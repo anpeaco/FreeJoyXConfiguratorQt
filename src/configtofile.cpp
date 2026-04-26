@@ -97,6 +97,10 @@ void ConfigToFile::loadDeviceConfigFromFile(QWidget *parent, const QString &file
         devC.buttons[i].is_disabled = uint8_t(deviceSettings.value("Disabled", devC.buttons[i].is_disabled).toInt());
         devC.buttons[i].delay_timer = uint8_t(deviceSettings.value("DelayTimer", devC.buttons[i].delay_timer).toInt());
         devC.buttons[i].press_timer = uint8_t(deviceSettings.value("PressTimer", devC.buttons[i].press_timer).toInt());
+        // LOGIC fields (no-ops for non-LOGIC types). Defaults of 0 / -1 are
+        // benign on old INIs from before the LOGIC type existed.
+        devC.buttons[i].op    = uint8_t(deviceSettings.value("Op",   devC.buttons[i].op).toInt());
+        devC.buttons[i].src_b = int8_t(deviceSettings.value("SrcB",  devC.buttons[i].src_b).toInt());
         deviceSettings.endGroup();
     }
 
@@ -344,6 +348,8 @@ void ConfigToFile::saveDeviceConfigToFile(const QString &fileName, dev_config_t 
         deviceSettings.setValue("Disabled", devC.buttons[i].is_disabled);
         deviceSettings.setValue("DelayTimer", devC.buttons[i].delay_timer);
         deviceSettings.setValue("PressTimer", devC.buttons[i].press_timer);
+        deviceSettings.setValue("Op",         devC.buttons[i].op);
+        deviceSettings.setValue("SrcB",       devC.buttons[i].src_b);
         deviceSettings.endGroup();
     }
 

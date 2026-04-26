@@ -52,8 +52,19 @@ void ButtonLogical::initialization()
         ui->comboBox_PressTimerIndex->addItem(m_timerList[i].guiName);
     }
 
+    // populate the LOGIC operator dropdown -- only meaningful when the
+    // slot's Function is set to "Logic", but pre-populate so the picker
+    // is ready when the user enables it.
+    m_logicOp_enumIndex.reserve(m_logicOpList.size());
+    for (int i = 0; i < m_logicOpList.size(); i++) {
+        ui->comboBox_LogicOp->addItem(m_logicOpList[i].guiName);
+        m_logicOp_enumIndex.push_back(m_logicOpList[i].deviceEnumIndex);
+    }
+
     connect(ui->comboBox_ButtonFunction, SIGNAL(currentIndexChanged(int)),
             this, SLOT(functionIndexChanged(int)));
+    connect(ui->comboBox_LogicOp, SIGNAL(currentIndexChanged(int)),
+            this, SLOT(logicOpIndexChanged(int)));
     connect(ui->spinBox_PhysicalButtonNumber, SIGNAL(valueChanged(int)),
             this, SLOT(editingOnOff(int)));
 }
@@ -77,6 +88,27 @@ void ButtonLogical::functionIndexChanged(int index)
     int type = m_logicFunctionList[index].deviceEnumIndex;
     emit functionTypeChanged(type, m_functionPrevType, m_buttonIndex);
     m_functionPrevType = type;
+    updateLogicWidgetsEnabled();
+}
+
+void ButtonLogical::logicOpIndexChanged(int /*index*/)
+{
+    // Only Source B's enabled state depends on the operator (NOT is unary).
+    updateLogicWidgetsEnabled();
+}
+
+void ButtonLogical::updateLogicWidgetsEnabled()
+{
+    const bool physSet  = ui->spinBox_PhysicalButtonNumber->value() > 0
+                       && ui->spinBox_PhysicalButtonNumber->isEnabled();
+    const bool isLogic  = (currentButtonType() == LOGIC);
+    const button_type_t curOp = m_logicOp_enumIndex.isEmpty()
+                                ? 0
+                                : m_logicOp_enumIndex[ui->comboBox_LogicOp->currentIndex()];
+    const bool isUnary  = (curOp == LOGIC_OP_NOT);
+
+    ui->comboBox_LogicOp->setEnabled(physSet && isLogic);
+    ui->spinBox_SourceB->setEnabled(physSet && isLogic && !isUnary);
 }
 
 void ButtonLogical::editingOnOff(int value)
@@ -96,6 +128,7 @@ void ButtonLogical::editingOnOff(int value)
         ui->comboBox_DelayTimerIndex->setEnabled(false);
         ui->comboBox_PressTimerIndex->setEnabled(false);
     }
+    updateLogicWidgetsEnabled();
 }
 
 void ButtonLogical::setButtonState(bool state)
@@ -192,6 +225,14 @@ void ButtonLogical::readFromConfig()
 
     // logical button function
     ui->comboBox_ButtonFunction->setCurrentIndex(Converter::EnumToIndex(button->type, m_logicFunc_enumIndex));
+    // logic operator (only meaningful when type == LOGIC; harmless to load otherwise)
+    {
+        int opIdx = Converter::EnumToIndex(button->op, m_logicOp_enumIndex);
+        if (opIdx < 0) opIdx = 0;
+        ui->comboBox_LogicOp->setCurrentIndex(opIdx);
+    }
+    // logic Source B (-1 stored => spinBox value 0)
+    ui->spinBox_SourceB->setValue(button->src_b + 1);
     // shift
     for (int i = 0; i < SHIFT_COUNT; i++) {
         if (button->shift_modificator == m_shiftList[i].deviceEnumIndex) {
@@ -224,6 +265,10 @@ void ButtonLogical::writeToConfig()
     button->is_inverted = ui->checkBox_IsInvert->isChecked();
 
     button->type = m_logicFunc_enumIndex[ui->comboBox_ButtonFunction->currentIndex()];
+    button->op = m_logicOp_enumIndex.isEmpty()
+                 ? 0
+                 : m_logicOp_enumIndex[ui->comboBox_LogicOp->currentIndex()];
+    button->src_b = ui->spinBox_SourceB->value() - 1;	// spinBox 0 -> stored -1 (unset)
     button->shift_modificator = m_shiftList[ui->comboBox_ShiftIndex->currentIndex()].deviceEnumIndex;
     button->delay_timer = m_timerList[ui->comboBox_DelayTimerIndex->currentIndex()].deviceEnumIndex;
     button->press_timer = m_timerList[ui->comboBox_PressTimerIndex->currentIndex()].deviceEnumIndex;

@@ -47,6 +47,10 @@ signals:
 private slots:
     void editingOnOff(int value);
     void functionIndexChanged(int index);
+    void logicOpIndexChanged(int index);
+
+private:
+    void updateLogicWidgetsEnabled();	// enable/disable Op + SourceB based on type / op
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
@@ -62,6 +66,7 @@ private:
     QElapsedTimer m_lastAct;
 
     QVector<int> m_logicFunc_enumIndex;
+    QVector<int> m_logicOp_enumIndex;
 
     const deviceEnum_guiName_t m_timerList[TIMER_COUNT] = // order must be as in common_types.h!!!!!!!!!!!          // static ?
     {
@@ -117,6 +122,20 @@ private:
         {RADIO_BUTTON4,        tr("Radio button 4")},
         {SEQUENTIAL_TOGGLE,    tr("Sequential toggle")},
         {SEQUENTIAL_BUTTON,    tr("Sequential button")},
+        {LOGIC,                tr("Logic")},
+    }};
+
+    // Operators for type == LOGIC. Order is purely UI ordering -- the
+    // underlying enum value comes from common_types.h.
+    const QVector <deviceEnum_guiName_t> m_logicOpList =
+    {{
+        {LOGIC_OP_AND,         tr("AND")},
+        {LOGIC_OP_OR,          tr("OR")},
+        {LOGIC_OP_NOT,         tr("NOT")},
+        {LOGIC_OP_NOR,         tr("NOR")},
+        {LOGIC_OP_NAND,        tr("NAND")},
+        {LOGIC_OP_XOR,         tr("XOR")},
+        {LOGIC_OP_A_AND_NOT_B, tr("A AND NOT B")},
     }};
 };
 
