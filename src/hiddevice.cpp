@@ -10,6 +10,7 @@
 #include "deviceconfig.h"
 #include "global.h"
 #include "firmwareupdater.h"
+#include "version.h"
 
 static const int DEVICE_SEARCH_DELAY = 1000; // ms
 static const int OLD_FIRMWARE_VID = 0x0483;
@@ -21,7 +22,8 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
     // Mutex is used for thread-safe access to m_currentWork and m_ledState 
     // from both UI and worker threads, as processData() blocks without an event loop.
     const QString FLASHER_PROD_STR ("FreeJoy Flasher");
-    const QString FJ_MANUFACT_STR ("FreeJoy");
+    const QString FJ_MANUFACT_STR (FORK_NAME);
+    const QString UPSTREAM_MANUFACT_STR ("FreeJoy");
     const QString OLD_MANUFACT_STR ("STMicroelectronics");
 
     // m_hidDevicesList - should be thread safe
@@ -81,8 +83,11 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                     }
                     break;
                 }
-                // add devices ptr to list. since FJ v1.7 we have changed the name and made two interfaces
-                if (QString::fromWCharArray(hidDevInfo->manufacturer_string) == FJ_MANUFACT_STR && hidDevInfo->interface_number == 1) {
+                // add devices ptr to list. since FJ v1.7 we have changed the name and made two interfaces.
+                // accept both upstream "FreeJoy" and our fork "FreeJoyX" so older boards still appear
+                // (they'll be flagged "incompatible firmware" by the version check downstream).
+                const QString manufact = QString::fromWCharArray(hidDevInfo->manufacturer_string);
+                if ((manufact == FJ_MANUFACT_STR || manufact == UPSTREAM_MANUFACT_STR) && hidDevInfo->interface_number == 1) {
                     tmp_HidList.append(qMakePair(false, hidDevInfo));
                 }
                 // search the old firmware device

@@ -6,6 +6,9 @@
 #define PATCH_VERSION 3
 #define BUILD_VERSION 0
 
+#define FORK_NAME    "FreeJoyX"
+#define FORK_VERSION "0.1.0"
+
 #ifdef INNO_SETUP
 	#define APP_VERSION Str(MAJOR_VERSION) + "." + Str(MINOR_VERSION) + "." + Str(PATCH_VERSION) + "." + "b" + Str(BUILD_VERSION)
 #else
