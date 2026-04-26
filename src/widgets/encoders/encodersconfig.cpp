@@ -175,7 +175,11 @@ void EncodersConfig::encoderInputChanged(int encoder_A, int encoder_B)      // Ð
 
 void EncodersConfig::readFromConfig()
 {
-    ui->comboBox_EncoderType->setCurrentIndex(gEnv.pDeviceConfig->config.encoders[0] - 1);      // - 1 - fast encoder without ENCODER_CONF_1x
+    // - 1 to skip ENCODER_CONF_1x which the dropdown excludes; clamp to 0 for
+    // factory-defaulted (uninitialised) configs so the dropdown shows "2x"
+    // rather than no selection.
+    int idx = gEnv.pDeviceConfig->config.fast_encoders[0].mode - 1;
+    ui->comboBox_EncoderType->setCurrentIndex(idx >= 0 ? idx : 0);
 
     for (int i = 0; i < MAX_ENCODERS_NUM - FAST_ENCODER_COUNT; i++)
     {
@@ -185,7 +189,13 @@ void EncodersConfig::readFromConfig()
 
 void EncodersConfig::writeToConfig()
 {
-    gEnv.pDeviceConfig->config.encoders[0] = ui->comboBox_EncoderType->currentIndex() + 1;      // + 1 - fast encoder without ENCODER_CONF_1x
+    // + 1 to map dropdown index back to ENCODER_CONF_2x/_4x enum values.
+    gEnv.pDeviceConfig->config.fast_encoders[0].mode = ui->comboBox_EncoderType->currentIndex() + 1;
+    // .enabled tracks whether the user has selected FAST_ENCODER on both
+    // PA8 and PA9 (counters maintained by fastEncoderSelected).
+    gEnv.pDeviceConfig->config.fast_encoders[0].enabled =
+        (m_fastEncoderInput_A > 0 && m_fastEncoderInput_B > 0) ? 1 : 0;
+
     for (int i = 0; i < MAX_ENCODERS_NUM - FAST_ENCODER_COUNT; i++)
     {
         m_encodersPtrList[i]->writeToConfig();

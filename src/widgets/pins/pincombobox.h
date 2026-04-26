@@ -7,7 +7,7 @@
 #include "global.h"
 
 #define PINS_COUNT 30
-#define PIN_TYPE_COUNT 32
+#define PIN_TYPE_COUNT 34
 enum // разделить и вынести отдельно?                 // все структуры в global.h?
 {
   ANALOG_IN = 100,
@@ -263,6 +263,16 @@ private:
 
         {FAST_ENCODER,   tr("Fast Encoder"),
         {PA_8, PA_9},
+        {},
+        {}, {QColor(55, 150, 25)}},
+
+        {FAST_ENCODER_2_A,   tr("Fast Encoder 2 A"),
+        {PB_6},                                         // TIM4 CH1 -- silicon-locked
+        {},
+        {}, {QColor(55, 150, 25)}},
+
+        {FAST_ENCODER_2_B,   tr("Fast Encoder 2 B"),
+        {PB_7},                                         // TIM4 CH2 -- silicon-locked
         {},
         {}, {QColor(55, 150, 25)}},
 
