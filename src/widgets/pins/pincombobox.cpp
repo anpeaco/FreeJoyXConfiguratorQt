@@ -1,6 +1,8 @@
 #include "pincombobox.h"
 #include "ui_pincombobox.h"
 
+#include <QFont>
+
 //! pinNumber cannot be less 1 and more than PINS_COUNT
 PinComboBox::PinComboBox(uint pinNumber, QWidget *parent) : // пины - первое, что я начал кодить в конфигураторе и спустя время
     QWidget(parent),                                        // заявляю - это говнокод!1 который даже мне тяжело понять
@@ -77,14 +79,20 @@ int PinComboBox::currentDevEnum() const
 {
     return m_currentDevEnum;
 }
-//! Set selected index enable or disable
+//! Set selected index enable or disable. Also strikes through the item's
+//! text when disabled so the conflict is visually obvious -- Qt's default
+//! disabled rendering is too subtle in this styled combobox.
 void PinComboBox::setIndexStatus(int index, bool status)
 {
+    QFont font = ui->comboBox_PinsType->font();
     if (status == true){
         ui->comboBox_PinsType->setItemData(index, 1 | 32, Qt::UserRole - 1);
+        font.setStrikeOut(false);
     } else {
         ui->comboBox_PinsType->setItemData(index, 0, Qt::UserRole - 1);
+        font.setStrikeOut(true);
     }
+    ui->comboBox_PinsType->setItemData(index, font, Qt::FontRole);
 }
 
 void PinComboBox::resetPin()
