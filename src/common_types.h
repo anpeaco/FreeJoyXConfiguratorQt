@@ -291,6 +291,16 @@ enum
 };
 typedef uint8_t encoder_t;
 
+// Per-encoder config for fast (hardware-quadrature) encoders. On F103 the
+// pin pair is silicon-locked to the timer (TIM1->PA8/PA9, TIM4->PB6/PB7) so
+// pins aren't part of this struct -- they live in the firmware's static
+// fast_encoder_hw[] table. F411 (Step 3) may revisit if remap matters.
+typedef struct
+{
+    uint8_t   enabled;		// 0 = disabled, 1 = enabled
+    encoder_t mode;			// ENCODER_CONF_1x / _2x / _4x
+} fast_encoder_t;
+
 
 typedef struct
 {
@@ -445,6 +455,9 @@ typedef struct
 
     // config 16;
     encoder_t						encoders[MAX_ENCODERS_NUM];
+    // per-fast-encoder config; indices 0..MAX_FAST_ENCODER_NUM-1 align with
+    // encoders_state[0..MAX_FAST_ENCODER_NUM-1] (the fast/hardware-quadrature slots).
+    fast_encoder_t			fast_encoders[MAX_FAST_ENCODER_NUM];
 
     uint8_t							button_polling_interval_ticks;
     uint8_t							encoder_polling_interval_ticks;

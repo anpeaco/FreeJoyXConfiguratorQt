@@ -11,12 +11,13 @@
 
 //#define DEBUG
 
-#define FIRMWARE_VERSION					0x1730			// v1.7.3b0
+#define FIRMWARE_VERSION					0x1732			// v1.7.3b2 (FreeJoyX: dev_config_t gains fast_encoders[])
 #define USED_PINS_NUM							30					// constant for BluePill and BlackPill boards
 #define MAX_AXIS_NUM							8						// max 8
 #define MAX_BUTTONS_NUM						128					// power of 2, max 128
 #define MAX_POVS_NUM							4						// max 4
 #define MAX_ENCODERS_NUM					16					// max 64
+#define MAX_FAST_ENCODER_NUM			2						// hardware-quadrature encoders (Enc 1 = TIM1/PA8/PA9, Enc 2 = TIM4/PB6/PB7).
 #define MAX_SHIFT_REG_NUM					4						// max 4
 #define MAX_LEDS_NUM							24
 #define NUM_RGB_LEDS    					50					// if increase dont forget calc config size CONFIG_PAGE_COUNT
