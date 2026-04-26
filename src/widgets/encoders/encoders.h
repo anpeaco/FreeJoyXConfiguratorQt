@@ -34,7 +34,8 @@ private:
     Ui::Encoders *ui;
     void setUiOnOff();
 
-    int m_encodersNumber;
+    int m_encodersNumber;	// 1-based display index shown in the UI label
+    int m_configIndex;		// index into dev_config encoders[] / encoders_state[]
     int m_input_A;
     int m_input_B;
     QString m_notDefined;

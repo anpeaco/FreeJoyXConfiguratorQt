@@ -10,7 +10,8 @@ Encoders::Encoders(int encodersNumber, QWidget *parent)
     m_input_B = 0;
     m_notDefined = tr("Not defined");
 
-    m_encodersNumber = encodersNumber + 1; // fast encoder index 0
+    m_encodersNumber = encodersNumber + 1;					// 1-based for the user-visible label
+    m_configIndex    = encodersNumber + MAX_FAST_ENCODER_NUM;	// slow encoders sit after the fast slots in dev_config
     ui->label_EncoderIndex->setNum(m_encodersNumber);
 
     for (int i = 0; i < ENCODER_TYPE_COUNT; ++i) {
@@ -81,10 +82,10 @@ void Encoders::setUiOnOff()
 
 void Encoders::readFromConfig()
 {
-    ui->comboBox_EncoderType->setCurrentIndex(gEnv.pDeviceConfig->config.encoders[m_encodersNumber]);
+    ui->comboBox_EncoderType->setCurrentIndex(gEnv.pDeviceConfig->config.encoders[m_configIndex]);
 }
 
 void Encoders::writeToConfig()
 {
-    gEnv.pDeviceConfig->config.encoders[m_encodersNumber] = ui->comboBox_EncoderType->currentIndex();
+    gEnv.pDeviceConfig->config.encoders[m_configIndex] = ui->comboBox_EncoderType->currentIndex();
 }

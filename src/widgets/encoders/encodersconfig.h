@@ -40,6 +40,10 @@ private:
     int m_fastEncoderInput_A;
     int m_fastEncoderInput_B;
 
+    // Encoder 2 (TIM4 / PB6 / PB7) input counters, mirroring Encoder 1's pair.
+    int m_fastEncoder2Input_A;
+    int m_fastEncoder2Input_B;
+
     const deviceEnum_guiName_t m_fastEncoderTypeList[ENCODER_TYPE_COUNT] = // порядов обязан быть как в common_types.h!!!!!!!!!!!
     {
         {ENCODER_CONF_1x, tr("Encoder 1x")},
