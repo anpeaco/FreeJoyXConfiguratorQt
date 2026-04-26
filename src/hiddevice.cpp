@@ -64,7 +64,7 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                         m_hidDevicesList.clear();
                         m_deviceNames.clear();
                         m_deviceNames.append(qMakePair(false, FLASHER_PROD_STR));
-                        emit hidDeviceList(m_deviceNames);
+                        emit hidDeviceList(m_deviceNames, -1);
                         emit flasherConnected();
                         emit flasherFound(true);
                     }
@@ -76,7 +76,7 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                         m_flasherPath.clear();
                         m_currentWork = REPORT_ID_PARAM;
                         m_deviceNames.clear();
-                        emit hidDeviceList(m_deviceNames);
+                        emit hidDeviceList(m_deviceNames, -1);
                         emit deviceConnected();
                         QThread::msleep(300);
                         break;
@@ -102,6 +102,11 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                     // old devices count != new devices count
                     std::lock_guard<std::mutex> lock(m_mutex);
                     if (m_hidDevicesList.size() != tmp_HidList.size()) {  // mutex
+                        // capture the current selection's path before we throw the list out,
+                        // so we can re-pick the same physical device after the rebuild
+                        if (m_selectedDevice >= 0 && m_selectedDevice < m_hidDevicesList.size()) {
+                            m_savedSelectedPath = m_hidDevicesList[m_selectedDevice].path;
+                        }
                         m_hidDevicesList.clear();
                         m_deviceNames.clear();
                         for (int i = 0; i < tmp_HidList.size(); ++i) {
@@ -109,8 +114,22 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                             // device names for UI combobox. pair for old firmware device
                             m_deviceNames.append(qMakePair(tmp_HidList[i].first, QString::fromWCharArray(tmp_HidList[i].second->product_string)));
                         }
+                        // restore selection by path match (path is stable across USB re-enumerate
+                        // on the same physical port). Keep the saved path if not yet found --
+                        // the target device may still be mid-reboot and reappear on a later cycle.
+                        int preferredIndex = -1;
+                        if (!m_savedSelectedPath.empty()) {
+                            for (int i = 0; i < m_hidDevicesList.size(); ++i) {
+                                if (m_hidDevicesList[i].path == m_savedSelectedPath) {
+                                    preferredIndex = i;
+                                    m_selectedDevice = i;
+                                    m_savedSelectedPath.clear();
+                                    break;
+                                }
+                            }
+                        }
                         // emit all connected FJ devices names
-                        emit hidDeviceList(m_deviceNames);
+                        emit hidDeviceList(m_deviceNames, preferredIndex);
                         tmp_HidList.clear();
                         deviceCountChanged = true;
                         // flasher disconnected. clear path
@@ -236,8 +255,13 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                     {
                         std::lock_guard<std::mutex> lock(m_mutex);
                         emit deviceDisconnected();
+                        // remember path so the device can be re-selected after the firmware
+                        // applies the new config and the device re-enumerates over USB
+                        if (m_selectedDevice >= 0 && m_selectedDevice < m_hidDevicesList.size()) {
+                            m_savedSelectedPath = m_hidDevicesList[m_selectedDevice].path;
+                        }
                         m_deviceNames.clear();
-                        emit hidDeviceList(m_deviceNames);
+                        emit hidDeviceList(m_deviceNames, -1);
                         m_hidDevicesList.clear();  // mutex
                         oldSelectedDevice = m_selectedDevice = -1;
                     }

@@ -51,7 +51,7 @@ private slots:
 
     void deviceFlasherController(bool isStartFlash);
 
-    void hidDeviceList(const QList<QPair<bool, QString>> &deviceNames);
+    void hidDeviceList(const QList<QPair<bool, QString>> &deviceNames, int preferredIndex);
     void hidDeviceListChanged(int index);
 
     void languageChanged(const QString &language);

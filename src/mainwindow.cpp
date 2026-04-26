@@ -276,23 +276,28 @@ void MainWindow::flasherConnected()
     }
 }
 
-// add/delete hid devices to/from combobox
-void MainWindow::hidDeviceList(const QList<QPair<bool, QString>> &deviceNames)
+// add/delete hid devices to/from combobox.
+// preferredIndex is the worker's restored selection (e.g. the same physical device
+// after a config-write USB re-enumerate). Block signals during the rebuild so the
+// auto-fired currentIndexChanged(0) from the first addItem doesn't override it.
+void MainWindow::hidDeviceList(const QList<QPair<bool, QString>> &deviceNames, int preferredIndex)
 {
+    QSignalBlocker bl(ui->comboBox_HidDeviceList);
+    ui->comboBox_HidDeviceList->clear();
     if (deviceNames.size() == 0) {
-        ui->comboBox_HidDeviceList->clear();
         return;
-    } else {
-        ui->comboBox_HidDeviceList->clear();
-        for (int i = 0; i < deviceNames.size(); ++i) {
-            if (deviceNames[i].first) {
-                // for old firmware
-                ui->comboBox_HidDeviceList->addItem("ONLY FLASH " + deviceNames[i].second, 1);
-            } else {
-                ui->comboBox_HidDeviceList->addItem(deviceNames[i].second);
-            }
+    }
+    for (int i = 0; i < deviceNames.size(); ++i) {
+        if (deviceNames[i].first) {
+            // for old firmware
+            ui->comboBox_HidDeviceList->addItem("ONLY FLASH " + deviceNames[i].second, 1);
+        } else {
+            ui->comboBox_HidDeviceList->addItem(deviceNames[i].second);
         }
     }
+    const int idx = (preferredIndex >= 0 && preferredIndex < deviceNames.size())
+                        ? preferredIndex : 0;
+    ui->comboBox_HidDeviceList->setCurrentIndex(idx);
 }
 
 // received device report

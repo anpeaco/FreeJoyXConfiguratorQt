@@ -32,7 +32,7 @@ signals:
     void configReceived(bool isSuccess);
     void configSent(bool isSuccess);
 
-    void hidDeviceList(const QList<QPair<bool, QString>> &deviceNames);
+    void hidDeviceList(const QList<QPair<bool, QString>> &deviceNames, int preferredIndex);
 
     void flasherFound(bool isFound);
     void flashStatus(int status, int percent);
@@ -77,6 +77,9 @@ private:
 
     QList<QPair<bool, QString>> m_deviceNames;
     QByteArray m_flasherPath;
+    // path of the device the user had selected, captured before list rebuilds so we
+    // can re-select the same physical device after USB re-enumeration (e.g. post config write)
+    std::string m_savedSelectedPath;
     const QByteArray *m_firmware;
 
     mutable std::mutex m_mutex;
