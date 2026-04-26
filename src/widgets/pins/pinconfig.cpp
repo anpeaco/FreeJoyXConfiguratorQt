@@ -166,6 +166,11 @@ void PinConfig::pinIndexChanged(int currentDeviceEnum, int previousDeviceEnum, i
 
     // PA10 RGB should only works if PA8 PWM or FastEncoder is not selected
     blockPA10RGB(currentDeviceEnum, previousDeviceEnum, pinNumber);
+
+    // Encoder 2 (PB6/PB7 via TIM4) and TLE5011_GEN (PB6 via TIM4) are mutually
+    // exclusive -- both want TIM4. Disable whichever role conflicts with the
+    // current selection.
+    blockEncoder2TLE5011(currentDeviceEnum, previousDeviceEnum, pinNumber);
 }
 
 
@@ -365,6 +370,96 @@ void PinConfig::blockPA10RGB(int currentDeviceEnum, int previousDeviceEnum, int 
                 m_pinCBoxPtrList[PA10Index]->enumIndex()[i] == LED_RGB_PL9823)
             {
                 m_pinCBoxPtrList[PA10Index]->setIndexStatus(i, true);
+                break;
+            }
+        }
+    }
+}
+
+
+// Encoder 2 (FAST_ENCODER on PB6 + PB7, configured for TIM4 in encoder mode)
+// and TLE5011_GEN (PB6, configured for TIM4 in PWM-output mode for the sensor's
+// clock) are mutually exclusive: both want TIM4. The configurator can't enforce
+// the timer at the firmware-resource level, so it surfaces the conflict in the
+// UI by greying out the conflicting role choices in the relevant pin
+// comboboxes. Same pattern as blockPA10RGB above.
+void PinConfig::blockEncoder2TLE5011(int currentDeviceEnum, int previousDeviceEnum, int pinNumber)
+{
+    static int encoder2Count = 0;
+    static int tleGenCount = 0;
+
+    const int PB6Index = PB_6 - PA_0;
+    const int PB7Index = PB_7 - PA_0;
+
+    // Track FAST_ENCODER selections on PB6 / PB7 (Encoder 2 channels).
+    // FAST_ENCODER on PA8 / PA9 is Encoder 1 -- not our concern here.
+    if ((pinNumber == PB_6 || pinNumber == PB_7) && currentDeviceEnum == FAST_ENCODER) {
+        encoder2Count++;
+    } else if ((pinNumber == PB_6 || pinNumber == PB_7) && previousDeviceEnum == FAST_ENCODER) {
+        encoder2Count--;
+    }
+
+    // Track TLE5011_GEN on PB6 (the only pin it's allowed on).
+    if (pinNumber == PB_6 && currentDeviceEnum == TLE5011_GEN) {
+        tleGenCount++;
+    } else if (pinNumber == PB_6 && previousDeviceEnum == TLE5011_GEN) {
+        tleGenCount--;
+    }
+
+    // Encoder 2 active -> disable TLE5011_GEN role on PB6.
+    const bool encoder2Active = encoder2Count > 0;
+    if (encoder2Active) {
+        if (m_pinCBoxPtrList[PB6Index]->currentDevEnum() == TLE5011_GEN) {
+            m_pinCBoxPtrList[PB6Index]->resetPin();
+        }
+        for (int i = 0; i < m_pinCBoxPtrList[PB6Index]->enumIndex().size(); ++i) {
+            if (m_pinCBoxPtrList[PB6Index]->enumIndex()[i] == TLE5011_GEN) {
+                m_pinCBoxPtrList[PB6Index]->setIndexStatus(i, false);
+                break;
+            }
+        }
+    } else {
+        for (int i = 0; i < m_pinCBoxPtrList[PB6Index]->enumIndex().size(); ++i) {
+            if (m_pinCBoxPtrList[PB6Index]->enumIndex()[i] == TLE5011_GEN) {
+                m_pinCBoxPtrList[PB6Index]->setIndexStatus(i, true);
+                break;
+            }
+        }
+    }
+
+    // TLE5011_GEN active -> disable FAST_ENCODER role on PB6 and PB7.
+    // (FAST_ENCODER on PA8 / PA9 stays available; only the PB6/PB7
+    // comboboxes are locally restricted.)
+    const bool tleActive = tleGenCount > 0;
+    if (tleActive) {
+        if (m_pinCBoxPtrList[PB6Index]->currentDevEnum() == FAST_ENCODER) {
+            m_pinCBoxPtrList[PB6Index]->resetPin();
+        }
+        if (m_pinCBoxPtrList[PB7Index]->currentDevEnum() == FAST_ENCODER) {
+            m_pinCBoxPtrList[PB7Index]->resetPin();
+        }
+        for (int i = 0; i < m_pinCBoxPtrList[PB6Index]->enumIndex().size(); ++i) {
+            if (m_pinCBoxPtrList[PB6Index]->enumIndex()[i] == FAST_ENCODER) {
+                m_pinCBoxPtrList[PB6Index]->setIndexStatus(i, false);
+                break;
+            }
+        }
+        for (int i = 0; i < m_pinCBoxPtrList[PB7Index]->enumIndex().size(); ++i) {
+            if (m_pinCBoxPtrList[PB7Index]->enumIndex()[i] == FAST_ENCODER) {
+                m_pinCBoxPtrList[PB7Index]->setIndexStatus(i, false);
+                break;
+            }
+        }
+    } else {
+        for (int i = 0; i < m_pinCBoxPtrList[PB6Index]->enumIndex().size(); ++i) {
+            if (m_pinCBoxPtrList[PB6Index]->enumIndex()[i] == FAST_ENCODER) {
+                m_pinCBoxPtrList[PB6Index]->setIndexStatus(i, true);
+                break;
+            }
+        }
+        for (int i = 0; i < m_pinCBoxPtrList[PB7Index]->enumIndex().size(); ++i) {
+            if (m_pinCBoxPtrList[PB7Index]->enumIndex()[i] == FAST_ENCODER) {
+                m_pinCBoxPtrList[PB7Index]->setIndexStatus(i, true);
                 break;
             }
         }

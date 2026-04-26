@@ -82,6 +82,9 @@ private:
     void setCurrentConfig(int currentDeviceEnum, int previousDeviceEnum, int pinNumber, QString pinName);
     void blockPA8PWM(int currentDeviceEnum, int previousDeviceEnum);
     void blockPA10RGB(int currentDeviceEnum, int previousDeviceEnum, int pinNumber);
+    // Encoder 2 (TIM4 / PB6 / PB7) and TLE5011_GEN (TIM4 / PB6) both want TIM4
+    // -- mutually exclusive. Same UX pattern as blockPA10RGB.
+    void blockEncoder2TLE5011(int currentDeviceEnum, int previousDeviceEnum, int pinNumber);
 
     struct source_t
     {
