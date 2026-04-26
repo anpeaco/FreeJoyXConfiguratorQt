@@ -1,8 +1,6 @@
 #include "encodersconfig.h"
 #include "ui_encodersconfig.h"
 
-#include <QLabel>
-
 EncodersConfig::EncodersConfig(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::EncodersConfig)
@@ -10,30 +8,22 @@ EncodersConfig::EncodersConfig(QWidget *parent) :
     ui->setupUi(this);
     m_encodersInput_A_count = 0;
     m_encodersInput_B_count = 0;
-    m_notDefined = tr("Not defined");
 
-    m_fastEncoderInput_A = 0;
-    m_fastEncoderInput_B = 0;
-    m_fastEncoder2Input_A = 0;
-    m_fastEncoder2Input_B = 0;
-
-    for (int i = 1; i < ENCODER_TYPE_COUNT; ++i) {      // i = 1 - fast encoder without ENCODER_CONF_1x
-        ui->comboBox_EncoderType->addItem(m_fastEncoderTypeList[i].guiName);
-        ui->comboBox_EncoderType2->addItem(m_fastEncoderTypeList[i].guiName);
+    // spawn fast-encoder rows -- one per fast encoder slot. The widgets
+    // own their own pin-name labels, mode dropdown, and counter state.
+    ui->layoutV_FastEncoders->setAlignment(Qt::AlignTop);
+    for (int i = 0; i < MAX_FAST_ENCODER_NUM; ++i) {
+        FastEncoder *fe = new FastEncoder(i, this);
+        ui->layoutV_FastEncoders->addWidget(fe);
+        m_fastEncodersPtrList.append(fe);
     }
-    ui->label_ButtonNumberA->setText(m_notDefined);
-    ui->label_ButtonNumberB->setText(m_notDefined);
-    ui->label_ButtonNumberA2->setText(m_notDefined);
-    ui->label_ButtonNumberB2->setText(m_notDefined);
 
+    // spawn slow-encoder rows below
     ui->layoutV_Encoders->setAlignment(Qt::AlignTop);
-    // encoders spawn
-    for (int i = 0; i < MAX_ENCODERS_NUM - MAX_FAST_ENCODER_NUM; i++)
-    {
+    for (int i = 0; i < MAX_ENCODERS_NUM - MAX_FAST_ENCODER_NUM; i++) {
         Encoders * encoder = new Encoders(i, this);
         ui->layoutV_Encoders->addWidget(encoder);
         m_encodersPtrList.append(encoder);
-        //encoder->hide();
     }
 }
 
@@ -45,6 +35,9 @@ EncodersConfig::~EncodersConfig()
 void EncodersConfig::retranslateUi()
 {
     ui->retranslateUi(this);
+    for (int i = 0; i < m_fastEncodersPtrList.size(); ++i) {
+        m_fastEncodersPtrList[i]->retranslateUi();
+    }
     for (int i = 0; i < m_encodersPtrList.size(); ++i) {
         m_encodersPtrList[i]->retranslateUi();
     }
@@ -52,46 +45,18 @@ void EncodersConfig::retranslateUi()
 
 void EncodersConfig::fastEncoderSelected(const QString &pinGuiName, bool isSelected)
 {
-    // FAST_ENCODER role is allowed on PA8/PA9 (Encoder 1, TIM1) and PB6/PB7
-    // (Encoder 2, TIM4). Dispatch by pin name to the right group of UI labels
-    // and counters.
-    const bool isEncoder2 = pinGuiName.endsWith("B6") || pinGuiName.endsWith("B7");
+    // FAST_ENCODER role is allowed on PA8/PA9 (Encoder 1, TIM1, fast slot 0)
+    // and PB6/PB7 (Encoder 2, TIM4, fast slot 1). Dispatch by pin name suffix.
+    int slot = (pinGuiName.endsWith("B6") || pinGuiName.endsWith("B7")) ? 1 : 0;
 
-    QLabel *labelA = isEncoder2 ? ui->label_ButtonNumberA2 : ui->label_ButtonNumberA;
-    QLabel *labelB = isEncoder2 ? ui->label_ButtonNumberB2 : ui->label_ButtonNumberB;
-    int &inputA = isEncoder2 ? m_fastEncoder2Input_A : m_fastEncoderInput_A;
-    int &inputB = isEncoder2 ? m_fastEncoder2Input_B : m_fastEncoderInput_B;
-
-    if (isSelected == true) {
-        if (labelA->text() == m_notDefined) {
-            labelA->setText(pinGuiName);
-            inputA++;
-        } else {
-            labelB->setText(pinGuiName);
-            inputB++;
-        }
+    if (slot >= m_fastEncodersPtrList.size()) {
+        return;
+    }
+    FastEncoder *fe = m_fastEncodersPtrList[slot];
+    if (isSelected) {
+        fe->setInput(pinGuiName);
     } else {
-        if (labelA->text() == pinGuiName) {
-            labelA->setText(m_notDefined);
-            inputA--;
-        } else {
-            labelB->setText(m_notDefined);
-            inputB--;
-        }
-    }
-    setUiOnOff();
-}
-
-void EncodersConfig::setUiOnOff()
-{
-    const bool enc1On = (m_fastEncoderInput_A > 0 && m_fastEncoderInput_B > 0);
-    for (auto&& child : ui->groupBox_FastEncoder->findChildren<QWidget *>()) {
-        child->setEnabled(enc1On);
-    }
-
-    const bool enc2On = (m_fastEncoder2Input_A > 0 && m_fastEncoder2Input_B > 0);
-    for (auto&& child : ui->groupBox_FastEncoder2->findChildren<QWidget *>()) {
-        child->setEnabled(enc2On);
+        fe->clearInput(pinGuiName);
     }
 }
 
@@ -190,36 +155,20 @@ void EncodersConfig::encoderInputChanged(int encoder_A, int encoder_B)      // Ð
 
 void EncodersConfig::readFromConfig()
 {
-    // - 1 to skip ENCODER_CONF_1x which the dropdown excludes; clamp to 0 for
-    // factory-defaulted (uninitialised) configs so the dropdown shows "2x"
-    // rather than no selection.
-    int idx0 = gEnv.pDeviceConfig->config.fast_encoders[0].mode - 1;
-    ui->comboBox_EncoderType->setCurrentIndex(idx0 >= 0 ? idx0 : 0);
-
-    int idx1 = gEnv.pDeviceConfig->config.fast_encoders[1].mode - 1;
-    ui->comboBox_EncoderType2->setCurrentIndex(idx1 >= 0 ? idx1 : 0);
-
-    for (int i = 0; i < MAX_ENCODERS_NUM - MAX_FAST_ENCODER_NUM; i++)
-    {
+    for (int i = 0; i < m_fastEncodersPtrList.size(); ++i) {
+        m_fastEncodersPtrList[i]->readFromConfig();
+    }
+    for (int i = 0; i < m_encodersPtrList.size(); ++i) {
         m_encodersPtrList[i]->readFromConfig();
     }
 }
 
 void EncodersConfig::writeToConfig()
 {
-    // + 1 to map dropdown index back to ENCODER_CONF_2x/_4x enum values.
-    // .enabled tracks whether the user has selected FAST_ENCODER on both
-    // pins of the encoder (counters maintained by fastEncoderSelected).
-    gEnv.pDeviceConfig->config.fast_encoders[0].mode = ui->comboBox_EncoderType->currentIndex() + 1;
-    gEnv.pDeviceConfig->config.fast_encoders[0].enabled =
-        (m_fastEncoderInput_A > 0 && m_fastEncoderInput_B > 0) ? 1 : 0;
-
-    gEnv.pDeviceConfig->config.fast_encoders[1].mode = ui->comboBox_EncoderType2->currentIndex() + 1;
-    gEnv.pDeviceConfig->config.fast_encoders[1].enabled =
-        (m_fastEncoder2Input_A > 0 && m_fastEncoder2Input_B > 0) ? 1 : 0;
-
-    for (int i = 0; i < MAX_ENCODERS_NUM - MAX_FAST_ENCODER_NUM; i++)
-    {
+    for (int i = 0; i < m_fastEncodersPtrList.size(); ++i) {
+        m_fastEncodersPtrList[i]->writeToConfig();
+    }
+    for (int i = 0; i < m_encodersPtrList.size(); ++i) {
         m_encodersPtrList[i]->writeToConfig();
     }
 }

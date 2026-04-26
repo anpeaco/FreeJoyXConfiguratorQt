@@ -77,6 +77,7 @@ SOURCES += \
     widgets/debugwindow.cpp \
     widgets/encoders/encoders.cpp \
     widgets/encoders/encodersconfig.cpp \
+    widgets/encoders/fastencoder.cpp \
     widgets/adv-settings/flasher.cpp \
     widgets/led/led.cpp \
     widgets/led/ledconfig.cpp \
@@ -132,6 +133,7 @@ HEADERS += \
     widgets/debugwindow.h \
     widgets/encoders/encoders.h \
     widgets/encoders/encodersconfig.h \
+    widgets/encoders/fastencoder.h \
     widgets/adv-settings/flasher.h \
     widgets/led/led.h \
     widgets/led/ledconfig.h \
@@ -162,6 +164,7 @@ FORMS += \
     widgets/debugwindow.ui \
     widgets/encoders/encoders.ui \
     widgets/encoders/encodersconfig.ui \
+    widgets/encoders/fastencoder.ui \
     widgets/adv-settings/flasher.ui \
     widgets/led/led.ui \
     widgets/led/ledconfig.ui \
