@@ -221,6 +221,13 @@ enum
 
     SEQUENTIAL_TOGGLE,
     SEQUENTIAL_BUTTON,
+
+    // POV 3 / POV 4 center -- appended here (rather than next to their
+    // direction siblings above) so adding them doesn't shift any existing
+    // enum values and existing button assignments survive the upgrade
+    // without a factory-reset.
+    POV3_CENTER,
+    POV4_CENTER,
 };
 typedef uint8_t button_type_t;
 
