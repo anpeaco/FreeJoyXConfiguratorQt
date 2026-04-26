@@ -170,6 +170,17 @@ void ConfigToFile::loadDeviceConfigFromFile(QWidget *parent, const QString &file
         deviceSettings.endGroup();
     }
 
+    // load Fast Encoders config from file. INIs saved before this section
+    // existed will fall back to the struct defaults (zero -> disabled,
+    // mode = ENCODER_CONF_1x), which is correct for upgrade scenarios.
+    for (int i = 0; i < MAX_FAST_ENCODER_NUM; ++i) {
+        deviceSettings.beginGroup("FastEncodersConfig_" + QString::number(i));
+
+        devC.fast_encoders[i].enabled = uint8_t(deviceSettings.value("Enabled", devC.fast_encoders[i].enabled).toInt());
+        devC.fast_encoders[i].mode    = uint8_t(deviceSettings.value("Mode",    devC.fast_encoders[i].mode).toInt());
+        deviceSettings.endGroup();
+    }
+
     // load LEDs config from file
     deviceSettings.beginGroup("LedsPWMConfig");
     devC.led_pwm_config[0].duty_cycle = uint8_t(deviceSettings.value("PinPA8", devC.led_pwm_config[0].duty_cycle).toInt());
@@ -403,6 +414,15 @@ void ConfigToFile::saveDeviceConfigToFile(const QString &fileName, dev_config_t 
         deviceSettings.beginGroup("EncodersConfig_" + QString::number(i));
 
         deviceSettings.setValue("EncType", devC.encoders[i]);
+        deviceSettings.endGroup();
+    }
+
+    // save Fast Encoders config to file
+    for (int i = 0; i < MAX_FAST_ENCODER_NUM; ++i) {
+        deviceSettings.beginGroup("FastEncodersConfig_" + QString::number(i));
+
+        deviceSettings.setValue("Enabled", devC.fast_encoders[i].enabled);
+        deviceSettings.setValue("Mode",    devC.fast_encoders[i].mode);
         deviceSettings.endGroup();
     }
 
