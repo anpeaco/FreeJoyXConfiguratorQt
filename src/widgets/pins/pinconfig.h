@@ -38,6 +38,10 @@ public:
 
 signals:
     void totalButtonsValueChanged(int count);
+    /* Forwarded from CurrentConfig::physicalButtonBreakdownChanged. Fires
+     * just before totalButtonsValueChanged so subscribers (button config
+     * grouping) get fresh per-source counts before the rebuild slot runs. */
+    void physicalButtonBreakdownChanged(int matrix, int shiftRegs, int axes, int direct);
     void totalLEDsValueChanged(int totalLed);
     void fastEncoderSelected(const QString &pinGuiName, bool isSelected);
     void shiftRegSelected(int latchPin, int clkPin, int dataPin, const QString &pinGuiName);

@@ -32,6 +32,11 @@ public:
 
     void addOrDeleteMainSource(int sourceEnum, QString sourceName, bool isAdd);
 
+    /* Live a2b button count for this axis, mirroring m_a2bButtonsCount.
+     * Returns 0 when this axis isn't contributing buttons (e.g. function
+     * disabled). Used by AxesConfig to compose its per-axis breakdown. */
+    int a2bButtonCount() const { return m_a2bButtonsCount; }
+
 signals:
     void a2bCountChanged(int count, int previousCount);
 

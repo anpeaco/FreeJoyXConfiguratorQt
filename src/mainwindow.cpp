@@ -131,7 +131,16 @@ MainWindow::MainWindow(QWidget *parent)
     connect(this, &MainWindow::sendConfigDone, this, &MainWindow::configSent);
 
 
-    // buttons pin changed
+    // buttons pin changed -- breakdown wired BEFORE setUiOnOff so the new
+    // group counts land before the rebuild slot triggers. Per-register and
+    // per-axis breakdowns come direct from their respective config widgets
+    // (they hold the live UI state; CurrentConfig only sees totals).
+    connect(m_pinConfig, &PinConfig::physicalButtonBreakdownChanged,
+            m_buttonConfig, &ButtonConfig::onPhysicalButtonBreakdownChanged);
+    connect(m_shiftRegConfig, &ShiftRegistersConfig::shiftRegBreakdownChanged,
+            m_buttonConfig, &ButtonConfig::onShiftRegBreakdownChanged);
+    connect(m_axesConfig, &AxesConfig::a2bBreakdownChanged,
+            m_buttonConfig, &ButtonConfig::onA2bBreakdownChanged);
     connect(m_pinConfig, &PinConfig::totalButtonsValueChanged, m_buttonConfig, &ButtonConfig::setUiOnOff);
     // LEDs changed
     connect(m_pinConfig, &PinConfig::totalLEDsValueChanged, m_ledConfig, &LedConfig::spawnLeds);

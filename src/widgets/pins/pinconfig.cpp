@@ -64,6 +64,8 @@ PinConfig::PinConfig(QWidget *parent) :         // пины - первое, чт
 
     connect(ui->widget_currConfig, &CurrentConfig::totalButtonsValueChanged,
             this, &PinConfig::totalButtonsValueChanged);
+    connect(ui->widget_currConfig, &CurrentConfig::physicalButtonBreakdownChanged,
+            this, &PinConfig::physicalButtonBreakdownChanged);
     connect(ui->widget_currConfig, &CurrentConfig::totalLEDsValueChanged,
             this, &PinConfig::totalLEDsValueChanged);
     connect(ui->widget_currConfig, &CurrentConfig::limitReached,

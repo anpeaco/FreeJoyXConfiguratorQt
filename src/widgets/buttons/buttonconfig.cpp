@@ -7,6 +7,7 @@
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
 #include <QDropEvent>
+#include <QLabel>
 #include <QMimeData>
 
 #ifdef DYNAMIC_CREATION
@@ -212,29 +213,126 @@ void ButtonConfig::on_checkBox_AutoPhysBut_toggled(bool checked)
     m_logicButtonPtrList[0]->setAutoPhysBut(checked);
 }
 
+QList<ButtonConfig::ButtonGroup> ButtonConfig::computeButtonGroups()
+{
+    // Counts arrive from CurrentConfig (combined totals) and from
+    // ShiftRegistersConfig + AxesConfig (per-register / per-axis breakdown).
+    // Order matches the firmware sequence in buttons.c::ButtonsReadPhysical.
+    QList<ButtonGroup> groups;
+
+    if (m_groupMatrix > 0) groups.append({tr("Matrix"), m_groupMatrix});
+
+    // Shift registers: prefer per-register sub-headers when we have that
+    // breakdown, else collapse to one combined "Shift registers" group.
+    int shiftRegSum = 0;
+    for (int n : m_shiftRegBreakdown) shiftRegSum += n;
+    if (shiftRegSum > 0) {
+        for (int i = 0; i < m_shiftRegBreakdown.size(); ++i) {
+            const int n = m_shiftRegBreakdown[i];
+            if (n > 0) {
+                groups.append({tr("Shift register %1").arg(i + 1), n});
+            }
+        }
+    } else if (m_groupShiftRegs > 0) {
+        groups.append({tr("Shift registers"), m_groupShiftRegs});
+    }
+
+    // Same fallback pattern for axis-to-buttons.
+    int axisSum = 0;
+    for (int n : m_axisBreakdown) axisSum += n;
+    if (axisSum > 0) {
+        for (int i = 0; i < m_axisBreakdown.size(); ++i) {
+            const int n = m_axisBreakdown[i];
+            if (n > 0) {
+                groups.append({tr("Axis %1 to buttons").arg(i + 1), n});
+            }
+        }
+    } else if (m_groupAxes > 0) {
+        groups.append({tr("Axis-to-buttons"), m_groupAxes});
+    }
+
+    if (m_groupDirect > 0) groups.append({tr("Direct"), m_groupDirect});
+
+    return groups;
+}
+
+void ButtonConfig::onPhysicalButtonBreakdownChanged(int matrix, int shiftRegs, int axes, int direct)
+{
+    m_groupMatrix    = matrix;
+    m_groupShiftRegs = shiftRegs;
+    m_groupAxes      = axes;
+    m_groupDirect    = direct;
+}
+
+void ButtonConfig::onShiftRegBreakdownChanged(const QList<int> &perRegister)
+{
+    m_shiftRegBreakdown = perRegister;
+}
+
+void ButtonConfig::onA2bBreakdownChanged(const QList<int> &perAxis)
+{
+    m_axisBreakdown = perAxis;
+}
+
 void ButtonConfig::physButtonsCreator(int count)
 {
-    // delete all
-    while (!m_PhysButtonPtrList.empty()) {
-        QWidget *widget = m_PhysButtonPtrList.takeLast();
-        ui->layoutG_PhysicalButton->removeWidget(widget);
-        widget->deleteLater();
-    }
-    // add
-    int row = 0;
-    int column = 0;
-    ui->layoutG_PhysicalButton->setAlignment(Qt::AlignTop);
-    for (int i = 0; i < count; i++) {
-        if (column >= 8) // phys buttons column
-        {
-            row++;
-            column = 0;
+    // Wipe the layout completely -- both the per-button widgets and any
+    // section header labels we added on the previous build.
+    QLayoutItem *item;
+    while ((item = ui->layoutG_PhysicalButton->takeAt(0)) != nullptr) {
+        if (QWidget *w = item->widget()) {
+            w->deleteLater();
         }
-        ButtonPhysical *physicalButtonWidget = new ButtonPhysical(i, this);
-        ui->layoutG_PhysicalButton->addWidget(physicalButtonWidget, row, column);
-        m_PhysButtonPtrList.append(physicalButtonWidget);
-        column++;
-        connect(physicalButtonWidget, &ButtonPhysical::physButtonPressed, this, &ButtonConfig::setPhysicButton);
+        delete item;
+    }
+    m_PhysButtonPtrList.clear();
+
+    ui->layoutG_PhysicalButton->setAlignment(Qt::AlignTop);
+    ui->layoutG_PhysicalButton->setHorizontalSpacing(2);
+    ui->layoutG_PhysicalButton->setVerticalSpacing(1);
+
+    QList<ButtonGroup> groups = computeButtonGroups();
+    const int kCols = 8;
+    int slot = 0;
+    int row = 0;
+
+    auto addGroup = [&](const QString &label, int group_count) {
+        if (slot >= count) return;
+        const int group_end = qMin(slot + group_count, count);
+
+        // Section header: bold, spans all columns.
+        QLabel *header = new QLabel(QString("%1 (%2-%3)")
+                                    .arg(label)
+                                    .arg(slot + 1)
+                                    .arg(group_end), this);
+        header->setStyleSheet("font-weight: bold; padding-top: 6px;");
+        ui->layoutG_PhysicalButton->addWidget(header, row, 0, 1, kCols);
+        row++;
+
+        int col = 0;
+        while (slot < group_end) {
+            ButtonPhysical *w = new ButtonPhysical(slot, this);
+            ui->layoutG_PhysicalButton->addWidget(w, row, col);
+            m_PhysButtonPtrList.append(w);
+            connect(w, &ButtonPhysical::physButtonPressed,
+                    this, &ButtonConfig::setPhysicButton);
+            slot++;
+            col++;
+            if (col >= kCols) { col = 0; row++; }
+        }
+        if (col != 0) row++;
+    };
+
+    for (const ButtonGroup &g : groups) {
+        addGroup(g.label, g.count);
+    }
+
+    // Defensive: if the user-facing physical-button count is larger than
+    // what the categories sum to (e.g. config drift, or "Other" categories
+    // we haven't accounted for), append the remainder under a fallback
+    // header so they still appear in the UI.
+    if (slot < count) {
+        addGroup(tr("Other"), count - slot);
     }
 }
 

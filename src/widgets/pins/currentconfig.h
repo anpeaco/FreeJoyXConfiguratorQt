@@ -21,6 +21,11 @@ public:
 signals:
     void totalLEDsValueChanged(int totalLed);
     void totalButtonsValueChanged(int count);
+    /* Physical-button source breakdown -- emitted alongside totalButtonsValueChanged
+     * (always immediately before it, from totalButtonsChanged()) so subscribers
+     * can match the firmware's matrix / shift-register / axis-to-buttons / direct
+     * ordering when grouping the physical-button display. */
+    void physicalButtonBreakdownChanged(int matrix, int shiftRegs, int axes, int direct);
     void limitReached(bool limit);
 
 public slots:

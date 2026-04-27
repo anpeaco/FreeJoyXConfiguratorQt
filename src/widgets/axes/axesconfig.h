@@ -32,6 +32,10 @@ signals:
     void axisRawValueChanged(int);
     void axisOutValueChanged(int);
     void a2bCountChanged(int count);
+    /* Per-axis a2b button counts. Index = axis number (0..MAX_AXIS_NUM-1).
+     * Emitted alongside a2bCountChanged so subscribers building grouped
+     * UI can sub-divide the "Axis-to-buttons" section by axis. */
+    void a2bBreakdownChanged(const QList<int> &perAxis);
 
 public slots:
     void addOrDeleteMainSource(int sourceEnum, QString sourceName, bool isAdd);

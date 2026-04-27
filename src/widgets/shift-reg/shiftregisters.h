@@ -31,6 +31,12 @@ public:
 
     const QString &defaultText() const;
 
+    /* Live button count for this register, mirroring the spinBox's value
+     * after debouncing through calcRegistersCount. Returns 0 when the
+     * spinBox is disabled (any of the latch/clk/data pins unset) since
+     * the firmware ignores registers without all three pins assigned. */
+    int buttonCount() const;
+
 signals:
     void buttonCountChanged(int currentCount, int previousCount);
 

@@ -47,6 +47,17 @@ signals:
 
 public slots:
     void setUiOnOff(int value);
+    /* Receives the per-source totals that back the section headers in
+     * the physical button display. Called by mainwindow's wiring just
+     * before setUiOnOff (which triggers the rebuild). */
+    void onPhysicalButtonBreakdownChanged(int matrix, int shiftRegs, int axes, int direct);
+    /* Per-register / per-axis breakdowns. Index = register or axis
+     * number, value = button count. When a non-empty breakdown is
+     * available we sub-divide the corresponding section in the button
+     * grid (e.g. "Shift register 1" + "Shift register 2" rather than a
+     * combined "Shift registers"). */
+    void onShiftRegBreakdownChanged(const QList<int> &perRegister);
+    void onA2bBreakdownChanged(const QList<int> &perAxis);
 
 private slots:
     void functionTypeChanged(button_type_t current, button_type_t previous, int buttonIndex);
@@ -91,7 +102,30 @@ private slots:
 private:
     Ui::ButtonConfig *ui;
     void physButtonsCreator(int count);
+
+    /* Compute the source-category breakdown of the current dev_config. Returns
+     * an ordered list of {label, count} mirroring the firmware order
+     * (matrix -> shift register -> axis-to-buttons -> direct). Used by
+     * physButtonsCreator to insert section headers between groups. */
+    struct ButtonGroup {
+        QString label;
+        int     count;
+    };
+    QList<ButtonGroup> computeButtonGroups();
+
     QString m_defaultShiftStyle;
+
+    /* Latest per-source breakdown of the physical button count, pushed in
+     * from CurrentConfig via PinConfig. Used by computeButtonGroups()
+     * instead of reading dev_config -- some sources (e.g. axis-to-buttons)
+     * update their UI count before writing to dev_config, so dev_config
+     * lags behind the live UI state. */
+    int m_groupMatrix    = 0;
+    int m_groupShiftRegs = 0;
+    int m_groupAxes      = 0;
+    int m_groupDirect    = 0;
+    QList<int> m_shiftRegBreakdown;	// per-register button counts (empty until first emit)
+    QList<int> m_axisBreakdown;		// per-axis a2b button counts (empty until first emit)
 
     int m_logicButtonInFocus;
     bool m_autoPhysButEnabled;

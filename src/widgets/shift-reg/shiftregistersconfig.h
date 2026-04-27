@@ -27,6 +27,11 @@ public:
 
 signals:
     void shiftRegButtonsCountChanged(int buttonsCount);
+    /* Per-register button counts. Index = register number (0..3), value =
+     * button count for that register (0 if pins unset). Emitted alongside
+     * shiftRegButtonsCountChanged so subscribers building grouped UI can
+     * sub-divide the "Shift registers" section by chain. */
+    void shiftRegBreakdownChanged(const QList<int> &perRegister);
 
 public slots:
     void shiftRegSelected(int latchPin, int clkPin, int dataPin, const QString &pinGuiName);

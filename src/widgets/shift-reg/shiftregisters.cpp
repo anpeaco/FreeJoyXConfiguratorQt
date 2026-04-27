@@ -106,6 +106,12 @@ const QString &ShiftRegisters::defaultText() const
     return m_notDefined;
 }
 
+int ShiftRegisters::buttonCount() const
+{
+    if (!ui->spinBox_ButtonCount->isEnabled()) return 0;
+    return ui->spinBox_ButtonCount->value();
+}
+
 void ShiftRegisters::readFromConfig()
 {
     ui->comboBox_ShiftRegType->setCurrentIndex(gEnv.pDeviceConfig->config.shift_registers[m_shiftRegNumber].type);

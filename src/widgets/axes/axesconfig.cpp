@@ -57,6 +57,17 @@ void AxesConfig::retranslateUi()
 void AxesConfig::a2bCountCalc(int count, int previousCount)
 {
     m_a2bButtonsCount += count - previousCount;
+
+    // Per-axis breakdown alongside the total -- emit FIRST so anyone
+    // grouping UI off the breakdown has fresh data when the total triggers
+    // a rebuild.
+    QList<int> perAxis;
+    perAxis.reserve(m_axesPtrList.size());
+    for (auto *a : m_axesPtrList) {
+        perAxis.append(a->a2bButtonCount());
+    }
+    emit a2bBreakdownChanged(perAxis);
+
     emit a2bCountChanged(m_a2bButtonsCount);
 }
 

@@ -97,6 +97,15 @@ void CurrentConfig::shiftRegButtonsCountChanged(int count)
 
 void CurrentConfig::totalButtonsChanged(int count)
 {
+    // Emit the per-source breakdown first so any subscriber that builds
+    // grouped UI off of it has fresh counts in hand by the time
+    // totalButtonsValueChanged triggers their rebuild.
+    emit physicalButtonBreakdownChanged(
+        m_columnsOfButtons * m_rowsOfButtons,
+        m_buttonsFromShiftRegs,
+        m_buttonsFromAxes,
+        m_singleButtons);
+
     if (count > MAX_BUTTONS_NUM && !m_maxButtonsWarning) {
         m_defaultLabelStyle = ui->label_TotalButtons->styleSheet();
         ui->label_TotalButtons->setStyleSheet(m_defaultLabelStyle + QStringLiteral("background-color: rgb(200, 0, 0);"));

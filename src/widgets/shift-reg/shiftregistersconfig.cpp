@@ -38,6 +38,17 @@ void ShiftRegistersConfig::retranslateUi()
 void ShiftRegistersConfig::shiftRegButtonsCalc(int currentCount, int previousCount)
 {
     m_shiftButtonsCount += currentCount - previousCount;
+
+    // Per-register breakdown alongside the total -- emit FIRST so anyone
+    // grouping UI off the breakdown has fresh data when the total triggers
+    // a rebuild.
+    QList<int> perRegister;
+    perRegister.reserve(m_shiftRegsPtrList.size());
+    for (auto *r : m_shiftRegsPtrList) {
+        perRegister.append(r->buttonCount());
+    }
+    emit shiftRegBreakdownChanged(perRegister);
+
     emit shiftRegButtonsCountChanged(m_shiftButtonsCount);
 }
 
