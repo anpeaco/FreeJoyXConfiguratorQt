@@ -4,6 +4,11 @@
 #include <QSettings>
 #include <QDebug>
 
+#include <QDragEnterEvent>
+#include <QDragMoveEvent>
+#include <QDropEvent>
+#include <QMimeData>
+
 #ifdef DYNAMIC_CREATION
     #include <QScrollArea>
     #include <QScrollBar>
@@ -44,6 +49,19 @@ ButtonConfig::ButtonConfig(QWidget *parent)
 
     connect(ui->spinBox_ButtonsPolling, qOverload<int>(&QSpinBox::valueChanged), this, &ButtonConfig::spinBoxStep);
     connect(ui->spinBox_EncoderPolling, qOverload<int>(&QSpinBox::valueChanged), this, &ButtonConfig::spinBoxStep);
+
+    // Accept drops on the scroll-area's content widget so dragging a row
+    // (started from a ButtonLogical's slot-number label) lands here.
+    ui->scrollAreaWidgetContents->setAcceptDrops(true);
+    ui->scrollAreaWidgetContents->installEventFilter(this);
+
+    // Drop-indicator: a thin highlighted bar that floats over the row
+    // gap where the dragged row will land. Lives as a child of the
+    // contents widget, hidden until a drag starts.
+    m_dropIndicator = new QFrame(ui->scrollAreaWidgetContents);
+    m_dropIndicator->setStyleSheet("background-color: #2196F3;");
+    m_dropIndicator->setFixedHeight(3);
+    m_dropIndicator->hide();
 
     Q_ASSERT(ui->groupBox_LogicalButtons->objectName() == QStringLiteral("groupBox_LogicalButtons"));
     Q_ASSERT(ui->groupBox_PhysicalButtons->objectName() == QStringLiteral("groupBox_PhysicalButtons"));
@@ -171,14 +189,20 @@ void ButtonConfig::spinBoxStep(int value)
     }
 }
 
-// set physical button for focused logical button
+// Auto-fill the focused field (physical-button OR Source B) when the user
+// presses a physical button on the device. Whichever spinBox the user
+// most recently focused wins; if neither is focused, we do nothing.
 void ButtonConfig::setPhysicButton(int buttonIndex)
 {
-    if (m_autoPhysButEnabled) {
-        int buttonInFocus = m_logicButtonPtrList[0]->currentFocus();
-        if (buttonInFocus >= 0) {
-            m_logicButtonPtrList[buttonInFocus]->setPhysicButton(buttonIndex);
-        }
+    if (!m_autoPhysButEnabled) return;
+    int physFocus = m_logicButtonPtrList[0]->currentFocus();
+    if (physFocus >= 0) {
+        m_logicButtonPtrList[physFocus]->setPhysicButton(buttonIndex);
+        return;
+    }
+    int srcBFocus = m_logicButtonPtrList[0]->currentFocusSrcB();
+    if (srcBFocus >= 0) {
+        m_logicButtonPtrList[srcBFocus]->setSourceBButton(buttonIndex);
     }
 }
 
@@ -452,5 +476,135 @@ void ButtonConfig::writeToConfig()
     // logical buttons
     for (int i = 0; i < m_logicButtonPtrList.size(); ++i) {
         m_logicButtonPtrList[i]->writeToConfig();
+    }
+}
+
+bool ButtonConfig::eventFilter(QObject *obj, QEvent *event)
+{
+    if (obj != ui->scrollAreaWidgetContents) {
+        return QWidget::eventFilter(obj, event);
+    }
+
+    switch (event->type()) {
+    case QEvent::DragEnter: {
+        QDragEnterEvent *de = static_cast<QDragEnterEvent *>(event);
+        if (de->mimeData()->hasFormat(BUTTON_ROW_MIME)) {
+            de->acceptProposedAction();
+            showDropIndicatorAtY(indicatorYForCursor(de->pos().y()));
+            return true;
+        }
+        break;
+    }
+    case QEvent::DragMove: {
+        QDragMoveEvent *de = static_cast<QDragMoveEvent *>(event);
+        if (de->mimeData()->hasFormat(BUTTON_ROW_MIME)) {
+            de->acceptProposedAction();
+            showDropIndicatorAtY(indicatorYForCursor(de->pos().y()));
+            return true;
+        }
+        break;
+    }
+    case QEvent::DragLeave:
+        m_dropIndicator->hide();
+        return true;
+    case QEvent::Drop: {
+        QDropEvent *de = static_cast<QDropEvent *>(event);
+        m_dropIndicator->hide();
+        if (!de->mimeData()->hasFormat(BUTTON_ROW_MIME)) break;
+        bool ok = false;
+        int srcSlot = de->mimeData()->data(BUTTON_ROW_MIME).toInt(&ok);
+        if (!ok) break;
+        int dstSlot = targetSlotForY(de->pos().y());
+        if (dstSlot >= 0) {
+            moveButton(srcSlot, dstSlot);
+        }
+        de->acceptProposedAction();
+        return true;
+    }
+    default:
+        break;
+    }
+    return QWidget::eventFilter(obj, event);
+}
+
+int ButtonConfig::targetSlotForY(int yPos) const
+{
+    // Walk visible button rows; first row whose midline is below cursor
+    // wins -- meaning "drop above row i's midline -> target slot i".
+    // Cursor below all rows lands at the last slot.
+    const int n = m_logicButtonPtrList.size();
+    if (n == 0) return -1;
+    for (int i = 0; i < n; ++i) {
+        QWidget *w = m_logicButtonPtrList[i];
+        const int mid = w->y() + w->height() / 2;
+        if (yPos < mid) return i;
+    }
+    return n - 1;
+}
+
+int ButtonConfig::indicatorYForCursor(int yPos) const
+{
+    // For drops above row 0's midline, line goes at row 0's top.
+    // For drops below the last row's midline, line goes at last row's bottom.
+    // Otherwise line goes at the top of the row whose midline is just
+    // below the cursor (= the gap between that row and the previous).
+    const int n = m_logicButtonPtrList.size();
+    if (n == 0) return 0;
+    QWidget *first = m_logicButtonPtrList[0];
+    QWidget *last  = m_logicButtonPtrList[n - 1];
+    if (yPos < first->y() + first->height() / 2) {
+        return first->y();
+    }
+    if (yPos > last->y() + last->height() / 2) {
+        return last->y() + last->height();
+    }
+    for (int i = 1; i < n; ++i) {
+        QWidget *w = m_logicButtonPtrList[i];
+        if (yPos < w->y() + w->height() / 2) {
+            return w->y();
+        }
+    }
+    return last->y() + last->height();
+}
+
+void ButtonConfig::showDropIndicatorAtY(int y)
+{
+    const int width = ui->scrollAreaWidgetContents->width();
+    // Center the 3px bar on the gap so it visually straddles the row boundary.
+    m_dropIndicator->setGeometry(0, y - 1, width, 3);
+    m_dropIndicator->raise();
+    m_dropIndicator->show();
+}
+
+void ButtonConfig::moveButton(int from, int to)
+{
+    if (from == to) return;
+    if (from < 0 || to < 0) return;
+    if (from >= MAX_BUTTONS_NUM || to >= MAX_BUTTONS_NUM) return;
+    if (from >= m_logicButtonPtrList.size() || to >= m_logicButtonPtrList.size()) return;
+
+    // Flush any unsaved widget edits to dev_config_t first so the move
+    // captures the user's current UI state, not the last loaded state.
+    for (int i = 0; i < m_logicButtonPtrList.size(); ++i) {
+        m_logicButtonPtrList[i]->writeToConfig();
+    }
+
+    button_t *cfg = gEnv.pDeviceConfig->config.buttons;
+    button_t moving = cfg[from];
+
+    if (from < to) {
+        // moving down: rows (from, to] shift up one slot
+        for (int i = from; i < to; ++i) cfg[i] = cfg[i + 1];
+    } else {
+        // moving up: rows [to, from) shift down one slot
+        for (int i = from; i > to; --i) cfg[i] = cfg[i - 1];
+    }
+    cfg[to] = moving;
+
+    // Refresh only the rows whose underlying data actually changed.
+    const int lo = qMin(from, to);
+    const int hi = qMax(from, to);
+    for (int i = lo; i <= hi; ++i) {
+        m_logicButtonPtrList[i]->readFromConfig();
     }
 }

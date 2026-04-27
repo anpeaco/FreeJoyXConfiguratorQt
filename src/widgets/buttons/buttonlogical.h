@@ -2,11 +2,16 @@
 #define BUTTONLOGICAL_H
 
 #include "common_types.h"
+#include <QPoint>
 #include <QWidget>
 
 #include "deviceconfig.h"
 #include "global.h"
 //#include <QThread>
+
+/* MIME format used by row-reorder drag-and-drop. The payload is the
+ * source button slot index (0..127) as an ASCII decimal string. */
+#define BUTTON_ROW_MIME "application/x-fjbutton-row"
 
 #define TIMER_COUNT 4 // "NO timer" + count
 #define SHIFT_COUNT 6
@@ -33,8 +38,10 @@ public:
     void setButtonState(bool setState);
 
     void setPhysicButton(int buttonIndex);
+    void setSourceBButton(int buttonIndex);
     void setAutoPhysBut(bool enabled);
     int currentFocus() const;
+    int currentFocusSrcB() const;
 
     void disableButtonType(button_type_t type, bool disable);
     button_type_t currentButtonType();
@@ -51,6 +58,7 @@ private slots:
 
 private:
     void updateLogicWidgetsEnabled();	// enable/disable Op + SourceB based on type / op
+    void startRowDrag();				// begin QDrag carrying m_buttonIndex
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
@@ -61,9 +69,11 @@ private:
     bool m_currentState;
     bool m_debugState;
     int m_buttonIndex;
-    static int m_currentFocus;
+    static int m_currentFocus;			// row whose phys-num spinBox has focus, or -1
+    static int m_currentFocusSrcB;		// row whose Source B spinBox has focus, or -1
     static bool m_autoPhysButEnabled;
     QElapsedTimer m_lastAct;
+    QPoint m_dragStartPos;				// cursor position at mouse-press on drag handle
 
     QVector<int> m_logicFunc_enumIndex;
     QVector<int> m_logicOp_enumIndex;

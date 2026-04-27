@@ -1,6 +1,7 @@
 #ifndef BUTTONCONFIG_H
 #define BUTTONCONFIG_H
 
+#include <QFrame>
 #include <QWidget>
 
 #include "buttonlogical.h"
@@ -34,6 +35,12 @@ public:
 
     void retranslateUi();
 
+    /* Move the button at slot `from` into slot `to`, shifting the rows
+     * in between. Pure data shuffle on dev_config_t.buttons[] -- no
+     * remap of physical_num / src_b references in other rows. Refreshes
+     * affected ButtonLogical widgets. Called from the drop handler. */
+    void moveButton(int from, int to);
+
 signals:
     void encoderInputChanged(int ecoder_A, int ecoder_B);
     void logicalButtonsCreated();
@@ -54,6 +61,31 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
 #endif
 
+protected:
+    /* Receives drag/drop events on scrollAreaWidgetContents (which we
+     * setAcceptDrops on in the ctor). Source MIME identifies the row
+     * being dragged; the cursor Y position picks the target slot. */
+    bool eventFilter(QObject *obj, QEvent *event) override;
+
+private:
+    /* Cursor Y -> target slot index. Drop above row N's vertical
+     * midline means "land at slot N" (row N and below shift down by 1). */
+    int targetSlotForY(int yPos) const;
+
+    /* Cursor Y -> Y coord (in scrollAreaWidgetContents space) where the
+     * drop indicator line should be drawn -- right at the gap the row
+     * will land in. Different from targetSlotForY only at the very
+     * bottom (drops below the last row land at slot n-1 but the
+     * indicator goes below the row, not at its top). */
+    int indicatorYForCursor(int yPos) const;
+
+    /* Reposition + show the drop-indicator line at the given Y coord,
+     * sized to the contents widget's full width. */
+    void showDropIndicatorAtY(int y);
+
+    QFrame *m_dropIndicator;
+
+private slots:
     void on_checkBox_AutoPhysBut_toggled(bool checked);
 
 private:

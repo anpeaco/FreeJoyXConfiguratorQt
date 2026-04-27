@@ -4,7 +4,14 @@
 #include "widgets/debugwindow.h"
 #include "converter.h"
 
+#include <QApplication>
+#include <QDrag>
+#include <QMimeData>
+#include <QMouseEvent>
+#include <QPixmap>
+
 int ButtonLogical::m_currentFocus = -1;
+int ButtonLogical::m_currentFocusSrcB = -1;
 bool ButtonLogical::m_autoPhysButEnabled = false;
 
 ButtonLogical::ButtonLogical(int buttonIndex, QWidget *parent)
@@ -18,6 +25,12 @@ ButtonLogical::ButtonLogical(int buttonIndex, QWidget *parent)
     m_debugState = false;
     ui->label_LogicalButtonNumber->setNum(m_buttonIndex + 1);
     ui->spinBox_PhysicalButtonNumber->installEventFilter(this);
+    ui->spinBox_SourceB->installEventFilter(this);
+
+    // Drag handle: the slot-number label initiates a row reorder drag.
+    ui->label_LogicalButtonNumber->setCursor(Qt::OpenHandCursor);
+    ui->label_LogicalButtonNumber->setToolTip(tr("Drag to reorder"));
+    ui->label_LogicalButtonNumber->installEventFilter(this);
 }
 
 ButtonLogical::~ButtonLogical()
@@ -171,9 +184,19 @@ void ButtonLogical::setPhysicButton(int buttonIndex)
     ui->spinBox_PhysicalButtonNumber->setValue(buttonIndex + 1); // +1 !!!!
 }
 
+void ButtonLogical::setSourceBButton(int buttonIndex)
+{
+    ui->spinBox_SourceB->setValue(buttonIndex + 1); // +1: spinBox 0 = "unset"
+}
+
 int ButtonLogical::currentFocus() const
 {
     return m_currentFocus;
+}
+
+int ButtonLogical::currentFocusSrcB() const
+{
+    return m_currentFocusSrcB;
 }
 
 void ButtonLogical::setAutoPhysBut(bool enabled)
@@ -200,8 +223,28 @@ button_type_t ButtonLogical::currentButtonType()
 
 bool ButtonLogical::eventFilter(QObject *obj, QEvent *event)
 {
-    Q_UNUSED(obj)
-    if (m_autoPhysButEnabled) {
+    // Drag-handle on the slot-number label: press records start position;
+    // move past the system drag threshold starts a QDrag with this row's
+    // slot index in MIME data. ButtonConfig handles the drop.
+    if (obj == ui->label_LogicalButtonNumber) {
+        if (event->type() == QEvent::MouseButtonPress) {
+            QMouseEvent *me = static_cast<QMouseEvent *>(event);
+            if (me->button() == Qt::LeftButton) {
+                m_dragStartPos = me->pos();
+            }
+        } else if (event->type() == QEvent::MouseMove) {
+            QMouseEvent *me = static_cast<QMouseEvent *>(event);
+            if ((me->buttons() & Qt::LeftButton) &&
+                (me->pos() - m_dragStartPos).manhattanLength() >= QApplication::startDragDistance()) {
+                startRowDrag();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Focus tracking on the physical-button spinBox (auto phys-but flow).
+    if (m_autoPhysButEnabled && obj == ui->spinBox_PhysicalButtonNumber) {
         if (event->type() == QEvent::FocusIn) {
             ui->spinBox_PhysicalButtonNumber->setStyleSheet("background-color: rgba(0, 120, 215, 200); color: rgb(255, 255, 255)");
             m_currentFocus = m_buttonIndex;
@@ -210,7 +253,31 @@ bool ButtonLogical::eventFilter(QObject *obj, QEvent *event)
             m_currentFocus = -1;
         }
     }
+
+    // Same flow for the Source B spinBox so a physical-button press
+    // populates whichever spinBox the user most recently focused.
+    if (m_autoPhysButEnabled && obj == ui->spinBox_SourceB) {
+        if (event->type() == QEvent::FocusIn) {
+            ui->spinBox_SourceB->setStyleSheet("background-color: rgba(0, 120, 215, 200); color: rgb(255, 255, 255)");
+            m_currentFocusSrcB = m_buttonIndex;
+        } else if (event->type() == QEvent::FocusOut) {
+            ui->spinBox_SourceB->setStyleSheet("");
+            m_currentFocusSrcB = -1;
+        }
+    }
     return false;
+}
+
+void ButtonLogical::startRowDrag()
+{
+    QDrag *drag = new QDrag(this);
+    QMimeData *mime = new QMimeData;
+    mime->setData(BUTTON_ROW_MIME, QByteArray::number(m_buttonIndex));
+    drag->setMimeData(mime);
+    // Pixmap of the row gives the user a visual handle while dragging.
+    drag->setPixmap(grab());
+    drag->setHotSpot(QPoint(m_dragStartPos.x(), height() / 2));
+    drag->exec(Qt::MoveAction);
 }
 
 void ButtonLogical::readFromConfig()
