@@ -106,8 +106,6 @@ private:
 
     bool m_deviceChanged;
 
-    QString m_buttonDefaultStyle;   // ?????????
-
     QString m_cfgDirPath;
     void curCfgFileChanged(const QString &fileName);
     QStringList cfgFilesList(const QString &dirPath);

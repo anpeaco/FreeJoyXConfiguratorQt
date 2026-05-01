@@ -91,6 +91,7 @@ SOURCES += \
     widgets/shifts-timers/shiftstimersconfig.cpp
 
 HEADERS += \
+    style_helpers.h \
     widgets/altspinbox.h \
     widgets/axes-curves/axescurvesbutton.h \
     widgets/axes-curves/axescurvesprofiles.h \

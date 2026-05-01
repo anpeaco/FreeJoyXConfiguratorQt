@@ -1,0 +1,508 @@
+/* FreeJoy Configurator — common widget rules.
+ *
+ * Layout, sizing, radius, and structural styling that does not depend on
+ * the active theme. Theme-specific colours live in dark.qss / light.qss
+ * and are appended to this file at runtime in MainWindow::themeChanged().
+ *
+ * Colours that come from the QPalette (set in themeChanged) are referenced
+ * via palette(...) so that switching the palette alone re-themes without
+ * needing a re-load of the stylesheet.
+ */
+
+/* ----- Base ---------------------------------------------------------- */
+
+QWidget {
+    selection-background-color: palette(highlight);
+    selection-color: palette(highlighted-text);
+}
+
+QToolTip {
+    color: palette(tool-tip-text);
+    background-color: palette(tool-tip-base);
+    border: 1px solid palette(mid);
+    border-radius: 4px;
+    padding: 4px 8px;
+}
+
+/* ----- Group boxes --------------------------------------------------- */
+
+QGroupBox {
+    background: transparent;
+    border: 1px solid palette(mid);
+    border-radius: 6px;
+    margin-top: 14px;
+    padding: 8px 0px 4px 0px;
+    font-weight: 600;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 10px;
+    top: 0px;
+    padding: 0px 6px;
+    color: palette(window-text);
+    background: palette(window);
+}
+
+QGroupBox::title[align="center"] {
+    subcontrol-position: top center;
+    left: 0px;
+}
+
+/* ----- Buttons ------------------------------------------------------- */
+
+QPushButton {
+    background-color: palette(button);
+    color: palette(button-text);
+    border: 1px solid palette(mid);
+    border-radius: 4px;
+    padding: 4px 12px;
+    min-height: 22px;
+}
+
+QPushButton:hover {
+    border-color: palette(highlight);
+}
+
+QPushButton:pressed {
+    background-color: palette(dark);
+}
+
+QPushButton:disabled {
+    color: palette(disabled, button-text);
+    background-color: palette(disabled, button);
+    border-color: palette(disabled, mid);
+}
+
+QPushButton:default {
+    border: 1px solid palette(highlight);
+}
+
+/* Primary action buttons (Read / Write to device).
+ * Apply via: button->setProperty("role", "primary"); style->polish(button); */
+QPushButton[role="primary"] {
+    background-color: palette(highlight);
+    color: palette(highlighted-text);
+    border: 1px solid palette(highlight);
+    font-weight: 600;
+}
+
+QPushButton[role="primary"]:hover {
+    /* slight tint shift handled by theme files */
+}
+
+QPushButton[role="primary"]:disabled {
+    background-color: palette(disabled, button);
+    color: palette(disabled, button-text);
+    border-color: palette(disabled, mid);
+}
+
+/* Transient success/error feedback set by mainwindow.cpp after read/write. */
+QPushButton[feedback="success"] {
+    background-color: #22c55e;
+    color: #ffffff;
+    border-color: #16a34a;
+}
+
+QPushButton[feedback="error"] {
+    background-color: #ef4444;
+    color: #ffffff;
+    border-color: #dc2626;
+}
+
+QPushButton[feedback="warning"] {
+    background-color: #f59e0b;
+    color: #ffffff;
+    border-color: #d97706;
+}
+
+/* Wiki / book icon-only round button in the Device sidebar. */
+QPushButton#pushButton_Wiki {
+    border: 1px solid palette(mid);
+    border-radius: 15px;
+    padding: 0px;
+    margin: 0px;
+    min-width: 30px;
+    max-width: 30px;
+    min-height: 30px;
+    max-height: 30px;
+}
+
+QPushButton#pushButton_Wiki:hover {
+    border-color: palette(highlight);
+    background-color: palette(alternate-base);
+}
+
+/* ----- Tool buttons -------------------------------------------------- */
+
+QToolButton {
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 3px;
+}
+
+QToolButton:hover {
+    background-color: palette(alternate-base);
+    border-color: palette(mid);
+}
+
+QToolButton:pressed {
+    background-color: palette(dark);
+}
+
+/* ----- Inputs (LineEdit, SpinBox, ComboBox) ------------------------- */
+
+QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {
+    background-color: palette(base);
+    color: palette(text);
+    border: 1px solid palette(mid);
+    border-radius: 4px;
+    padding: 2px 6px;
+    selection-background-color: palette(highlight);
+    selection-color: palette(highlighted-text);
+}
+
+QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus {
+    border-color: palette(highlight);
+}
+
+QLineEdit:disabled, QSpinBox:disabled, QDoubleSpinBox:disabled, QComboBox:disabled {
+    color: palette(disabled, text);
+    background-color: palette(disabled, base);
+    border-color: palette(disabled, mid);
+}
+
+QSpinBox::up-button, QDoubleSpinBox::up-button,
+QSpinBox::down-button, QDoubleSpinBox::down-button {
+    border: none;
+    background: transparent;
+    width: 14px;
+}
+
+QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover,
+QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {
+    background-color: palette(alternate-base);
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 18px;
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+}
+
+QComboBox::down-arrow {
+    width: 10px;
+    height: 10px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: palette(base);
+    color: palette(text);
+    border: 1px solid palette(mid);
+    border-radius: 4px;
+    selection-background-color: palette(highlight);
+    selection-color: palette(highlighted-text);
+    outline: 0;
+    padding: 2px;
+}
+
+/* Auto-physical-button focus highlight on the Source / Source B spinboxes
+ * in Button Config. Set via: spin->setProperty("role", "autoassign-focus"). */
+QSpinBox[role="autoassign-focus"] {
+    background-color: palette(highlight);
+    color: palette(highlighted-text);
+    border-color: palette(highlight);
+}
+
+/* ----- Checkbox / Radio --------------------------------------------- */
+
+QCheckBox, QRadioButton {
+    color: palette(window-text);
+    spacing: 6px;
+}
+
+QCheckBox::indicator, QRadioButton::indicator {
+    width: 14px;
+    height: 14px;
+}
+
+QCheckBox::indicator {
+    border: 1px solid palette(mid);
+    border-radius: 3px;
+    background: palette(base);
+}
+
+QCheckBox::indicator:hover {
+    border-color: palette(highlight);
+}
+
+QCheckBox::indicator:checked {
+    background: palette(highlight);
+    border-color: palette(highlight);
+}
+
+QRadioButton::indicator {
+    border: 1px solid palette(mid);
+    border-radius: 7px;
+    background: palette(base);
+}
+
+QRadioButton::indicator:hover {
+    border-color: palette(highlight);
+}
+
+QRadioButton::indicator:checked {
+    background: palette(highlight);
+    border: 4px solid palette(base);
+    border-radius: 7px;
+}
+
+/* ----- Tabs --------------------------------------------------------- */
+
+QTabWidget::pane {
+    border: 1px solid palette(mid);
+    border-radius: 4px;
+    top: -1px;
+    background: palette(window);
+}
+
+QTabBar::tab {
+    background: transparent;
+    color: palette(window-text);
+    padding: 6px 14px;
+    margin-right: 2px;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+QTabBar::tab:hover {
+    background: palette(alternate-base);
+}
+
+QTabBar::tab:selected {
+    background: palette(window);
+    border: 1px solid palette(mid);
+    border-bottom: 1px solid palette(window);
+    color: palette(window-text);
+    font-weight: 600;
+}
+
+/* ----- Scrollbars (slim modern) ------------------------------------- */
+
+QScrollBar:vertical {
+    background: transparent;
+    width: 10px;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background: palette(mid);
+    min-height: 24px;
+    border-radius: 4px;
+    margin: 1px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: palette(highlight);
+}
+
+QScrollBar:horizontal {
+    background: transparent;
+    height: 10px;
+    margin: 0;
+}
+
+QScrollBar::handle:horizontal {
+    background: palette(mid);
+    min-width: 24px;
+    border-radius: 4px;
+    margin: 1px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: palette(highlight);
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    background: transparent;
+    border: none;
+    height: 0;
+    width: 0;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: transparent;
+}
+
+/* ----- Sliders ------------------------------------------------------ */
+
+QSlider::groove:horizontal {
+    height: 4px;
+    background: palette(mid);
+    border-radius: 2px;
+}
+
+QSlider::handle:horizontal {
+    background: palette(highlight);
+    width: 14px;
+    margin: -5px 0;
+    border-radius: 7px;
+}
+
+QSlider::handle:horizontal:hover {
+    background: palette(highlight);
+}
+
+QSlider::groove:vertical {
+    width: 4px;
+    background: palette(mid);
+    border-radius: 2px;
+}
+
+QSlider::handle:vertical {
+    background: palette(highlight);
+    height: 14px;
+    margin: 0 -5px;
+    border-radius: 7px;
+}
+
+/* ----- Progress bar ------------------------------------------------- */
+
+QProgressBar {
+    background: palette(base);
+    border: 1px solid palette(mid);
+    border-radius: 4px;
+    text-align: center;
+    color: palette(text);
+}
+
+QProgressBar::chunk {
+    background: palette(highlight);
+    border-radius: 3px;
+    margin: 1px;
+}
+
+/* ----- Menus -------------------------------------------------------- */
+
+QMenu {
+    background-color: palette(base);
+    color: palette(text);
+    border: 1px solid palette(mid);
+    border-radius: 4px;
+    padding: 4px;
+}
+
+QMenu::item {
+    padding: 4px 14px;
+    border-radius: 3px;
+}
+
+QMenu::item:selected {
+    background: palette(highlight);
+    color: palette(highlighted-text);
+}
+
+QMenu::separator {
+    height: 1px;
+    background: palette(mid);
+    margin: 4px 6px;
+}
+
+QMenuBar {
+    background: palette(window);
+    color: palette(window-text);
+    border-bottom: 1px solid palette(mid);
+}
+
+QMenuBar::item {
+    padding: 4px 10px;
+    background: transparent;
+}
+
+QMenuBar::item:selected {
+    background: palette(alternate-base);
+    border-radius: 3px;
+}
+
+/* ----- Status indicators (device label, etc.) ----------------------- */
+
+/* QLabel[role="status-connected"] / "status-disconnected" / "status-warning"
+ * Driven from MainWindow status callbacks. */
+
+QLabel[role="status-connected"] {
+    background-color: #22c55e;
+    color: #ffffff;
+    border-radius: 4px;
+    padding: 2px 8px;
+}
+
+QLabel[role="status-disconnected"] {
+    background-color: #ef4444;
+    color: #ffffff;
+    border-radius: 4px;
+    padding: 2px 8px;
+}
+
+QLabel[role="status-warning"] {
+    background-color: #f59e0b;
+    color: #ffffff;
+    border-radius: 4px;
+    padding: 2px 8px;
+}
+
+QLabel[role="status-error"] {
+    background-color: #ef4444;
+    color: #ffffff;
+    border-radius: 4px;
+    padding: 2px 8px;
+}
+
+/* ----- Physical-button indicator on Button Config tab --------------- */
+
+/* The 26x26 round indicator that lights green when its physical
+ * button is pressed. Off-state colour differs per theme so we leave
+ * the off state to dark.qss / light.qss. */
+
+QLabel[buttonState="on"] {
+    border-radius: 13px;
+    min-height: 26px;
+    min-width: 26px;
+    background-color: #22c55e;
+    color: #ffffff;
+}
+
+/* ----- Active-shift indicator on Shifts & Timers tab ---------------- */
+
+/* The shift-name label flashes green when that shift's physical button
+ * is held on the device. Set via setProperty("shiftActive", true). */
+
+QLabel[shiftActive="true"] {
+    background-color: #22c55e;
+    color: #ffffff;
+    border-radius: 4px;
+    padding: 1px 4px;
+}
+
+/* ----- Curve-editor button accent border --------------------------- */
+
+QPushButton[curveButtonState="selected"] {
+    border-color: palette(highlight);
+}
+
+QPushButton[curveButtonState="active"] {
+    border-color: #22c55e;
+}
+
+/* ----- Drop indicator (drag-reorder of logical button rows) -------- */
+
+QFrame[role="drop-indicator"] {
+    background-color: palette(highlight);
+    border: none;
+}

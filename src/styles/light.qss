@@ -1,0 +1,37 @@
+/* FreeJoy Configurator — light theme overrides.
+ *
+ * Appended after common.qss when MainWindow::themeChanged(false) runs.
+ * The QPalette set in themeChanged() handles 80% of colours; this file
+ * only specifies overrides where palette references are not enough.
+ */
+
+/* Off-state for the physical-button indicator. On light backgrounds we
+ * use a soft red so the unpressed buttons read as "armed but not
+ * pressed" — the historical FreeJoy convention. */
+
+QLabel[buttonState="off"] {
+    border-radius: 13px;
+    min-height: 26px;
+    min-width: 26px;
+    background-color: #d96868;
+    color: #ffffff;
+}
+
+/* Primary button hover/pressed for light theme. */
+
+QPushButton[role="primary"]:hover {
+    background-color: #1f78e0;
+    border-color: #1f78e0;
+}
+
+QPushButton[role="primary"]:pressed {
+    background-color: #0a4f9e;
+    border-color: #0a4f9e;
+}
+
+/* Group-box borders are nearly invisible on a light background with the
+ * default mid colour, so nudge them slightly. */
+
+QGroupBox {
+    border-color: #cccccc;
+}

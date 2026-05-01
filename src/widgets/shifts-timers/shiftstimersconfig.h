@@ -40,8 +40,6 @@ public:
 private:
     Ui::ShiftsTimersConfig *ui;
 
-    QString m_defaultShiftStyle;
-
     bool m_isShifts_act;
     bool m_shift1_act;
     bool m_shift2_act;

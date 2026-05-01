@@ -1,5 +1,6 @@
 #include "shiftstimersconfig.h"
 #include "ui_shiftstimersconfig.h"
+#include "style_helpers.h"
 
 #include <QSpinBox>
 
@@ -121,42 +122,37 @@ void ShiftsTimersConfig::shiftStateChanged()
             m_isShifts_act = true;
 
             if (i == 0 && m_shift1_act == false) {
-                m_defaultShiftStyle = ui->text_shift1_logicalButton->styleSheet();
-                ui->text_shift1_logicalButton->setStyleSheet(m_defaultShiftStyle + "background-color: rgb(0, 128, 0);");
+                freejoy_style::setRole(ui->text_shift1_logicalButton, "shiftActive", true);
                 m_shift1_act = true;
             } else if (i == 1 && m_shift2_act == false) {
-                m_defaultShiftStyle = ui->text_shift1_logicalButton->styleSheet();
-                ui->text_shift2_logicalButton->setStyleSheet(m_defaultShiftStyle + "background-color: rgb(0, 128, 0);");
+                freejoy_style::setRole(ui->text_shift2_logicalButton, "shiftActive", true);
                 m_shift2_act = true;
             } else if (i == 2 && m_shift3_act == false) {
-                m_defaultShiftStyle = ui->text_shift1_logicalButton->styleSheet();
-                ui->text_shift3_logicalButton->setStyleSheet(m_defaultShiftStyle + "background-color: rgb(0, 128, 0);");
+                freejoy_style::setRole(ui->text_shift3_logicalButton, "shiftActive", true);
                 m_shift3_act = true;
             } else if (i == 3 && m_shift4_act == false) {
-                m_defaultShiftStyle = ui->text_shift1_logicalButton->styleSheet();
-                ui->text_shift4_logicalButton->setStyleSheet(m_defaultShiftStyle + "background-color: rgb(0, 128, 0);");
+                freejoy_style::setRole(ui->text_shift4_logicalButton, "shiftActive", true);
                 m_shift4_act = true;
             } else if (i == 4 && m_shift5_act == false) {
-                m_defaultShiftStyle = ui->text_shift1_logicalButton->styleSheet();
-                ui->text_shift5_logicalButton->setStyleSheet(m_defaultShiftStyle + "background-color: rgb(0, 128, 0);");
+                freejoy_style::setRole(ui->text_shift5_logicalButton, "shiftActive", true);
                 m_shift5_act = true;
             }
 
         } else if (m_isShifts_act == true) {
             if (i == 0 && m_shift1_act == true) {
-                ui->text_shift1_logicalButton->setStyleSheet(m_defaultShiftStyle);
+                freejoy_style::clearRole(ui->text_shift1_logicalButton, "shiftActive");
                 m_shift1_act = false;
             } else if (i == 0 && m_shift2_act == true) {
-                ui->text_shift2_logicalButton->setStyleSheet(m_defaultShiftStyle);
+                freejoy_style::clearRole(ui->text_shift2_logicalButton, "shiftActive");
                 m_shift2_act = false;
             } else if (i == 0 && m_shift3_act == true) {
-                ui->text_shift3_logicalButton->setStyleSheet(m_defaultShiftStyle);
+                freejoy_style::clearRole(ui->text_shift3_logicalButton, "shiftActive");
                 m_shift3_act = false;
             } else if (i == 0 && m_shift4_act == true) {
-                ui->text_shift4_logicalButton->setStyleSheet(m_defaultShiftStyle);
+                freejoy_style::clearRole(ui->text_shift4_logicalButton, "shiftActive");
                 m_shift4_act = false;
             } else if (i == 0 && m_shift5_act == true) {
-                ui->text_shift5_logicalButton->setStyleSheet(m_defaultShiftStyle);
+                freejoy_style::clearRole(ui->text_shift5_logicalButton, "shiftActive");
                 m_shift5_act = false;
             }
 

@@ -38,7 +38,6 @@ private:
     QByteArray m_fileArray;
     QString m_flashButtonText;
     QString m_enterToFlash_BtnText;
-    QString m_defaultButtonStyle;
     void flashDone();
 };
 

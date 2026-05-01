@@ -320,11 +320,11 @@
            <height>37</height>
           </size>
          </property>
-         <property name="styleSheet">
-          <string notr="true">height: 30px;</string>
-         </property>
          <property name="text">
           <string>Write config to Device</string>
+         </property>
+         <property name="role" stdset="0">
+          <string>primary</string>
          </property>
         </widget>
        </item>
@@ -341,9 +341,6 @@
            <width>165</width>
            <height>37</height>
           </size>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">height: 30px;</string>
          </property>
          <property name="text">
           <string>Reset All</string>
@@ -367,9 +364,6 @@
            <height>37</height>
           </size>
          </property>
-         <property name="styleSheet">
-          <string notr="true">height: 30px;</string>
-         </property>
          <property name="text">
           <string>Load config from file</string>
          </property>
@@ -392,11 +386,11 @@
            <height>37</height>
           </size>
          </property>
-         <property name="styleSheet">
-          <string notr="true">height: 30px;</string>
-         </property>
          <property name="text">
           <string>Read config from Device</string>
+         </property>
+         <property name="role" stdset="0">
+          <string>primary</string>
          </property>
         </widget>
        </item>
@@ -413,9 +407,6 @@
            <width>165</width>
            <height>37</height>
           </size>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">height: 30px;</string>
          </property>
          <property name="text">
           <string>Save config to file</string>
@@ -533,9 +524,6 @@
            <height>37</height>
           </size>
          </property>
-         <property name="styleSheet">
-          <string notr="true">height: 30px;</string>
-         </property>
          <property name="text">
           <string>Show debug</string>
          </property>
@@ -548,9 +536,6 @@
            <width>165</width>
            <height>26</height>
           </size>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">height: 22px;</string>
          </property>
         </widget>
        </item>

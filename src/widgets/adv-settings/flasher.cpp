@@ -6,6 +6,7 @@
 
 #include "deviceconfig.h"
 #include "global.h"
+#include "style_helpers.h"
 
 #include <QDebug>
 
@@ -44,10 +45,10 @@ void Flasher::flasherFound(bool isFound)
     ui->pushButton_FlasherMode->setEnabled(!isFound);
     if (isFound == true) {
         qDebug()<< "Flasher found";
-        ui->pushButton_FlasherMode->setStyleSheet(m_defaultButtonStyle + "color: white; background-color: rgb(0, 128, 0);");
+        freejoy_style::setRole(ui->pushButton_FlasherMode, "feedback", "success");
         ui->pushButton_FlasherMode->setText(tr("Ready to flash"));
     } else {
-        ui->pushButton_FlasherMode->setStyleSheet(m_defaultButtonStyle);
+        freejoy_style::clearRole(ui->pushButton_FlasherMode, "feedback");
         ui->pushButton_FlasherMode->setText(m_enterToFlash_BtnText);
     }
 }
@@ -64,7 +65,6 @@ void Flasher::on_pushButton_FlashFirmware_clicked()
 
     if (file.open(QIODevice::ReadWrite)) {
         ui->pushButton_FlashFirmware->setEnabled(false);
-        m_defaultButtonStyle = ui->pushButton_FlashFirmware->styleSheet();
         m_fileArray = file.readAll();
         qDebug() << "file array size =" << m_fileArray.size();
         emit startFlash(true);
@@ -88,28 +88,23 @@ void Flasher::flashStatus(int status, int percent)
 
     if (status == FINISHED) {
         ui->pushButton_FlashFirmware->setText(tr("Finished"));
-        ui->pushButton_FlashFirmware->setStyleSheet(m_defaultButtonStyle
-                                                    + "color: white; background-color: rgb(0, 128, 0);");
+        freejoy_style::setRole(ui->pushButton_FlashFirmware, "feedback", "success");
         flashDone();
     } else if (status == SIZE_ERROR) {
         ui->pushButton_FlashFirmware->setText(tr("SIZE ERROR"));
-        ui->pushButton_FlashFirmware->setStyleSheet(m_defaultButtonStyle
-                                                    + "color: white; background-color: rgb(200, 0, 0);");
+        freejoy_style::setRole(ui->pushButton_FlashFirmware, "feedback", "error");
         flashDone();
     } else if (status == CRC_ERROR) {
         ui->pushButton_FlashFirmware->setText(tr("CRC ERROR"));
-        ui->pushButton_FlashFirmware->setStyleSheet(m_defaultButtonStyle
-                                                    + "color: white; background-color: rgb(200, 0, 0);");
+        freejoy_style::setRole(ui->pushButton_FlashFirmware, "feedback", "error");
         flashDone();
     } else if (status == ERASE_ERROR) {
         ui->pushButton_FlashFirmware->setText(tr("ERASE ERROR"));
-        ui->pushButton_FlashFirmware->setStyleSheet(m_defaultButtonStyle
-                                                    + "color: white; background-color: rgb(200, 128, 0);");
+        freejoy_style::setRole(ui->pushButton_FlashFirmware, "feedback", "warning");
         flashDone();
     } else if (status == 666) {
         ui->pushButton_FlashFirmware->setText(tr("ERROR"));
-        ui->pushButton_FlashFirmware->setStyleSheet(m_defaultButtonStyle
-                                                    + "color: white; background-color: rgb(200, 0, 0);");
+        freejoy_style::setRole(ui->pushButton_FlashFirmware, "feedback", "error");
         flashDone();
     }
 }
@@ -117,11 +112,11 @@ void Flasher::flashStatus(int status, int percent)
 void Flasher::flashDone()
 {
     QTimer::singleShot(1000, [&] {
-        ui->pushButton_FlashFirmware->setStyleSheet(m_defaultButtonStyle);
+        freejoy_style::clearRole(ui->pushButton_FlashFirmware, "feedback");
         ui->pushButton_FlashFirmware->setEnabled(false);
         ui->pushButton_FlashFirmware->setText(m_flashButtonText);
         ui->pushButton_FlasherMode->setEnabled(true);
-        ui->pushButton_FlasherMode->setStyleSheet(m_defaultButtonStyle);
+        freejoy_style::clearRole(ui->pushButton_FlasherMode, "feedback");
         ui->pushButton_FlasherMode->setText(m_enterToFlash_BtnText);
         m_fileArray.clear();
         m_fileArray.shrink_to_fit();

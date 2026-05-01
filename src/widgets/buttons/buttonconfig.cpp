@@ -1,5 +1,6 @@
 #include "buttonconfig.h"
 #include "ui_buttonconfig.h"
+#include "style_helpers.h"
 #include <QTimer>
 #include <QSettings>
 #include <QDebug>
@@ -62,7 +63,7 @@ ButtonConfig::ButtonConfig(QWidget *parent)
     // gap where the dragged row will land. Lives as a child of the
     // contents widget, hidden until a drag starts.
     m_dropIndicator = new QFrame(ui->scrollAreaWidgetContents);
-    m_dropIndicator->setStyleSheet("background-color: #2196F3;");
+    freejoy_style::setRole(m_dropIndicator, "role", "drop-indicator");
     m_dropIndicator->setFixedHeight(3);
     m_dropIndicator->hide();
 

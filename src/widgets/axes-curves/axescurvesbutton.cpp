@@ -69,30 +69,25 @@ void AxesCurvesButton::paintEvent(QPaintEvent *event)
 
 void AxesCurvesButton::installStyleSheet()
 {
+    // Palette refs let this widget retheme automatically when the global
+    // palette changes; the drop-target green stays a literal because it
+    // signals semantic state ("about to receive drop"), not theme accent.
     setStyleSheet(QStringLiteral(R"(
         AxesCurvesButton[checked="true"], AxesCurvesButton[pressed="true"] {
-            background-color: rgba(45, 160, 250, 25);
-        }
-        AxesCurvesButton[checked="false"] {
-
+            background-color: palette(highlight);
         }
         AxesCurvesButton[hover="true"] {
-            border: 1px solid;
-            border-color: rgb(45,160,250);
+            border: 1px solid palette(highlight);
         }
         AxesCurvesButton[hover="false"] {
             border: 0px solid;
         }
         AxesCurvesButton[drop="true"] {
-            border: 1px solid;
-            border-color: rgb(0,200,0);
-            background-color: rgba(0, 250, 0, 25);
+            border: 1px solid #22c55e;
+            background-color: rgba(34, 197, 94, 25);
         }
-
-
         AxesCurvesButton[lastChecked="true"] {
-            border: 1px solid;
-            border-color: rgb(45,160,250);
+            border: 1px solid palette(highlight);
         }
         AxesCurvesButton[lastChecked="false"][hover="false"][drop="false"] {
             border: 0px solid;

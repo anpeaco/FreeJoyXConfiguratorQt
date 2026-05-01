@@ -3,6 +3,7 @@
 
 #include "widgets/debugwindow.h"
 #include "converter.h"
+#include "style_helpers.h"
 
 #include <QApplication>
 #include <QDrag>
@@ -252,10 +253,10 @@ bool ButtonLogical::eventFilter(QObject *obj, QEvent *event)
     // Focus tracking on the physical-button spinBox (auto phys-but flow).
     if (m_autoPhysButEnabled && obj == ui->spinBox_PhysicalButtonNumber) {
         if (event->type() == QEvent::FocusIn) {
-            ui->spinBox_PhysicalButtonNumber->setStyleSheet("background-color: rgba(0, 120, 215, 200); color: rgb(255, 255, 255)");
+            freejoy_style::setRole(ui->spinBox_PhysicalButtonNumber, "role", "autoassign-focus");
             m_currentFocus = m_buttonIndex;
         } else if (event->type() == QEvent::FocusOut){
-            ui->spinBox_PhysicalButtonNumber->setStyleSheet("");
+            freejoy_style::clearRole(ui->spinBox_PhysicalButtonNumber, "role");
             m_currentFocus = -1;
         }
     }
@@ -264,10 +265,10 @@ bool ButtonLogical::eventFilter(QObject *obj, QEvent *event)
     // populates whichever spinBox the user most recently focused.
     if (m_autoPhysButEnabled && obj == ui->spinBox_SourceB) {
         if (event->type() == QEvent::FocusIn) {
-            ui->spinBox_SourceB->setStyleSheet("background-color: rgba(0, 120, 215, 200); color: rgb(255, 255, 255)");
+            freejoy_style::setRole(ui->spinBox_SourceB, "role", "autoassign-focus");
             m_currentFocusSrcB = m_buttonIndex;
         } else if (event->type() == QEvent::FocusOut) {
-            ui->spinBox_SourceB->setStyleSheet("");
+            freejoy_style::clearRole(ui->spinBox_SourceB, "role");
             m_currentFocusSrcB = -1;
         }
     }

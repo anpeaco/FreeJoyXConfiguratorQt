@@ -37,7 +37,6 @@ public slots:
 private:
     Ui::CurrentConfig *ui;
 
-    QString m_defaultLabelStyle;
     bool m_maxButtonsWarning;
     int m_axisSources;
     int m_buttonsFromAxes;

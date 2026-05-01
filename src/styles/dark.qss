@@ -1,0 +1,31 @@
+/* FreeJoy Configurator — dark theme overrides.
+ *
+ * Appended after common.qss when MainWindow::themeChanged(true) runs.
+ * The QPalette set in themeChanged() handles 80% of colours; this file
+ * only specifies overrides where palette references are not enough.
+ */
+
+/* Off-state for the physical-button indicator. On dark backgrounds we
+ * use a muted grey so the unpressed buttons don't fight the UI; the
+ * green on-state stays vivid by contrast. */
+
+QLabel[buttonState="off"] {
+    border-radius: 13px;
+    min-height: 26px;
+    min-width: 26px;
+    background-color: #5a5a5a;
+    color: #dcdcdc;
+}
+
+/* Primary button hover/pressed: lift the highlight tone slightly so
+ * the user gets visible feedback without changing the silhouette. */
+
+QPushButton[role="primary"]:hover {
+    background-color: #2f8be8;
+    border-color: #2f8be8;
+}
+
+QPushButton[role="primary"]:pressed {
+    background-color: #1864b0;
+    border-color: #1864b0;
+}

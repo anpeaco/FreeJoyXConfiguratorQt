@@ -1,6 +1,7 @@
 #include "currentconfig.h"
 #include "ui_currentconfig.h"
 #include "common_defines.h"
+#include "style_helpers.h"
 
 CurrentConfig::CurrentConfig(QWidget *parent) :
     QWidget(parent),
@@ -8,7 +9,6 @@ CurrentConfig::CurrentConfig(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    m_defaultLabelStyle = "";
     m_maxButtonsWarning = false;
     m_axisSources = 0;
     m_buttonsFromAxes = 0;
@@ -107,17 +107,16 @@ void CurrentConfig::totalButtonsChanged(int count)
         m_singleButtons);
 
     if (count > MAX_BUTTONS_NUM && !m_maxButtonsWarning) {
-        m_defaultLabelStyle = ui->label_TotalButtons->styleSheet();
-        ui->label_TotalButtons->setStyleSheet(m_defaultLabelStyle + QStringLiteral("background-color: rgb(200, 0, 0);"));
-        ui->text_TotalButtons->setStyleSheet(m_defaultLabelStyle + QStringLiteral("background-color: rgb(200, 0, 0);"));
+        freejoy_style::setRole(ui->label_TotalButtons, "role", "status-error");
+        freejoy_style::setRole(ui->text_TotalButtons, "role", "status-error");
         m_maxButtonsWarning = true;
         if (m_limit == false) {
             m_limit = true;
             emit limitReached(true);
         }
     } else if (m_maxButtonsWarning == true) {   // && count <= MAX_BUTTONS_NUM
-        ui->label_TotalButtons->setStyleSheet(m_defaultLabelStyle);
-        ui->text_TotalButtons->setStyleSheet(m_defaultLabelStyle);
+        freejoy_style::clearRole(ui->label_TotalButtons, "role");
+        freejoy_style::clearRole(ui->text_TotalButtons, "role");
         m_maxButtonsWarning = false;
         if (m_limit) {
             m_limit = false;
@@ -130,15 +129,15 @@ void CurrentConfig::totalButtonsChanged(int count)
 void CurrentConfig::totalLEDsChanged(int count)
 {
     if (count > MAX_LEDS_NUM){
-        m_defaultLabelStyle = ui->label_TotalLEDs->styleSheet();
-        ui->label_TotalLEDs->setStyleSheet(m_defaultLabelStyle + QStringLiteral("background-color: rgb(200, 0, 0);"));
-        ui->text_TotalLEDs->setStyleSheet(m_defaultLabelStyle + QStringLiteral("background-color: rgb(200, 0, 0);"));
+        freejoy_style::setRole(ui->label_TotalLEDs, "role", "status-error");
+        freejoy_style::setRole(ui->text_TotalLEDs, "role", "status-error");
         if (m_limit == false) {
             m_limit = true;
             emit limitReached(true);
         }
     } else {
-        ui->text_TotalLEDs->setStyleSheet(m_defaultLabelStyle);
+        freejoy_style::clearRole(ui->label_TotalLEDs, "role");
+        freejoy_style::clearRole(ui->text_TotalLEDs, "role");
         if (m_limit) {
             m_limit = false;
             emit limitReached(false);

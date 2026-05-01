@@ -13,6 +13,7 @@
 #include "mousewheelguard.h"
 #include "configtofile.h"
 #include "selectfolder.h"
+#include "style_helpers.h"
 
 #include "common_types.h"
 #include "global.h"
@@ -252,7 +253,7 @@ void MainWindow::showConnectDeviceInfo()
     } else {
         // for old(1.6-) firmware
         blockWRConfigToDevice(true);
-        ui->label_DeviceStatus->setStyleSheet("color: white; background-color: rgb(168, 168, 0);");
+        freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-warning");
     }
     m_advSettings->flasher()->deviceConnected(true);
 }
@@ -261,7 +262,7 @@ void MainWindow::showConnectDeviceInfo()
 void MainWindow::hideConnectDeviceInfo()
 {
     ui->label_DeviceStatus->setText(tr("Disconnected"));
-    ui->label_DeviceStatus->setStyleSheet("color: white; background-color: rgb(160, 0, 0);");
+    freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-disconnected");
     blockWRConfigToDevice(true);
     m_advSettings->flasher()->deviceConnected(false);
     // debug window
@@ -280,7 +281,7 @@ void MainWindow::hideConnectDeviceInfo()
 void MainWindow::flasherConnected()
 {
     ui->label_DeviceStatus->setText(tr("Connected"));
-    ui->label_DeviceStatus->setStyleSheet("color: white; background-color: rgb(0, 128, 0);");
+    freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-connected");
     blockWRConfigToDevice(true);
     m_advSettings->flasher()->deviceConnected(false);
     if (m_debugWindow) {
@@ -321,13 +322,13 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
     if (m_deviceChanged) {
         if (firmwareCompatible == false) {
             blockWRConfigToDevice(true);
-            ui->label_DeviceStatus->setStyleSheet("color: white; background-color: rgb(168, 168, 0);");
+            freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-warning");
             ui->label_DeviceStatus->setText(tr("Incompatible Firmware"));
         } else {
             if (m_pinConfig->limitIsReached() == false) {
                 blockWRConfigToDevice(false);
             }
-            ui->label_DeviceStatus->setStyleSheet("color: white; background-color: rgb(0, 128, 0);");
+            freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-connected");
             // set firmware version
             QString str = QString::number(gEnv.pDeviceConfig->paramsReport.firmware_version, 16);
             if (str.size() == 4) {
@@ -517,8 +518,7 @@ QStringList MainWindow::cfgFilesList(const QString &dirPath)
 // slot after receiving the config
 void MainWindow::configReceived(bool success)
 {
-    m_buttonDefaultStyle = ui->pushButton_ReadConfig->styleSheet();
-    static QString button_default_text = ui->pushButton_ReadConfig->text();    //????????????????????????
+    static QString button_default_text = ui->pushButton_ReadConfig->text();
 
     if (success == true)
     {
@@ -533,9 +533,9 @@ void MainWindow::configReceived(bool success)
         }
 
         ui->pushButton_ReadConfig->setText(tr("Received"));
-        ui->pushButton_ReadConfig->setStyleSheet(m_buttonDefaultStyle + "color: rgb(235, 235, 235); background-color: rgb(0, 128, 0);");
+        freejoy_style::setRole(ui->pushButton_ReadConfig, "feedback", "success");
         QTimer::singleShot(1500, this, [&] {
-            ui->pushButton_ReadConfig->setStyleSheet(m_buttonDefaultStyle);
+            freejoy_style::clearRole(ui->pushButton_ReadConfig, "feedback");
             ui->pushButton_ReadConfig->setText(button_default_text);
             if (ui->comboBox_HidDeviceList->currentIndex() >= 0){
                 blockWRConfigToDevice(false);
@@ -543,9 +543,9 @@ void MainWindow::configReceived(bool success)
         });
     } else {
         ui->pushButton_ReadConfig->setText(tr("Error"));
-        ui->pushButton_ReadConfig->setStyleSheet(m_buttonDefaultStyle + "color: rgb(235, 235, 235); background-color: rgb(200, 0, 0);");
+        freejoy_style::setRole(ui->pushButton_ReadConfig, "feedback", "error");
         QTimer::singleShot(1500, this, [&] {
-            ui->pushButton_ReadConfig->setStyleSheet(m_buttonDefaultStyle);
+            freejoy_style::clearRole(ui->pushButton_ReadConfig, "feedback");
             ui->pushButton_ReadConfig->setText(button_default_text);
             if (ui->comboBox_HidDeviceList->currentIndex() >= 0) {
                 blockWRConfigToDevice(false);
@@ -557,18 +557,17 @@ void MainWindow::configReceived(bool success)
 // slot after sending the config
 void MainWindow::configSent(bool success)
 {
-    m_buttonDefaultStyle = ui->pushButton_ReadConfig->styleSheet();
-    static QString button_default_text = ui->pushButton_WriteConfig->text();    //???
+    static QString button_default_text = ui->pushButton_WriteConfig->text();
     // curves pointer activated
     m_axesCurvesConfig->deviceStatus(true);
 
     if (success == true)
     {
         ui->pushButton_WriteConfig->setText(tr("Sent"));
-        ui->pushButton_WriteConfig->setStyleSheet(m_buttonDefaultStyle + "color: white; background-color: rgb(0, 128, 0);");
+        freejoy_style::setRole(ui->pushButton_WriteConfig, "feedback", "success");
 
         QTimer::singleShot(1500, this, [&] {
-            ui->pushButton_WriteConfig->setStyleSheet(m_buttonDefaultStyle);
+            freejoy_style::clearRole(ui->pushButton_WriteConfig, "feedback");
             ui->pushButton_WriteConfig->setText(button_default_text);
             if (ui->comboBox_HidDeviceList->currentIndex() >= 0){
                 blockWRConfigToDevice(false);
@@ -576,10 +575,10 @@ void MainWindow::configSent(bool success)
         });
     } else {
         ui->pushButton_WriteConfig->setText(tr("Error"));
-        ui->pushButton_WriteConfig->setStyleSheet(m_buttonDefaultStyle + "color: white; background-color: rgb(200, 0, 0);");
+        freejoy_style::setRole(ui->pushButton_WriteConfig, "feedback", "error");
 
         QTimer::singleShot(1500, this, [&] {
-            ui->pushButton_WriteConfig->setStyleSheet(m_buttonDefaultStyle);
+            freejoy_style::clearRole(ui->pushButton_WriteConfig, "feedback");
             ui->pushButton_WriteConfig->setText(button_default_text);
             if (ui->comboBox_HidDeviceList->currentIndex() >= 0){
                 blockWRConfigToDevice(false);
