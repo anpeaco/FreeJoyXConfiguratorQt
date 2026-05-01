@@ -472,7 +472,7 @@
            </property>
            <property name="icon">
             <iconset resource="resources.qrc">
-             <normaloff>:/Images/ST_wiki.png</normaloff>:/Images/ST_wiki.png</iconset>
+             <normaloff>:/Images/icons/lucide/book-open.svg</normaloff>:/Images/icons/lucide/book-open.svg</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -587,7 +587,7 @@
            </property>
            <property name="icon">
             <iconset resource="resources.qrc">
-             <normaloff>:/Images/setings.png</normaloff>:/Images/setings.png</iconset>
+             <normaloff>:/Images/icons/lucide/settings.svg</normaloff>:/Images/icons/lucide/settings.svg</iconset>
            </property>
           </widget>
          </item>

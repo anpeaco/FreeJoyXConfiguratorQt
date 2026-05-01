@@ -232,13 +232,22 @@
          </sizepolicy>
         </property>
         <property name="minimumSize">
-         <size><width>50</width><height>0</height></size>
+         <size><width>50</width><height>20</height></size>
         </property>
         <property name="maximumSize">
-         <size><width>50</width><height>16777215</height></size>
+         <size><width>50</width><height>20</height></size>
+        </property>
+        <property name="toolTip">
+         <string>Invert this button's input (HIGH becomes pressed, LOW becomes released)</string>
         </property>
         <property name="text">
-         <string>Invert</string>
+         <string/>
+        </property>
+        <property name="pixmap">
+         <pixmap resource="../../resources.qrc">:/Images/icons/lucide/repeat.svg</pixmap>
+        </property>
+        <property name="scaledContents">
+         <bool>false</bool>
         </property>
         <property name="alignment">
          <set>Qt::AlignBottom|Qt::AlignHCenter</set>
@@ -295,13 +304,22 @@
          </sizepolicy>
         </property>
         <property name="minimumSize">
-         <size><width>50</width><height>0</height></size>
+         <size><width>50</width><height>20</height></size>
         </property>
         <property name="maximumSize">
-         <size><width>50</width><height>16777215</height></size>
+         <size><width>50</width><height>20</height></size>
+        </property>
+        <property name="toolTip">
+         <string>Disable this button slot</string>
         </property>
         <property name="text">
-         <string>Disable</string>
+         <string/>
+        </property>
+        <property name="pixmap">
+         <pixmap resource="../../resources.qrc">:/Images/icons/lucide/ban.svg</pixmap>
+        </property>
+        <property name="scaledContents">
+         <bool>false</bool>
         </property>
         <property name="alignment">
          <set>Qt::AlignBottom|Qt::AlignHCenter</set>

@@ -906,7 +906,7 @@ QIcon MainWindow::pixmapToIcon(QPixmap pixmap, const QColor &color)
 void MainWindow::updateColor()
 {
     QColor col = QApplication::palette().color(QPalette::Text);
-    ui->toolButton_ConfigsDir->setIcon(pixmapToIcon(QPixmap(":/Images/setings.png"), col));
+    ui->toolButton_ConfigsDir->setIcon(pixmapToIcon(QPixmap(":/Images/icons/lucide/settings.svg"), col));
 }
 
 

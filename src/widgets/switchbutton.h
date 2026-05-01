@@ -30,12 +30,12 @@ private:
     QPixmap changePixmapColor(const QPixmap &pixmap, const QColor &color);
     void changeColor(bool state);
 
-    QPixmap m_sunPix = QPixmap(":/Images/sun.png");
+    QPixmap m_sunPix = QPixmap(":/Images/icons/lucide/sun.svg");
     const QColor m_kSunLightMode = QColor(248, 227, 161);
     const QColor m_kSunDarkMode = QColor(124, 113, 60);
     const QColor m_kSunBackground = QColor(100, 123, 210);;
 
-    QPixmap m_moonPix = QPixmap(":/Images/moon.png");
+    QPixmap m_moonPix = QPixmap(":/Images/icons/lucide/moon.svg");
     const QColor m_kMoonLightMode = QColor(74, 79, 89);//QColor(49, 54, 59);
     const QColor m_kMoonDarkMode = QColor(248, 227, 161);
     const QColor m_kMoonBackground = QColor(39, 51, 69);

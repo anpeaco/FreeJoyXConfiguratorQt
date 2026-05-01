@@ -132,7 +132,7 @@ void MainWindow::themeChanged(bool dark)
             )"));
 
         // stylesheet icon: url(...); does not work in linux?
-        ui->pushButton_Wiki->setIcon(QIcon(":/Images/ST_wiki.png"));
+        ui->pushButton_Wiki->setIcon(QIcon(":/Images/icons/lucide/book-open.svg"));
         styleName = "white";
 #if defined Q_OS_WIN && _MSC_VER
         setDarkBorderToWindow((HWND)window()->winId(), false);
@@ -244,7 +244,7 @@ void MainWindow::themeChanged(bool dark)
             )"));
 
         // stylesheet icon: url(...); does not work in linux?
-        ui->pushButton_Wiki->setIcon(QIcon(":/Images/ST_wiki_dark.png"));
+        ui->pushButton_Wiki->setIcon(QIcon(":/Images/icons/lucide/book-open.svg"));
         styleName = "dark";
 #if defined Q_OS_WIN && _MSC_VER
         setDarkBorderToWindow((HWND)window()->winId(), true);

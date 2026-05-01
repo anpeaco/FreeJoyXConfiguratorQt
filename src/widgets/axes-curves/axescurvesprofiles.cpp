@@ -225,7 +225,7 @@ QIcon AxesCurvesProfiles::pixmapToIcon(QPixmap pixmap, const QColor &color)
 void AxesCurvesProfiles::updateColor()
 {
     QColor col = QApplication::palette().color(QPalette::Text);
-    ui->toolButton_Reset->setIcon(pixmapToIcon(QPixmap(":/Images/reset.png"), col));
+    ui->toolButton_Reset->setIcon(pixmapToIcon(QPixmap(":/Images/icons/lucide/rotate-ccw.svg"), col));
 }
 
 bool AxesCurvesProfiles::eventFilter(QObject *object, QEvent *event)

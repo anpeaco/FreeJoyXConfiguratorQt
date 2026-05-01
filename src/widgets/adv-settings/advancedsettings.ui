@@ -332,7 +332,7 @@
            <string/>
           </property>
           <property name="pixmap">
-           <pixmap resource="../../resources.qrc">:/Images/warning.png</pixmap>
+           <pixmap resource="../../resources.qrc">:/Images/icons/lucide/triangle-alert.svg</pixmap>
           </property>
           <property name="scaledContents">
            <bool>true</bool>
@@ -363,7 +363,7 @@
            <string/>
           </property>
           <property name="pixmap">
-           <pixmap resource="../../resources.qrc">:/Images/warning.png</pixmap>
+           <pixmap resource="../../resources.qrc">:/Images/icons/lucide/triangle-alert.svg</pixmap>
           </property>
           <property name="scaledContents">
            <bool>true</bool>

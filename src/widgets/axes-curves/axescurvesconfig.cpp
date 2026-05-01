@@ -157,14 +157,14 @@ QPixmap AxesCurvesConfig::coloringPixmap(QPixmap pixmap, const QColor &color)
 void AxesCurvesConfig::updateColor()
 {
     QColor col = QApplication::palette().color(QPalette::Text);
-    QPixmap pix = coloringPixmap(QPixmap(":/Images/reset.png"), col);
+    QPixmap pix = coloringPixmap(QPixmap(":/Images/icons/lucide/rotate-ccw.svg"), col);
 
     QByteArray arr;
     QBuffer buf(&arr);
     pix.save(&buf, "PNG");
     QString url = QString("data:image/png;base64,") + arr.toBase64();
     QString tt = m_toolTip;
-    tt.replace(":/Images/reset.png", url);
+    tt.replace(":/Images/icons/lucide/rotate-ccw.svg", url);
 
     ui->info->setToolTip(tt);
 }
