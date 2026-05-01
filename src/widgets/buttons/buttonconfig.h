@@ -113,8 +113,6 @@ private:
     };
     QList<ButtonGroup> computeButtonGroups();
 
-    QString m_defaultShiftStyle;
-
     /* Latest per-source breakdown of the physical button count, pushed in
      * from CurrentConfig via PinConfig. Used by computeButtonGroups()
      * instead of reading dev_config -- some sources (e.g. axis-to-buttons)
@@ -130,16 +128,7 @@ private:
     int m_logicButtonInFocus;
     bool m_autoPhysButEnabled;
 
-    bool m_isShifts_act;
-    bool m_shift1_act;
-    bool m_shift2_act;
-    bool m_shift3_act;
-    bool m_shift4_act;
-    bool m_shift5_act;
-
     void logicaButtonsCreator();
-
-    void spinBoxStep(int value);
 
     QList<ButtonLogical *> m_logicButtonPtrList;
     QList<ButtonPhysical *> m_PhysButtonPtrList;

@@ -17,6 +17,7 @@
 #include "ledconfig.h"
 #include "pinconfig.h"
 #include "shiftregistersconfig.h"
+#include "shiftstimersconfig.h"
 #include "switchbutton.h"
 
 QT_BEGIN_NAMESPACE
@@ -92,6 +93,7 @@ private:
 
     PinConfig *m_pinConfig;
     ButtonConfig *m_buttonConfig;
+    ShiftsTimersConfig *m_shiftsTimersConfig;
     LedConfig *m_ledConfig;
     EncodersConfig *m_encoderConfig;
     ShiftRegistersConfig *m_shiftRegConfig;

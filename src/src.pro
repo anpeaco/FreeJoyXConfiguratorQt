@@ -32,6 +32,7 @@ INCLUDEPATH +="widgets" \
     "widgets/led" \
     "widgets/pins" \
     "widgets/shift-reg" \
+    "widgets/shifts-timers" \
     "widgets/color" \
     "widgets/led_rgb"
 
@@ -86,7 +87,8 @@ SOURCES += \
     widgets/pins/pinsbluepill.cpp \
     widgets/pins/pinscontrlite.cpp \
     widgets/shift-reg/shiftregisters.cpp \
-    widgets/shift-reg/shiftregistersconfig.cpp
+    widgets/shift-reg/shiftregistersconfig.cpp \
+    widgets/shifts-timers/shiftstimersconfig.cpp
 
 HEADERS += \
     widgets/altspinbox.h \
@@ -142,7 +144,8 @@ HEADERS += \
     widgets/pins/pinsbluepill.h \
     widgets/pins/pinscontrlite.h \
     widgets/shift-reg/shiftregisters.h \
-    widgets/shift-reg/shiftregistersconfig.h
+    widgets/shift-reg/shiftregistersconfig.h \
+    widgets/shifts-timers/shiftstimersconfig.h
 
 FORMS += \
     mainwindow.ui \
@@ -175,7 +178,8 @@ FORMS += \
     widgets/pins/pintypehelper.ui \
     widgets/selectfolder.ui \
     widgets/shift-reg/shiftregisters.ui \
-    widgets/shift-reg/shiftregistersconfig.ui
+    widgets/shift-reg/shiftregistersconfig.ui \
+    widgets/shifts-timers/shiftstimersconfig.ui
 
 TRANSLATIONS += \
     FreeJoyQt_ru.ts \

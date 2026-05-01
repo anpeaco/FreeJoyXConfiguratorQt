@@ -66,6 +66,10 @@ MainWindow::MainWindow(QWidget *parent)
     m_buttonConfig = new ButtonConfig(this);
     ui->layoutV_tabButtonConfig->addWidget(m_buttonConfig);
     qDebug()<<"button config load time ="<< timer.restart() << "ms";
+    // add shifts & timers widget
+    m_shiftsTimersConfig = new ShiftsTimersConfig(this);
+    ui->layoutV_tabShiftsTimers->addWidget(m_shiftsTimersConfig);
+    qDebug()<<"shifts/timers config load time ="<< timer.restart() << "ms";
     // add axes widget
     m_axesConfig = new AxesConfig(this);
     ui->layoutV_tabAxesConfig->addWidget(m_axesConfig);
@@ -142,6 +146,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_axesConfig, &AxesConfig::a2bBreakdownChanged,
             m_buttonConfig, &ButtonConfig::onA2bBreakdownChanged);
     connect(m_pinConfig, &PinConfig::totalButtonsValueChanged, m_buttonConfig, &ButtonConfig::setUiOnOff);
+    // shift spinboxes get enabled/disabled with the same connect/disconnect signal
+    connect(m_pinConfig, &PinConfig::totalButtonsValueChanged, m_shiftsTimersConfig, &ShiftsTimersConfig::setUiOnOff);
     // LEDs changed
     connect(m_pinConfig, &PinConfig::totalLEDsValueChanged, m_ledConfig, &LedConfig::spawnLeds);
     connect(m_pinConfig, &PinConfig::ledPwmSelected, m_ledConfig, &LedConfig::ledPwmSelected);
@@ -338,6 +344,12 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
     if(ui->tab_ButtonConfig->isVisible() == true || m_debugWindow) {
         m_buttonConfig->buttonStateChanged();
     }
+    // Shift activation indicators live on the Shifts & Timers tab now;
+    // refresh them whenever that tab is visible so the green highlight
+    // tracks the device's current shift state.
+    if(ui->tab_ShiftsTimers->isVisible() == true || m_debugWindow) {
+        m_shiftsTimersConfig->shiftStateChanged();
+    }
 
     static QElapsedTimer timer;
 
@@ -413,6 +425,8 @@ void MainWindow::UiReadFromConfig()
     m_advSettings->readFromConfig();
     // read button config
     m_buttonConfig->readFromConfig();
+    // read shifts & timers config
+    m_shiftsTimersConfig->readFromConfig();
 }
 
 void MainWindow::UiWriteToConfig()
@@ -433,6 +447,8 @@ void MainWindow::UiWriteToConfig()
     m_advSettings->writeToConfig();
     // write button config
     m_buttonConfig->writeToConfig();
+    // write shifts & timers config
+    m_shiftsTimersConfig->writeToConfig();
     // remove device name from registry. sometimes windows does not update the name in gaming devices and has to be deleted in the registry
 #ifdef Q_OS_WIN
         qDebug()<<"Remove device OEMName from registry";
@@ -636,6 +652,7 @@ void MainWindow::languageChanged(const QString &language)
 
     m_pinConfig->retranslateUi();
     m_buttonConfig->retranslateUi();
+    m_shiftsTimersConfig->retranslateUi();
     m_ledConfig->retranslateUi();
     m_encoderConfig->retranslateUi();
     m_shiftRegConfig->retranslateUi();

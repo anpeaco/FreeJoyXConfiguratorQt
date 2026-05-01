@@ -89,6 +89,25 @@
         </property>
        </layout>
       </widget>
+      <widget class="QWidget" name="tab_ShiftsTimers">
+       <attribute name="title">
+        <string> Shifts &amp; Timers </string>
+       </attribute>
+       <layout class="QVBoxLayout" name="layoutV_tabShiftsTimers">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>6</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+       </layout>
+      </widget>
       <widget class="QWidget" name="tab_AxesConfig">
        <attribute name="title">
         <string> Axes Config </string>
