@@ -45,11 +45,18 @@ public:
 
     void disableButtonType(button_type_t type, bool disable);
     button_type_t currentButtonType();
+    // Returns the 0-indexed physical-button assignment, or -1 if unassigned.
+    // Mirrors what writeToConfig() pushes into button->physical_num.
+    int currentPhysicalNum() const;
 
     void retranslateUi();
 
 signals:
     void functionTypeChanged(button_type_t current, button_type_t previous, int buttonIndex);
+    // Fired when the user changes the physical-button assignment for this row.
+    // ButtonConfig listens to rerun the per-physical coexistence filter
+    // (Step 4: gesture button types).
+    void physicalNumChanged(int buttonIndex);
 
 private slots:
     void editingOnOff(int value);
@@ -133,6 +140,8 @@ private:
         {SEQUENTIAL_TOGGLE,    tr("Sequential toggle")},
         {SEQUENTIAL_BUTTON,    tr("Sequential button")},
         {LOGIC,                tr("Logic")},
+        {LONG_PRESS,           tr("Long press")},
+        {DOUBLE_TAP,           tr("Double tap")},
     }};
 
     // Operators for type == LOGIC. Order is purely UI ordering -- the

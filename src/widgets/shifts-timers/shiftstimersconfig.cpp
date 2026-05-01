@@ -71,6 +71,9 @@ void ShiftsTimersConfig::readFromConfig()
 
     ui->spinBox_ButtonsPolling->setValue(devc->button_polling_interval_ticks * TICKS_NS);
     ui->spinBox_EncoderPolling->setValue(devc->encoder_polling_interval_ticks * TICKS_NS);
+
+    ui->spinBox_LongPressThreshold->setValue(devc->long_press_threshold_ms);
+    ui->spinBox_DoubleTapWindow->setValue(devc->double_tap_window_ms);
 }
 
 void ShiftsTimersConfig::writeToConfig()
@@ -93,6 +96,9 @@ void ShiftsTimersConfig::writeToConfig()
 
     devc->button_polling_interval_ticks = ui->spinBox_ButtonsPolling->value() / TICKS_NS;
     devc->encoder_polling_interval_ticks = ui->spinBox_EncoderPolling->value() / TICKS_NS;
+
+    devc->long_press_threshold_ms = ui->spinBox_LongPressThreshold->value();
+    devc->double_tap_window_ms = ui->spinBox_DoubleTapWindow->value();
 }
 
 void ShiftsTimersConfig::setUiOnOff(int value)

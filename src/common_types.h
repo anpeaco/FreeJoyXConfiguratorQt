@@ -234,6 +234,16 @@ enum
     // delay_timer field selects the debounce timer. Two new fields (op and
     // src_b) hold the operator and Source B. See F103_LOGIC_PLAN.md.
     LOGIC,
+
+    // Gesture button types. Appended last so adding them doesn't shift any
+    // existing enum value. Coexistence rule (configurator-enforced): a
+    // physical input may host {NORMAL, LONG_PRESS, DOUBLE_TAP} only --
+    // mixing with other types is blocked. NORMAL slots delay their output
+    // by the resolved gesture window when a sister gesture slot exists,
+    // and the gesture wins (suppresses NORMAL) if it fires within the
+    // window. See F103_GESTURE_PLAN.md.
+    LONG_PRESS,
+    DOUBLE_TAP,
 };
 typedef uint8_t button_type_t;
 
@@ -478,6 +488,12 @@ typedef struct
     uint16_t						button_timer2_ms;						// config packet 7
     uint16_t						button_timer3_ms;						// config packet 8
     uint16_t 						a2b_debounce_ms;						// config packet 9
+    // Gesture-detection global timers. Apply to every LONG_PRESS / DOUBLE_TAP
+    // slot on the device (no per-slot override). long_press_threshold_ms is the
+    // hold time before LONG_PRESS fires; double_tap_window_ms is the max time
+    // between first and second tap for DOUBLE_TAP to fire.
+    uint16_t						long_press_threshold_ms;
+    uint16_t						double_tap_window_ms;
 
     // config 12-13-14
     axis_to_buttons_t		axes_to_buttons[MAX_AXIS_NUM];

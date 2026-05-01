@@ -142,6 +142,7 @@ void ButtonLogical::editingOnOff(int value)
         ui->comboBox_PressTimerIndex->setEnabled(false);
     }
     updateLogicWidgetsEnabled();
+    emit physicalNumChanged(m_buttonIndex);
 }
 
 void ButtonLogical::setButtonState(bool state)
@@ -218,6 +219,11 @@ void ButtonLogical::disableButtonType(button_type_t type, bool disable)
 button_type_t ButtonLogical::currentButtonType()
 {
     return m_logicFunc_enumIndex[ui->comboBox_ButtonFunction->currentIndex()];
+}
+
+int ButtonLogical::currentPhysicalNum() const
+{
+    return ui->spinBox_PhysicalButtonNumber->value() - 1;
 }
 
 

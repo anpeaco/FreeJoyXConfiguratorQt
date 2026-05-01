@@ -32,6 +32,11 @@ ButtonConfig::ButtonConfig(QWidget *parent)
         m_logicButtonPtrList.append(logicalButtonsWidget);
         connect(m_logicButtonPtrList[i], &ButtonLogical::functionTypeChanged,
                 this, &ButtonConfig::functionTypeChanged);
+        // Step 4: rerun the per-physical coexistence filter whenever any
+        // row's physical-button assignment changes (the type-change path
+        // is covered via functionTypeChanged below).
+        connect(m_logicButtonPtrList[i], &ButtonLogical::physicalNumChanged,
+                this, [this](int){ physicalConflictFilter(); });
     }
     gEnv.pAppSettings->beginGroup("OtherSettings");
     ui->checkBox_AutoPhysBut->setChecked(gEnv.pAppSettings->value("AutoSetPhysButton", true).toBool());
@@ -324,6 +329,7 @@ void ButtonConfig::functionTypeChanged(button_type_t current, button_type_t prev
         emit encoderInputChanged(0, (buttonIndex + 1) * -1);
     }
     typeLimit(current, previous);
+    physicalConflictFilter();
 }
 
 void ButtonConfig::typeLimit(button_type_t current, button_type_t previous)
@@ -373,6 +379,77 @@ void ButtonConfig::setUiOnOff(int value)
     }
 
     physButtonsCreator(value);
+}
+
+// Step 4: per-physical coexistence filter for the gesture button types.
+//
+// Rule: a single physical input may host slots of types
+// {BUTTON_NORMAL, LONG_PRESS, DOUBLE_TAP} only -- mixing with TOGGLE / RADIO /
+// SEQUENTIAL / POV / LOGIC / etc. on the same physical is blocked. Implemented
+// as a per-row dropdown filter:
+//
+//   - If any *sister* row on the same physical uses a non-allowed type, hide
+//     LONG_PRESS and DOUBLE_TAP from this row's Function dropdown.
+//   - If any sister uses LONG_PRESS or DOUBLE_TAP, hide every non-allowed
+//     type managed by this filter from the row's Function dropdown.
+//   - Self-row is excluded from the "sister" scan, so the user can change a
+//     row's type *away* from gesture without the filter locking them in.
+//
+// ENCODER_INPUT_A / _B are deliberately NOT managed by this filter -- typeLimit()
+// owns their disable state via its global cap (max 15 each). Mixing ENCODER_*
+// with a gesture on the same physical is nonsensical in practice (encoder slots
+// pair-bind physical pins) and isn't worth the dual-ownership complexity.
+//
+// Patterned on typeLimit() but keyed by physical_num instead of global counts.
+void ButtonConfig::physicalConflictFilter()
+{
+    // Set of types this filter is allowed to disable / enable. Excludes
+    // ENCODER_INPUT_A / _B (typeLimit-owned). Order doesn't matter.
+    static const button_type_t kManagedTypes[] = {
+        BUTTON_TOGGLE, TOGGLE_SWITCH, TOGGLE_SWITCH_ON, TOGGLE_SWITCH_OFF,
+        POV1_UP, POV1_RIGHT, POV1_DOWN, POV1_LEFT, POV1_CENTER,
+        POV2_UP, POV2_RIGHT, POV2_DOWN, POV2_LEFT, POV2_CENTER,
+        POV3_UP, POV3_RIGHT, POV3_DOWN, POV3_LEFT, POV3_CENTER,
+        POV4_UP, POV4_RIGHT, POV4_DOWN, POV4_LEFT, POV4_CENTER,
+        RADIO_BUTTON1, RADIO_BUTTON2, RADIO_BUTTON3, RADIO_BUTTON4,
+        SEQUENTIAL_TOGGLE, SEQUENTIAL_BUTTON,
+        LOGIC,
+        LONG_PRESS, DOUBLE_TAP,
+    };
+    auto isAllowedWithGesture = [](button_type_t t) -> bool {
+        return t == BUTTON_NORMAL || t == LONG_PRESS || t == DOUBLE_TAP;
+    };
+    auto isGesture = [](button_type_t t) -> bool {
+        return t == LONG_PRESS || t == DOUBLE_TAP;
+    };
+
+    const int n = m_logicButtonPtrList.size();
+    for (int r = 0; r < n; ++r)
+    {
+        const int physical = m_logicButtonPtrList[r]->currentPhysicalNum();
+
+        bool hasGestureSister = false;
+        bool hasOtherSister   = false;
+        if (physical >= 0)
+        {
+            for (int s = 0; s < n; ++s)
+            {
+                if (s == r) continue;
+                if (m_logicButtonPtrList[s]->currentPhysicalNum() != physical) continue;
+                button_type_t t = m_logicButtonPtrList[s]->currentButtonType();
+                if (isGesture(t))                  hasGestureSister = true;
+                else if (!isAllowedWithGesture(t)) hasOtherSister   = true;
+            }
+        }
+
+        for (button_type_t t : kManagedTypes)
+        {
+            bool hide = false;
+            if (hasOtherSister && isGesture(t))               hide = true;
+            if (hasGestureSister && !isAllowedWithGesture(t)) hide = true;
+            m_logicButtonPtrList[r]->disableButtonType(t, hide);
+        }
+    }
 }
 
 void ButtonConfig::buttonStateChanged()

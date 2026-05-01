@@ -84,6 +84,10 @@ void ConfigToFile::loadDeviceConfigFromFile(QWidget *parent, const QString &file
     devC.encoder_press_time_ms = uint8_t(deviceSettings.value("EncoderPress", devC.encoder_press_time_ms).toInt());
     devC.button_polling_interval_ticks = uint16_t(deviceSettings.value("ButtonsPolling", devC.button_polling_interval_ticks).toInt());
     devC.encoder_polling_interval_ticks = uint8_t(deviceSettings.value("EncodersPolling", devC.encoder_polling_interval_ticks).toInt());
+    // Gesture timers (Step 4). Old INIs default to firmware init_config values
+    // already present in devC at this point (500 / 300).
+    devC.long_press_threshold_ms = uint16_t(deviceSettings.value("LongPressThreshold", devC.long_press_threshold_ms).toInt());
+    devC.double_tap_window_ms    = uint16_t(deviceSettings.value("DoubleTapWindow",    devC.double_tap_window_ms).toInt());
     deviceSettings.endGroup();
 
     // load Buttons config from file
@@ -335,6 +339,9 @@ void ConfigToFile::saveDeviceConfigToFile(const QString &fileName, dev_config_t 
     deviceSettings.setValue("EncoderPress", devC.encoder_press_time_ms);
     deviceSettings.setValue("ButtonsPolling", devC.button_polling_interval_ticks);
     deviceSettings.setValue("EncodersPolling", devC.encoder_polling_interval_ticks);
+    // Gesture timers (Step 4)
+    deviceSettings.setValue("LongPressThreshold", devC.long_press_threshold_ms);
+    deviceSettings.setValue("DoubleTapWindow",    devC.double_tap_window_ms);
     deviceSettings.endGroup();
 
     // save Buttons config to file
