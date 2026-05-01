@@ -7,6 +7,7 @@
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
 #include <QDropEvent>
+#include <QIcon>
 #include <QLabel>
 #include <QMimeData>
 
@@ -21,6 +22,13 @@ ButtonConfig::ButtonConfig(QWidget *parent)
 {
     ui->setupUi(this);
     m_logicButtonInFocus = -1;
+
+    // Lucide SVGs rasterize at their native 24x24, which overflows the
+    // 50x20 header label boxes. Re-render at 16x16 so they sit cleanly
+    // inside the row without enlarging the column widths.
+    const QSize headerIconSize(16, 16);
+    ui->label_7->setPixmap(QIcon(QStringLiteral(":/Images/icons/lucide/ban.svg")).pixmap(headerIconSize));
+    ui->label_6->setPixmap(QIcon(QStringLiteral(":/Images/icons/lucide/repeat.svg")).pixmap(headerIconSize));
 
     // dynamic creation with scroll
 #ifdef DYNAMIC_CREATION
