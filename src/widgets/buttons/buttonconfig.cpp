@@ -328,47 +328,23 @@ void ButtonConfig::functionTypeChanged(button_type_t current, button_type_t prev
     } else if (previous == ENCODER_INPUT_B) {
         emit encoderInputChanged(0, (buttonIndex + 1) * -1);
     }
-    typeLimit(current, previous);
-    physicalConflictFilter();
+    typeLimit(current, previous);  // updates cap state and reapplies the dropdown filter
 }
 
+// typeLimit only updates the global cap-tracking state; the actual dropdown
+// disable/enable apply happens in physicalConflictFilter() which considers
+// both this cap rule AND the per-physical gesture coexistence rule. This
+// avoids the two filters fighting over the same dropdown items (the encoder
+// types ENCODER_INPUT_A / _B in particular fall under both).
 void ButtonConfig::typeLimit(button_type_t current, button_type_t previous)
 {
-    static int limitCountArray[m_typeLimCount]{};
-    static bool limitIsEnable[m_typeLimCount]{};
-
     for (int i = 0; i < m_typeLimCount; ++i)
     {
-        if (current == m_ButtonsTypeLimit[i].type)
-        {
-            limitCountArray[i]++;
-        }
-        if (previous == m_ButtonsTypeLimit[i].type)
-        {
-            limitCountArray[i]--;
-        }
-
-        if (limitCountArray[i] >= m_ButtonsTypeLimit[i].maxCount && limitIsEnable[i] == false)
-        {
-            limitIsEnable[i] = true;
-            for (int j = 0; j < m_logicButtonPtrList.size(); ++j)
-            {
-                if (m_logicButtonPtrList[j]->currentButtonType() != current)
-                {
-                    m_logicButtonPtrList[j]->disableButtonType(current, true);
-                }
-            }
-        }
-
-        if (limitIsEnable[i] == true && limitCountArray[i] < m_ButtonsTypeLimit[i].maxCount)
-        {
-            limitIsEnable[i] = false;
-            for (int j = 0; j < m_logicButtonPtrList.size(); ++j)
-            {
-                m_logicButtonPtrList[j]->disableButtonType(previous, false);
-            }
-        }
+        if (current == m_ButtonsTypeLimit[i].type)  m_typeLimitCount[i]++;
+        if (previous == m_ButtonsTypeLimit[i].type) m_typeLimitCount[i]--;
+        m_typeAtCap[i] = (m_typeLimitCount[i] >= m_ButtonsTypeLimit[i].maxCount);
     }
+    physicalConflictFilter();
 }
 
 void ButtonConfig::setUiOnOff(int value)
@@ -381,36 +357,35 @@ void ButtonConfig::setUiOnOff(int value)
     physButtonsCreator(value);
 }
 
-// Step 4: per-physical coexistence filter for the gesture button types.
+// Unified per-row dropdown filter. Applies BOTH active rules:
 //
-// Rule: a single physical input may host slots of types
-// {BUTTON_NORMAL, LONG_PRESS, DOUBLE_TAP} only -- mixing with TOGGLE / RADIO /
-// SEQUENTIAL / POV / LOGIC / etc. on the same physical is blocked. Implemented
-// as a per-row dropdown filter:
+//   1) Per-physical gesture coexistence (Step 4): a physical input may host
+//      slots of types {BUTTON_NORMAL, LONG_PRESS, DOUBLE_TAP} only. If any
+//      sister row on the same physical uses a non-allowed type, hide LONG_PRESS
+//      and DOUBLE_TAP from this row's dropdown. If any sister uses LONG_PRESS
+//      or DOUBLE_TAP, hide every non-allowed type from this row's dropdown.
+//      Self-row excluded from the "sister" scan so the user can change a row's
+//      type *away* from gesture without the filter locking them in.
 //
-//   - If any *sister* row on the same physical uses a non-allowed type, hide
-//     LONG_PRESS and DOUBLE_TAP from this row's Function dropdown.
-//   - If any sister uses LONG_PRESS or DOUBLE_TAP, hide every non-allowed
-//     type managed by this filter from the row's Function dropdown.
-//   - Self-row is excluded from the "sister" scan, so the user can change a
-//     row's type *away* from gesture without the filter locking them in.
+//   2) Global type cap (encoder cap): m_typeAtCap[i] tracks whether each
+//      capped type (ENCODER_INPUT_A / _B at 15 max) is currently at limit.
+//      When at cap, hide that type from every row that isn't currently
+//      showing it (rows already using it keep displaying it).
 //
-// ENCODER_INPUT_A / _B are deliberately NOT managed by this filter -- typeLimit()
-// owns their disable state via its global cap (max 15 each). Mixing ENCODER_*
-// with a gesture on the same physical is nonsensical in practice (encoder slots
-// pair-bind physical pins) and isn't worth the dual-ownership complexity.
-//
-// Patterned on typeLimit() but keyed by physical_num instead of global counts.
+// A type is hidden iff EITHER rule says so. Both typeLimit() and the
+// physicalNumChanged signal call this function so the dropdown stays
+// in sync after either edit.
 void ButtonConfig::physicalConflictFilter()
 {
-    // Set of types this filter is allowed to disable / enable. Excludes
-    // ENCODER_INPUT_A / _B (typeLimit-owned). Order doesn't matter.
+    // Every type that can be filtered out by either rule. Order doesn't matter.
+    // Excludes BUTTON_NORMAL (always allowed under both rules).
     static const button_type_t kManagedTypes[] = {
         BUTTON_TOGGLE, TOGGLE_SWITCH, TOGGLE_SWITCH_ON, TOGGLE_SWITCH_OFF,
         POV1_UP, POV1_RIGHT, POV1_DOWN, POV1_LEFT, POV1_CENTER,
         POV2_UP, POV2_RIGHT, POV2_DOWN, POV2_LEFT, POV2_CENTER,
         POV3_UP, POV3_RIGHT, POV3_DOWN, POV3_LEFT, POV3_CENTER,
         POV4_UP, POV4_RIGHT, POV4_DOWN, POV4_LEFT, POV4_CENTER,
+        ENCODER_INPUT_A, ENCODER_INPUT_B,
         RADIO_BUTTON1, RADIO_BUTTON2, RADIO_BUTTON3, RADIO_BUTTON4,
         SEQUENTIAL_TOGGLE, SEQUENTIAL_BUTTON,
         LOGIC,
@@ -427,6 +402,7 @@ void ButtonConfig::physicalConflictFilter()
     for (int r = 0; r < n; ++r)
     {
         const int physical = m_logicButtonPtrList[r]->currentPhysicalNum();
+        const button_type_t selfType = m_logicButtonPtrList[r]->currentButtonType();
 
         bool hasGestureSister = false;
         bool hasOtherSister   = false;
@@ -444,10 +420,24 @@ void ButtonConfig::physicalConflictFilter()
 
         for (button_type_t t : kManagedTypes)
         {
-            bool hide = false;
-            if (hasOtherSister && isGesture(t))               hide = true;
-            if (hasGestureSister && !isAllowedWithGesture(t)) hide = true;
-            m_logicButtonPtrList[r]->disableButtonType(t, hide);
+            // Rule 1: gesture coexistence.
+            bool gestureHide = false;
+            if (hasOtherSister && isGesture(t))               gestureHide = true;
+            if (hasGestureSister && !isAllowedWithGesture(t)) gestureHide = true;
+
+            // Rule 2: global type cap. Don't hide t from a row already using
+            // it -- the dropdown still needs to show its current value.
+            bool capHide = false;
+            for (int i = 0; i < m_typeLimCount; ++i)
+            {
+                if (t == m_ButtonsTypeLimit[i].type && m_typeAtCap[i] && selfType != t)
+                {
+                    capHide = true;
+                    break;
+                }
+            }
+
+            m_logicButtonPtrList[r]->disableButtonType(t, gestureHide || capHide);
         }
     }
 }

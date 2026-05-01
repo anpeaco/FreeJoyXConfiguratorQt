@@ -104,13 +104,20 @@ private:
     };
     //static deviceEnum_guiName_t logical_function_list_[LOGICAL_FUNCTION_COUNT];
 
-    const QVector <deviceEnum_guiName_t> m_logicFunctionList = // any order          // static ?
+    const QVector <deviceEnum_guiName_t> m_logicFunctionList = // dropdown order; the underlying enum value is decoupled from list position via Converter::EnumToIndex
     {{
-        {BUTTON_NORMAL,        tr("Button normal")},
-        {BUTTON_TOGGLE,        tr("Button toggle")},
+        // Most-used first (these typically own the per-physical coexistence
+        // rule -- see ButtonConfig::physicalConflictFilter).
+        {BUTTON_NORMAL,        tr("Normal")},
+        {DOUBLE_TAP,           tr("Double tap")},
+        {LONG_PRESS,           tr("Long press")},
+        {LOGIC,                tr("Logic")},
+        // Toggle family
+        {BUTTON_TOGGLE,        tr("Toggle")},
         {TOGGLE_SWITCH,        tr("Toggle switch ON/OFF")},
         {TOGGLE_SWITCH_ON,     tr("Toggle switch ON")},
         {TOGGLE_SWITCH_OFF,    tr("Toggle switch OFF")},
+        // POVs
         {POV1_UP,              tr("POV1 Up")},
         {POV1_RIGHT,           tr("POV1 Right")},
         {POV1_DOWN,            tr("POV1 Down")},
@@ -131,17 +138,15 @@ private:
         {POV4_DOWN,            tr("POV4 Down")},
         {POV4_LEFT,            tr("POV4 Left")},
         {POV4_CENTER,          tr("POV4 Center")},
+        // Encoders + radios + sequentials
         {ENCODER_INPUT_A,      tr("Encoder A")},
         {ENCODER_INPUT_B,      tr("Encoder B")},
-        {RADIO_BUTTON1,        tr("Radio button 1")},
-        {RADIO_BUTTON2,        tr("Radio button 2")},
-        {RADIO_BUTTON3,        tr("Radio button 3")},
-        {RADIO_BUTTON4,        tr("Radio button 4")},
+        {RADIO_BUTTON1,        tr("Radio 1")},
+        {RADIO_BUTTON2,        tr("Radio 2")},
+        {RADIO_BUTTON3,        tr("Radio 3")},
+        {RADIO_BUTTON4,        tr("Radio 4")},
         {SEQUENTIAL_TOGGLE,    tr("Sequential toggle")},
         {SEQUENTIAL_BUTTON,    tr("Sequential button")},
-        {LOGIC,                tr("Logic")},
-        {LONG_PRESS,           tr("Long press")},
-        {DOUBLE_TAP,           tr("Double tap")},
     }};
 
     // Operators for type == LOGIC. Order is purely UI ordering -- the

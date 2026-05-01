@@ -153,6 +153,10 @@ private:
         {ENCODER_INPUT_A,        15},
         {ENCODER_INPUT_B,        15},
     };
+    // typeLimit's count and "type is at cap" tracking. Shared with
+    // physicalConflictFilter so both rules can be applied in a single pass.
+    int  m_typeLimitCount[m_typeLimCount]{};
+    bool m_typeAtCap[m_typeLimCount]{};
 };
 
 #endif // BUTTONCONFIG_H
