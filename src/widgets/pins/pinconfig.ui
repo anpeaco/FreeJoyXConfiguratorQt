@@ -12,22 +12,22 @@
   </property>
   <layout class="QGridLayout" name="layoutG" rowstretch="7,7,0,0" columnstretch="5,1">
    <property name="leftMargin">
-    <number>0</number>
-   </property>
-   <property name="topMargin">
-    <number>0</number>
-   </property>
-   <property name="rightMargin">
-    <number>0</number>
-   </property>
-   <property name="bottomMargin">
-    <number>0</number>
-   </property>
-   <property name="horizontalSpacing">
     <number>6</number>
    </property>
+   <property name="topMargin">
+    <number>6</number>
+   </property>
+   <property name="rightMargin">
+    <number>6</number>
+   </property>
+   <property name="bottomMargin">
+    <number>6</number>
+   </property>
+   <property name="horizontalSpacing">
+    <number>12</number>
+   </property>
    <property name="verticalSpacing">
-    <number>20</number>
+    <number>12</number>
    </property>
    <item row="1" column="1">
     <widget class="PinTypeHelper" name="widget_PinTypeHelper" native="true"/>

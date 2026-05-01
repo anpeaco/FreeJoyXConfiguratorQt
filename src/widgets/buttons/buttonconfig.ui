@@ -21,16 +21,19 @@
   </property>
   <layout class="QGridLayout" name="gridLayout" columnstretch="5,10">
    <property name="leftMargin">
-    <number>0</number>
+    <number>6</number>
    </property>
    <property name="topMargin">
-    <number>0</number>
+    <number>6</number>
    </property>
    <property name="rightMargin">
-    <number>0</number>
+    <number>6</number>
    </property>
    <property name="bottomMargin">
-    <number>0</number>
+    <number>6</number>
+   </property>
+   <property name="horizontalSpacing">
+    <number>12</number>
    </property>
    <item row="0" column="1">
     <widget class="QGroupBox" name="groupBox_LogicalButtons">
@@ -232,10 +235,10 @@
          </sizepolicy>
         </property>
         <property name="minimumSize">
-         <size><width>50</width><height>20</height></size>
+         <size><width>50</width><height>26</height></size>
         </property>
         <property name="maximumSize">
-         <size><width>50</width><height>20</height></size>
+         <size><width>50</width><height>26</height></size>
         </property>
         <property name="toolTip">
          <string>Invert this button's input (HIGH becomes pressed, LOW becomes released)</string>
@@ -304,10 +307,10 @@
          </sizepolicy>
         </property>
         <property name="minimumSize">
-         <size><width>50</width><height>20</height></size>
+         <size><width>50</width><height>26</height></size>
         </property>
         <property name="maximumSize">
-         <size><width>50</width><height>20</height></size>
+         <size><width>50</width><height>26</height></size>
         </property>
         <property name="toolTip">
          <string>Disable this button slot</string>
