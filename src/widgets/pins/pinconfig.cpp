@@ -1,11 +1,13 @@
 #include "pinconfig.h"
 #include "ui_pinconfig.h"
+#include <QComboBox>
 #include <QLabel>
 #include <QSettings>
 #include "pinscontrlite.h"
 #include "pinsbluepill.h"
 #include "pintypehelper.h"
 #include "global.h"
+#include "style_helpers.h"
 
 // todo: change "int pinNumber" to enum Pin
 
@@ -486,22 +488,22 @@ bool PinConfig::limitIsReached()
 
 void PinConfig::highlightPins(pin_t pinType, bool enable)
 {
-    bool i2c = false;
-    if (pinType == I2C_SDA) i2c = true;
+    // QSS in 8597cbd took over QComboBox styling, so setPalette() no
+    // longer repaints; drive the highlight via a dynamic property and
+    // let QComboBox[pinHighlight="true"] in common.qss handle the look.
+    bool i2c = (pinType == I2C_SDA);
 
     for (int i = 0; i < m_pinCBoxPtrList.size(); ++i) {
         for (auto &type: m_pinCBoxPtrList[i]->enumIndex()) {
             if (type == pinType || (i2c && type == I2C_SCL)) {
-                if (enable) {
-                    QPalette pal(m_pinCBoxPtrList[i]->palette());
-                    pal.setColor(QPalette::Button, pal.highlight().color());
-                    m_pinCBoxPtrList[i]->setPalette(pal);
-                } else {
-                    // надо именно так, чтобы при смене темы менялся цвет, а не зависал,
-                    // как, например, при использовании qApp->palette()
-                    PinComboBox tmp(1);
-                    m_pinCBoxPtrList[i]->setPalette(tmp.palette());
+                for (auto *cb : m_pinCBoxPtrList[i]->findChildren<QComboBox*>()) {
+                    if (enable) {
+                        freejoy_style::setRole(cb, "pinHighlight", true);
+                    } else {
+                        freejoy_style::clearRole(cb, "pinHighlight");
+                    }
                 }
+                break;
             }
         }
     }

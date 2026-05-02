@@ -35,3 +35,16 @@ QPushButton[role="primary"]:pressed {
 QGroupBox {
     border-color: #cccccc;
 }
+
+/* Spinbox / combobox chevrons — dark strokes for light palette.
+ * Qt's QSvgRenderer doesn't resolve SVG currentColor from QSS, so the
+ * stroke colour is baked into each variant SVG. */
+
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
+    image: url(:/Images/icons/lucide/chevron-up-light.svg);
+}
+
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow,
+QComboBox::down-arrow {
+    image: url(:/Images/icons/lucide/chevron-down-light.svg);
+}
