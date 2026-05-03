@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QSettings>
+#include <QTimer>
 #include <QTranslator>
 
 #include "hiddevice.h"
@@ -62,6 +63,12 @@ private slots:
      * since it arrives later via the params report. */
     void setDeviceInfo(const QString &vidHex, const QString &pidHex, const QString &serial);
 
+    /* Fires after the post-write 5-second grace window with no match.
+     * If the dropdown still has no current selection but the list does
+     * have items, falls back to index 0 -- legacy behaviour for boards
+     * that re-enumerate slowly or come back with a different identity. */
+    void onPostWriteFallback();
+
     void languageChanged(const QString &language);
     void setFont();
 
@@ -112,6 +119,25 @@ private:
     bool m_debugIsEnable;
 
     bool m_deviceChanged;
+    /* True between clicking Write Config and the next deviceConnected.
+     * Lets hideConnectDeviceInfo show "Restarting..." instead of
+     * "Disconnected" while the chip is re-enumerating after the write,
+     * which is a much friendlier signal than the red "Disconnected"
+     * pill (the cable wasn't pulled). Cleared on reconnect, on
+     * configSent(false), and on natural cable-pull disconnects (the
+     * latter via the second hideConnectDeviceInfo call from the main
+     * worker loop's empty-list path -- see comment in that slot). */
+    bool m_postWriteRestarting = false;
+
+    /* 5-second grace window after Write Config during which the
+     * dropdown does NOT auto-select index 0 if the post-write rebuild
+     * can't yet match the target identity (serial / expectedVid+Pid /
+     * path). Without it the configurator briefly shows the wrong
+     * device every time another HID is plugged in. On timeout we fall
+     * back to selecting index 0 -- last-resort behaviour for boards
+     * that legitimately took longer than 5 s to re-enumerate or that
+     * came back with a totally different identity. */
+    QTimer m_postWriteFallbackTimer;
 
     QString m_cfgDirPath;
     void curCfgFileChanged(const QString &fileName);

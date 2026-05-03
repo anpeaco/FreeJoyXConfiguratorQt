@@ -47,6 +47,16 @@ MainWindow::MainWindow(QWidget *parent)
 
     QMainWindow::setWindowIcon(QIcon(":/Images/icon-32.png"));
 
+    // Post-write grace window: started from on_pushButton_WriteConfig_clicked
+    // and stopped on successful reconnect (getParamsPacket) or write
+    // failure (configSent(false)). On timeout, falls back to selecting
+    // dropdown index 0 -- the brief auto-select-first-device behaviour
+    // we used to do unconditionally, now only used as a last resort.
+    m_postWriteFallbackTimer.setSingleShot(true);
+    m_postWriteFallbackTimer.setInterval(5000);
+    connect(&m_postWriteFallbackTimer, &QTimer::timeout,
+            this, &MainWindow::onPostWriteFallback);
+
     // firmware version
     setWindowTitle(tr("%1 Configurator %2 (fork of FreeJoy v%3)")
                        .arg(FORK_NAME).arg(FORK_VERSION).arg(APP_VERSION));
@@ -275,8 +285,19 @@ void MainWindow::showConnectDeviceInfo()
 // device disconnected
 void MainWindow::hideConnectDeviceInfo()
 {
-    ui->label_DeviceStatus->setText(tr("Disconnected"));
-    freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-disconnected");
+    if (m_postWriteRestarting) {
+        // Disconnect was triggered by a Write Config that wiped the
+        // device list mid-flight; the chip is just re-enumerating with
+        // the new config. Show that as "Restarting..." with the warning
+        // (yellow) role rather than the alarming red "Disconnected".
+        // Flag is cleared on the next showConnectDeviceInfo (reconnect)
+        // or on configSent(false) if the write failed outright.
+        ui->label_DeviceStatus->setText(tr("Restarting..."));
+        freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-warning");
+    } else {
+        ui->label_DeviceStatus->setText(tr("Disconnected"));
+        freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-disconnected");
+    }
     blockWRConfigToDevice(true);
     m_advSettings->flasher()->deviceConnected(false);
     // debug window
@@ -346,15 +367,53 @@ void MainWindow::hidDeviceList(const QList<QPair<bool, QString>> &deviceNames, i
             ui->comboBox_HidDeviceList->addItem(deviceNames[i].second);
         }
     }
-    const int idx = (preferredIndex >= 0 && preferredIndex < deviceNames.size())
-                        ? preferredIndex : 0;
+    int idx;
+    if (preferredIndex >= 0 && preferredIndex < deviceNames.size()) {
+        // Worker matched the post-write target identity. Select it.
+        idx = preferredIndex;
+    } else if (m_postWriteRestarting && m_postWriteFallbackTimer.isActive()) {
+        // Within the 5-second post-write grace window and no match yet.
+        // Don't auto-pick another device -- leave the dropdown
+        // unselected and wait for the target chip to re-enumerate (or
+        // for the timer to expire and fall back to index 0).
+        idx = -1;
+    } else {
+        // Default behaviour for natural list rebuilds (other devices
+        // plugging in, app startup, etc.) and for post-write rebuilds
+        // after the grace window has expired.
+        idx = 0;
+    }
     ui->comboBox_HidDeviceList->setCurrentIndex(idx);
+}
+
+void MainWindow::onPostWriteFallback()
+{
+    // 5-second grace window expired with no match. Clear the flag so
+    // status text and future hidDeviceList calls revert to the legacy
+    // first-device-default. If the dropdown is still unselected but
+    // has items, pick item 0 explicitly -- this is OUTSIDE any signal
+    // blocker so the comboBox's currentIndexChanged fires
+    // hidDeviceListChanged -> setSelectedDevice, which finally tells
+    // the worker to open something.
+    m_postWriteRestarting = false;
+    if (ui->comboBox_HidDeviceList->currentIndex() < 0 &&
+        ui->comboBox_HidDeviceList->count() > 0) {
+        ui->comboBox_HidDeviceList->setCurrentIndex(0);
+    }
 }
 
 // received device report
 void MainWindow::getParamsPacket(bool firmwareCompatible)
 {
     if (m_deviceChanged) {
+        // Device is back; clear the post-write-restart flag so any
+        // future genuine cable-pull disconnect shows "Disconnected"
+        // again rather than re-using the "Restarting..." label. Also
+        // stop the 5-second grace timer so it doesn't expire later
+        // and trip the "fall back to index 0" branch over a device
+        // that's already correctly connected.
+        m_postWriteRestarting = false;
+        m_postWriteFallbackTimer.stop();
         const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
         const QString devStr = QString::number(devVer, 16);
         const QString verFmt = (devStr.size() == 4)
@@ -638,6 +697,15 @@ void MainWindow::configSent(bool success)
         ui->pushButton_WriteConfig->setText(tr("Error"));
         freejoy_style::setRole(ui->pushButton_WriteConfig, "feedback", "error");
 
+        // Write failed outright -- the chip is unlikely to re-enumerate.
+        // Clear the flag so the next disconnect (e.g. user pulling the
+        // cable to recover) shows the honest "Disconnected" pill rather
+        // than misleading "Restarting...". Also stop the 5s fallback
+        // timer so it doesn't suddenly select the first device 5s after
+        // a write that genuinely failed.
+        m_postWriteRestarting = false;
+        m_postWriteFallbackTimer.stop();
+
         QTimer::singleShot(1500, this, [&] {
             freejoy_style::clearRole(ui->pushButton_WriteConfig, "feedback");
             ui->pushButton_WriteConfig->setText(button_default_text);
@@ -854,6 +922,17 @@ void MainWindow::on_pushButton_WriteConfig_clicked()
     qDebug()<<"Write config started";
     if (!confirmLogicConfigComplete()) return;
     blockWRConfigToDevice(true);  // не успевает блокироваться? таймер
+
+    // Mark the imminent disconnect+reconnect cycle as "restart, not
+    // unplug". hideConnectDeviceInfo reads this to show the friendlier
+    // "Restarting..." pill instead of the red "Disconnected".
+    m_postWriteRestarting = true;
+
+    // Start the 5-second grace window. While it's running,
+    // MainWindow::hidDeviceList suppresses the auto-default-to-0 so the
+    // dropdown stays empty until the actual target device re-appears.
+    // On timeout (still no match) we fall back to selecting index 0.
+    m_postWriteFallbackTimer.start();
 
     UiWriteToConfig();
     // Pass the post-write VID/PID so the worker can find the device
