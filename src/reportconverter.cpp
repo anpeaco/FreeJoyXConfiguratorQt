@@ -22,6 +22,12 @@ int ReportConverter::paramReport(uint8_t *paramsBuf)
                 return 1;
             } else {
                 firmwareCompatible = 0;
+                // Always copy at least the device's firmware_version bytes
+                // even on mismatch so the UI can show "Incompatible (vX.Y.Z)"
+                // instead of a bare "Incompatible". The rest of paramsReport
+                // is left zero -- layouts may not match.
+                gEnv.pDeviceConfig->paramsReport.firmware_version =
+                    *(uint16_t *)(paramsBuf + 2);
             }
         } else if (firmwareCompatible == 1) {
             memcpy((uint8_t *)&(gEnv.pDeviceConfig->paramsReport) + 62, paramsBuf + 2, sizeof(params_report_t) - 62);

@@ -36,6 +36,43 @@
     <number>1</number>
    </property>
    <item>
+    <widget class="QLabel" name="label_DragHandle">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>14</width>
+       <height>26</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>14</width>
+       <height>26</height>
+      </size>
+     </property>
+     <property name="toolTip">
+      <string>Drag to reorder</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap resource="../../resources.qrc">:/Images/icons/lucide/ellipsis-vertical.svg</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>false</bool>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QLabel" name="label_LogicalButtonNumber">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
@@ -119,13 +156,13 @@
      </property>
      <property name="minimumSize">
       <size>
-       <width>50</width>
+       <width>28</width>
        <height>26</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
-       <width>50</width>
+       <width>28</width>
        <height>26</height>
       </size>
      </property>
@@ -175,13 +212,13 @@
      </property>
      <property name="minimumSize">
       <size>
-       <width>50</width>
+       <width>28</width>
        <height>26</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
-       <width>50</width>
+       <width>28</width>
        <height>26</height>
       </size>
      </property>

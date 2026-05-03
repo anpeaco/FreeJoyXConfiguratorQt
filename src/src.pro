@@ -132,6 +132,7 @@ HEADERS += \
     widgets/buttons/buttonconfig.h \
     widgets/buttons/buttonlogical.h \
     widgets/buttons/buttonphysical.h \
+    widgets/buttons/physref.h \
     widgets/pins/currentconfig.h \
     widgets/debugwindow.h \
     widgets/encoders/encoders.h \

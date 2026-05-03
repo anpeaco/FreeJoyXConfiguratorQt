@@ -19,6 +19,11 @@ AxesConfig::AxesConfig(QWidget *parent)
         m_axesPtrList.append(axis);
         connect(axis, SIGNAL(a2bCountChanged(int, int)),
                 this, SLOT(a2bCountCalc(int, int)));
+        // Re-mark source dropdowns whenever any axis's selection
+        // changes -- ensures "(used by X)" suffixes track the live
+        // global usage map without per-axis state.
+        connect(axis, &Axes::mainSourceChanged,
+                this, &AxesConfig::refreshSourceUsage);
         // added hidden axes checkboxes
         QCheckBox *chb = new QCheckBox(axesList()[i].guiName, this);
         ui->layoutH_HiddenAxes->addWidget(chb);
@@ -76,6 +81,36 @@ void AxesConfig::addOrDeleteMainSource(int sourceEnum, QString sourceName, bool 
     for (int i = 0; i < MAX_AXIS_NUM; ++i) {
         m_axesPtrList[i]->addOrDeleteMainSource(sourceEnum, sourceName, isAdd);
     }
+    // The set of candidate sources changed; refresh the "used by X"
+    // annotations so newly-added items pick up suffixes immediately
+    // and removed items don't leave dangling references in other
+    // axes' dropdowns.
+    refreshSourceUsage();
+}
+
+void AxesConfig::refreshSourceUsage()
+{
+    // Build the global "source enum -> list of axis names" usage map.
+    QMap<int, QStringList> globalUsed;
+    for (int i = 0; i < m_axesPtrList.size(); ++i) {
+        const int e = m_axesPtrList[i]->currentSource();
+        if (Axes::isSharedSource(e)) continue;   // None / Encoder -- never count
+        globalUsed[e].append(axesList()[i].guiName);
+    }
+
+    // Push to each axis a per-axis "used by OTHERS" map (own usage stripped).
+    for (int i = 0; i < m_axesPtrList.size(); ++i) {
+        const int ownEnum = m_axesPtrList[i]->currentSource();
+        const QString ownName = axesList()[i].guiName;
+        QMap<int, QStringList> usedByOthers = globalUsed;
+        if (!Axes::isSharedSource(ownEnum) && usedByOthers.contains(ownEnum)) {
+            usedByOthers[ownEnum].removeAll(ownName);
+            if (usedByOthers[ownEnum].isEmpty()) {
+                usedByOthers.remove(ownEnum);
+            }
+        }
+        m_axesPtrList[i]->markSourcesInUse(usedByOthers);
+    }
 }
 
 void AxesConfig::axesValueChanged()
@@ -89,7 +124,7 @@ void AxesConfig::axesValueChanged()
 void AxesConfig::hideAxis(int index, bool hide)
 {
     if (index < 0) index = 0;
-    else if (index >= m_axesPtrList.size()) index = m_axesPtrList.size() -1;
+    else if (index >= m_axesPtrList.size()) index = m_axesPtrList.size() - 1;
 
     if (hide) {
         m_axesPtrList[index]->hide();
@@ -103,6 +138,10 @@ void AxesConfig::readFromConfig()
     for (int i = 0; i < MAX_AXIS_NUM; i++) {
         m_axesPtrList[i]->readFromConfig();
     }
+    // Annotate dropdowns now that the loaded source selections are
+    // settled. axes whose source matched the combobox's current value
+    // didn't fire mainSourceChanged during load, so do a single sweep.
+    refreshSourceUsage();
 }
 
 void AxesConfig::writeToConfig()

@@ -1,6 +1,9 @@
 #ifndef AXES_H
 #define AXES_H
 
+#include <QHash>
+#include <QMap>
+#include <QStringList>
 #include <QWidget>
 #include "axesextended.h"
 #include "axestobuttonsslider.h"
@@ -37,8 +40,57 @@ public:
      * disabled). Used by AxesConfig to compose its per-axis breakdown. */
     int a2bButtonCount() const { return m_a2bButtonsCount; }
 
+    /* True iff a real input source (not the "None" placeholder) is
+     * selected for this axis. Used by applyOutputGuard() to decide
+     * whether the Output checkbox should be enabled. */
+    bool hasMainSource() const;
+
+    /* Returns the deviceEnum of the currently-selected main source,
+     * or the internal "None" sentinel when no source is selected.
+     * AxesConfig uses this together with isSharedSource() to compose
+     * the per-source "used by which axes" map. */
+    int currentSource() const;
+
+    /* True for sources that are conceptually shared and should never
+     * be flagged as "used by another axis" -- the "None" placeholder
+     * (axis disabled) and the "Encoder" pseudo-source (every axis can
+     * pick the same encoder source). Encapsulates the private
+     * Axes-internal enum so AxesConfig doesn't have to reach in. */
+    static bool isSharedSource(int sourceEnum);
+
+    /* Annotate combobox items whose source is already selected by other
+     * axes: greyed foreground + " - used by X, Y" suffix + tooltip. The
+     * items remain selectable; this is purely a usage hint. usedByOthers
+     * maps source-enum -> list of axis display names using that source.
+     * Pass an empty map to clear all annotations. */
+    void markSourcesInUse(const QMap<int, QStringList> &usedByOthers);
+
 signals:
     void a2bCountChanged(int count, int previousCount);
+
+    /* Fired whenever the main-source combobox selection changes (user
+     * edit or readFromConfig-driven). AxesConfig listens to recompute
+     * the global per-source usage map and re-annotate every axis's
+     * dropdown. */
+    void mainSourceChanged();
+
+private:
+    /* Enforce "no source -> do not output". When the main-source
+     * combobox is at "None", forces the Output checkbox to unchecked
+     * + disabled with an explanatory tooltip. Re-enables the checkbox
+     * (without changing its checked state) once a real source is
+     * selected. Called from the ctor, mainSourceIndexChanged, and the
+     * tail of readFromConfig (to catch loaded configs whose source
+     * already matches the combobox default and don't fire a change
+     * signal). */
+    void applyOutputGuard();
+
+    /* Original (un-annotated) display text for each combobox item,
+     * keyed by deviceEnum. markSourcesInUse uses this to restore the
+     * base text when an annotation is removed and to compose new
+     * "(used by X)" suffixes from a clean baseline rather than
+     * compounding suffixes across re-annotations. */
+    QHash<int, QString> m_baseDisplayTextByEnum;
 
 private slots:
     void calibMinMaxValueChanged(int value);

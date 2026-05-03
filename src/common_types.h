@@ -468,6 +468,23 @@ typedef struct
 
 
 
+/******************** PHYSICAL BUTTON BREAKDOWN **********************/
+// Snapshot of how button slots were divided across categories at the
+// moment dev_config_t.buttons[] was last serialised. Configurator
+// metadata only -- the firmware allocates the bytes but never reads
+// them. Lets the configurator detect breakdown drift across save/load
+// cycles and translate stale physical_num references through
+// freejoy::toRef / toAbs (see widgets/buttons/physref.h). Layout MUST
+// match the firmware's mirror in
+// FreeJoyX/application/Inc/common_types.h byte-for-byte.
+typedef struct phys_breakdown_t
+{
+    uint8_t					matrix;								// matrix-rows * matrix-cols
+    uint8_t					per_sr[MAX_SHIFT_REG_NUM];	// button count per SR
+    uint8_t					per_a2b[MAX_AXIS_NUM];		// a2b button count per axis
+    uint8_t					direct;								// BUTTON_GND/BUTTON_VCC pin count
+}	phys_breakdown_t;
+
 /******************** DEVICE CONFIGURATION **********************/
 typedef struct
 {
@@ -523,6 +540,13 @@ typedef struct
     uint8_t							rgb_brightness;
     uint16_t						rgb_delay_ms;
     argb_led_t 					rgb_leds[NUM_RGB_LEDS];
+
+    // Snapshot of the physical-button breakdown at the moment of the
+    // last serialise. Configurator-only metadata; firmware ignores it.
+    // Zero on factory-reset / legacy configs -- the configurator treats
+    // all-zero as "no snapshot available" and falls back to the in-session
+    // auto-remap baseline.
+    phys_breakdown_t		saved_breakdown;
 
 }dev_config_t;
 

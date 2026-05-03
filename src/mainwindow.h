@@ -55,6 +55,13 @@ private slots:
     void hidDeviceList(const QList<QPair<bool, QString>> &deviceNames, int preferredIndex);
     void hidDeviceListChanged(int index);
 
+    /* Receives USB identity (vid hex, pid hex, serial) for the currently
+     * opened device from HidDevice and populates the device-info card
+     * below the dropdown. Empty strings (on disconnect) reset the card
+     * to "—". Firmware version is filled separately from getParamsPacket
+     * since it arrives later via the params report. */
+    void setDeviceInfo(const QString &vidHex, const QString &pidHex, const QString &serial);
+
     void languageChanged(const QString &language);
     void setFont();
 
@@ -114,6 +121,12 @@ private:
 
     void UiReadFromConfig();
     void UiWriteToConfig();
+
+    /* Returns true if every logical button slot using Function = Logic
+     * has its operator and (for binary operators) Source B set to real
+     * values rather than the "-" UI sentinels. On false, this also pops
+     * a warning naming the first incomplete slot. */
+    bool confirmLogicConfigComplete();
 
     void loadAppConfig();
     void saveAppConfig();

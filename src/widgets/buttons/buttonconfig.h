@@ -6,6 +6,7 @@
 
 #include "buttonlogical.h"
 #include "buttonphysical.h"
+#include "physref.h"
 
 #include "common_defines.h"
 #include "common_types.h"
@@ -32,6 +33,31 @@ public:
     void readFromConfig();
     void writeToConfig();
     void buttonStateChanged();
+
+    /* Walks all logical button rows and returns the slot index of the
+     * first one whose LOGIC configuration is incomplete (operator left
+     * at "-" or, for binary ops, Source B left at "-"). Returns -1 when
+     * every row is fine. MainWindow uses this to gate Write-to-device
+     * and Save-to-file. */
+    int firstIncompleteLogicSlot() const;
+
+    /* Begin / end markers for a config load. Wraps UiReadFromConfig in
+     * MainWindow so the auto-remap (which fires off the same breakdown
+     * signals that user pin / SR / a2b edits do) can distinguish a
+     * fresh load (just snapshot the new breakdown) from a user edit
+     * (remap dev_config_t against the previous snapshot). */
+    void beginConfigLoad();
+    void endConfigLoad();
+
+    /* Persist the live physical-button breakdown into
+     * dev_config_t.saved_breakdown. Called from MainWindow::UiWriteToConfig
+     * just before serialisation so the next load can detect breakdown
+     * drift and remap stale physical_num references via freejoy::toRef /
+     * toAbs. Configurator-only metadata; firmware ignores the field. */
+    void captureBreakdownToConfig();
+
+    // PhysBreakdown / PhysRef / toRef / toAbs live in physref.h now.
+    using PhysBreakdown = freejoy::PhysBreakdown;
 
     void retranslateUi();
 
@@ -107,6 +133,14 @@ private:
 private slots:
     void on_checkBox_AutoPhysBut_toggled(bool checked);
 
+    /* Toolbar "Clear All" button: confirms with the user, then resets
+     * every dev_config_t.buttons[] slot to defaults (physical_num = -1,
+     * type = NORMAL, src_b = -1, all flags / timers / shift / op zero)
+     * and refreshes every ButtonLogical row from the cleared cfg. Pins,
+     * axes, shift register and timer config are deliberately left
+     * untouched. */
+    void on_pushButton_ClearAllLogical_clicked();
+
 private:
     Ui::ButtonConfig *ui;
     void physButtonsCreator(int count);
@@ -132,6 +166,37 @@ private:
     int m_groupDirect    = 0;
     QList<int> m_shiftRegBreakdown;	// per-register button counts (empty until first emit)
     QList<int> m_axisBreakdown;		// per-axis a2b button counts (empty until first emit)
+
+    /* Snapshot of the breakdown at the moment of the last load (or
+     * the previous remap). The PhysBreakdown type itself is declared
+     * in the public section above. */
+    PhysBreakdown m_lastBreakdown;
+    bool m_breakdownInitialized = false;
+    bool m_loadInProgress = false;
+
+    PhysBreakdown currentBreakdown() const;
+
+    /* Walk dev_config_t.buttons[] and translate every physical_num and
+     * src_b from the `oldB` breakdown to the `newB` breakdown via
+     * freejoy::toRef + toAbs. References whose category disappears in
+     * `newB` become -1 and are surfaced via a single QMessageBox at the
+     * end. Used by both the in-session auto-remap (setUiOnOff path) and
+     * the load-time remap (endConfigLoad path against
+     * dev_config_t.saved_breakdown). */
+    void remapBreakdown(const PhysBreakdown &oldB, const PhysBreakdown &newB);
+
+    /* Called once per setUiOnOff. If the breakdown has changed since the
+     * last snapshot AND we're not mid-load, remap dev_config_t.buttons[]
+     * physical_num + src_b references and refresh affected UI rows. */
+    void maybeRemap();
+
+    /* Read the configurator-only saved_breakdown metadata back out of
+     * dev_config_t. Called by endConfigLoad to detect drift between
+     * when the chip's config was last written (saved breakdown) and
+     * the live breakdown derived from the just-loaded pin/SR/a2b
+     * widgets. The public counterpart, captureBreakdownToConfig, is
+     * declared above next to beginConfigLoad / endConfigLoad. */
+    PhysBreakdown breakdownFromConfig() const;
 
     int m_logicButtonInFocus;
     bool m_autoPhysButEnabled;

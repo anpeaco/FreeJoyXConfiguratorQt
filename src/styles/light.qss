@@ -5,16 +5,15 @@
  * only specifies overrides where palette references are not enough.
  */
 
-/* Off-state for the physical-button indicator. On light backgrounds we
- * use a soft red so the unpressed buttons read as "armed but not
- * pressed" — the historical FreeJoy convention. */
+/* Off-state for the physical-button indicator on light backgrounds:
+ * outlined ring, transparent fill, muted text. Drops the historical
+ * "soft red" off-colour because red on every unpressed button reads
+ * as an error state. Shape and the transparent-base reset live in
+ * common.qss; this only sets the theme-tuned colours. */
 
 QLabel[buttonState="off"] {
-    border-radius: 13px;
-    min-height: 26px;
-    min-width: 26px;
-    background-color: #d96868;
-    color: #ffffff;
+    border-color: #cccccc;
+    color: #888888;
 }
 
 /* Primary button hover/pressed for light theme. */
@@ -47,4 +46,8 @@ QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
 QSpinBox::down-arrow, QDoubleSpinBox::down-arrow,
 QComboBox::down-arrow {
     image: url(:/Images/icons/lucide/chevron-down-light.svg);
+}
+
+QCheckBox::indicator:checked {
+    image: url(:/Images/icons/lucide/check-light.svg);
 }

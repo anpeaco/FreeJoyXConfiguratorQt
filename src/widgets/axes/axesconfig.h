@@ -44,6 +44,13 @@ private slots:
     void hideAxis(int index, bool hide);
     //    void axesValueChanged(int value);
 
+    /* Recompute, for every axis, which OTHER axes have already
+     * selected each candidate source, and push that map down so each
+     * axis can grey-out + suffix the duplicate items in its dropdown.
+     * Called from each axis's mainSourceChanged signal, plus the tail
+     * of readFromConfig and addOrDeleteMainSource. */
+    void refreshSourceUsage();
+
 private:
     Ui::AxesConfig *ui;
     int m_a2bButtonsCount;

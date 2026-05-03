@@ -11,7 +11,14 @@ class HidDevice : public QObject
 
 public:
     void getConfigFromDevice();
-    void sendConfigToDevice();
+    /* expectedVid / expectedPid: the vid/pid that will be in effect on
+     * the device AFTER it applies the config we're about to send. If
+     * the user edited the VID/PID fields in the configurator, the
+     * device re-enumerates with the new values, so the reconnect-after-
+     * write flow needs to look for the new (vid, pid) pair, not the
+     * pre-write one. Pass dev_config_t.config.vid / .pid from the
+     * caller; matched against re-enumerated devices alongside serial. */
+    void sendConfigToDevice(uint16_t expectedVid, uint16_t expectedPid);
     void sendLedState(uint32_t bitmask);
 
     bool enterToFlashMode();
@@ -33,6 +40,12 @@ signals:
     void configSent(bool isSuccess);
 
     void hidDeviceList(const QList<QPair<bool, QString>> &deviceNames, int preferredIndex);
+
+    /* Carry the currently-opened device's USB identity to MainWindow's
+     * device-info card. Emitted on every open (after deviceConnected)
+     * and again with empty strings on disconnect, so the card clears
+     * when the device goes away. */
+    void deviceInfo(const QString &vidHex, const QString &pidHex, const QString &serial);
 
     void flasherFound(bool isFound);
     void flashStatus(int status, int percent);
@@ -80,6 +93,16 @@ private:
     // path of the device the user had selected, captured before list rebuilds so we
     // can re-select the same physical device after USB re-enumeration (e.g. post config write)
     std::string m_savedSelectedPath;
+    // Identity-based reconnect after a config write. Captured at the
+    // moment of sendConfigToDevice so the detection-thread rebuild can
+    // find the same physical device once it re-enumerates -- even when
+    // the OS hands it a new HID path (Windows instance ID can change
+    // across disconnect/reconnect) or the user has just edited the
+    // VID/PID fields and the firmware comes back with new IDs. Match
+    // priority: serial number first, then (expected vid, expected pid).
+    std::wstring m_targetSerial;
+    uint16_t m_targetExpectedVid = 0;
+    uint16_t m_targetExpectedPid = 0;
     const QByteArray *m_firmware;
 
     mutable std::mutex m_mutex;

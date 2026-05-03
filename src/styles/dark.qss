@@ -5,16 +5,14 @@
  * only specifies overrides where palette references are not enough.
  */
 
-/* Off-state for the physical-button indicator. On dark backgrounds we
- * use a muted grey so the unpressed buttons don't fight the UI; the
- * green on-state stays vivid by contrast. */
+/* Off-state for the physical-button indicator on dark backgrounds:
+ * outlined ring, transparent fill, muted text. Shape and the
+ * transparent-base reset live in common.qss; this only sets the
+ * theme-tuned colours. */
 
 QLabel[buttonState="off"] {
-    border-radius: 13px;
-    min-height: 26px;
-    min-width: 26px;
-    background-color: #5a5a5a;
-    color: #dcdcdc;
+    border-color: #5a5a5a;
+    color: #b0b0b0;
 }
 
 /* Primary button hover/pressed: lift the highlight tone slightly so
@@ -41,4 +39,8 @@ QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
 QSpinBox::down-arrow, QDoubleSpinBox::down-arrow,
 QComboBox::down-arrow {
     image: url(:/Images/icons/lucide/chevron-down-dark.svg);
+}
+
+QCheckBox::indicator:checked {
+    image: url(:/Images/icons/lucide/check-dark.svg);
 }

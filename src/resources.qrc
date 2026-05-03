@@ -35,8 +35,8 @@
         <file>Images/MLX90393.png</file>
         <file>Images/rgbButtonOff.png</file>
         <file>Images/rgbButtonOn.png</file>
-        <file>Images/icons/lucide/ban.svg</file>
-        <file>Images/icons/lucide/repeat.svg</file>
+        <file>Images/icons/lucide/eye-off.svg</file>
+        <file>Images/icons/lucide/arrow-down-up.svg</file>
         <file>Images/icons/lucide/settings.svg</file>
         <file>Images/icons/lucide/rotate-ccw.svg</file>
         <file>Images/icons/lucide/triangle-alert.svg</file>
@@ -49,5 +49,8 @@
         <file>Images/icons/lucide/chevron-down-dark.svg</file>
         <file>Images/icons/lucide/chevron-up-light.svg</file>
         <file>Images/icons/lucide/chevron-down-light.svg</file>
+        <file>Images/icons/lucide/check-dark.svg</file>
+        <file>Images/icons/lucide/check-light.svg</file>
+        <file>Images/icons/lucide/ellipsis-vertical.svg</file>
     </qresource>
 </RCC>

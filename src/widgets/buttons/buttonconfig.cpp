@@ -10,6 +10,7 @@
 #include <QDropEvent>
 #include <QIcon>
 #include <QLabel>
+#include <QMessageBox>
 #include <QMimeData>
 
 #ifdef DYNAMIC_CREATION
@@ -25,11 +26,11 @@ ButtonConfig::ButtonConfig(QWidget *parent)
     m_logicButtonInFocus = -1;
 
     // Lucide SVGs rasterize at their native 24x24, which overflows the
-    // 50x20 header label boxes. Re-render at 16x16 so they sit cleanly
+    // 28x26 header label boxes. Re-render at 16x16 so they sit cleanly
     // inside the row without enlarging the column widths.
     const QSize headerIconSize(16, 16);
-    ui->label_7->setPixmap(QIcon(QStringLiteral(":/Images/icons/lucide/ban.svg")).pixmap(headerIconSize));
-    ui->label_6->setPixmap(QIcon(QStringLiteral(":/Images/icons/lucide/repeat.svg")).pixmap(headerIconSize));
+    ui->label_7->setPixmap(QIcon(QStringLiteral(":/Images/icons/lucide/eye-off.svg")).pixmap(headerIconSize));
+    ui->label_6->setPixmap(QIcon(QStringLiteral(":/Images/icons/lucide/arrow-down-up.svg")).pixmap(headerIconSize));
 
     // dynamic creation with scroll
 #ifdef DYNAMIC_CREATION
@@ -59,12 +60,13 @@ ButtonConfig::ButtonConfig(QWidget *parent)
     ui->scrollAreaWidgetContents->setAcceptDrops(true);
     ui->scrollAreaWidgetContents->installEventFilter(this);
 
-    // Drop-indicator: a thin highlighted bar that floats over the row
-    // gap where the dragged row will land. Lives as a child of the
-    // contents widget, hidden until a drag starts.
+    // Drop-indicator: a row-height ghost block that floats over the
+    // gap where the dragged row will land. Centered on the gap so it
+    // visually straddles the two adjacent rows, with translucent fill
+    // + dashed border to signal "this slot is reserved". Lives as a
+    // child of the contents widget, hidden until a drag starts.
     m_dropIndicator = new QFrame(ui->scrollAreaWidgetContents);
     freejoy_style::setRole(m_dropIndicator, "role", "drop-indicator");
-    m_dropIndicator->setFixedHeight(3);
     m_dropIndicator->hide();
 
     Q_ASSERT(ui->groupBox_LogicalButtons->objectName() == QStringLiteral("groupBox_LogicalButtons"));
@@ -192,6 +194,42 @@ void ButtonConfig::setPhysicButton(int buttonIndex)
     int srcBFocus = m_logicButtonPtrList[0]->currentFocusSrcB();
     if (srcBFocus >= 0) {
         m_logicButtonPtrList[srcBFocus]->setSourceBButton(buttonIndex);
+    }
+}
+
+void ButtonConfig::on_pushButton_ClearAllLogical_clicked()
+{
+    const QMessageBox::StandardButton reply = QMessageBox::question(
+        this,
+        tr("Clear All Logical Buttons"),
+        tr("Reset every logical button slot back to defaults?\n\n"
+           "Function returns to Normal, physical button assignments, "
+           "Source B, shift modifier, operator and per-row timers are "
+           "all cleared. Pin Config, Axes, Shift Registers and the "
+           "global Timer values are NOT affected.\n\n"
+           "This cannot be undone except by reading the config back "
+           "from the device."),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No);
+    if (reply != QMessageBox::Yes) return;
+
+    // Reset only dev_config_t.buttons[]. Everything else stays put.
+    button_t *cfg = gEnv.pDeviceConfig->config.buttons;
+    for (int i = 0; i < MAX_BUTTONS_NUM; ++i) {
+        cfg[i].physical_num    = -1;
+        cfg[i].type            = BUTTON_NORMAL;
+        cfg[i].src_b           = -1;
+        cfg[i].shift_modificator = 0;
+        cfg[i].is_inverted     = 0;
+        cfg[i].is_disabled     = 0;
+        cfg[i].op              = 0;
+        cfg[i].delay_timer     = 0;
+        cfg[i].press_timer     = 0;
+    }
+
+    // Push the cleared cfg into the row widgets.
+    for (int i = 0; i < m_logicButtonPtrList.size(); ++i) {
+        m_logicButtonPtrList[i]->readFromConfig();
     }
 }
 
@@ -358,10 +396,38 @@ void ButtonConfig::typeLimit(button_type_t current, button_type_t previous)
 
 void ButtonConfig::setUiOnOff(int value)
 {
+    // setUiOnOff fires *after* all three breakdown signals (mainwindow
+    // wires totalButtonsValueChanged last). It is the single rendezvous
+    // point where the breakdown is consistent, so the auto-remap runs
+    // here. Order is critical:
+    //
+    //   1. Flush logical-button rows -> dev_config_t under the OLD
+    //      spinbox max. Without this, step 3's remap+readFromConfig
+    //      would later flush *clamped* values to cfg on the next save,
+    //      destroying the remap. Skipped during a config load because
+    //      the logical-button rows haven't been read yet -- their
+    //      default-zero spinboxes would overwrite the just-loaded
+    //      dev_config_t.
+    //   2. Bump per-row physical-button spinbox max to the new total
+    //      so step 3's readFromConfig (inside maybeRemap) can render
+    //      newly-bumped physical_num values without being silently
+    //      clamped to the previous, smaller max.
+    //   3. maybeRemap: mutate cfg.buttons[].physical_num + .src_b
+    //      through classify/rederive, then refresh each row's UI.
+    //   4. Rebuild the physical-button grid (the part setUiOnOff
+    //      always did).
+    if (!m_loadInProgress) {
+        for (int i = 0; i < m_logicButtonPtrList.size(); ++i) {
+            m_logicButtonPtrList[i]->writeToConfig();
+        }
+    }
+
     for (int i = 0; i < m_logicButtonPtrList.size(); ++i) {
         m_logicButtonPtrList[i]->setSpinBoxOnOff(value);
         m_logicButtonPtrList[i]->setMaxPhysButtons(value);
     }
+
+    maybeRemap();
 
     physButtonsCreator(value);
 }
@@ -492,8 +558,6 @@ void ButtonConfig::buttonStateChanged()
 
 void ButtonConfig::readFromConfig()
 {
-    dev_config_t *devc = &gEnv.pDeviceConfig->config;
-
     // dynamic creation with scroll
 #ifdef DYNAMIC_CREATION
     for (int i = MAX_BUTTONS_NUM; i > 0; --i) {
@@ -558,6 +622,21 @@ bool ButtonConfig::eventFilter(QObject *obj, QEvent *event)
         if (!ok) break;
         int dstSlot = targetSlotForY(de->pos().y());
         if (dstSlot >= 0) {
+            // targetSlotForY treats "cursor in upper half of row k" as
+            // "land at index k", but moveButton removes the source from
+            // its slot first -- when src is above k, that shifts row k
+            // up by one, so the gap-above-row-k corresponds to index
+            // k-1, not k. Without this adjustment a downward drop lands
+            // one row too low. Skipped for the "below the last row's
+            // midline" tail, where the user genuinely wants the final
+            // slot (n-1) and the same removal-shift makes that work.
+            const int n = m_logicButtonPtrList.size();
+            QWidget *last = n > 0 ? m_logicButtonPtrList.last() : nullptr;
+            const bool belowLast = last
+                && de->pos().y() > last->y() + last->height() / 2;
+            if (!belowLast && srcSlot < dstSlot) {
+                dstSlot--;
+            }
             moveButton(srcSlot, dstSlot);
         }
         de->acceptProposedAction();
@@ -612,10 +691,182 @@ int ButtonConfig::indicatorYForCursor(int yPos) const
 void ButtonConfig::showDropIndicatorAtY(int y)
 {
     const int width = ui->scrollAreaWidgetContents->width();
-    // Center the 3px bar on the gap so it visually straddles the row boundary.
-    m_dropIndicator->setGeometry(0, y - 1, width, 3);
+    // Match the live row height so the ghost reads as a placeholder
+    // for the row about to be inserted; fall back to 32 (the static
+    // ButtonLogical row height from buttonlogical.ui) before any rows
+    // are realised.
+    const int rowH = m_logicButtonPtrList.isEmpty()
+                     ? 32
+                     : m_logicButtonPtrList.first()->height();
+    m_dropIndicator->setGeometry(0, y - rowH / 2, width, rowH);
     m_dropIndicator->raise();
     m_dropIndicator->show();
+}
+
+// ---------------------------------------------------------------------
+// Physical-button auto-remap (Option 1 from the upstream-quirk fix).
+//
+// FreeJoy assigns physical button IDs sequentially in firmware order:
+// matrix -> shift register -> axis-to-buttons -> direct. When the user
+// adds an SR or resizes a category, every ID in later categories shifts.
+// Logical buttons that referenced an absolute physical_num would silently
+// point at the wrong input.
+//
+// The mapping math (PhysBreakdown / PhysRef / toRef / toAbs) lives in
+// physref.h. This translation unit handles the two trigger points:
+//
+//   1. In-session edits -- maybeRemap() runs from setUiOnOff against
+//      m_lastBreakdown (snapshot of the post-load breakdown).
+//   2. Load-time -- endConfigLoad reads dev_config_t.saved_breakdown
+//      (the snapshot captured at the last save) and remaps if it
+//      differs from the live post-load breakdown. Defensive: catches
+//      drift introduced by external tools, partial writes, etc.
+//
+// References whose category disappears (e.g. an SR removed entirely)
+// become -1 and are surfaced in a single summary message.
+// ---------------------------------------------------------------------
+
+ButtonConfig::PhysBreakdown ButtonConfig::currentBreakdown() const
+{
+    PhysBreakdown b;
+    b.matrix  = m_groupMatrix;
+    b.perSR   = m_shiftRegBreakdown;
+    b.perA2b  = m_axisBreakdown;
+    b.direct  = m_groupDirect;
+    return b;
+}
+
+void ButtonConfig::captureBreakdownToConfig()
+{
+    // Persist the live breakdown into dev_config_t.saved_breakdown so the
+    // next load (after this save) can detect drift. Only writes the
+    // categories the firmware-side struct allocates space for; trailing
+    // unused slots stay zero so legacy detection stays clean.
+    phys_breakdown_t &dst = gEnv.pDeviceConfig->config.saved_breakdown;
+    const PhysBreakdown live = currentBreakdown();
+
+    dst.matrix = static_cast<uint8_t>(qBound(0, live.matrix, 255));
+    for (int i = 0; i < MAX_SHIFT_REG_NUM; ++i) {
+        const int n = (i < live.perSR.size()) ? live.perSR[i] : 0;
+        dst.per_sr[i] = static_cast<uint8_t>(qBound(0, n, 255));
+    }
+    for (int i = 0; i < MAX_AXIS_NUM; ++i) {
+        const int n = (i < live.perA2b.size()) ? live.perA2b[i] : 0;
+        dst.per_a2b[i] = static_cast<uint8_t>(qBound(0, n, 255));
+    }
+    dst.direct = static_cast<uint8_t>(qBound(0, live.direct, 255));
+}
+
+ButtonConfig::PhysBreakdown ButtonConfig::breakdownFromConfig() const
+{
+    const phys_breakdown_t &src = gEnv.pDeviceConfig->config.saved_breakdown;
+    PhysBreakdown b;
+    b.matrix = src.matrix;
+    b.perSR.reserve(MAX_SHIFT_REG_NUM);
+    for (int i = 0; i < MAX_SHIFT_REG_NUM; ++i) b.perSR.append(src.per_sr[i]);
+    b.perA2b.reserve(MAX_AXIS_NUM);
+    for (int i = 0; i < MAX_AXIS_NUM; ++i) b.perA2b.append(src.per_a2b[i]);
+    b.direct = src.direct;
+    return b;
+}
+
+void ButtonConfig::remapBreakdown(const PhysBreakdown &oldB,
+                                  const PhysBreakdown &newB)
+{
+    button_t *cfg = gEnv.pDeviceConfig->config.buttons;
+    QList<int> brokenSlots;
+    for (int i = 0; i < MAX_BUTTONS_NUM; ++i) {
+        if (cfg[i].physical_num >= 0) {
+            int newP = freejoy::toAbs(freejoy::toRef(cfg[i].physical_num, oldB), newB);
+            if (newP < 0) brokenSlots.append(i);
+            cfg[i].physical_num = static_cast<int8_t>(newP);
+        }
+        if (cfg[i].type == LOGIC && cfg[i].src_b >= 0) {
+            int newB2 = freejoy::toAbs(freejoy::toRef(cfg[i].src_b, oldB), newB);
+            if (newB2 < 0 && !brokenSlots.contains(i)) brokenSlots.append(i);
+            cfg[i].src_b = static_cast<int8_t>(newB2);
+        }
+    }
+
+    // Refresh affected UI rows from the mutated cfg.
+    for (int i = 0; i < m_logicButtonPtrList.size(); ++i) {
+        m_logicButtonPtrList[i]->readFromConfig();
+    }
+
+    if (!brokenSlots.isEmpty()) {
+        QStringList slotStrs;
+        for (int s : brokenSlots) slotStrs << QString::number(s + 1);
+        QMessageBox::warning(
+            this,
+            tr("Logical Buttons Cleared"),
+            tr("The connection change removed the input(s) referenced by "
+               "logical button(s) %1. Their physical button / Source B "
+               "have been cleared. Please reassign before saving.")
+                .arg(slotStrs.join(QStringLiteral(", "))));
+    }
+}
+
+void ButtonConfig::beginConfigLoad()
+{
+    m_loadInProgress = true;
+}
+
+void ButtonConfig::endConfigLoad()
+{
+    m_loadInProgress = false;
+
+    // Live breakdown derived from the just-loaded pin / SR / a2b config.
+    const PhysBreakdown live = currentBreakdown();
+
+    // Snapshot stored at the last save, if any. Zero on factory-reset
+    // and on configs written before FIRMWARE_VERSION 0x1760 (when the
+    // saved_breakdown field was added). PhysBreakdown::isZero handles
+    // both cases as "no snapshot available -- take the loaded refs at
+    // face value".
+    const PhysBreakdown saved = breakdownFromConfig();
+
+    if (!saved.isZero() && saved != live) {
+        // Drift between when the chip's config was last serialised and
+        // the live state of pin/SR/a2b widgets. Most common cause: an
+        // external tool wrote the config, or the chip's config was
+        // written by a configurator version that didn't run the
+        // in-session auto-remap. Translate references through the saved
+        // baseline so they end up valid under the live breakdown.
+        remapBreakdown(saved, live);
+    }
+
+    m_lastBreakdown = live;
+    m_breakdownInitialized = true;
+}
+
+void ButtonConfig::maybeRemap()
+{
+    if (m_loadInProgress) return;
+
+    if (!m_breakdownInitialized) {
+        m_lastBreakdown = currentBreakdown();
+        m_breakdownInitialized = true;
+        return;
+    }
+
+    PhysBreakdown nb = currentBreakdown();
+    if (nb == m_lastBreakdown) return;
+
+    // Caller (setUiOnOff) has already flushed UI -> dev_config_t under
+    // the OLD spinbox max and then bumped the max to the new total, so
+    // remapBreakdown can mutate cfg + refresh UI without clamping.
+    remapBreakdown(m_lastBreakdown, nb);
+    m_lastBreakdown = nb;
+}
+
+int ButtonConfig::firstIncompleteLogicSlot() const
+{
+    for (int i = 0; i < m_logicButtonPtrList.size(); ++i) {
+        if (!m_logicButtonPtrList[i]->isLogicConfigComplete()) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 void ButtonConfig::moveButton(int from, int to)

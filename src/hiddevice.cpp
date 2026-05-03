@@ -114,11 +114,58 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                             // device names for UI combobox. pair for old firmware device
                             m_deviceNames.append(qMakePair(tmp_HidList[i].first, QString::fromWCharArray(tmp_HidList[i].second->product_string)));
                         }
-                        // restore selection by path match (path is stable across USB re-enumerate
-                        // on the same physical port). Keep the saved path if not yet found --
-                        // the target device may still be mid-reboot and reappear on a later cycle.
+                        // Restore selection of the same physical device after a list
+                        // rebuild (most importantly: after a config write that
+                        // re-enumerates the device over USB).
+                        //
+                        // Match priority -- earliest hit wins:
+                        //   1. Serial number captured at write time. Stable across
+                        //      reboot and across user edits to VID/PID, so this is
+                        //      the best identifier for "the same physical device".
+                        //   2. Expected (VID, PID) captured at write time. Covers
+                        //      the case where the user edited the VID/PID fields
+                        //      and the device comes back with new IDs but the
+                        //      serial generation differs (or wasn't available).
+                        //   3. Pre-existing HID path. Retained as a final fallback
+                        //      for non-write-driven rebuilds (e.g. user plugs/
+                        //      unplugs another device while we're connected) where
+                        //      no target identity was captured.
+                        // After any successful match, all three target fields are
+                        // cleared so a later rebuild doesn't latch onto a stale
+                        // identifier.
                         int preferredIndex = -1;
-                        if (!m_savedSelectedPath.empty()) {
+                        const bool haveTargetSerial = !m_targetSerial.empty();
+                        const bool haveTargetVidPid = (m_targetExpectedVid != 0 || m_targetExpectedPid != 0);
+
+                        auto clearTargetIdentity = [&]() {
+                            m_targetSerial.clear();
+                            m_targetExpectedVid = 0;
+                            m_targetExpectedPid = 0;
+                            m_savedSelectedPath.clear();
+                        };
+
+                        if (haveTargetSerial) {
+                            for (int i = 0; i < m_hidDevicesList.size(); ++i) {
+                                if (m_hidDevicesList[i].serNum == m_targetSerial) {
+                                    preferredIndex = i;
+                                    m_selectedDevice = i;
+                                    clearTargetIdentity();
+                                    break;
+                                }
+                            }
+                        }
+                        if (preferredIndex == -1 && haveTargetVidPid) {
+                            for (int i = 0; i < m_hidDevicesList.size(); ++i) {
+                                if (m_hidDevicesList[i].vid == m_targetExpectedVid &&
+                                    m_hidDevicesList[i].pid == m_targetExpectedPid) {
+                                    preferredIndex = i;
+                                    m_selectedDevice = i;
+                                    clearTargetIdentity();
+                                    break;
+                                }
+                            }
+                        }
+                        if (preferredIndex == -1 && !m_savedSelectedPath.empty()) {
                             for (int i = 0; i < m_hidDevicesList.size(); ++i) {
                                 if (m_hidDevicesList[i].path == m_savedSelectedPath) {
                                     preferredIndex = i;
@@ -155,6 +202,7 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                 // all devices disconnected
                 if (m_hidDevicesList.empty()) {
                     emit deviceDisconnected();
+                    emit deviceInfo(QString(), QString(), QString());
                     oldSelectedDevice = m_selectedDevice = -1;
                     shouldSleep = true;
                 }
@@ -169,6 +217,10 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
             if (m_selectedDevice != oldSelectedDevice || (deviceCountChanged && m_selectedDevice >= 0)) {
                 std::string path;
                 bool shouldOpen = false;
+                // Captured under lock so the deviceInfo emit below the
+                // lock has consistent values without holding the mutex
+                // across the signal dispatch.
+                QString openVidStr, openPidStr, openSerialStr;
                 {
                     std::lock_guard<std::mutex> lock(m_mutex);
                     if (!m_hidDevicesList.empty() && m_selectedDevice < m_hidDevicesList.size()) {  // mutex
@@ -179,10 +231,14 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                         const ushort pid = m_hidDevicesList[m_selectedDevice].pid;
                         const wchar_t *serNum = m_hidDevicesList[m_selectedDevice].serNum.c_str();
 
+                        openVidStr = QString::number(vid, 16).toUpper().rightJustified(4, '0');
+                        openPidStr = QString::number(pid, 16).toUpper().rightJustified(4, '0');
+                        openSerialStr = QString::fromWCharArray(serNum);
+
                         qDebug().nospace()<<"Open HID device №"<<m_selectedDevice + 1
-                                         <<". VID"<<QString::number(vid, 16).toUpper().rightJustified(4, '0')
-                                        <<", PID"<<QString::number(pid, 16).toUpper().rightJustified(4, '0')
-                                       <<", Serial number "<<QString::fromWCharArray(serNum);
+                                         <<". VID"<<openVidStr
+                                        <<", PID"<<openPidStr
+                                       <<", Serial number "<<openSerialStr;
                     }
                 }
 
@@ -192,6 +248,7 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                     if (m_paramsRead) {
                         ReportConverter::resetReport();
                         emit deviceConnected();
+                        emit deviceInfo(openVidStr, openPidStr, openSerialStr);
                         oldSelectedDevice = m_selectedDevice;
                         deviceCountChanged = false;
 
@@ -255,6 +312,7 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                     {
                         std::lock_guard<std::mutex> lock(m_mutex);
                         emit deviceDisconnected();
+                        emit deviceInfo(QString(), QString(), QString());
                         // remember path so the device can be re-selected after the firmware
                         // applies the new config and the device re-enumerates over USB
                         if (m_selectedDevice >= 0 && m_selectedDevice < m_hidDevicesList.size()) {
@@ -628,9 +686,22 @@ void HidDevice::getConfigFromDevice()
     m_currentWork = REPORT_ID_CONFIG_IN;
 }
 // button "send config" clicked
-void HidDevice::sendConfigToDevice()
+void HidDevice::sendConfigToDevice(uint16_t expectedVid, uint16_t expectedPid)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
+    // Snapshot the device's identity now so the detection-thread
+    // rebuild can re-pick it after the firmware applies the config and
+    // re-enumerates. Serial is the strongest match (stable across the
+    // reboot); (expectedVid, expectedPid) is the fallback for cases
+    // where the user just edited the VID/PID fields and the device
+    // comes back with new IDs but the same serial generation.
+    if (m_selectedDevice >= 0 && m_selectedDevice < m_hidDevicesList.size()) {
+        m_targetSerial = m_hidDevicesList[m_selectedDevice].serNum;
+    } else {
+        m_targetSerial.clear();
+    }
+    m_targetExpectedVid = expectedVid;
+    m_targetExpectedPid = expectedPid;
     m_currentWork = REPORT_ID_CONFIG_OUT;
 }
 

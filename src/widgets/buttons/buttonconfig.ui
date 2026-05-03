@@ -59,7 +59,7 @@
       <property name="verticalSpacing">
        <number>0</number>
       </property>
-      <item row="1" column="8">
+      <item row="1" column="9">
        <widget class="QLabel" name="label_4">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -81,7 +81,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="9">
+      <item row="1" column="10">
        <widget class="QLabel" name="label_3">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -103,7 +103,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="10">
+      <item row="1" column="11">
        <widget class="QLabel" name="label_2">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -125,7 +125,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
+      <item row="1" column="2">
        <widget class="QLabel" name="label_8">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -147,7 +147,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="11">
+      <item row="1" column="12">
        <widget class="QLabel" name="label_9">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -160,7 +160,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="5">
+      <item row="1" column="6">
        <widget class="QLabel" name="label_5">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -182,7 +182,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="6">
+      <item row="1" column="7">
        <widget class="QLabel" name="label_LogicOp">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -204,7 +204,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="7">
+      <item row="1" column="8">
        <widget class="QLabel" name="label_SourceB">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -226,7 +226,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="4">
+      <item row="1" column="5">
        <widget class="QLabel" name="label_6">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -235,10 +235,10 @@
          </sizepolicy>
         </property>
         <property name="minimumSize">
-         <size><width>50</width><height>26</height></size>
+         <size><width>28</width><height>26</height></size>
         </property>
         <property name="maximumSize">
-         <size><width>50</width><height>26</height></size>
+         <size><width>28</width><height>26</height></size>
         </property>
         <property name="toolTip">
          <string>Invert this button's input (HIGH becomes pressed, LOW becomes released)</string>
@@ -247,7 +247,7 @@
          <string/>
         </property>
         <property name="pixmap">
-         <pixmap resource="../../resources.qrc">:/Images/icons/lucide/repeat.svg</pixmap>
+         <pixmap resource="../../resources.qrc">:/Images/icons/lucide/arrow-down-up.svg</pixmap>
         </property>
         <property name="scaledContents">
          <bool>false</bool>
@@ -257,7 +257,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="3">
+      <item row="1" column="4">
        <widget class="QLabel" name="label_10">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -276,7 +276,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
+      <item row="1" column="1">
        <widget class="QLabel" name="label">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -298,7 +298,26 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_DragHandleHeader">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size><width>14</width><height>0</height></size>
+        </property>
+        <property name="maximumSize">
+         <size><width>14</width><height>16777215</height></size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3">
        <widget class="QLabel" name="label_7">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -307,10 +326,10 @@
          </sizepolicy>
         </property>
         <property name="minimumSize">
-         <size><width>50</width><height>26</height></size>
+         <size><width>28</width><height>26</height></size>
         </property>
         <property name="maximumSize">
-         <size><width>50</width><height>26</height></size>
+         <size><width>28</width><height>26</height></size>
         </property>
         <property name="toolTip">
          <string>Disable this button slot</string>
@@ -319,7 +338,7 @@
          <string/>
         </property>
         <property name="pixmap">
-         <pixmap resource="../../resources.qrc">:/Images/icons/lucide/ban.svg</pixmap>
+         <pixmap resource="../../resources.qrc">:/Images/icons/lucide/eye-off.svg</pixmap>
         </property>
         <property name="scaledContents">
          <bool>false</bool>
@@ -329,10 +348,10 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="0" colspan="12">
-       <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="1,0,0,1">
+      <item row="0" column="0" colspan="13">
+       <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="1,0,0,1,0">
         <property name="spacing">
-         <number>0</number>
+         <number>6</number>
         </property>
         <property name="leftMargin">
          <number>0</number>
@@ -386,9 +405,19 @@
           </property>
          </spacer>
         </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_ClearAllLogical">
+          <property name="toolTip">
+           <string>Clear every logical button slot back to defaults. Pin, axis, shift register and timer settings are not affected.</string>
+          </property>
+          <property name="text">
+           <string>Clear All</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </item>
-      <item row="2" column="0" colspan="12">
+      <item row="2" column="0" colspan="13">
        <widget class="QScrollArea" name="scrollArea_LogButtons">
         <property name="frameShape">
          <enum>QFrame::NoFrame</enum>

@@ -160,8 +160,21 @@ QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {
     border: 1px solid palette(mid);
     border-radius: 4px;
     padding: 2px 6px;
+}
+
+/* Loud selection only for real text editing. Spinboxes auto-select
+ * their entire content on focus, so palette(highlight) here paints
+ * the whole cell blue every time the user tabs in or clicks an arrow.
+ * Quiet the spinbox/combobox selection so focus is only signalled by
+ * the border-color rule below. */
+QLineEdit {
     selection-background-color: palette(highlight);
     selection-color: palette(highlighted-text);
+}
+
+QSpinBox, QDoubleSpinBox, QComboBox {
+    selection-background-color: palette(alternate-base);
+    selection-color: palette(text);
 }
 
 QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus {
@@ -252,8 +265,8 @@ QCheckBox, QRadioButton {
 }
 
 QCheckBox::indicator, QRadioButton::indicator {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
 }
 
 QCheckBox::indicator {
@@ -266,9 +279,20 @@ QCheckBox::indicator:hover {
     border-color: palette(highlight);
 }
 
+/* Render a check glyph inside the indicator instead of filling the
+ * box with palette(highlight) — the loud blue fill reads as a
+ * selection rather than a state. The border accent on :checked is
+ * kept so "on" still has visible affordance.
+ *
+ * image: url(...) per-theme in dark.qss / light.qss because
+ * QSvgRenderer does not resolve SVG currentColor from QSS. */
 QCheckBox::indicator:checked {
-    background: palette(highlight);
     border-color: palette(highlight);
+}
+
+QCheckBox::indicator:disabled {
+    background: palette(disabled, base);
+    border-color: palette(disabled, mid);
 }
 
 QRadioButton::indicator {
@@ -493,15 +517,23 @@ QLabel[role="status-error"] {
 
 /* ----- Physical-button indicator on Button Config tab --------------- */
 
-/* The 26x26 round indicator that lights green when its physical
- * button is pressed. Off-state colour differs per theme so we leave
- * the off state to dark.qss / light.qss. */
+/* 26x26 chip per slot in the 128-button grid. Outlined-when-off,
+ * filled-when-on so the inactive grid stays visually quiet and only
+ * pressed buttons pop. Shape lives here; off-state colour tuning is
+ * per-theme in dark.qss / light.qss because the ring + muted text
+ * need theme-specific contrast. */
 
-QLabel[buttonState="on"] {
+QLabel[buttonState="off"], QLabel[buttonState="on"] {
     border-radius: 13px;
     min-height: 26px;
     min-width: 26px;
+    border: 1px solid transparent;
+    background-color: transparent;
+}
+
+QLabel[buttonState="on"] {
     background-color: #22c55e;
+    border-color: #22c55e;
     color: #ffffff;
 }
 
@@ -529,7 +561,48 @@ QPushButton[curveButtonState="active"] {
 
 /* ----- Drop indicator (drag-reorder of logical button rows) -------- */
 
+/* Row-height ghost shown at the insertion gap during a row reorder
+ * drag. Translucent fill + dashed border read as "phantom slot, this
+ * is where the row will land". rgba is hardcoded because palette()
+ * refs don't carry an alpha channel; the Material-blue tone matches
+ * palette(highlight) closely enough on both light and dark themes. */
 QFrame[role="drop-indicator"] {
-    background-color: palette(highlight);
-    border: none;
+    background-color: rgba(48, 138, 233, 60);
+    border: 1px dashed palette(highlight);
+    border-radius: 4px;
+}
+
+/* ----- Info cards (sidebar Device + App groups) -------------------- */
+
+/* Compact key/value cards used for the Device group (firmware / VID:PID /
+ * serial of the currently-connected device) and the App group (the
+ * configurator's own expected firmware version). Tagged via the
+ * dynamic property role="info-card" on each QFrame so this rule covers
+ * both without per-objectName duplication. */
+
+QFrame[role="info-card"] {
+    border: 1px solid palette(mid);
+    border-radius: 4px;
+    background-color: palette(alternate-base);
+}
+
+/* Key labels (left column): muted so the values dominate visually.
+ * Targeted by objectName suffix convention -- every key label in either
+ * card is named *Key. */
+QFrame[role="info-card"] QLabel#label_FirmwareKey,
+QFrame[role="info-card"] QLabel#label_VidPidKey,
+QFrame[role="info-card"] QLabel#label_SerialKey,
+QFrame[role="info-card"] QLabel#label_AppFirmwareKey {
+    color: palette(disabled, text);
+}
+
+/* Value labels (right column): monospace so 4-digit VID:PID pairs align
+ * column-wise across rows and serial-number hex/digit strings stay
+ * readable without ambiguity. */
+QFrame[role="info-card"] QLabel#label_FirmwareVal,
+QFrame[role="info-card"] QLabel#label_VidPidVal,
+QFrame[role="info-card"] QLabel#label_SerialVal,
+QFrame[role="info-card"] QLabel#label_AppFirmwareVal {
+    color: palette(text);
+    font-family: "Consolas", "Cascadia Mono", "Courier New", monospace;
 }

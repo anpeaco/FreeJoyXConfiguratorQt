@@ -35,10 +35,13 @@ Axes::Axes(int axisNumber, QWidget *parent)
     m_axisNumber = axisNumber;
     ui->groupBox_AxixName->setTitle(axesList()[m_axisNumber].guiName);
 
-    // add main source
+    // add main source. Cache the original display text under each
+    // enum so markSourcesInUse() can append/restore "(used by X)"
+    // suffixes without compounding.
     for (int i = 0; i < 2; ++i) {
         ui->comboBox_AxisSource1->addItem(m_axesPinList[i].guiName);
         m_mainSource_enumIndex.push_back(m_axesPinList[i].deviceEnumIndex);
+        m_baseDisplayTextByEnum.insert(m_axesPinList[i].deviceEnumIndex, m_axesPinList[i].guiName);
     }
 
     // set a2b  // двойная работа? readFromConfig()
@@ -69,6 +72,11 @@ Axes::Axes(int axisNumber, QWidget *parent)
     connect(ui->spinBox_A2bCount, qOverload<int>(&QSpinBox::valueChanged), this, &Axes::a2bSpinBoxChanged);
 
     Q_ASSERT(ui->groupBox_AxixName->objectName() == QStringLiteral("groupBox_AxixName"));
+
+    // Default state at construction: combobox at "None" -> Output
+    // checkbox starts disabled + unchecked. addOrDeleteMainSource will
+    // re-enable as analog pins get assigned in Pin Config.
+    applyOutputGuard();
 }
 
 Axes::~Axes()
@@ -87,8 +95,11 @@ void Axes::retranslateUi()
 void Axes::addOrDeleteMainSource(int sourceEnum, QString sourceName, bool isAdd)
 {
     if (isAdd == true) {
-        ui->comboBox_AxisSource1->addItem(m_axesPinList[Converter::EnumToIndex(sourceEnum, m_axesPinList)].guiName + " - " + sourceName);
-        m_mainSource_enumIndex.push_back(m_axesPinList[Converter::EnumToIndex(sourceEnum, m_axesPinList)].deviceEnumIndex);
+        const int pinIdx = Converter::EnumToIndex(sourceEnum, m_axesPinList);
+        const QString baseText = m_axesPinList[pinIdx].guiName + " - " + sourceName;
+        ui->comboBox_AxisSource1->addItem(baseText);
+        m_mainSource_enumIndex.push_back(m_axesPinList[pinIdx].deviceEnumIndex);
+        m_baseDisplayTextByEnum.insert(sourceEnum, baseText);
     } else {
         for (int i = 0; i < m_mainSource_enumIndex.size(); ++i) {
             if (m_mainSource_enumIndex[i] == sourceEnum) {
@@ -97,6 +108,7 @@ void Axes::addOrDeleteMainSource(int sourceEnum, QString sourceName, bool isAdd)
                 }
                 ui->comboBox_AxisSource1->removeItem(i);
                 m_mainSource_enumIndex.erase(m_mainSource_enumIndex.begin() + i);
+                m_baseDisplayTextByEnum.remove(sourceEnum);
                 break;
             }
         }
@@ -109,6 +121,72 @@ void Axes::mainSourceIndexChanged(int index)
         m_axesExtend->setI2CEnabled(true);
     } else {
         m_axesExtend->setI2CEnabled(false);
+    }
+    applyOutputGuard();
+    emit mainSourceChanged();
+}
+
+bool Axes::hasMainSource() const
+{
+    return currentSource() != None;
+}
+
+int Axes::currentSource() const
+{
+    if (m_mainSource_enumIndex.isEmpty()) return None;
+    const int idx = ui->comboBox_AxisSource1->currentIndex();
+    if (idx < 0 || idx >= m_mainSource_enumIndex.size()) return None;
+    return m_mainSource_enumIndex[idx];
+}
+
+bool Axes::isSharedSource(int sourceEnum)
+{
+    return sourceEnum == None || sourceEnum == Encoder;
+}
+
+void Axes::markSourcesInUse(const QMap<int, QStringList> &usedByOthers)
+{
+    for (int i = 0; i < m_mainSource_enumIndex.size(); ++i) {
+        const int e = m_mainSource_enumIndex[i];
+        // "None" and "Encoder" are conceptually shared -- never mark.
+        if (e == None || e == Encoder) continue;
+
+        const QString base = m_baseDisplayTextByEnum.value(
+            e, ui->comboBox_AxisSource1->itemText(i));
+
+        if (usedByOthers.contains(e)) {
+            const QStringList by = usedByOthers.value(e);
+            ui->comboBox_AxisSource1->setItemText(
+                i, base + tr(" — used by %1").arg(by.join(QStringLiteral(", "))));
+            ui->comboBox_AxisSource1->setItemData(
+                i, QBrush(QColor(140, 140, 140)), Qt::ForegroundRole);
+            ui->comboBox_AxisSource1->setItemData(
+                i,
+                tr("Already selected as the main source of: %1").arg(by.join(QStringLiteral(", "))),
+                Qt::ToolTipRole);
+        } else {
+            ui->comboBox_AxisSource1->setItemText(i, base);
+            ui->comboBox_AxisSource1->setItemData(i, QVariant(), Qt::ForegroundRole);
+            ui->comboBox_AxisSource1->setItemData(i, QVariant(), Qt::ToolTipRole);
+        }
+    }
+}
+
+void Axes::applyOutputGuard()
+{
+    if (hasMainSource()) {
+        ui->checkBox_Output->setEnabled(true);
+        ui->checkBox_Output->setToolTip(QString());
+    } else {
+        // Force unchecked so the visual state reads unambiguously as
+        // "do not output" when there is no input to produce output
+        // from. setChecked(false) emits toggled() -> outputValueChanged
+        // -> m_outputEnabled = false, keeping the local cache honest.
+        ui->checkBox_Output->setChecked(false);
+        ui->checkBox_Output->setEnabled(false);
+        ui->checkBox_Output->setToolTip(tr(
+            "No input source assigned. Select a Main Source above to "
+            "enable HID output for this axis."));
     }
 }
 
@@ -263,6 +341,12 @@ void Axes::readFromConfig()
     }
     // axes extended settings
     m_axesExtend->readFromConfig();
+    // Reapply the no-source-no-output rule explicitly: when the loaded
+    // source matches the combobox's current value, setCurrentIndex
+    // doesn't fire mainSourceIndexChanged, so the guard wouldn't run
+    // through that path. This catches axes that load with source = None
+    // and out_enabled = true (force-uncheck them).
+    applyOutputGuard();
 }
 
 void Axes::writeToConfig()

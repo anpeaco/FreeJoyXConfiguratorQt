@@ -3,6 +3,7 @@
 #include <QSettings>
 #include <QFileDialog>
 #include <QDesktopServices>
+#include <QMessageBox>
 #include <QSpinBox>
 #include <QCheckBox>
 #include <QKeyEvent>
@@ -49,6 +50,18 @@ MainWindow::MainWindow(QWidget *parent)
     // firmware version
     setWindowTitle(tr("%1 Configurator %2 (fork of FreeJoy v%3)")
                        .arg(FORK_NAME).arg(FORK_VERSION).arg(APP_VERSION));
+
+    // App-group info card: shows the configurator's own expected
+    // firmware version, formatted identically to the device-info card's
+    // Firmware row so the two visually pair up for at-a-glance match
+    // checking. Compile-time constant, set once at startup.
+    {
+        const QString cfgStr = QString::number(FIRMWARE_VERSION, 16);
+        const QString cfgFmt = (cfgStr.size() == 4)
+            ? QString("v%1.%2.%3b%4").arg(cfgStr[0]).arg(cfgStr[1]).arg(cfgStr[2]).arg(cfgStr[3])
+            : QString("0x") + cfgStr;
+        ui->label_AppFirmwareVal->setText(cfgFmt);
+    }
 
     // load application config
     loadAppConfig();
@@ -198,6 +211,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_hidDeviceWorker, &HidDevice::deviceDisconnected, this, &MainWindow::hideConnectDeviceInfo);
     connect(m_hidDeviceWorker, &HidDevice::flasherConnected, this, &MainWindow::flasherConnected);
     connect(m_hidDeviceWorker, &HidDevice::hidDeviceList, this, &MainWindow::hidDeviceList);
+    connect(m_hidDeviceWorker, &HidDevice::deviceInfo, this, &MainWindow::setDeviceInfo);
 
 
     // read config from device
@@ -294,6 +308,27 @@ void MainWindow::flasherConnected()
 
 // add/delete hid devices to/from combobox.
 // preferredIndex is the worker's restored selection (e.g. the same physical device
+void MainWindow::setDeviceInfo(const QString &vidHex, const QString &pidHex, const QString &serial)
+{
+    // Empty strings = no device / disconnect; reset the card to "—".
+    const QString placeholder = QStringLiteral("—");   // em dash
+    if (vidHex.isEmpty() && pidHex.isEmpty() && serial.isEmpty()) {
+        ui->label_FirmwareVal->setText(placeholder);
+        ui->label_VidPidVal->setText(placeholder);
+        ui->label_SerialVal->setText(placeholder);
+        return;
+    }
+    ui->label_VidPidVal->setText(vidHex + QStringLiteral(":") + pidHex);
+    ui->label_SerialVal->setText(serial.isEmpty() ? placeholder : serial);
+    // Clear the firmware row on every new connection. getParamsPacket
+    // will overwrite it with the device's reported version once the
+    // params report arrives. Without this clear, switching from one
+    // device to another (especially to a silent / very-incompatible
+    // device that never responds to the params request) would leave
+    // the previous device's firmware version visible on the card.
+    ui->label_FirmwareVal->setText(placeholder);
+}
+
 // after a config-write USB re-enumerate). Block signals during the rebuild so the
 // auto-fired currentIndexChanged(0) from the first addItem doesn't override it.
 void MainWindow::hidDeviceList(const QList<QPair<bool, QString>> &deviceNames, int preferredIndex)
@@ -320,6 +355,19 @@ void MainWindow::hidDeviceList(const QList<QPair<bool, QString>> &deviceNames, i
 void MainWindow::getParamsPacket(bool firmwareCompatible)
 {
     if (m_deviceChanged) {
+        const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
+        const QString devStr = QString::number(devVer, 16);
+        const QString verFmt = (devStr.size() == 4)
+            ? QString("v%1.%2.%3b%4").arg(devStr[0]).arg(devStr[1]).arg(devStr[2]).arg(devStr[3])
+            : QString("0x") + devStr;
+
+        // Push the firmware version into the device-info card. VID/PID/
+        // serial are populated separately via setDeviceInfo() driven by
+        // HidDevice::deviceInfo at open time. Even on incompatible
+        // firmware we still surface the version here -- the card is
+        // strictly informational.
+        ui->label_FirmwareVal->setText(verFmt);
+
         if (firmwareCompatible == false) {
             blockWRConfigToDevice(true);
             freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-warning");
@@ -329,11 +377,7 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
                 blockWRConfigToDevice(false);
             }
             freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-connected");
-            // set firmware version
-            QString str = QString::number(gEnv.pDeviceConfig->paramsReport.firmware_version, 16);
-            if (str.size() == 4) {
-                ui->label_DeviceStatus->setText(tr("Device firmware") + " v" + str[0] + "." + str[1] + "." + str[2] + "b" + str[3]);
-            }
+            ui->label_DeviceStatus->setText(tr("Connected"));
         }
         m_deviceChanged = false;
     }
@@ -410,6 +454,13 @@ void MainWindow::deviceFlasherController(bool isStartFlash)
                                             /////////////////////    CONFIG SLOTS    /////////////////////
 void MainWindow::UiReadFromConfig()
 {
+    // Bracket the load with begin/end markers so ButtonConfig's
+    // physical-button auto-remap suppresses itself during the load
+    // (the breakdown signals fire on the same path as user edits) and
+    // snapshots the post-load breakdown as the new baseline once we're
+    // done. Subsequent user edits remap relative to that snapshot.
+    m_buttonConfig->beginConfigLoad();
+
     // read pin config
     m_pinConfig->readFromConfig();
     // read axes config
@@ -428,6 +479,8 @@ void MainWindow::UiReadFromConfig()
     m_buttonConfig->readFromConfig();
     // read shifts & timers config
     m_shiftsTimersConfig->readFromConfig();
+
+    m_buttonConfig->endConfigLoad();
 }
 
 void MainWindow::UiWriteToConfig()
@@ -450,6 +503,14 @@ void MainWindow::UiWriteToConfig()
     m_buttonConfig->writeToConfig();
     // write shifts & timers config
     m_shiftsTimersConfig->writeToConfig();
+
+    // Persist the live physical-button breakdown (matrix + per-SR +
+    // per-a2b + direct counts) into dev_config_t.saved_breakdown so the
+    // next load can detect drift and translate stale physical_num
+    // references through freejoy::toRef/toAbs. Configurator-only
+    // metadata; firmware allocates the bytes but never reads them.
+    m_buttonConfig->captureBreakdownToConfig();
+
     // remove device name from registry. sometimes windows does not update the name in gaming devices and has to be deleted in the registry
 #ifdef Q_OS_WIN
         qDebug()<<"Remove device OEMName from registry";
@@ -526,11 +587,11 @@ void MainWindow::configReceived(bool success)
         // curves pointer activated
         m_axesCurvesConfig->deviceStatus(true);
 
-        // set firmware version
-        QString str = QString::number(gEnv.pDeviceConfig->config.firmware_version, 16);
-        if (str.size() == 4) {
-            ui->label_DeviceStatus->setText(tr("Device firmware") + " v" + str[0] + "." + str[1] + "." + str[2] + "b" + str[3] + " ✔");
-        }
+        // Status pill stays "Connected" -- the firmware version is
+        // surfaced in the device-info card below the dropdown, no need
+        // to repeat it here. The transient "Received" feedback on the
+        // Read button below already confirms the read succeeded.
+        ui->label_DeviceStatus->setText(tr("Connected"));
 
         ui->pushButton_ReadConfig->setText(tr("Received"));
         freejoy_style::setRole(ui->pushButton_ReadConfig, "feedback", "success");
@@ -769,14 +830,39 @@ void MainWindow::on_pushButton_ReadConfig_clicked()
     m_hidDeviceWorker->getConfigFromDevice();
 }
 
+// Validate logical button slots before any save path. Returns true when
+// every LOGIC slot has both an operator picked and (for binary ops) a
+// Source B set; otherwise pops a warning naming the first offending slot
+// and returns false. Centralised so Write-to-device and Save-to-file
+// share identical wording.
+bool MainWindow::confirmLogicConfigComplete()
+{
+    const int slot = m_buttonConfig->firstIncompleteLogicSlot();
+    if (slot < 0) return true;
+    QMessageBox::warning(
+        this,
+        tr("Incomplete Logic Configuration"),
+        tr("Logical button %1 has Function = Logic but is missing an "
+           "operator or Source B. Pick an operator (and Source B for "
+           "binary operators) before saving.").arg(slot + 1));
+    return false;
+}
+
 // write config to device
 void MainWindow::on_pushButton_WriteConfig_clicked()
 {
     qDebug()<<"Write config started";
+    if (!confirmLogicConfigComplete()) return;
     blockWRConfigToDevice(true);  // не успевает блокироваться? таймер
 
     UiWriteToConfig();
-    m_hidDeviceWorker->sendConfigToDevice();
+    // Pass the post-write VID/PID so the worker can find the device
+    // after it re-enumerates -- if the user edited those fields, the
+    // device will come back with new IDs and the path-based lookup
+    // would otherwise fail.
+    m_hidDeviceWorker->sendConfigToDevice(
+        gEnv.pDeviceConfig->config.vid,
+        gEnv.pDeviceConfig->config.pid);
 }
 
 // load from file
@@ -796,6 +882,7 @@ void MainWindow::on_pushButton_LoadFromFile_clicked()
 void MainWindow::on_pushButton_SaveToFile_clicked()
 {
     qDebug()<<"Save to file started";
+    if (!confirmLogicConfigComplete()) return;
 
     QString tmpStr(ui->comboBox_Configs->currentText());
     if (tmpStr == "") {

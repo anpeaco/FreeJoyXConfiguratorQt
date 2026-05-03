@@ -7,6 +7,7 @@
 
 #include <QApplication>
 #include <QDrag>
+#include <QGraphicsOpacityEffect>
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QPixmap>
@@ -28,10 +29,10 @@ ButtonLogical::ButtonLogical(int buttonIndex, QWidget *parent)
     ui->spinBox_PhysicalButtonNumber->installEventFilter(this);
     ui->spinBox_SourceB->installEventFilter(this);
 
-    // Drag handle: the slot-number label initiates a row reorder drag.
-    ui->label_LogicalButtonNumber->setCursor(Qt::OpenHandCursor);
-    ui->label_LogicalButtonNumber->setToolTip(tr("Drag to reorder"));
-    ui->label_LogicalButtonNumber->installEventFilter(this);
+    // Drag handle: the dedicated grip-icon column initiates a row reorder
+    // drag. (Tooltip is set in the .ui file.)
+    ui->label_DragHandle->setCursor(Qt::OpenHandCursor);
+    ui->label_DragHandle->installEventFilter(this);
 }
 
 ButtonLogical::~ButtonLogical()
@@ -100,6 +101,22 @@ void ButtonLogical::setSpinBoxOnOff(int maxPhysButtons)
 void ButtonLogical::functionIndexChanged(int index)
 {
     int type = m_logicFunctionList[index].deviceEnumIndex;
+
+    // Any function change clears the LOGIC-only fields back to their
+    // "-" sentinels:
+    //   - Transitioning INTO LOGIC: forces the user to pick an op +
+    //     Source B explicitly; isLogicConfigComplete() will block a
+    //     save until they do.
+    //   - Transitioning OUT of LOGIC: visually clears the now-disabled
+    //     comboboxes so a stale "AND, 5" doesn't sit greyed-out under
+    //     a Function = Toggle slot.
+    // During readFromConfig this reset is harmless: the function
+    // setCurrentIndex fires first, then for type == LOGIC slots the
+    // subsequent setCurrentIndex / setValue calls overwrite the reset
+    // with the saved op + Source B.
+    ui->comboBox_LogicOp->setCurrentIndex(0);   // index 0 = "-" sentinel
+    ui->spinBox_SourceB->setValue(0);            // 0 -> stored src_b = -1
+
     emit functionTypeChanged(type, m_functionPrevType, m_buttonIndex);
     m_functionPrevType = type;
     updateLogicWidgetsEnabled();
@@ -227,13 +244,31 @@ int ButtonLogical::currentPhysicalNum() const
     return ui->spinBox_PhysicalButtonNumber->value() - 1;
 }
 
+bool ButtonLogical::isLogicConfigComplete() const
+{
+    // Read directly from the widgets (not dev_config_t) because the
+    // save path validates *before* writeToConfig flushes the UI state.
+    const int funcIdx = ui->comboBox_ButtonFunction->currentIndex();
+    if (funcIdx < 0 || funcIdx >= m_logicFunc_enumIndex.size()) return true;
+    if (m_logicFunc_enumIndex[funcIdx] != LOGIC) return true;
+
+    const int opIdx = ui->comboBox_LogicOp->currentIndex();
+    if (opIdx <= 0) return false;                       // "-" sentinel selected
+    const int op = (opIdx < m_logicOp_enumIndex.size())
+                   ? m_logicOp_enumIndex[opIdx]
+                   : -1;
+    if (op == LOGIC_OP_NOT) return true;                // unary -- src_b irrelevant
+
+    return ui->spinBox_SourceB->value() > 0;            // 0 -> src_b = -1 = unset
+}
+
 
 bool ButtonLogical::eventFilter(QObject *obj, QEvent *event)
 {
-    // Drag-handle on the slot-number label: press records start position;
+    // Drag-handle on the grip-icon label: press records start position;
     // move past the system drag threshold starts a QDrag with this row's
     // slot index in MIME data. ButtonConfig handles the drop.
-    if (obj == ui->label_LogicalButtonNumber) {
+    if (obj == ui->label_DragHandle) {
         if (event->type() == QEvent::MouseButtonPress) {
             QMouseEvent *me = static_cast<QMouseEvent *>(event);
             if (me->button() == Qt::LeftButton) {
@@ -277,14 +312,27 @@ bool ButtonLogical::eventFilter(QObject *obj, QEvent *event)
 
 void ButtonLogical::startRowDrag()
 {
+    // Capture the row pixmap at full opacity *before* dimming, so the
+    // cursor's drag preview stays vivid while the in-place row fades.
+    QPixmap rowPix = grab();
+
+    // Dim self to ~40% so the source slot reads as "lifted out" while
+    // dragging — paired with the row-tall ghost indicator at the drop
+    // gap, this gives the user a clear before/after preview.
+    auto *effect = new QGraphicsOpacityEffect(this);
+    effect->setOpacity(0.4);
+    setGraphicsEffect(effect);
+
     QDrag *drag = new QDrag(this);
     QMimeData *mime = new QMimeData;
     mime->setData(BUTTON_ROW_MIME, QByteArray::number(m_buttonIndex));
     drag->setMimeData(mime);
-    // Pixmap of the row gives the user a visual handle while dragging.
-    drag->setPixmap(grab());
+    drag->setPixmap(rowPix);
     drag->setHotSpot(QPoint(m_dragStartPos.x(), height() / 2));
     drag->exec(Qt::MoveAction);
+
+    // QDrag::exec() blocks until drop or cancel; restore opacity here.
+    setGraphicsEffect(nullptr);
 }
 
 void ButtonLogical::readFromConfig()
@@ -299,14 +347,18 @@ void ButtonLogical::readFromConfig()
 
     // logical button function
     ui->comboBox_ButtonFunction->setCurrentIndex(Converter::EnumToIndex(button->type, m_logicFunc_enumIndex));
-    // logic operator (only meaningful when type == LOGIC; harmless to load otherwise)
-    {
+    // Operator + Source B only matter for type == LOGIC. For non-LOGIC
+    // slots functionIndexChanged() above (triggered by the function
+    // setCurrentIndex when the index actually moves) has already cleared
+    // both to their "-" sentinels; loading the saved op / src_b here
+    // would resurrect stale values under a now-disabled combobox.
+    if (button->type == LOGIC) {
         int opIdx = Converter::EnumToIndex(button->op, m_logicOp_enumIndex);
         if (opIdx < 0) opIdx = 0;
         ui->comboBox_LogicOp->setCurrentIndex(opIdx);
+        // logic Source B (-1 stored => spinBox value 0)
+        ui->spinBox_SourceB->setValue(button->src_b + 1);
     }
-    // logic Source B (-1 stored => spinBox value 0)
-    ui->spinBox_SourceB->setValue(button->src_b + 1);
     // shift
     for (int i = 0; i < SHIFT_COUNT; i++) {
         if (button->shift_modificator == m_shiftList[i].deviceEnumIndex) {

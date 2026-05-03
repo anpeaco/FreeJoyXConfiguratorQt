@@ -51,6 +51,16 @@ public:
 
     void retranslateUi();
 
+    /* True iff the row's current UI state is a valid configuration to
+     * persist. For type != LOGIC this is always true. For type == LOGIC
+     * the operator must be picked (not the "-" sentinel) and, if the
+     * operator is binary, Source B must be set (not the "-" / 0 spinBox
+     * default). Used by ButtonConfig to gate Write-to-device and
+     * Save-to-file -- partially-configured LOGIC slots otherwise serialise
+     * with op=AND/src_b=-1 which the firmware would interpret as a real
+     * (and likely wrong) configuration. */
+    bool isLogicConfigComplete() const;
+
 signals:
     void functionTypeChanged(button_type_t current, button_type_t previous, int buttonIndex);
     // Fired when the user changes the physical-button assignment for this row.
@@ -150,9 +160,13 @@ private:
     }};
 
     // Operators for type == LOGIC. Order is purely UI ordering -- the
-    // underlying enum value comes from common_types.h.
+    // underlying enum value comes from common_types.h. The leading "-"
+    // entry is a UI-only sentinel (deviceEnumIndex = -1) meaning
+    // "operator not chosen yet"; isLogicConfigComplete() blocks saves
+    // while it is selected, so the -1 never reaches dev_config_t.
     const QVector <deviceEnum_guiName_t> m_logicOpList =
     {{
+        {-1,                   tr("-")},
         {LOGIC_OP_AND,         tr("AND")},
         {LOGIC_OP_OR,          tr("OR")},
         {LOGIC_OP_NOT,         tr("NOT")},
