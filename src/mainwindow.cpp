@@ -337,17 +337,27 @@ void MainWindow::setDeviceInfo(const QString &vidHex, const QString &pidHex, con
         ui->label_FirmwareVal->setText(placeholder);
         ui->label_VidPidVal->setText(placeholder);
         ui->label_SerialVal->setText(placeholder);
+        ui->label_BoardVal->setText(placeholder);
+        /* Re-enable the LED tab on disconnect so the user can edit a
+         * config offline. getParamsPacket re-disables it if the next
+         * device that connects is an F411. */
+        const int ledTabIdx = ui->tabWidget->indexOf(ui->tab_LED);
+        if (ledTabIdx >= 0) {
+            ui->tabWidget->setTabEnabled(ledTabIdx, true);
+            ui->tabWidget->setTabToolTip(ledTabIdx, QString());
+        }
         return;
     }
     ui->label_VidPidVal->setText(vidHex + QStringLiteral(":") + pidHex);
     ui->label_SerialVal->setText(serial.isEmpty() ? placeholder : serial);
-    // Clear the firmware row on every new connection. getParamsPacket
-    // will overwrite it with the device's reported version once the
-    // params report arrives. Without this clear, switching from one
-    // device to another (especially to a silent / very-incompatible
-    // device that never responds to the params request) would leave
-    // the previous device's firmware version visible on the card.
+    // Clear the firmware + board rows on every new connection. The
+    // params report path (getParamsPacket) populates them once the
+    // device responds. Without these clears, switching from one device
+    // to another (especially to a silent / very-incompatible device
+    // that never answers the params request) would leave the previous
+    // device's firmware version + board name visible on the card.
     ui->label_FirmwareVal->setText(placeholder);
+    ui->label_BoardVal->setText(placeholder);
 }
 
 // after a config-write USB re-enumerate). Block signals during the rebuild so the
@@ -426,6 +436,42 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
         // firmware we still surface the version here -- the card is
         // strictly informational.
         ui->label_FirmwareVal->setText(verFmt);
+
+        // Phase 7: surface the device's self-reported board_id on the
+        // info card and route it into the per-board pin-table selector.
+        // Compatible firmware only -- on a version mismatch the layout
+        // of params_report_t may not match what we're parsing, so the
+        // board_id byte can't be trusted.
+        if (firmwareCompatible == true) {
+            const uint8_t boardId = gEnv.pDeviceConfig->paramsReport.board_id;
+            QString boardName;
+            switch (boardId) {
+                case BOARD_ID_F103_BLUEPILL:  boardName = QStringLiteral("Blue Pill (F103)"); break;
+                case BOARD_ID_F411_BLACKPILL: boardName = QStringLiteral("Black Pill (F411)"); break;
+                default:                      boardName = QStringLiteral("—"); break;
+            }
+            ui->label_BoardVal->setText(boardName);
+            if (boardId != 0) {
+                m_pinConfig->setConnectedBoard(boardId);
+            }
+            /* LED tab is disabled on F411 until Phase 8 ports the LED
+             * stack to LL. The struct fields persist so a config saved
+             * with LED settings on F103 round-trips cleanly through an
+             * F411 session, but the user can't edit LEDs while pointed
+             * at an F411 device. F103 (and unknown board_id, which
+             * could be a stale firmware) keeps full access. */
+            const int ledTabIdx = ui->tabWidget->indexOf(ui->tab_LED);
+            if (ledTabIdx >= 0) {
+                const bool ledSupported = (boardId != BOARD_ID_F411_BLACKPILL);
+                ui->tabWidget->setTabEnabled(ledTabIdx, ledSupported);
+                ui->tabWidget->setTabToolTip(ledTabIdx, ledSupported
+                    ? QString()
+                    : tr("LEDs are not yet supported on Black Pill (F411). "
+                         "Coming in a future update."));
+            }
+        } else {
+            ui->label_BoardVal->setText(QStringLiteral("—"));
+        }
 
         if (firmwareCompatible == false) {
             blockWRConfigToDevice(true);

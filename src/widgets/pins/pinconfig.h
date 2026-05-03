@@ -14,6 +14,7 @@ QT_END_NAMESPACE
 #define PIN_TYPE_LIMIT_COUNT 3
 
 class PinsBluePill;
+class PinsBlackPill;
 class PinsContrLite;
 
 namespace Ui {
@@ -35,6 +36,12 @@ public:
     void retranslateUi();
 
     void resetAllPins();
+
+    /* Phase 7: route the connected device's board_id (from
+     * paramsReport.board_id) into the per-board widget selector. Maps
+     * BOARD_ID_F103_BLUEPILL -> combobox slot 0, BOARD_ID_F411_BLACKPILL
+     * -> slot 2; ContrLite (slot 1) is user-selected only. */
+    void setConnectedBoard(int boardId);
 
 signals:
     void totalButtonsValueChanged(int count);
@@ -68,6 +75,7 @@ private:
     Ui::PinConfig *ui;
 
     PinsBluePill *m_bluePill;
+    PinsBlackPill *m_blackPill;
     PinsContrLite *m_contrLite;
     int m_lastBoard;
 

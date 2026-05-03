@@ -18,6 +18,11 @@ public:
 
 private:
     static void oldConfigHandler(QWidget *parent, dev_config_t &devC);
+    /* Phase 7: warn when the loaded INI's board_id doesn't match the
+     * connected device. No automatic conversion -- writes will be
+     * refused by firmware until the user edits the config or connects
+     * the matching board. */
+    static void crossBoardCheck(QWidget *parent, dev_config_t &devC);
 
 };
 

@@ -85,6 +85,7 @@ SOURCES += \
     widgets/pins/pincombobox.cpp \
     widgets/pins/pinconfig.cpp \
     widgets/pins/pinsbluepill.cpp \
+    widgets/pins/pinsblackpill.cpp \
     widgets/pins/pinscontrlite.cpp \
     widgets/shift-reg/shiftregisters.cpp \
     widgets/shift-reg/shiftregistersconfig.cpp \
@@ -144,6 +145,7 @@ HEADERS += \
     widgets/pins/pincombobox.h \
     widgets/pins/pinconfig.h \
     widgets/pins/pinsbluepill.h \
+    widgets/pins/pinsblackpill.h \
     widgets/pins/pinscontrlite.h \
     widgets/shift-reg/shiftregisters.h \
     widgets/shift-reg/shiftregistersconfig.h \
@@ -176,6 +178,7 @@ FORMS += \
     widgets/pins/pincombobox.ui \
     widgets/pins/pinconfig.ui \
     widgets/pins/pinsbluepill.ui \
+    widgets/pins/pinsblackpill.ui \
     widgets/pins/pinscontrlite.ui \
     widgets/pins/pintypehelper.ui \
     widgets/selectfolder.ui \

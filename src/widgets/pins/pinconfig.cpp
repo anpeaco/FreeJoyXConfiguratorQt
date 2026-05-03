@@ -5,6 +5,8 @@
 #include <QSettings>
 #include "pinscontrlite.h"
 #include "pinsbluepill.h"
+#include "pinsblackpill.h"
+#include "common_defines.h"
 #include "pintypehelper.h"
 #include "global.h"
 #include "style_helpers.h"
@@ -15,10 +17,12 @@ PinConfig::PinConfig(QWidget *parent) :         // пины - первое, чт
     QWidget(parent),                            // заявляю - это говнокод!1 который даже мне тяжело понять
     ui(new Ui::PinConfig),                      // мои соболезнования тем кто будет разбираться)
     m_bluePill{new PinsBluePill(this)},
+    m_blackPill{new PinsBlackPill(this)},
     m_contrLite{new PinsContrLite(this)}
 {
     ui->setupUi(this);
     m_bluePill->hide();
+    m_blackPill->hide();
     m_contrLite->hide();
 
     m_maxButtonsWarning = false;
@@ -37,7 +41,7 @@ PinConfig::PinConfig(QWidget *parent) :         // пины - первое, чт
 
     gEnv.pAppSettings->beginGroup("BoardSettings");
     m_lastBoard = gEnv.pAppSettings->value("SelectedBoard", 0).toInt();
-    if (m_lastBoard < 0 || m_lastBoard > 1) {
+    if (m_lastBoard < 0 || m_lastBoard > 2) {
         m_lastBoard = 0;
     }
     gEnv.pAppSettings->endGroup();
@@ -50,9 +54,14 @@ PinConfig::PinConfig(QWidget *parent) :         // пины - первое, чт
         m_contrLite->addPinComboBox(m_pinCBoxPtrList);
         ui->layoutV_pins->addWidget(m_contrLite);
         m_contrLite->show();
+    } else if (m_lastBoard == 2) {
+        m_blackPill->addPinComboBox(m_pinCBoxPtrList);
+        ui->layoutV_pins->addWidget(m_blackPill);
+        m_blackPill->show();
     }
     ui->comboBox_board->addItem("Blue Pill");
     ui->comboBox_board->addItem("Controller Lite");
+    ui->comboBox_board->addItem("Black Pill (F411)");
     ui->comboBox_board->setCurrentIndex(m_lastBoard);
     connect(ui->comboBox_board, qOverload<int>(&CenteredCBox::currentIndexChanged),
             this, &PinConfig::boardChanged);
@@ -95,24 +104,55 @@ void PinConfig::retranslateUi()
 
 void PinConfig::boardChanged(int index)
 {
-    if (index == 0 && m_lastBoard == 1) {
-        Q_ASSERT(qobject_cast<PinsContrLite *>(ui->layoutV_pins->takeAt(0)->widget()));
-        m_contrLite->hide();
-        ui->layoutV_pins->takeAt(0);
+    if (index == m_lastBoard) {
+        return;
+    }
 
+    /* Detach whichever board widget is currently hosted -- the layout
+     * holds exactly one of {bluePill, contrLite, blackPill} at any time
+     * (m_lastBoard tells us which). Hide it, take it out of the layout,
+     * then add the newly selected board widget. */
+    QLayoutItem *current = ui->layoutV_pins->takeAt(0);
+    Q_ASSERT(current);
+    if (m_lastBoard == 0) {
+        Q_ASSERT(qobject_cast<PinsBluePill *>(current->widget()));
+        m_bluePill->hide();
+    } else if (m_lastBoard == 1) {
+        Q_ASSERT(qobject_cast<PinsContrLite *>(current->widget()));
+        m_contrLite->hide();
+    } else if (m_lastBoard == 2) {
+        Q_ASSERT(qobject_cast<PinsBlackPill *>(current->widget()));
+        m_blackPill->hide();
+    }
+    delete current;
+
+    if (index == 0) {
         m_bluePill->addPinComboBox(m_pinCBoxPtrList);
         ui->layoutV_pins->addWidget(m_bluePill);
         m_bluePill->show();
-        m_lastBoard = 0;
-    } else if (index == 1 && m_lastBoard == 0) {
-        Q_ASSERT(qobject_cast<PinsBluePill *>(ui->layoutV_pins->takeAt(0)->widget()));
-        m_bluePill->hide();
-        ui->layoutV_pins->takeAt(0);
-
+    } else if (index == 1) {
         m_contrLite->addPinComboBox(m_pinCBoxPtrList);
         ui->layoutV_pins->addWidget(m_contrLite);
         m_contrLite->show();
-        m_lastBoard = 1;
+    } else if (index == 2) {
+        m_blackPill->addPinComboBox(m_pinCBoxPtrList);
+        ui->layoutV_pins->addWidget(m_blackPill);
+        m_blackPill->show();
+    }
+    m_lastBoard = index;
+}
+
+void PinConfig::setConnectedBoard(int boardId)
+{
+    int slot = -1;
+    if (boardId == BOARD_ID_F103_BLUEPILL) {
+        slot = 0;
+    } else if (boardId == BOARD_ID_F411_BLACKPILL) {
+        slot = 2;
+    }
+    /* Unknown / zero board_id -> leave the user-selected board as-is. */
+    if (slot >= 0 && slot != m_lastBoard) {
+        ui->comboBox_board->setCurrentIndex(slot);
     }
 }
 

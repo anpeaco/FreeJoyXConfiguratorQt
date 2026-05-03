@@ -2,6 +2,8 @@
 #include <QSettings>
 #include <QMessageBox>
 #include "common_defines.h"
+#include "deviceconfig.h"
+#include "global.h"
 
 #include <QDebug>
 
@@ -34,6 +36,13 @@ void ConfigToFile::loadDeviceConfigFromFile(QWidget *parent, const QString &file
 
     // load Pins config from file
     deviceSettings.beginGroup("PinsConfig");
+
+    /* Phase 7: per-board pin layout differentiator. Old INIs (no key)
+     * default to BluePill -- F411 is a strict superset addition, so any
+     * pre-Phase-7 file is by definition a BluePill config. The
+     * cross-board mismatch warning fires later in caller code, where
+     * the connected device's board_id is known. */
+    devC.board_id = uint8_t(deviceSettings.value("BoardId", BOARD_ID_F103_BLUEPILL).toInt());
 
     devC.pins[0] = int8_t(deviceSettings.value("A0", devC.pins[0]).toInt());
     devC.pins[1] = int8_t(deviceSettings.value("A1", devC.pins[1]).toInt());
@@ -241,6 +250,36 @@ void ConfigToFile::loadDeviceConfigFromFile(QWidget *parent, const QString &file
     deviceSettings.endGroup();
 
     oldConfigHandler(parent, devC);
+    crossBoardCheck(parent, devC);
+}
+
+void ConfigToFile::crossBoardCheck(QWidget *parent, dev_config_t &devC)
+{
+    /* Phase 7: warn when an INI carries a board_id that doesn't match
+     * the connected device. The user can still proceed -- they may be
+     * editing a config offline ahead of plugging in the right board --
+     * but the firmware will reject the eventual write with 0xFE. The
+     * dialog is informational only; no automatic conversion. */
+    const uint8_t fileBoard = devC.board_id;
+    const uint8_t deviceBoard = gEnv.pDeviceConfig
+        ? gEnv.pDeviceConfig->paramsReport.board_id
+        : 0;
+    if (deviceBoard == 0 || fileBoard == 0 || fileBoard == deviceBoard) {
+        return;
+    }
+    auto boardName = [](uint8_t id) -> QString {
+        switch (id) {
+            case BOARD_ID_F103_BLUEPILL:  return QStringLiteral("Blue Pill (F103)");
+            case BOARD_ID_F411_BLACKPILL: return QStringLiteral("Black Pill (F411)");
+            default:                      return QStringLiteral("Unknown (id=") + QString::number(id) + QStringLiteral(")");
+        }
+    };
+    const QString warning = QObject::tr(
+        "This config was saved for %1, but the connected device is %2. "
+        "Loading proceeded but writing this config to the device will be "
+        "refused. Edit pins or connect the matching board before writing.")
+        .arg(boardName(fileBoard), boardName(deviceBoard));
+    QMessageBox::warning(parent, QObject::tr("Cross-board config"), warning);
 }
 
 
@@ -290,6 +329,7 @@ void ConfigToFile::saveDeviceConfigToFile(const QString &fileName, dev_config_t 
     deviceSettings.endGroup();
     // save Pins config to file
     deviceSettings.beginGroup("PinsConfig");        // for(;;) x3
+    deviceSettings.setValue("BoardId", devC.board_id);
     deviceSettings.setValue("A0", devC.pins[0]);
     deviceSettings.setValue("A1", devC.pins[1]);
     deviceSettings.setValue("A2", devC.pins[2]);
