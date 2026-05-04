@@ -357,6 +357,7 @@
             <item><widget class="CenteredCBox" name="comboBox_Configs"/></item>
             <item>
              <widget class="QToolButton" name="toolButton_ConfigsDir">
+              <property name="toolTip"><string>Open the configs folder in your file manager</string></property>
               <property name="text"><string/></property>
               <property name="icon"><iconset resource="resources.qrc"><normaloff>:/Images/icons/lucide/settings.svg</normaloff>:/Images/icons/lucide/settings.svg</iconset></property>
              </widget>

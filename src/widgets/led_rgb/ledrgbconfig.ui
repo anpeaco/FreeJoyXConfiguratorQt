@@ -76,7 +76,7 @@
       <item row="0" column="0">
        <widget class="QRadioButton" name="radioButton_staticColor">
         <property name="text">
-         <string>Static Color</string>
+         <string>Static color</string>
         </property>
        </widget>
       </item>

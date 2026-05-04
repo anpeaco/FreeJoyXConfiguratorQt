@@ -51,6 +51,9 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="toolTip">
+        <string>Save the current curve to the selected profile</string>
+       </property>
        <property name="text">
         <string>Set</string>
        </property>
@@ -63,6 +66,9 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>Reset the selected profile to its default curve</string>
        </property>
        <property name="icon">
         <iconset resource="../../resources.qrc">
