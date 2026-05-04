@@ -24,6 +24,11 @@ AxesConfig::AxesConfig(QWidget *parent)
         // global usage map without per-axis state.
         connect(axis, &Axes::mainSourceChanged,
                 this, &AxesConfig::refreshSourceUsage);
+        // Forward per-axis output-active changes so the Curves tab
+        // can grey-out thumbnails for axes whose curves don't
+        // currently affect device output.
+        connect(axis, &Axes::outputActiveChanged,
+                this, &AxesConfig::axisOutputActiveChanged);
         // added hidden axes checkboxes
         QCheckBox *chb = new QCheckBox(axesList()[i].guiName, this);
         ui->layoutH_HiddenAxes->addWidget(chb);

@@ -72,6 +72,12 @@ signals:
     void logicalButtonsCreated();
 
 public slots:
+    /* Updates the Delay/Press timer dropdown labels on every logical
+     * row to reflect the current button_timerN_ms values. Wired from
+     * MainWindow to ShiftsTimersConfig::buttonTimersChanged so the
+     * "T<n> (<value> ms)" suffixes track live edits. */
+    void refreshTimerLabels();
+
     void setUiOnOff(int value);
     /* Receives the per-source totals that back the section headers in
      * the physical button display. Called by mainwindow's wiring just

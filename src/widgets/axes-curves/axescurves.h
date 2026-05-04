@@ -38,6 +38,13 @@ public:
     void updateAxis();
     void deviceStatus(bool isConnect);
 
+public slots:
+    /* Toggle the "not in use" overlay for the curve button at
+     * axisNumber. Called from AxesConfig (relayed through
+     * AxesCurvesConfig) whenever an axis's main-source or Output
+     * checkbox changes. */
+    void setAxisInUse(int axisNumber, bool inUse);
+
 signals:
     void deviceStatusChanged(bool isConnect);
 

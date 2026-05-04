@@ -21,6 +21,7 @@ AxesCurvesButton::AxesCurvesButton(QWidget *parent) :
     , m_autoExclusive(false)
     , m_checkable(false)
     , m_draggable(true)
+    , m_axisInUse(true)
 {
     setMouseTracking(false);
 
@@ -65,16 +66,56 @@ void AxesCurvesButton::paintEvent(QPaintEvent *event)
         p.setPen(QColor(255, 255, 255, 30));
         p.drawRoundedRect(r.adjusted(1, 1, -1, -1), 2.0, 2.0);
     }
+
+    // "Not in use" overlay: drawn last so it sits on top of the curve,
+    // grid, and Fusion outline. Half-opaque palette window wash + bold
+    // centred label tells the user at a glance that this axis isn't
+    // contributing to the device output (main source unset or Output
+    // checkbox off in the Axes tab). The button stays interactive so
+    // the user can still edit the curve in advance of enabling output.
+    if (!m_axisInUse) {
+        QPainter overlay(this);
+        overlay.setRenderHint(QPainter::Antialiasing, true);
+
+        QColor wash = window()->palette().window().color();
+        wash.setAlpha(160);
+        overlay.fillRect(rect(), wash);
+
+        QColor txt = window()->palette().windowText().color();
+        QFont f = overlay.font();
+        f.setBold(true);
+        overlay.setFont(f);
+        overlay.setPen(txt);
+        overlay.drawText(rect(), Qt::AlignCenter, tr("not in use"));
+    }
+}
+
+void AxesCurvesButton::setAxisInUse(bool inUse)
+{
+    if (m_axisInUse == inUse) {
+        return;
+    }
+    m_axisInUse = inUse;
+    update();
 }
 
 void AxesCurvesButton::installStyleSheet()
 {
-    // Palette refs let this widget retheme automatically when the global
-    // palette changes; the drop-target green stays a literal because it
-    // signals semantic state ("about to receive drop"), not theme accent.
+    // Selected state was previously a solid background-fill in
+    // palette(highlight), which painted over the curve and made the
+    // active selection unreadable ("totally blue, you can't see it").
+    // Border-only selection keeps the curve visible while still
+    // signalling which axis is currently being edited; the border
+    // width matches the hover/lastChecked rules so the button doesn't
+    // jump pixel-wise between states.
+    //
+    // Palette refs let this widget retheme automatically when the
+    // global palette changes; the drop-target green stays a literal
+    // because it signals semantic state ("about to receive drop"),
+    // not theme accent.
     setStyleSheet(QStringLiteral(R"(
         AxesCurvesButton[checked="true"], AxesCurvesButton[pressed="true"] {
-            background-color: palette(highlight);
+            border: 2px solid palette(highlight);
         }
         AxesCurvesButton[hover="true"] {
             border: 1px solid palette(highlight);

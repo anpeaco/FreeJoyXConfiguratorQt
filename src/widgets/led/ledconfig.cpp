@@ -10,6 +10,7 @@
 #include "global.h"
 
 #include <QDebug>
+#include <QSpinBox>
 LedConfig::LedConfig(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::LedConfig)
@@ -40,6 +41,33 @@ LedConfig::LedConfig(QWidget *parent)
     ui->frame_PwmPb1->setEnabled(false);
     ui->frame_PwmPb4->setEnabled(false);
     m_ledsRgb->setEnabled(false);
+
+    /* Refresh LED row dropdowns whenever any of the four LED timer
+     * spinboxes change (user edit OR readFromConfig setValue). Each
+     * handler pushes the new value into gEnv.pDeviceConfig->config
+     * FIRST so timerSlotDisplayName() sees the live value; without
+     * this, dropdowns would render the value from the last
+     * writeToConfig until Write was clicked. Self-contained: LED
+     * timers live on this same tab, so MainWindow doesn't need to
+     * be involved. */
+    auto wireLedTimer = [this](QSpinBox *sb, int slot) {
+        connect(sb, qOverload<int>(&QSpinBox::valueChanged),
+                this, [this, slot](int v) {
+                    gEnv.pDeviceConfig->config.led_timer_ms[slot] = v;
+                    refreshTimerLabels();
+                });
+    };
+    wireLedTimer(ui->spinBox_Timer1, 0);
+    wireLedTimer(ui->spinBox_Timer2, 1);
+    wireLedTimer(ui->spinBox_Timer3, 2);
+    wireLedTimer(ui->spinBox_Timer4, 3);
+}
+
+void LedConfig::refreshTimerLabels()
+{
+    for (auto *led : m_ledPtrList) {
+        if (led) led->refreshTimerLabels();
+    }
 }
 
 LedConfig::~LedConfig()

@@ -90,10 +90,10 @@
          </sizepolicy>
         </property>
         <property name="minimumSize">
-         <size><width>70</width><height>0</height></size>
+         <size><width>110</width><height>0</height></size>
         </property>
         <property name="maximumSize">
-         <size><width>70</width><height>16777215</height></size>
+         <size><width>110</width><height>16777215</height></size>
         </property>
         <property name="text">
          <string>Delay timer</string>
@@ -112,10 +112,10 @@
          </sizepolicy>
         </property>
         <property name="minimumSize">
-         <size><width>70</width><height>0</height></size>
+         <size><width>110</width><height>0</height></size>
         </property>
         <property name="maximumSize">
-         <size><width>70</width><height>16777215</height></size>
+         <size><width>110</width><height>16777215</height></size>
         </property>
         <property name="text">
          <string>Press timer</string>
@@ -348,8 +348,12 @@
         </property>
        </widget>
       </item>
+      <!-- Top action row. Clear All used to live at the right end with
+           "Clear All" text; relocated to sit immediately after the
+           auto-set Info icon, rendered as a square reset-glyph icon
+           button to match the calibration column's Reset button. -->
       <item row="0" column="0" colspan="13">
-       <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="1,0,0,1,0">
+       <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="1,0,0,0,1">
         <property name="spacing">
          <number>6</number>
         </property>
@@ -393,6 +397,31 @@
          </widget>
         </item>
         <item>
+         <widget class="QPushButton" name="pushButton_ClearAllLogical">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize"><size><width>22</width><height>22</height></size></property>
+          <property name="maximumSize"><size><width>22</width><height>22</height></size></property>
+          <property name="toolTip">
+           <string>Clear every logical button slot back to defaults. Pin, axis, shift register and timer settings are not affected.</string>
+          </property>
+          <property name="text">
+           <string notr="true"/>
+          </property>
+          <property name="icon">
+           <iconset resource="../../resources.qrc">
+            <normaloff>:/Images/icons/lucide/rotate-ccw.svg</normaloff>:/Images/icons/lucide/rotate-ccw.svg</iconset>
+          </property>
+          <property name="iconSize"><size><width>14</width><height>14</height></size></property>
+          <property name="autoDefault"><bool>false</bool></property>
+          <property name="default"><bool>false</bool></property>
+         </widget>
+        </item>
+        <item>
          <spacer name="horizontalSpacer_8">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -404,16 +433,6 @@
            </size>
           </property>
          </spacer>
-        </item>
-        <item>
-         <widget class="QPushButton" name="pushButton_ClearAllLogical">
-          <property name="toolTip">
-           <string>Clear every logical button slot back to defaults. Pin, axis, shift register and timer settings are not affected.</string>
-          </property>
-          <property name="text">
-           <string>Clear All</string>
-          </property>
-         </widget>
         </item>
        </layout>
       </item>

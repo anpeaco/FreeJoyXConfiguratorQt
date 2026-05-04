@@ -4,6 +4,7 @@
 #include "widgets/debugwindow.h"
 #include "converter.h"
 #include "style_helpers.h"
+#include "timer_label.h"
 
 #include <QApplication>
 #include <QDrag>
@@ -63,8 +64,13 @@ void ButtonLogical::initialization()
         ui->comboBox_ShiftIndex->addItem(m_shiftList[i].guiName);
     }
     for (int i = 0; i < TIMER_COUNT; i++) {
-        ui->comboBox_DelayTimerIndex->addItem(m_timerList[i].guiName);
-        ui->comboBox_PressTimerIndex->addItem(m_timerList[i].guiName);
+        // Item 0 is the "-" sentinel (slot = -1); items 1..3 map to button
+        // timers T1..T3. Display "-" for the sentinel and "T<n> (X ms)"
+        // for real slots so the user sees the configured value alongside
+        // the slot number.
+        const QString label = freejoy_ui::timerSlotDisplayName(freejoy_ui::ButtonTimer, i - 1);
+        ui->comboBox_DelayTimerIndex->addItem(label);
+        ui->comboBox_PressTimerIndex->addItem(label);
     }
 
     // populate the LOGIC operator dropdown -- only meaningful when the
@@ -398,4 +404,17 @@ void ButtonLogical::writeToConfig()
     button->shift_modificator = m_shiftList[ui->comboBox_ShiftIndex->currentIndex()].deviceEnumIndex;
     button->delay_timer = m_timerList[ui->comboBox_DelayTimerIndex->currentIndex()].deviceEnumIndex;
     button->press_timer = m_timerList[ui->comboBox_PressTimerIndex->currentIndex()].deviceEnumIndex;
+}
+
+void ButtonLogical::refreshTimerLabels()
+{
+    /* Re-render the "T<n> (X ms)" labels in both timer dropdowns from the
+     * current dev_config values. Selected indices are preserved -- we only
+     * touch item text. Called after Shifts & Timers spinboxes change or
+     * after readFromConfig pulls fresh values from device/file. */
+    for (int i = 0; i < TIMER_COUNT; ++i) {
+        const QString label = freejoy_ui::timerSlotDisplayName(freejoy_ui::ButtonTimer, i - 1);
+        ui->comboBox_DelayTimerIndex->setItemText(i, label);
+        ui->comboBox_PressTimerIndex->setItemText(i, label);
+    }
 }

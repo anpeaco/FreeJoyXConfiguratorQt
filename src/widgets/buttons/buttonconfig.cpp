@@ -556,6 +556,13 @@ void ButtonConfig::buttonStateChanged()
     }
 }
 
+void ButtonConfig::refreshTimerLabels()
+{
+    for (auto *row : m_logicButtonPtrList) {
+        if (row) row->refreshTimerLabels();
+    }
+}
+
 void ButtonConfig::readFromConfig()
 {
     // dynamic creation with scroll

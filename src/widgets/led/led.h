@@ -31,6 +31,12 @@ public:
 
     bool isHostControlled() const;
 
+    /* Re-renders the Timer dropdown items as "T<n> (<value> ms)" using
+     * the current led_timer_ms[0..3] values from gEnv.pDeviceConfig.
+     * LedConfig calls this on every row when one of its own timer
+     * spinboxes changes, and on readFromConfig completion. */
+    void refreshTimerLabels();
+
 signals:
     void ledToggled(int ledNumber, bool state);
 
