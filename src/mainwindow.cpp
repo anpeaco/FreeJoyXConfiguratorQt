@@ -478,9 +478,27 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
         }
 
         if (firmwareCompatible == false) {
-            blockWRConfigToDevice(true);
-            freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-warning");
-            ui->label_DeviceStatus->setText(tr("Incompatible Firmware"));
+            /* Three sub-states inside "not exact-version-match":
+             *   a. Device runs a legacy version we have a migrator for.
+             *      Allow Read (so the user can import the config), block
+             *      Write (writing current-shape bytes to a device expecting
+             *      a different shape would corrupt its on-flash config).
+             *      The user's next move is: Read -> save backup ->
+             *      flash FreeJoyX firmware -> Write to (now-current) device.
+             *   b. Device is from somewhere we don't recognise -- block
+             *      both Read and Write, surface "Incompatible Firmware".
+             */
+            if (legacy::canMigrate(devVer)) {
+                ui->pushButton_ReadConfig->setDisabled(false);
+                ui->pushButton_WriteConfig->setDisabled(true);
+                freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-warning");
+                ui->label_DeviceStatus->setText(
+                    tr("Legacy firmware (%1) — read to import").arg(verFmt));
+            } else {
+                blockWRConfigToDevice(true);
+                freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-warning");
+                ui->label_DeviceStatus->setText(tr("Incompatible Firmware"));
+            }
         } else {
             if (m_pinConfig->limitIsReached() == false) {
                 blockWRConfigToDevice(false);
