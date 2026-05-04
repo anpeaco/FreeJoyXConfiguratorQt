@@ -31,6 +31,8 @@ public slots:
 private slots:
     void on_pushButton_FlasherMode_clicked();
     void on_pushButton_FlashFirmware_clicked();
+    void on_toolButton_OpenRecoveryDir_clicked();
+    void on_comboBox_FlashSource_aboutToShowPopup();
 
 private:
     Ui::Flasher *ui;
@@ -39,6 +41,15 @@ private:
     QString m_flashButtonText;
     QString m_enterToFlash_BtnText;
     void flashDone();
+
+    /* Recovery firmwares: scan <appDir>/recovery/ for .bin files and
+     * populate the Source dropdown. The first entry is always
+     * "Browse for file..." which keeps the original Flash-via-file-
+     * picker behaviour. Named entries are recovery binaries the user
+     * has dropped into the folder; selecting one and clicking Flash
+     * Firmware loads that .bin directly into m_fileArray. */
+    QString recoveryDirPath() const;
+    void refreshRecoveryList();
 };
 
 #endif // FLASHER_H

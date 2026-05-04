@@ -3,6 +3,11 @@
 
 #include <QFileDialog>
 #include <QTimer>
+#include <QDir>
+#include <QCoreApplication>
+#include <QDesktopServices>
+#include <QUrl>
+#include <QMessageBox>
 
 #include "deviceconfig.h"
 #include "global.h"
@@ -17,6 +22,19 @@ Flasher::Flasher(QWidget *parent)
     ui->setupUi(this);
     m_enterToFlash_BtnText = ui->pushButton_FlasherMode->text();
     m_flashButtonText = ui->pushButton_FlashFirmware->text();
+
+    /* Populate the Source dropdown on construction; refresh whenever the
+     * user opens the popup so newly-added binaries appear without a
+     * restart. The first entry is always "Browse for file..." (the
+     * original behaviour). */
+    refreshRecoveryList();
+
+    /* Auto-rescan on dropdown click. Qt doesn't have an aboutToShowPopup
+     * signal on QComboBox by default, so install an event filter or hook
+     * via the abstract item view. The simplest is to wire the same
+     * refresh to the toolButton's click + on widget show. The dropdown
+     * stays in sync with disk if the user uses the "..." button to open
+     * the folder + drop in new files. */
 }
 
 Flasher::~Flasher()
@@ -58,18 +76,121 @@ void Flasher::on_pushButton_FlasherMode_clicked()
     emit flashModeClicked(false);
 }
 
+QString Flasher::recoveryDirPath() const
+{
+    /* Recovery folder lives next to the configurator executable. Users
+     * drop known-good .bin files there; the dropdown picks them up.
+     * Created on first scan if missing so the "..." button always opens
+     * something. */
+    return QCoreApplication::applicationDirPath() + "/recovery";
+}
+
+void Flasher::refreshRecoveryList()
+{
+    const QString sourcePath = ui->comboBox_FlashSource->currentData().toString();
+
+    QSignalBlocker bl(ui->comboBox_FlashSource);
+    ui->comboBox_FlashSource->clear();
+    /* First entry is always Browse -- carries an empty path; the click
+     * handler interprets empty as "open file picker". */
+    ui->comboBox_FlashSource->addItem(tr("Browse for file..."), QString());
+
+    QDir recoveryDir(recoveryDirPath());
+    if (!recoveryDir.exists()) {
+        recoveryDir.mkpath(".");
+    }
+
+    const QStringList bins = recoveryDir.entryList(
+        QStringList() << "*.bin", QDir::Files, QDir::Name);
+    for (const QString &name : bins) {
+        const QString fullPath = recoveryDir.absoluteFilePath(name);
+        /* Display the bare filename (e.g. "upstream-v1.7.1b3.bin");
+         * stash the full path as user data so the click handler can
+         * open it directly without re-resolving. */
+        ui->comboBox_FlashSource->addItem(name, fullPath);
+    }
+
+    /* Restore selection if the previously-selected file still exists. */
+    if (!sourcePath.isEmpty()) {
+        const int idx = ui->comboBox_FlashSource->findData(sourcePath);
+        if (idx >= 0) {
+            ui->comboBox_FlashSource->setCurrentIndex(idx);
+        }
+    }
+}
+
+void Flasher::on_toolButton_OpenRecoveryDir_clicked()
+{
+    /* Make sure the folder exists, then open it in the OS file manager.
+     * Refresh the dropdown when the user comes back so any binaries
+     * they dropped in are visible immediately. */
+    QDir recoveryDir(recoveryDirPath());
+    if (!recoveryDir.exists()) {
+        recoveryDir.mkpath(".");
+    }
+    QDesktopServices::openUrl(QUrl::fromLocalFile(recoveryDir.absolutePath()));
+    refreshRecoveryList();
+}
+
+void Flasher::on_comboBox_FlashSource_aboutToShowPopup()
+{
+    /* Hook left for future use -- Qt doesn't fire this signal natively
+     * on QComboBox. Currently the dropdown rescans only when the
+     * "..." button is clicked. */
+    refreshRecoveryList();
+}
+
 void Flasher::on_pushButton_FlashFirmware_clicked()
 {
-    QFile file(
-        QFileDialog::getOpenFileName(this, tr("Open Config"), QDir::currentPath() + "/", tr("Binary files (.bin) (*.bin)")));
+    const QString sourcePath = ui->comboBox_FlashSource->currentData().toString();
 
-    if (file.open(QIODevice::ReadWrite)) {
+    QString filePath;
+    if (sourcePath.isEmpty()) {
+        /* "Browse for file..." selected -- original behaviour. */
+        filePath = QFileDialog::getOpenFileName(
+            this, tr("Open firmware binary"),
+            recoveryDirPath() + "/",
+            tr("Binary files (.bin) (*.bin)"));
+        if (filePath.isEmpty()) {
+            qDebug() << "User cancelled file picker";
+            return;
+        }
+    } else {
+        /* Recovery firmware selected -- confirm before flashing because
+         * recovery means "rolling back to a known-good build" and the
+         * user shouldn't trip into it accidentally. */
+        const QString fileName = ui->comboBox_FlashSource->currentText();
+        const QMessageBox::StandardButton rc = QMessageBox::question(this,
+            tr("Flash recovery firmware?"),
+            tr("<p>Flash recovery firmware:</p>"
+               "<p><b>%1</b></p>"
+               "<p>The device's current firmware will be erased and "
+               "replaced. Make sure you have a backup of your config "
+               "(auto-backup runs on Enter Flasher Mode -- check "
+               "&lt;configs&gt;/backups/).</p>"
+               "<p>Continue?</p>").arg(fileName),
+            QMessageBox::Yes | QMessageBox::Cancel,
+            QMessageBox::Cancel);
+        if (rc != QMessageBox::Yes) {
+            qDebug() << "User cancelled recovery flash";
+            return;
+        }
+        filePath = sourcePath;
+    }
+
+    QFile file(filePath);
+    if (file.open(QIODevice::ReadOnly)) {
         ui->pushButton_FlashFirmware->setEnabled(false);
         m_fileArray = file.readAll();
-        qDebug() << "file array size =" << m_fileArray.size();
+        qDebug() << "file array size =" << m_fileArray.size()
+                 << "from" << filePath;
         emit startFlash(true);
     } else {
-        qDebug() << "cant open file";
+        qWarning() << "Couldn't open firmware file:" << filePath;
+        QMessageBox::warning(this, tr("Couldn't open firmware"),
+            tr("Couldn't read the firmware file:\n%1\n\n"
+               "Check that the file exists and the configurator has "
+               "permission to read it.").arg(filePath));
     }
 }
 
