@@ -148,7 +148,7 @@
      <item>
       <widget class="QToolButton" name="toolButton_OpenRecoveryDir">
        <property name="toolTip">
-        <string>Open the recovery folder in your file manager and refresh the GitHub release list.</string>
+        <string>Menu: open the firmware folder (your dev builds), open the recovery folder (fallback builds), or refresh from GitHub.</string>
        </property>
        <property name="text">
         <string notr="true">…</string>

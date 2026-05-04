@@ -9,6 +9,9 @@
 #include <QUrl>
 #include <QMessageBox>
 #include <QVariantMap>
+#include <QMenu>
+#include <QAction>
+#include <QCursor>
 
 #include "deviceconfig.h"
 #include "global.h"
@@ -219,6 +222,24 @@ void Flasher::refreshSourceList()
         }
     }
 
+    /* Build-output folder (<exe>/firmware/): fresh dev builds the user
+     * has dropped here. Listed before recovery/ so they bubble to the
+     * top of local entries. Tagged "[Build]" to distinguish from
+     * recovery fallbacks. */
+    QDir firmwareDir(m_library->firmwareDir());
+    if (!firmwareDir.exists()) {
+        firmwareDir.mkpath(".");
+    }
+    const QStringList builds = firmwareDir.entryList(
+        QStringList() << "*.bin", QDir::Files, QDir::Time | QDir::Reversed);
+    for (const QString &name : builds) {
+        const QString fullPath = firmwareDir.absoluteFilePath(name);
+        QVariantMap data;
+        data[kKeyKind] = kKindLocal;
+        data[kKeyLocal] = fullPath;
+        ui->comboBox_FlashSource->addItem(tr("[Build] %1").arg(name), data);
+    }
+
     /* Local .bin files in recovery/ that aren't auto-downloaded asset
      * mirrors. We skip files matching the auto-download naming scheme
      * (prefix "FreeJoy-Team_" or "anpeaco_") because they show up in
@@ -262,29 +283,55 @@ void Flasher::refreshSourceList()
 
 void Flasher::on_toolButton_OpenRecoveryDir_clicked()
 {
-    /* The "..." button now does double duty: open the folder AND
-     * trigger a refresh of the GitHub release list, since the user
-     * is probably about to drop in or notice new files either way. */
-    QDir recoveryDir(m_library->recoveryDir());
-    if (!recoveryDir.exists()) {
-        recoveryDir.mkpath(".");
+    /* The "..." button gives the user a way to access both watched
+     * folders + trigger a GitHub refresh in one place. Pop a small
+     * QMenu so the action is explicit -- one click on the button
+     * shows the menu, one more click chooses an action. */
+    QMenu menu(this);
+
+    QAction *openFirmware = menu.addAction(
+        tr("Open firmware (build outputs) folder"));
+    QAction *openRecovery = menu.addAction(
+        tr("Open recovery (fallback builds) folder"));
+    menu.addSeparator();
+    QAction *refresh = menu.addAction(
+        tr("Refresh from GitHub"));
+
+    QAction *picked = menu.exec(QCursor::pos());
+    if (!picked) return;
+
+    if (picked == openFirmware) {
+        QDir d(m_library->firmwareDir());
+        if (!d.exists()) d.mkpath(".");
+        QDesktopServices::openUrl(QUrl::fromLocalFile(d.absolutePath()));
+    } else if (picked == openRecovery) {
+        QDir d(m_library->recoveryDir());
+        if (!d.exists()) d.mkpath(".");
+        QDesktopServices::openUrl(QUrl::fromLocalFile(d.absolutePath()));
+    } else if (picked == refresh) {
+        m_library->fetchReleases();
     }
-    QDesktopServices::openUrl(QUrl::fromLocalFile(recoveryDir.absolutePath()));
-    m_library->fetchReleases();   /* fires onReleasesUpdated when done */
+    /* Refresh local list either way -- if the user opens a folder
+     * they're probably about to drop a file in, and the next dropdown
+     * open should reflect it. (For network-fetch the list rebuilds via
+     * onReleasesUpdated when fetchReleases finishes.) */
     refreshSourceList();
 }
 
 void Flasher::on_pushButton_BrowseFirmware_clicked()
 {
-    /* Default the file picker to the recovery folder if it has any
-     * .bin files, otherwise to applicationDirPath() (i.e. next to the
-     * configurator exe -- typical place to drop a freshly-built
-     * firmware). Filter is permissive: .bin first, then All files for
-     * users who've named their build artefact differently. */
-    QDir recoveryDir(m_library->recoveryDir());
+    /* Default the file picker to firmware/ if it has any .bin files
+     * (most likely place for fresh dev builds), then recovery/, then
+     * applicationDirPath() (next to the exe). Filter is permissive:
+     * .bin first, then All files for builds named differently. */
     QString defaultPath = QCoreApplication::applicationDirPath();
-    if (recoveryDir.exists() &&
-        !recoveryDir.entryList(QStringList() << "*.bin", QDir::Files).isEmpty()) {
+    QDir firmwareDir(m_library->firmwareDir());
+    QDir recoveryDir(m_library->recoveryDir());
+    if (firmwareDir.exists() &&
+        !firmwareDir.entryList(QStringList() << "*.bin", QDir::Files).isEmpty()) {
+        defaultPath = firmwareDir.absolutePath();
+    } else if (recoveryDir.exists() &&
+               !recoveryDir.entryList(QStringList() << "*.bin", QDir::Files).isEmpty()) {
         defaultPath = recoveryDir.absolutePath();
     }
 

@@ -46,6 +46,11 @@ QString FirmwareLibrary::recoveryDir() const
     return QCoreApplication::applicationDirPath() + "/recovery";
 }
 
+QString FirmwareLibrary::firmwareDir() const
+{
+    return QCoreApplication::applicationDirPath() + "/firmware";
+}
+
 QString FirmwareLibrary::cacheFilePath() const
 {
     return recoveryDir() + "/" + QString::fromLatin1(kCacheFileName);

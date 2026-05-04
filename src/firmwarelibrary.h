@@ -90,6 +90,14 @@ public:
     QString recoveryDir() const;
     QString cacheFilePath() const;
 
+    /* Firmware folder: <exe>/firmware/. Distinct from recovery/ so the
+     * user's fresh build outputs don't mix with stable fallbacks.
+     * Convention:
+     *   recovery/ = known-good builds (downloads + safety nets)
+     *   firmware/ = your dev builds (drop FreeJoy.bin from
+     *               armgcc/build/f103/app/ here for one-click flashing) */
+    QString firmwareDir() const;
+
 signals:
     /* Both repos finished fetching (success or error). The Flasher
      * widget rebuilds the Source dropdown when this fires. */
