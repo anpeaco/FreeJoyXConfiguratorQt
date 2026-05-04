@@ -49,6 +49,10 @@ private slots:
 
     void configReceived(bool success);
     void configSent(bool success);
+    /* Old upstream firmware was read + the bytes translated into the
+     * current dev_config_t shape. Surface a message dialog explaining
+     * the migration and the next-step (flash + write). */
+    void legacyConfigMigrated(uint16_t oldFirmwareVersion);
     void blockWRConfigToDevice(bool block);
 
     void deviceFlasherController(bool isStartFlash);

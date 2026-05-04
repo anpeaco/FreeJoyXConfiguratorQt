@@ -3,6 +3,8 @@
 #include <QElapsedTimer>
 #include <QMap>
 #include <thread>
+#include <vector>
+#include <cstring>
 #include "hiddevice.h"
 #include "hidapi.h"
 #include "common_defines.h"
@@ -11,6 +13,7 @@
 #include "global.h"
 #include "firmwareupdater.h"
 #include "version.h"
+#include "legacy/legacy_migrator.h"
 
 static const int DEVICE_SEARCH_DELAY = 1000; // ms
 static const int OLD_FIRMWARE_VID = 0x0483;
@@ -385,8 +388,21 @@ void HidDevice::readConfigFromDevice(uint8_t *buffer)
     uint8_t config_request_buffer[2] = {REPORT_ID_CONFIG_IN, 1};
 
     // 62 = BUFFERSIZE(64)-2 bytes (first - ID, second - cfg part)
-    uint8_t cfg_count = sizeof(dev_config_t) / 62;
-    uint8_t last_cfg_size = sizeof(dev_config_t) % 62;
+    //
+    // Cross-version-compatible config read: ask for as many fragments as
+    // the DEVICE'S dev_config_t spans, not the configurator's. Old upstream
+    // firmware computes its own cfg_count from sizeof(its dev_config_t)
+    // and rejects fragment requests beyond that (gated by `<= cfg_count`
+    // in upstream usb_endp.c). Asking for more fragments than the device
+    // has would silently abort the read. legacy::legacyConfigSize() looks
+    // up the wire size for the version we read in params_report; falls
+    // back to current sizeof(dev_config_t) for current/unknown versions.
+    const uint16_t device_fw =
+        gEnv.pDeviceConfig ? gEnv.pDeviceConfig->paramsReport.firmware_version
+                           : FIRMWARE_VERSION;
+    const size_t device_cfg_size = legacy::legacyConfigSize(device_fw);
+    uint8_t cfg_count = device_cfg_size / 62;
+    uint8_t last_cfg_size = device_cfg_size % 62;
     if (last_cfg_size > 0)
     {
         cfg_count++;
@@ -449,6 +465,39 @@ void HidDevice::readConfigFromDevice(uint8_t *buffer)
     }
 
     if (report_count == cfg_count) {
+        // Migrate if the device was running an older firmware version.
+        // gEnv.pDeviceConfig->config currently holds device_cfg_size bytes
+        // of legacy-shaped data at offset 0; the rest of the dev_config_t
+        // is untouched (still whatever was there before the read). We
+        // snapshot the legacy bytes into a side buffer and run the
+        // migrator, which seeds defaults from InitConfig() and overlays
+        // preserved fields. Result: gEnv.pDeviceConfig->config is in the
+        // current shape, with the user's mapping intact.
+        if ((device_fw & 0xFFF0) != (FIRMWARE_VERSION & 0xFFF0)) {
+            if (legacy::canMigrate(device_fw)) {
+                std::vector<uint8_t> raw(device_cfg_size);
+                std::memcpy(raw.data(),
+                            &gEnv.pDeviceConfig->config,
+                            device_cfg_size);
+                legacy::MigrateResult r = legacy::migrateLegacyConfig(
+                    raw.data(),
+                    raw.size(),
+                    gEnv.pDeviceConfig->config);
+                if (r == legacy::MigrateResult::Ok) {
+                    qInfo() << "Legacy config migrated from"
+                            << legacy::describeVersion(device_fw);
+                    emit legacyConfigMigrated(device_fw);
+                } else {
+                    qWarning() << "Legacy migration failed (result"
+                               << static_cast<int>(r) << ") for version"
+                               << legacy::describeVersion(device_fw);
+                }
+            } else {
+                qWarning() << "Read config from unsupported firmware version"
+                           << legacy::describeVersion(device_fw)
+                           << "-- no migrator; config in unknown shape";
+            }
+        }
         {
             std::lock_guard<std::mutex> lock(m_mutex);
             m_currentWork = REPORT_ID_PARAM;

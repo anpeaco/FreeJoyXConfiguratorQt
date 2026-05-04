@@ -20,6 +20,7 @@
 #include "global.h"
 #include "deviceconfig.h"
 #include "version.h"
+#include "legacy/legacy_migrator.h"
 
 #include <QDebug>
 
@@ -228,6 +229,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_hidDeviceWorker, &HidDevice::configReceived, this, &MainWindow::configReceived);
     // write config to device
     connect(m_hidDeviceWorker, &HidDevice::configSent, this, &MainWindow::configSent);
+    // legacy config migrated -- old upstream firmware was read and translated
+    connect(m_hidDeviceWorker, &HidDevice::legacyConfigMigrated,
+            this, &MainWindow::legacyConfigMigrated);
 
 
     // load default config // loading will occur after loading buttons config
@@ -682,6 +686,34 @@ QStringList MainWindow::cfgFilesList(const QString &dirPath)
 
 
 // slot after receiving the config
+void MainWindow::legacyConfigMigrated(uint16_t oldFirmwareVersion)
+{
+    /* Fires after a successful Read from a device whose firmware predates
+     * the configurator's current shape. The bytes have been translated
+     * into the current dev_config_t in memory; the UI will show the
+     * migrated config when configReceived(true) lands next. We just need
+     * to tell the user what happened and what to do next. */
+    const QString fromVer = QString::fromLatin1(legacy::describeVersion(oldFirmwareVersion));
+    const QString message = tr(
+        "<p>This device is running upstream FreeJoy firmware (%1).</p>"
+        "<p>The configurator has read its config and translated it into "
+        "the current shape. Your existing pin assignments, axes, buttons, "
+        "shift registers, encoders and LED settings are preserved. "
+        "New-since-then features (logical buttons, gestures, RGB) carry "
+        "default values.</p>"
+        "<p>To finish upgrading the device:</p>"
+        "<ol>"
+        "<li>Review the imported config in the tabs above. "
+        "<b>Save it to a file</b> as a backup.</li>"
+        "<li>Flash %2 firmware via "
+        "<i>Advanced Settings &rarr; Firmware flasher</i>.</li>"
+        "<li>After the device reconnects, click "
+        "<b>Write config to device</b> to push the migrated config.</li>"
+        "</ol>"
+    ).arg(fromVer, FORK_NAME);
+    QMessageBox::information(this, tr("Legacy config imported"), message);
+}
+
 void MainWindow::configReceived(bool success)
 {
     static QString button_default_text = ui->pushButton_ReadConfig->text();

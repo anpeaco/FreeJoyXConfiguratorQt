@@ -89,7 +89,8 @@ SOURCES += \
     widgets/pins/pinscontrlite.cpp \
     widgets/shift-reg/shiftregisters.cpp \
     widgets/shift-reg/shiftregistersconfig.cpp \
-    widgets/shifts-timers/shiftstimersconfig.cpp
+    widgets/shifts-timers/shiftstimersconfig.cpp \
+    legacy/legacy_migrator.cpp
 
 HEADERS += \
     style_helpers.h \
@@ -149,7 +150,9 @@ HEADERS += \
     widgets/pins/pinscontrlite.h \
     widgets/shift-reg/shiftregisters.h \
     widgets/shift-reg/shiftregistersconfig.h \
-    widgets/shifts-timers/shiftstimersconfig.h
+    widgets/shifts-timers/shiftstimersconfig.h \
+    legacy/legacy_types.h \
+    legacy/legacy_migrator.h
 
 FORMS += \
     mainwindow.ui \

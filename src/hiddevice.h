@@ -39,6 +39,13 @@ signals:
     void configReceived(bool isSuccess);
     void configSent(bool isSuccess);
 
+    /* Emitted right before configReceived(true) when the device was
+     * running an older firmware version and getConfigFromDevice migrated
+     * the bytes into the current dev_config_t shape. The configurator can
+     * use this to surface a UI toast / banner (e.g. "Migrated from v1.7.1
+     * -- review and write back to keep your mapping"). */
+    void legacyConfigMigrated(uint16_t oldFirmwareVersion);
+
     void hidDeviceList(const QList<QPair<bool, QString>> &deviceNames, int preferredIndex);
 
     /* Carry the currently-opened device's USB identity to MainWindow's
