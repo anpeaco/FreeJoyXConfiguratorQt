@@ -133,83 +133,77 @@
          <property name="verticalSpacing">
           <number>3</number>
          </property>
-         <!-- Row 2: top action row. Calibrate (text) on the left;
-              Reset Calibration (icon, square) on the right. -->
-         <item row="2" column="0">
-          <widget class="QPushButton" name="pushButton_StartCalib">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
+         <!-- Row 2: top action row. Single HBox spans all three grid
+              columns so the Calibrate button can grow horizontally
+              right up to the Reset icon button. Without spanning,
+              Calibrate would sit in col 0 (sized to fit "Minimum"/
+              "Maximum" labels) and leave a 50+ px gap before Reset. -->
+         <item row="2" column="0" colspan="3">
+          <layout class="QHBoxLayout" name="layoutH_TopActions">
+           <property name="spacing">
+            <number>4</number>
            </property>
-           <property name="text">
-            <string>Calibrate</string>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
-           </property>
-           <property name="default">
-            <bool>false</bool>
-           </property>
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="checked">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <spacer name="horizontalSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>8</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="2" column="2">
-          <widget class="QPushButton" name="pushButton_ResetCalib">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size><width>26</width><height>26</height></size>
-           </property>
-           <property name="maximumSize">
-            <size><width>26</width><height>26</height></size>
-           </property>
-           <property name="toolTip">
-            <string>Reset calibration (Min / Center / Max back to factory defaults)</string>
-           </property>
-           <property name="text">
-            <string notr="true"/>
-           </property>
-           <property name="icon">
-            <iconset resource="../../resources.qrc">
-             <normaloff>:/Images/icons/lucide/rotate-ccw.svg</normaloff>:/Images/icons/lucide/rotate-ccw.svg</iconset>
-           </property>
-           <property name="iconSize">
-            <size><width>18</width><height>18</height></size>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
-           </property>
-           <property name="default">
-            <bool>false</bool>
-           </property>
-          </widget>
+           <item>
+            <widget class="QPushButton" name="pushButton_StartCalib">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Calibrate</string>
+             </property>
+             <property name="autoDefault">
+              <bool>false</bool>
+             </property>
+             <property name="default">
+              <bool>false</bool>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="checked">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_ResetCalib">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size><width>26</width><height>26</height></size>
+             </property>
+             <property name="maximumSize">
+              <size><width>26</width><height>26</height></size>
+             </property>
+             <property name="toolTip">
+              <string>Reset calibration (Min / Center / Max back to factory defaults)</string>
+             </property>
+             <property name="text">
+              <string notr="true"/>
+             </property>
+             <property name="icon">
+              <iconset resource="../../resources.qrc">
+               <normaloff>:/Images/icons/lucide/rotate-ccw.svg</normaloff>:/Images/icons/lucide/rotate-ccw.svg</iconset>
+             </property>
+             <property name="iconSize">
+              <size><width>18</width><height>18</height></size>
+             </property>
+             <property name="autoDefault">
+              <bool>false</bool>
+             </property>
+             <property name="default">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
 
          <!-- Row 3: Minimum -->
@@ -301,7 +295,11 @@
            </item>
           </layout>
          </item>
-         <item row="4" column="1">
+         <!-- alignment="Qt::AlignVCenter" so the 26x26 button vertically
+              centers in the row alongside the taller Center spinbox in
+              col 2. Without this, the icon button anchors to the top of
+              the cell and reads as visually low. -->
+         <item row="4" column="1" alignment="Qt::AlignVCenter">
           <widget class="QPushButton" name="pushButton_SetCenter">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
