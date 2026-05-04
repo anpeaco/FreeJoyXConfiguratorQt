@@ -360,6 +360,12 @@ void MainWindow::flasherConnected()
 // preferredIndex is the worker's restored selection (e.g. the same physical device
 void MainWindow::setDeviceInfo(const QString &vidHex, const QString &pidHex, const QString &serial)
 {
+    /* Cache identity for the pre-write backup filename (THOUGHTS #2).
+     * Cleared on disconnect (empty-string path below). */
+    m_currentDeviceVid = vidHex;
+    m_currentDevicePid = pidHex;
+    m_currentDeviceSerial = serial;
+
     // Empty strings = no device / disconnect; reset the card to "—".
     const QString placeholder = QStringLiteral("—");   // em dash
     if (vidHex.isEmpty() && pidHex.isEmpty() && serial.isEmpty()) {
@@ -902,6 +908,49 @@ void MainWindow::configReceived(bool success)
 {
     static QString button_default_text = ui->pushButton_ReadConfig->text();
 
+    /* Pre-write backup branch (THOUGHTS #2): on_pushButton_WriteConfig
+     * fired this Read silently to capture what was on the device
+     * before we overwrite it. Save the just-read config to a backup
+     * file, restore the user's staged edits to memory, then continue
+     * with the actual write. UI is intentionally NOT refreshed -- the
+     * tabs already show m_pendingWriteConfig, and a flicker through
+     * the read-back state would be confusing. */
+    if (m_backupBeforeWritePending) {
+        m_backupBeforeWritePending = false;
+        if (success) {
+            const QString path = writePreWriteDeviceBackup();
+            qInfo() << "Pre-write device-config backup saved to" << path;
+            ui->pushButton_WriteConfig->setText(tr("Backup OK, writing..."));
+        } else {
+            const QMessageBox::StandardButton rc = QMessageBox::warning(this,
+                tr("Pre-write backup failed"),
+                tr("<p>Could not read the device's current config to "
+                   "back it up before writing.</p>"
+                   "<p>Continue with the write anyway? If the new "
+                   "config has issues, you'll have no automatic "
+                   "rollback path -- only configs you previously "
+                   "saved manually.</p>"),
+                QMessageBox::Yes | QMessageBox::Cancel,
+                QMessageBox::Cancel);
+            if (rc != QMessageBox::Yes) {
+                /* Restore staged edits and unblock; bail out. */
+                gEnv.pDeviceConfig->config = m_pendingWriteConfig;
+                ui->pushButton_WriteConfig->setText(button_default_text);
+                if (ui->comboBox_HidDeviceList->currentIndex() >= 0) {
+                    blockWRConfigToDevice(false);
+                }
+                return;
+            }
+        }
+        /* Restore the user's pending edits in-memory (the Read clobbered
+         * gEnv.pDeviceConfig->config), then proceed with the actual
+         * write. The UI was never updated to show the read-back so
+         * there's nothing to restore on the UI side. */
+        gEnv.pDeviceConfig->config = m_pendingWriteConfig;
+        doActualWriteToDevice();
+        return;
+    }
+
     if (success == true)
     {
         UiReadFromConfig();
@@ -1255,8 +1304,42 @@ void MainWindow::on_pushButton_WriteConfig_clicked()
 {
     qDebug()<<"Write config started";
     if (!confirmLogicConfigComplete()) return;
-    blockWRConfigToDevice(true);  // не успевает блокироваться? таймер
 
+    /* Pre-write device-config backup (THOUGHTS #2). Snapshot the user's
+     * staged edits, kick off a Read of the device's current config so
+     * we can save a "this is what was on the device before we
+     * overwrote it" backup file, then restore the staged edits and
+     * write. configReceived picks up the chain via
+     * m_backupBeforeWritePending.
+     *
+     * If no device is selected (placeholder still showing) or no
+     * params have arrived, skip the backup and write directly --
+     * there's nothing readable to back up. */
+    UiWriteToConfig();
+    const uint16_t devVer = gEnv.pDeviceConfig
+        ? gEnv.pDeviceConfig->paramsReport.firmware_version
+        : 0;
+    const bool deviceReadable = (devVer != 0) &&
+        ((devVer & 0xFFF0) == (FIRMWARE_VERSION & 0xFFF0));
+    if (deviceReadable) {
+        m_pendingWriteConfig = gEnv.pDeviceConfig->config;
+        m_backupBeforeWritePending = true;
+        blockWRConfigToDevice(true);
+        ui->pushButton_WriteConfig->setText(tr("Backing up..."));
+        m_hidDeviceWorker->getConfigFromDevice();
+        return;
+    }
+
+    /* No backup possible -- proceed straight to write. */
+    blockWRConfigToDevice(true);
+    doActualWriteToDevice();
+}
+
+void MainWindow::doActualWriteToDevice()
+{
+    /* The actual write half. Called either directly from
+     * on_pushButton_WriteConfig_clicked (when no backup was possible)
+     * or from configReceived after the pre-write backup completes. */
     // Mark the imminent disconnect+reconnect cycle as "restart, not
     // unplug". hideConnectDeviceInfo reads this to show the friendlier
     // "Restarting..." pill instead of the red "Disconnected".
@@ -1276,6 +1359,50 @@ void MainWindow::on_pushButton_WriteConfig_clicked()
     m_hidDeviceWorker->sendConfigToDevice(
         gEnv.pDeviceConfig->config.vid,
         gEnv.pDeviceConfig->config.pid);
+}
+
+QString MainWindow::writePreWriteDeviceBackup()
+{
+    /* Pre-write backup of the device's current config. The just-read
+     * config is in gEnv.pDeviceConfig->config. Filename embeds the
+     * device's USB identity so multiple boards' backups don't collide
+     * and the user can find the right file later by name.
+     *
+     * Format: prewrite-<deviceName>-<serial>-<vid>_<pid>-<timestamp>.cfg
+     * Sanitised: characters not in [A-Za-z0-9._-] are replaced with _
+     * to keep the path filesystem-safe. */
+    QDir backupsDir(m_cfgDirPath + "/backups");
+    if (!backupsDir.exists()) {
+        backupsDir.mkpath(".");
+    }
+
+    auto sanitise = [](const QString &raw) {
+        QString out = raw;
+        for (int i = 0; i < out.size(); ++i) {
+            const QChar c = out[i];
+            if (!c.isLetterOrNumber() && c != '.' && c != '-' && c != '_') {
+                out[i] = '_';
+            }
+        }
+        return out;
+    };
+
+    const QString deviceName = sanitise(QString::fromLatin1(
+        gEnv.pDeviceConfig->config.device_name));
+    const QString serial = sanitise(m_currentDeviceSerial.isEmpty()
+                                        ? QStringLiteral("nosn")
+                                        : m_currentDeviceSerial);
+    const QString vidpid = QStringLiteral("%1_%2")
+                               .arg(m_currentDeviceVid.isEmpty() ? QStringLiteral("0000") : m_currentDeviceVid,
+                                    m_currentDevicePid.isEmpty() ? QStringLiteral("0000") : m_currentDevicePid);
+    const QString stamp = QDateTime::currentDateTime().toString("yyyyMMdd-hhmmss");
+
+    const QString fileName = QString("prewrite-%1-%2-%3-%4.cfg")
+                                 .arg(deviceName, serial, vidpid, stamp);
+    const QString fullPath = backupsDir.absoluteFilePath(fileName);
+
+    ConfigToFile::saveDeviceConfigToFile(fullPath, gEnv.pDeviceConfig->config);
+    return fullPath;
 }
 
 // load from file

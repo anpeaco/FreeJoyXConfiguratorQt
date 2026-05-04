@@ -157,6 +157,22 @@ private:
     void doEnterFlashMode();
     void doFlashFirmware();
 
+    /* Pre-write device-config backup. When the user clicks Write, the
+     * configurator first reads the device's current config (no UI
+     * refresh -- silent), saves it to a backup file named with the
+     * device's identity (Name + serial + VID/PID), and then continues
+     * with the actual write. m_pendingWriteConfig holds the user's
+     * staged edits across the read+write cycle. */
+    bool m_backupBeforeWritePending = false;
+    dev_config_t m_pendingWriteConfig;
+    /* Device identity captured at setDeviceInfo time -- used for the
+     * pre-write backup filename. Cleared on disconnect. */
+    QString m_currentDeviceVid;
+    QString m_currentDevicePid;
+    QString m_currentDeviceSerial;
+    QString writePreWriteDeviceBackup();
+    void doActualWriteToDevice();
+
     /* Post-flash health check. Starts a timer when the flasher emits
      * flashTerminated(true). Cleared when the device reconnects (a
      * successful firmware boot fires deviceConnected / paramsPacketReceived).
