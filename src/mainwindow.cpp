@@ -153,6 +153,14 @@ MainWindow::MainWindow(QWidget *parent)
     // хз так или сверху исключать?
     ui->comboBox_HidDeviceList->setFocusPolicy(Qt::WheelFocus);
     ui->comboBox_Configs->setFocusPolicy(Qt::WheelFocus);
+    /* Placeholder for the device dropdown. Shown when currentIndex == -1
+     * (no device picked) -- both at startup before any device shows up,
+     * and after a list rebuild that didn't auto-select. The user has to
+     * explicitly pick a device before Read/Write/edit actions are
+     * usable, which avoids the race where index 0 was auto-selected
+     * at startup before that device's params had arrived. */
+    ui->comboBox_HidDeviceList->setPlaceholderText(tr("— select device —"));
+    ui->comboBox_HidDeviceList->setCurrentIndex(-1);
     for (auto &&comBox: m_pinConfig->findChildren<QComboBox *>())
     {
             comBox->setFocusPolicy(Qt::WheelFocus);
@@ -409,10 +417,13 @@ void MainWindow::hidDeviceList(const QList<QPair<bool, QString>> &deviceNames, i
         // for the timer to expire and fall back to index 0).
         idx = -1;
     } else {
-        // Default behaviour for natural list rebuilds (other devices
-        // plugging in, app startup, etc.) and for post-write rebuilds
-        // after the grace window has expired.
-        idx = 0;
+        // Default for natural list rebuilds (app startup, devices
+        // plugging in mid-session): leave the dropdown unselected so
+        // the placeholder stays visible. User picks a device
+        // explicitly. Avoids the racy "F15E UFC selected but not
+        // actually connected yet" state at startup, where index 0
+        // gets auto-picked before params have arrived.
+        idx = -1;
     }
     ui->comboBox_HidDeviceList->setCurrentIndex(idx);
 }
