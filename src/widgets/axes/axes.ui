@@ -200,6 +200,9 @@
             <iconset resource="../../resources.qrc">
              <normaloff>:/Images/icons/lucide/rotate-ccw.svg</normaloff>:/Images/icons/lucide/rotate-ccw.svg</iconset>
            </property>
+           <property name="iconSize">
+            <size><width>18</width><height>18</height></size>
+           </property>
            <property name="autoDefault">
             <bool>false</bool>
            </property>
@@ -247,10 +250,11 @@
          </item>
 
          <!-- Row 4: Center. Label is a plain QLabel (left-aligned to
-              match Minimum/Maximum); the checkbox carries no text and
-              sits next to the label as the toggle indicator. Set Center
-              moves into column 1 as a square icon button so the row
-              reads: [Center  toggle]  [⊕]  [value]. -->
+              match Minimum/Maximum); a stretch spacer pushes the
+              checkbox to the right edge of column 0 so it sits
+              immediately to the left of the Set Center icon button in
+              column 1. Row reads:
+                [Center            ☐] [⊕] [value]. -->
          <item row="4" column="0">
           <layout class="QHBoxLayout" name="layoutH_CenterRow">
            <property name="spacing">
@@ -270,6 +274,16 @@
             </widget>
            </item>
            <item>
+            <spacer name="horizontalSpacer_CenterRow">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size><width>0</width><height>0</height></size>
+             </property>
+            </spacer>
+           </item>
+           <item>
             <widget class="QCheckBox" name="checkBox_Center">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
@@ -284,16 +298,6 @@
               <string notr="true"/>
              </property>
             </widget>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer_CenterRow">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size><width>0</width><height>0</height></size>
-             </property>
-            </spacer>
            </item>
           </layout>
          </item>
@@ -319,7 +323,10 @@
            </property>
            <property name="icon">
             <iconset resource="../../resources.qrc">
-             <normaloff>:/Images/icons/lucide/crosshair.svg</normaloff>:/Images/icons/lucide/crosshair.svg</iconset>
+             <normaloff>:/Images/icons/lucide/target.svg</normaloff>:/Images/icons/lucide/target.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size><width>18</width><height>18</height></size>
            </property>
            <property name="autoDefault">
             <bool>false</bool>
