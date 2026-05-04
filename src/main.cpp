@@ -41,6 +41,13 @@ int main(int argc, char *argv[])
     #endif
     //qputenv("QT_SCALE_FACTOR", "0.8");
     qRegisterMetaType<QList<QPair<bool, QString>> >();
+    /* HidDevice runs on its own QThread and emits signals carrying
+     * uint16_t (firmware versions, VIDs, PIDs). Qt's metatype system
+     * registers `quint16` automatically, but not the C standard
+     * `uint16_t` typedef -- queued connections then fail at runtime
+     * with "Cannot queue arguments of type 'uint16_t'". Register it
+     * here, once, before any cross-thread connect. */
+    qRegisterMetaType<uint16_t>("uint16_t");
 
     QElapsedTimer time;
     time.start();
