@@ -57,6 +57,16 @@ signals:
     void flasherFound(bool isFound);
     void flashStatus(int status, int percent);
 
+    /* Carries the flasher (bootloader) USB identity so the Flasher tab
+     * can show "you're about to flash device X" instead of just
+     * "ready to flash". Emitted alongside flasherFound(true). vid/pid
+     * are the bootloader's, not the application's. */
+    void flasherDeviceInfo(const QString &manufacturer,
+                           const QString &product,
+                           const QString &serial,
+                           ushort vid,
+                           ushort pid);
+
 private:
     struct Device
     {

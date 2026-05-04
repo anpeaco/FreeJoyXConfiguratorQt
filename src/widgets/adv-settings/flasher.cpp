@@ -85,6 +85,12 @@ void Flasher::flasherFound(bool isFound)
      * mirrors the Flash button's enabled state but with opposite
      * intent. */
     ui->pushButton_AbortFlash->setEnabled(isFound);
+    /* Hide the device-info strip once flasher mode ends (success or
+     * abort). Re-shown by onFlasherDeviceInfo when DFU is detected. */
+    if (!isFound) {
+        ui->frame_FlasherDeviceInfo->setVisible(false);
+        ui->label_FlasherDeviceInfo->clear();
+    }
     if (isFound == true) {
         qDebug() << "Flasher found";
         freejoy_style::setRole(ui->pushButton_FlasherMode, "feedback", "success");
@@ -93,6 +99,30 @@ void Flasher::flasherFound(bool isFound)
         freejoy_style::clearRole(ui->pushButton_FlasherMode, "feedback");
         ui->pushButton_FlasherMode->setText(m_enterToFlash_BtnText);
     }
+}
+
+void Flasher::onFlasherDeviceInfo(const QString &manufacturer,
+                                  const QString &product,
+                                  const QString &serial,
+                                  ushort vid,
+                                  ushort pid)
+{
+    /* Builds a single-line summary the user can scan to confirm the
+     * right device is in flasher mode. Format mirrors the device-info
+     * card on the main window: VID:PID hex + serial + product +
+     * manufacturer. */
+    const QString vidStr = QString::number(vid, 16).rightJustified(4, QChar('0')).toUpper();
+    const QString pidStr = QString::number(pid, 16).rightJustified(4, QChar('0')).toUpper();
+
+    QStringList parts;
+    if (!product.isEmpty())      parts << QStringLiteral("<b>%1</b>").arg(product);
+    if (!manufacturer.isEmpty()) parts << manufacturer;
+    parts << QStringLiteral("VID:PID <code>%1:%2</code>").arg(vidStr, pidStr);
+    if (!serial.isEmpty())       parts << QStringLiteral("SN <code>%1</code>").arg(serial);
+
+    const QString summary = tr("Connected flasher: ") + parts.join(QStringLiteral(" &middot; "));
+    ui->label_FlasherDeviceInfo->setText(summary);
+    ui->frame_FlasherDeviceInfo->setVisible(true);
 }
 
 void Flasher::on_pushButton_AbortFlash_clicked()
@@ -150,8 +180,8 @@ void Flasher::refreshSourceList()
     QSignalBlocker bl(ui->comboBox_FlashSource);
     ui->comboBox_FlashSource->clear();
 
-    /* Always-present "Browse for file..." entry. */
-    ui->comboBox_FlashSource->addItem(tr("Browse for file..."), QVariant());
+    /* Browse is a separate action button now (pushButton_BrowseFirmware);
+     * the dropdown only lists actual firmware sources. */
 
     /* Remote releases first -- newest builds bubble to the top of the
      * dropdown via FirmwareLibrary's sort. */
@@ -244,21 +274,57 @@ void Flasher::on_toolButton_OpenRecoveryDir_clicked()
     refreshSourceList();
 }
 
+void Flasher::on_pushButton_BrowseFirmware_clicked()
+{
+    /* Default the file picker to the recovery folder if it has any
+     * .bin files, otherwise to applicationDirPath() (i.e. next to the
+     * configurator exe -- typical place to drop a freshly-built
+     * firmware). Filter is permissive: .bin first, then All files for
+     * users who've named their build artefact differently. */
+    QDir recoveryDir(m_library->recoveryDir());
+    QString defaultPath = QCoreApplication::applicationDirPath();
+    if (recoveryDir.exists() &&
+        !recoveryDir.entryList(QStringList() << "*.bin", QDir::Files).isEmpty()) {
+        defaultPath = recoveryDir.absolutePath();
+    }
+
+    const QString filePath = QFileDialog::getOpenFileName(
+        this, tr("Choose firmware binary"),
+        defaultPath,
+        tr("Firmware (*.bin);;All files (*)"));
+    if (filePath.isEmpty()) {
+        qDebug() << "User cancelled file picker";
+        return;
+    }
+    /* If we're in flasher mode, flash immediately. Otherwise (device
+     * not in DFU yet) just remember the path -- but with a separate
+     * Browse button + dropdown, "remembering" doesn't have a
+     * persistent home. For now we only allow Browse to take effect
+     * when flasher is ready; if the user clicks Browse without DFU
+     * active, we just open the picker to let them confirm the file
+     * exists, then nothing happens until they enter flasher mode and
+     * click Browse again. */
+    if (!ui->pushButton_FlashFirmware->isEnabled()) {
+        QMessageBox::information(this, tr("Device not in flasher mode"),
+            tr("Selected file:\n%1\n\n"
+               "The device isn't in flasher mode yet. Click "
+               "<b>Enter Flasher Mode</b> first, then click Browse "
+               "again to flash this file.").arg(filePath));
+        return;
+    }
+    startFlashFromFile(filePath);
+}
+
 void Flasher::on_pushButton_FlashFirmware_clicked()
 {
     const QVariant currentData = ui->comboBox_FlashSource->currentData();
 
-    /* "Browse for file..." -- empty data; original behaviour. */
+    /* No selection or empty dropdown -- nudge the user to either pick
+     * a source from the dropdown or use Browse. */
     if (!currentData.isValid()) {
-        const QString filePath = QFileDialog::getOpenFileName(
-            this, tr("Open firmware binary"),
-            m_library->recoveryDir() + "/",
-            tr("Binary files (.bin) (*.bin)"));
-        if (filePath.isEmpty()) {
-            qDebug() << "User cancelled file picker";
-            return;
-        }
-        startFlashFromFile(filePath);
+        QMessageBox::information(this, tr("Pick a firmware source"),
+            tr("Select a firmware build from the Source dropdown, or "
+               "click <b>Browse...</b> to pick a .bin from disk."));
         return;
     }
 

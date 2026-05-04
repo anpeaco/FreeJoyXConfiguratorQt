@@ -70,6 +70,17 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                         emit hidDeviceList(m_deviceNames, -1);
                         emit flasherConnected();
                         emit flasherFound(true);
+                        // Surface the bootloader's USB identity so the
+                        // Flasher tab can show "you're about to flash
+                        // <device>" instead of just "Ready to flash" --
+                        // gives the user something to confirm against
+                        // when they have multiple boards plugged in.
+                        emit flasherDeviceInfo(
+                            QString::fromWCharArray(hidDevInfo->manufacturer_string),
+                            QString::fromWCharArray(hidDevInfo->product_string),
+                            QString::fromWCharArray(hidDevInfo->serial_number),
+                            hidDevInfo->vendor_id,
+                            hidDevInfo->product_id);
                     }
                     //hidDevInfo = hidDevInfo->next;
                     // start flash firmware

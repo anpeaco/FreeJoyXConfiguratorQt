@@ -36,10 +36,21 @@ signals:
 public slots:
     void flasherFound(bool isFound);
     void flashStatus(int status, int percent);
+    /* Driven by HidDevice::flasherDeviceInfo. Populates the
+     * "Connected flasher" info line in the Flasher tab so the user
+     * can confirm the right device is in flasher mode before
+     * committing to a flash. */
+    void onFlasherDeviceInfo(const QString &manufacturer,
+                             const QString &product,
+                             const QString &serial,
+                             ushort vid,
+                             ushort pid);
+
 private slots:
     void on_pushButton_FlasherMode_clicked();
     void on_pushButton_FlashFirmware_clicked();
     void on_pushButton_AbortFlash_clicked();
+    void on_pushButton_BrowseFirmware_clicked();
     void on_toolButton_OpenRecoveryDir_clicked();
 
     void onReleasesUpdated();

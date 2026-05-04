@@ -117,7 +117,7 @@
     </layout>
    </item>
    <item row="2" column="1">
-    <layout class="QHBoxLayout" name="layoutH_FlashSource" stretch="0,1,0">
+    <layout class="QHBoxLayout" name="layoutH_FlashSource" stretch="0,1,0,0">
      <property name="spacing">
       <number>6</number>
      </property>
@@ -131,14 +131,24 @@
      <item>
       <widget class="QComboBox" name="comboBox_FlashSource">
        <property name="toolTip">
-        <string>Pick a firmware source. "Browse for file..." opens a file picker for any .bin. Named entries are recovery binaries auto-detected in the recovery/ folder next to the configurator -- drop known-good .bin files there to add them.</string>
+        <string>Pick a firmware build to flash. Entries come from auto-fetched GitHub releases and from local files dropped into the recovery folder. Use the Browse button to pick any .bin from disk.</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_BrowseFirmware">
+       <property name="toolTip">
+        <string>Open a file picker to choose any .bin from disk (e.g. a fresh build at FreeJoyX/armgcc/build/f103/app/FreeJoy.bin).</string>
+       </property>
+       <property name="text">
+        <string>Browse...</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QToolButton" name="toolButton_OpenRecoveryDir">
        <property name="toolTip">
-        <string>Open the recovery folder so you can add or remove .bin files. The dropdown rescans on next click.</string>
+        <string>Open the recovery folder in your file manager and refresh the GitHub release list.</string>
        </property>
        <property name="text">
         <string notr="true">…</string>
@@ -148,6 +158,38 @@
     </layout>
    </item>
    <item row="3" column="0" colspan="3">
+    <widget class="QFrame" name="frame_FlasherDeviceInfo">
+     <property name="visible">
+      <bool>false</bool>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <layout class="QHBoxLayout" name="layoutH_FlasherDeviceInfo">
+      <property name="leftMargin"><number>9</number></property>
+      <property name="rightMargin"><number>9</number></property>
+      <property name="topMargin"><number>0</number></property>
+      <property name="bottomMargin"><number>0</number></property>
+      <item>
+       <widget class="QLabel" name="label_FlasherDeviceInfo">
+        <property name="text">
+         <string notr="true"/>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::RichText</enum>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="4" column="0" colspan="3">
     <widget class="QProgressBar" name="progressBar_Flash">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">

@@ -215,6 +215,10 @@ MainWindow::MainWindow(QWidget *parent)
     // enter flash mode clicked
     connect(m_advSettings->flasher(), &Flasher::flashModeClicked, this, &MainWindow::deviceFlasherController);
     connect(m_advSettings->flasher(), &Flasher::flashTerminated, this, &MainWindow::onFlashTerminated);
+    /* Pipe flasher-side USB identity from HidDevice straight into the
+     * Flasher widget so it can show "Connected flasher: <details>". */
+    connect(m_hidDeviceWorker, &HidDevice::flasherDeviceInfo,
+            m_advSettings->flasher(), &Flasher::onFlasherDeviceInfo);
     // flasher found
     connect(m_hidDeviceWorker, &HidDevice::flasherFound, m_advSettings->flasher(), &Flasher::flasherFound);
     // start flash
