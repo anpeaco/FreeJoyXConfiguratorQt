@@ -7,6 +7,8 @@ namespace Ui {
 class Flasher;
 }
 
+class FirmwareLibrary;
+
 class Flasher : public QWidget
 {
     Q_OBJECT
@@ -38,24 +40,33 @@ private slots:
     void on_pushButton_FlasherMode_clicked();
     void on_pushButton_FlashFirmware_clicked();
     void on_toolButton_OpenRecoveryDir_clicked();
-    void on_comboBox_FlashSource_aboutToShowPopup();
+
+    void onReleasesUpdated();
+    void onAssetDownloaded(const QString &localPath, bool success);
 
 private:
     Ui::Flasher *ui;
+    FirmwareLibrary *m_library;
 
     QByteArray m_fileArray;
     QString m_flashButtonText;
     QString m_enterToFlash_BtnText;
     void flashDone();
 
-    /* Recovery firmwares: scan <appDir>/recovery/ for .bin files and
-     * populate the Source dropdown. The first entry is always
-     * "Browse for file..." which keeps the original Flash-via-file-
-     * picker behaviour. Named entries are recovery binaries the user
-     * has dropped into the folder; selecting one and clicking Flash
-     * Firmware loads that .bin directly into m_fileArray. */
-    QString recoveryDirPath() const;
-    void refreshRecoveryList();
+    /* Source dropdown holds three kinds of entries:
+     *   - "Browse for file..."  (data = empty QVariant)
+     *   - Local .bin file       (data = absolute path string)
+     *   - Remote release asset  (data = QVariantMap with repo/tag/url/localPath)
+     * refreshSourceList() rebuilds the contents from local disk + the
+     * FirmwareLibrary's last-known release list. */
+    void refreshSourceList();
+
+    /* When the user picks a remote entry and clicks Flash, we trigger
+     * an async download via FirmwareLibrary. These hold the pending
+     * state so onAssetDownloaded knows to start the flash on success. */
+    bool m_flashAfterDownload = false;
+    QString m_pendingDownloadPath;
+    void startFlashFromFile(const QString &filePath);
 };
 
 #endif // FLASHER_H

@@ -1,6 +1,6 @@
 TEMPLATE = app
 
-QT       += core gui svg
+QT       += core gui svg network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -90,7 +90,8 @@ SOURCES += \
     widgets/shift-reg/shiftregisters.cpp \
     widgets/shift-reg/shiftregistersconfig.cpp \
     widgets/shifts-timers/shiftstimersconfig.cpp \
-    legacy/legacy_migrator.cpp
+    legacy/legacy_migrator.cpp \
+    firmwarelibrary.cpp
 
 HEADERS += \
     style_helpers.h \
@@ -152,7 +153,8 @@ HEADERS += \
     widgets/shift-reg/shiftregistersconfig.h \
     widgets/shifts-timers/shiftstimersconfig.h \
     legacy/legacy_types.h \
-    legacy/legacy_migrator.h
+    legacy/legacy_migrator.h \
+    firmwarelibrary.h
 
 FORMS += \
     mainwindow.ui \
