@@ -40,13 +40,13 @@
      <property name="minimumSize">
       <size>
        <width>0</width>
-       <height>150</height>
+       <height>170</height>
       </size>
      </property>
      <property name="maximumSize">
       <size>
        <width>16777215</width>
-       <height>150</height>
+       <height>170</height>
       </size>
      </property>
      <property name="font">
@@ -105,7 +105,7 @@
         <property name="minimumSize">
          <size>
           <width>185</width>
-          <height>120</height>
+          <height>140</height>
          </size>
         </property>
         <property name="frameShape">
