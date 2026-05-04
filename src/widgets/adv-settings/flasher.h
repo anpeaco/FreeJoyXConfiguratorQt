@@ -39,6 +39,7 @@ public slots:
 private slots:
     void on_pushButton_FlasherMode_clicked();
     void on_pushButton_FlashFirmware_clicked();
+    void on_pushButton_AbortFlash_clicked();
     void on_toolButton_OpenRecoveryDir_clicked();
 
     void onReleasesUpdated();

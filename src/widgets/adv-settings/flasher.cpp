@@ -81,6 +81,10 @@ void Flasher::flasherFound(bool isFound)
 {
     ui->pushButton_FlashFirmware->setEnabled(isFound);
     ui->pushButton_FlasherMode->setEnabled(!isFound);
+    /* Abort is only relevant while the device is in flasher mode --
+     * mirrors the Flash button's enabled state but with opposite
+     * intent. */
+    ui->pushButton_AbortFlash->setEnabled(isFound);
     if (isFound == true) {
         qDebug() << "Flasher found";
         freejoy_style::setRole(ui->pushButton_FlasherMode, "feedback", "success");
@@ -89,6 +93,41 @@ void Flasher::flasherFound(bool isFound)
         freejoy_style::clearRole(ui->pushButton_FlasherMode, "feedback");
         ui->pushButton_FlasherMode->setText(m_enterToFlash_BtnText);
     }
+}
+
+void Flasher::on_pushButton_AbortFlash_clicked()
+{
+    /* The bootloader doesn't expose a "stop and jump to app" command
+     * over HID -- it only knows the flash protocol. To exit DFU
+     * without writing a new firmware, the user has to power-cycle
+     * the device. Fortunately the bootloader's magic word
+     * (BKP->DR4 = 0x424C on F103, RTC->BKP0R on F411) is cleared on
+     * read at boot, so any reset path puts the device back into the
+     * existing application:
+     *
+     *   1. Unplug + replug the USB cable (cleanest, always works)
+     *   2. Press the BluePill / BlackPill reset button (NRST)
+     *   3. Software reset via SWD / external tool (advanced)
+     *
+     * No automatic option from the configurator side is reliable --
+     * a USB-port-cycle isn't portable across OSes (Windows can't
+     * even reliably re-cycle without a hub) and the bootloader
+     * isn't going to listen to a "please exit" packet we make up.
+     * So: explain the situation and trust the user to do the
+     * physical action. */
+    QMessageBox::information(this, tr("Abort flasher mode"),
+        tr("<p>The bootloader doesn't have a software-abort command, "
+           "so getting the device out of flasher mode without "
+           "flashing requires a physical reset:</p>"
+           "<ul>"
+           "<li><b>Easiest:</b> unplug + replug the USB cable.</li>"
+           "<li>Or press the device's reset button (NRST on "
+           "BluePill / BlackPill) if it has one.</li>"
+           "</ul>"
+           "<p>The bootloader's flasher-mode magic word is "
+           "cleared on read, so any reset path will boot the "
+           "existing application normally -- nothing on the device "
+           "has been changed by entering flasher mode.</p>"));
 }
 
 void Flasher::on_pushButton_FlasherMode_clicked()
