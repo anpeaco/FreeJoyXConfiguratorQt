@@ -37,6 +37,12 @@ public slots:
     void ledRgbSelected(Pin pin, bool selected);
     void onLedToggled(int ledNumber, bool state);
 
+    /* Re-renders the Timer dropdown items on every LED row to reflect
+     * the current led_timer_ms[0..3] values. Wired internally to the
+     * Timer1..Timer4 spinboxes' valueChanged signals so user edits
+     * (and load-time setValue calls) propagate to the dropdowns. */
+    void refreshTimerLabels();
+
 private:
     Ui::LedConfig *ui;
 

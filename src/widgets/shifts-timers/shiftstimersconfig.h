@@ -37,6 +37,14 @@ public:
     // used.
     void shiftStateChanged();
 
+signals:
+    /* Emitted whenever any of the three button_timer{1,2,3}_ms
+     * spinboxes change value (user edit OR readFromConfig restore).
+     * MainWindow forwards to ButtonConfig::refreshTimerLabels so the
+     * Delay/Press timer dropdowns in Button Config update their
+     * "T<n> (X ms)" suffixes live. */
+    void buttonTimersChanged();
+
 private:
     Ui::ShiftsTimersConfig *ui;
 

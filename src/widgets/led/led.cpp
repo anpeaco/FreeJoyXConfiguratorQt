@@ -1,5 +1,6 @@
 #include "led.h"
 #include "ui_led.h"
+#include "timer_label.h"
 #include <QEvent>
 #include <QMouseEvent>
 #include <QCursor>
@@ -18,7 +19,11 @@ LED::LED(int ledNumber, QWidget *parent)
     }
 
     for (uint i = 0; i < std::size(m_TimerList); ++i) {
-        ui->comboBox_Timer->addItem(m_TimerList[i].guiName);
+        // Item 0 is the "-" sentinel (slot = -1); items 1..4 map to LED
+        // timers T1..T4 in led_timer_ms[0..3]. Show "T<n> (X ms)" so the
+        // user sees the timer's configured duration alongside the slot.
+        ui->comboBox_Timer->addItem(
+            freejoy_ui::timerSlotDisplayName(freejoy_ui::LedTimer, static_cast<int>(i) - 1));
     }
 
     connect(ui->pushButton_LEDNumber, &QPushButton::clicked, this, [=](){
@@ -93,6 +98,15 @@ void LED::writeToConfig()
 bool LED::isHostControlled() const
 {
     return ui->checkBox_HostControlled->isChecked();
+}
+
+void LED::refreshTimerLabels()
+{
+    for (uint i = 0; i < std::size(m_TimerList); ++i) {
+        ui->comboBox_Timer->setItemText(
+            static_cast<int>(i),
+            freejoy_ui::timerSlotDisplayName(freejoy_ui::LedTimer, static_cast<int>(i) - 1));
+    }
 }
 
 void LED::changeEvent(QEvent *event)

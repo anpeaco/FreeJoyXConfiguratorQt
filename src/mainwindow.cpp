@@ -199,6 +199,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_pinConfig, &PinConfig::totalButtonsValueChanged, m_buttonConfig, &ButtonConfig::setUiOnOff);
     // shift spinboxes get enabled/disabled with the same connect/disconnect signal
     connect(m_pinConfig, &PinConfig::totalButtonsValueChanged, m_shiftsTimersConfig, &ShiftsTimersConfig::setUiOnOff);
+    /* Button Config's Delay/Press timer dropdowns show "T<n> (X ms)";
+     * keep the (X ms) suffix live as the user edits Timer 1/2/3 on
+     * the Shifts & Timers tab. */
+    connect(m_shiftsTimersConfig, &ShiftsTimersConfig::buttonTimersChanged,
+            m_buttonConfig, &ButtonConfig::refreshTimerLabels);
     // LEDs changed
     connect(m_pinConfig, &PinConfig::totalLEDsValueChanged, m_ledConfig, &LedConfig::spawnLeds);
     connect(m_pinConfig, &PinConfig::ledPwmSelected, m_ledConfig, &LedConfig::ledPwmSelected);

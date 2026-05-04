@@ -39,6 +39,17 @@ ShiftsTimersConfig::ShiftsTimersConfig(QWidget *parent)
             this, [this, stepSnap](int v) { stepSnap(ui->spinBox_ButtonsPolling, v); });
     connect(ui->spinBox_EncoderPolling, qOverload<int>(&QSpinBox::valueChanged),
             this, [this, stepSnap](int v) { stepSnap(ui->spinBox_EncoderPolling, v); });
+
+    /* Forward Timer 1/2/3 edits to a single buttonTimersChanged signal
+     * so MainWindow can refresh Button Config's dropdown labels in one
+     * place, not three. Fires on user edits AND on readFromConfig's
+     * setValue calls -- same path either way. */
+    connect(ui->spinBox_Timer1, qOverload<int>(&QSpinBox::valueChanged),
+            this, &ShiftsTimersConfig::buttonTimersChanged);
+    connect(ui->spinBox_Timer2, qOverload<int>(&QSpinBox::valueChanged),
+            this, &ShiftsTimersConfig::buttonTimersChanged);
+    connect(ui->spinBox_Timer3, qOverload<int>(&QSpinBox::valueChanged),
+            this, &ShiftsTimersConfig::buttonTimersChanged);
 }
 
 ShiftsTimersConfig::~ShiftsTimersConfig()

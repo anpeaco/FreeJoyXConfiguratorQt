@@ -51,6 +51,13 @@ public:
 
     void retranslateUi();
 
+    /* Re-renders the Delay/Press timer dropdown items as
+     * "T<n> (<value> ms)" using the current button_timerN_ms values
+     * from gEnv.pDeviceConfig->config. ButtonConfig calls this on
+     * every row when ShiftsTimersConfig signals a change, and on
+     * readFromConfig completion. */
+    void refreshTimerLabels();
+
     /* True iff the row's current UI state is a valid configuration to
      * persist. For type != LOGIC this is always true. For type == LOGIC
      * the operator must be picked (not the "-" sentinel) and, if the

@@ -10,6 +10,7 @@
 #include "global.h"
 
 #include <QDebug>
+#include <QSpinBox>
 LedConfig::LedConfig(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::LedConfig)
@@ -40,6 +41,22 @@ LedConfig::LedConfig(QWidget *parent)
     ui->frame_PwmPb1->setEnabled(false);
     ui->frame_PwmPb4->setEnabled(false);
     m_ledsRgb->setEnabled(false);
+
+    /* Refresh LED row dropdowns whenever any of the four LED timer
+     * spinboxes change (user edit OR readFromConfig setValue). Self-
+     * contained: LED timers live on this same tab, so MainWindow
+     * doesn't need to be involved. */
+    for (auto *sb : { ui->spinBox_Timer1, ui->spinBox_Timer2, ui->spinBox_Timer3, ui->spinBox_Timer4 }) {
+        connect(sb, qOverload<int>(&QSpinBox::valueChanged),
+                this, &LedConfig::refreshTimerLabels);
+    }
+}
+
+void LedConfig::refreshTimerLabels()
+{
+    for (auto *led : m_ledPtrList) {
+        if (led) led->refreshTimerLabels();
+    }
 }
 
 LedConfig::~LedConfig()
