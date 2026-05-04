@@ -157,6 +157,16 @@ private:
     void doEnterFlashMode();
     void doFlashFirmware();
 
+    /* Post-flash health check. Starts a timer when the flasher emits
+     * flashTerminated(true). Cleared when the device reconnects (a
+     * successful firmware boot fires deviceConnected / paramsPacketReceived).
+     * If the timer fires without a reconnect, surfaces a "Flash may have
+     * failed" dialog pointing the user at the recovery dropdown. */
+    QTimer m_postFlashHealthTimer;
+    bool m_postFlashHealthPending = false;
+    void onFlashTerminated(bool success);
+    void onPostFlashHealthTimeout();
+
     /* Toggle the config-editing tabs (Pin / Button / Shifts&Timers /
      * Axes / Curves / Shift Reg / Encoders / LED). Disabled when an
      * unrecognised-firmware device is connected, so the user can't

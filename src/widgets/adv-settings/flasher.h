@@ -24,6 +24,12 @@ public:
 signals:
     void flashModeClicked(bool is_start_flash);
     void startFlash(bool is_start_flash);
+    /* Fires when flashStatus reaches a terminal state (FINISHED or
+     * any error variant). MainWindow uses this to start a watchdog
+     * timer expecting the device to reconnect within ~15s. If it
+     * doesn't, MainWindow surfaces a "Flash may have failed" dialog
+     * pointing at the recovery dropdown. */
+    void flashTerminated(bool success);
 
 public slots:
     void flasherFound(bool isFound);

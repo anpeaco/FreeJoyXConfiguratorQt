@@ -60,6 +60,16 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&m_postWriteFallbackTimer, &QTimer::timeout,
             this, &MainWindow::onPostWriteFallback);
 
+    /* Post-flash health watchdog: 15 s after a flash terminates, if
+     * the device hasn't reconnected with sensible params, surface a
+     * dialog pointing the user at the recovery dropdown. Started by
+     * onFlashTerminated, cleared by paramsPacketReceived (in
+     * getParamsPacket). */
+    m_postFlashHealthTimer.setSingleShot(true);
+    m_postFlashHealthTimer.setInterval(15000);
+    connect(&m_postFlashHealthTimer, &QTimer::timeout,
+            this, &MainWindow::onPostFlashHealthTimeout);
+
     // firmware version
     setWindowTitle(tr("%1 Configurator %2 (fork of FreeJoy v%3)")
                        .arg(FORK_NAME).arg(FORK_VERSION).arg(APP_VERSION));
@@ -204,6 +214,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // enter flash mode clicked
     connect(m_advSettings->flasher(), &Flasher::flashModeClicked, this, &MainWindow::deviceFlasherController);
+    connect(m_advSettings->flasher(), &Flasher::flashTerminated, this, &MainWindow::onFlashTerminated);
     // flasher found
     connect(m_hidDeviceWorker, &HidDevice::flasherFound, m_advSettings->flasher(), &Flasher::flasherFound);
     // start flash
@@ -421,6 +432,19 @@ void MainWindow::onPostWriteFallback()
 // received device report
 void MainWindow::getParamsPacket(bool firmwareCompatible)
 {
+    /* Post-flash health: once a params packet arrives the device is
+     * back -- the flashed firmware booted and started reporting state.
+     * Disarm the watchdog regardless of whether the version itself is
+     * compatible (an incompatible-but-running firmware is still
+     * "device booted, USB working" which is what we were watching
+     * for). The version-mismatch case is then handled by the normal
+     * legacy / unsupported branch below. */
+    if (m_postFlashHealthPending) {
+        m_postFlashHealthPending = false;
+        m_postFlashHealthTimer.stop();
+        qDebug() << "Post-flash health: device returned, watchdog cleared";
+    }
+
     if (m_deviceChanged) {
         // Device is back; clear the post-write-restart flag so any
         // future genuine cable-pull disconnect shows "Disconnected"
@@ -564,6 +588,53 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
 }
 
 // Flasher controller
+void MainWindow::onFlashTerminated(bool success)
+{
+    /* Whether the flash itself reported success or failure, we now
+     * watch for the device to reconnect. A "FINISHED" status from the
+     * bootloader doesn't actually tell us whether the new firmware
+     * boots cleanly -- only that the bytes landed and the CRC
+     * matched. The boot loop, USB enumeration and version check are
+     * separate concerns that we observe via the next paramsReport. */
+    if (success) {
+        m_postFlashHealthPending = true;
+        m_postFlashHealthTimer.start();
+        qDebug() << "Post-flash health watchdog armed (15 s)";
+    } else {
+        /* Flash itself failed -- bootloader still running, recovery
+         * dropdown still accessible via the Flasher tab. No watchdog
+         * needed; user already sees the error state on the Flash button. */
+        m_postFlashHealthPending = false;
+        m_postFlashHealthTimer.stop();
+    }
+}
+
+void MainWindow::onPostFlashHealthTimeout()
+{
+    if (!m_postFlashHealthPending) return;
+    m_postFlashHealthPending = false;
+
+    qWarning() << "Post-flash health timeout: device didn't reconnect "
+                  "within 15 s of flash completion";
+
+    QMessageBox::warning(this, tr("Flash may have failed"),
+        tr("<p>Firmware flash completed but the device hasn't "
+           "reconnected within 15 seconds.</p>"
+           "<p>The new firmware may be failing to boot or enumerate "
+           "over USB. Possible recovery paths:</p>"
+           "<ul>"
+           "<li>Unplug and replug the device. Sometimes Windows "
+           "needs a moment.</li>"
+           "<li>If it stays absent, hold the BOOT0 button and "
+           "replug to force the bootloader. Then use "
+           "<i>Advanced Settings &rarr; Firmware flasher</i> with "
+           "a known-good build from the Source dropdown to "
+           "recover.</li>"
+           "<li>If you have a backup config, restore it via "
+           "<b>Load config from file</b> after the recovery flash.</li>"
+           "</ul>"));
+}
+
 void MainWindow::deviceFlasherController(bool isStartFlash)
 {
     if (isStartFlash) {

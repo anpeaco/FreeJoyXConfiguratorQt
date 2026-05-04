@@ -211,22 +211,27 @@ void Flasher::flashStatus(int status, int percent)
         ui->pushButton_FlashFirmware->setText(tr("Finished"));
         freejoy_style::setRole(ui->pushButton_FlashFirmware, "feedback", "success");
         flashDone();
+        emit flashTerminated(true);
     } else if (status == SIZE_ERROR) {
         ui->pushButton_FlashFirmware->setText(tr("SIZE ERROR"));
         freejoy_style::setRole(ui->pushButton_FlashFirmware, "feedback", "error");
         flashDone();
+        emit flashTerminated(false);
     } else if (status == CRC_ERROR) {
         ui->pushButton_FlashFirmware->setText(tr("CRC ERROR"));
         freejoy_style::setRole(ui->pushButton_FlashFirmware, "feedback", "error");
         flashDone();
+        emit flashTerminated(false);
     } else if (status == ERASE_ERROR) {
         ui->pushButton_FlashFirmware->setText(tr("ERASE ERROR"));
         freejoy_style::setRole(ui->pushButton_FlashFirmware, "feedback", "warning");
         flashDone();
+        emit flashTerminated(false);
     } else if (status == 666) {
         ui->pushButton_FlashFirmware->setText(tr("ERROR"));
         freejoy_style::setRole(ui->pushButton_FlashFirmware, "feedback", "error");
         flashDone();
+        emit flashTerminated(false);
     }
 }
 
