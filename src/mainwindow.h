@@ -144,6 +144,27 @@ private:
     QTimer m_postWriteFallbackTimer;
 
     QString m_cfgDirPath;
+
+    /* Auto-backup-before-flash. When the user clicks "Enter Flasher Mode"
+     * with a recognised device connected, deviceFlasherController() sets
+     * this flag and triggers a Read. configReceived() picks up the chain:
+     * saves the migrated config to a timestamped backup file in
+     * <m_cfgDirPath>/backups/, surfaces the path, then resumes the flasher
+     * mode entry (via doEnterFlashMode()). On Read failure, asks the user
+     * whether to proceed without a backup. */
+    bool m_backupBeforeFlashPending = false;
+    QString writeAutoBackup();
+    void doEnterFlashMode();
+    void doFlashFirmware();
+
+    /* Toggle the config-editing tabs (Pin / Button / Shifts&Timers /
+     * Axes / Curves / Shift Reg / Encoders / LED). Disabled when an
+     * unrecognised-firmware device is connected, so the user can't
+     * silently edit a config that doesn't correspond to anything on
+     * the device. Advanced Settings + Debug stay accessible -- those
+     * are configurator-side controls, not device-state. */
+    void setConfigTabsEnabled(bool enabled);
+
     void curCfgFileChanged(const QString &fileName);
     QStringList cfgFilesList(const QString &dirPath);
     QIcon pixmapToIcon(QPixmap pixmap, const QColor &color);

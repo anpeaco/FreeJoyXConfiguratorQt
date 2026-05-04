@@ -8,6 +8,8 @@
 #include <QCheckBox>
 #include <QKeyEvent>
 #include <QPainter>
+#include <QDateTime>
+#include <QDir>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -483,19 +485,27 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
              *      Allow Read (so the user can import the config), block
              *      Write (writing current-shape bytes to a device expecting
              *      a different shape would corrupt its on-flash config).
+             *      Tabs stay editable -- user might want to adjust the
+             *      imported config before saving / flashing.
              *      The user's next move is: Read -> save backup ->
              *      flash FreeJoyX firmware -> Write to (now-current) device.
              *   b. Device is from somewhere we don't recognise -- block
-             *      both Read and Write, surface "Incompatible Firmware".
+             *      Read, Write, AND tab editing. The in-memory dev_config_t
+             *      doesn't correspond to anything on the device, and any
+             *      edits the user makes would be lost the moment the
+             *      device disconnects (or worse, written somewhere they
+             *      shouldn't be). Surface "Incompatible Firmware".
              */
             if (legacy::canMigrate(devVer)) {
                 ui->pushButton_ReadConfig->setDisabled(false);
                 ui->pushButton_WriteConfig->setDisabled(true);
+                setConfigTabsEnabled(true);
                 freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-warning");
                 ui->label_DeviceStatus->setText(
                     tr("Legacy firmware (%1) — read to import").arg(verFmt));
             } else {
                 blockWRConfigToDevice(true);
+                setConfigTabsEnabled(false);
                 freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-warning");
                 ui->label_DeviceStatus->setText(tr("Incompatible Firmware"));
             }
@@ -503,6 +513,7 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
             if (m_pinConfig->limitIsReached() == false) {
                 blockWRConfigToDevice(false);
             }
+            setConfigTabsEnabled(true);
             freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-connected");
             ui->label_DeviceStatus->setText(tr("Connected"));
         }
@@ -554,21 +565,90 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
 
 // Flasher controller
 void MainWindow::deviceFlasherController(bool isStartFlash)
-{        // херня? mb QtConcurrent::run()
-    // так оставить или как read/write а bool через сигнал?
-    QEventLoop loop; // static?
+{
+    if (isStartFlash) {
+        // Already in flasher mode and the .bin is loaded -- no backup
+        // possible (the bootloader doesn't expose application state).
+        // Just push the bytes.
+        doFlashFirmware();
+        return;
+    }
+
+    // "Enter Flasher Mode" path. If a recognised device is connected,
+    // auto-backup its config first by chaining a Read before the
+    // bootloader trigger. configReceived() picks up after the read and
+    // calls doEnterFlashMode() to resume.
+    const uint16_t devVer = gEnv.pDeviceConfig
+        ? gEnv.pDeviceConfig->paramsReport.firmware_version
+        : 0;
+    const bool deviceConnected = (devVer != 0);
+    const bool versionRecognised =
+        ((devVer & 0xFFF0) == (FIRMWARE_VERSION & 0xFFF0)) ||
+        legacy::canMigrate(devVer);
+
+    if (deviceConnected && versionRecognised) {
+        m_backupBeforeFlashPending = true;
+        qDebug() << "Auto-backup before flash: triggering Read";
+        // Reuse the existing Read path -- triggers
+        // m_hidDeviceWorker->getConfigFromDevice() asynchronously;
+        // configReceived() handles the rest.
+        on_pushButton_ReadConfig_clicked();
+        return;
+    }
+
+    // No device, or unsupported firmware -- skip backup and proceed.
+    qDebug() << "Auto-backup skipped (no device or unrecognised firmware);"
+                " entering flasher mode directly";
+    doEnterFlashMode();
+}
+
+QString MainWindow::writeAutoBackup()
+{
+    // Backups land in <m_cfgDirPath>/backups/ with a timestamped filename
+    // that also embeds the device's reported firmware_version, so the
+    // user can tell at a glance which board/version a backup belongs to.
+    QDir backupsDir(m_cfgDirPath + "/backups");
+    if (!backupsDir.exists()) {
+        backupsDir.mkpath(".");
+    }
+
+    const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
+    const QString stamp = QDateTime::currentDateTime().toString("yyyyMMdd-hhmmss");
+    const QString fwHex = QString::number(devVer, 16).rightJustified(4, QChar('0'));
+    const QString fileName = QString("backup-%1-fw%2.cfg").arg(stamp, fwHex);
+    const QString fullPath = backupsDir.absoluteFilePath(fileName);
+
+    UiWriteToConfig();
+    ConfigToFile::saveDeviceConfigToFile(fullPath, gEnv.pDeviceConfig->config);
+    return fullPath;
+}
+
+void MainWindow::doEnterFlashMode()
+{
+    QEventLoop loop;
     QObject context;
     context.moveToThread(m_threadGetSendConfig);
     connect(m_threadGetSendConfig, &QThread::started, &context, [&]() {
-        qDebug()<<"Start flasher controller";
-        if (isStartFlash == true){
-            qDebug()<<"Start flash";
-            m_hidDeviceWorker->flashFirmware(m_advSettings->flasher()->fileArray());
-        } else {
-            qDebug()<<"Enter to flash mode";
-            m_hidDeviceWorker->enterToFlashMode();
-        }
-        qDebug()<<"Flasher controller finished";
+        qDebug() << "Enter to flash mode";
+        m_hidDeviceWorker->enterToFlashMode();
+        qDebug() << "Flash mode entry finished";
+        loop.quit();
+    });
+    m_threadGetSendConfig->start();
+    loop.exec();
+    m_threadGetSendConfig->quit();
+    m_threadGetSendConfig->wait();
+}
+
+void MainWindow::doFlashFirmware()
+{
+    QEventLoop loop;
+    QObject context;
+    context.moveToThread(m_threadGetSendConfig);
+    connect(m_threadGetSendConfig, &QThread::started, &context, [&]() {
+        qDebug() << "Start flash";
+        m_hidDeviceWorker->flashFirmware(m_advSettings->flasher()->fileArray());
+        qDebug() << "Flash firmware finished";
         loop.quit();
     });
     m_threadGetSendConfig->start();
@@ -768,6 +848,44 @@ void MainWindow::configReceived(bool success)
             }
         });
     }
+
+    /* Auto-backup-before-flash continuation. If deviceFlasherController()
+     * triggered this Read for a backup, save the config now and resume
+     * the flasher mode entry. On Read failure, ask the user whether to
+     * proceed without a backup. */
+    if (m_backupBeforeFlashPending) {
+        m_backupBeforeFlashPending = false;
+        if (success) {
+            const QString path = writeAutoBackup();
+            QMessageBox::information(this, tr("Config backed up"),
+                tr("<p>Device config saved to:</p>"
+                   "<p><a href=\"file:///%1\">%2</a></p>"
+                   "<p>If anything goes wrong with the flash, you can restore "
+                   "by loading this file via <b>Load config from file</b> "
+                   "after flashing a known-good firmware.</p>"
+                   "<p>Now entering flasher mode...</p>")
+                    .arg(path, QDir::toNativeSeparators(path)));
+        } else {
+            const QMessageBox::StandardButton rc = QMessageBox::warning(this,
+                tr("Backup failed"),
+                tr("<p>Could not read the device's current config. "
+                   "Proceeding without a backup means a failed flash could "
+                   "leave the device with default settings (you'd lose your "
+                   "current mappings).</p>"
+                   "<p>Continue with flash anyway?</p>"),
+                QMessageBox::Yes | QMessageBox::Cancel,
+                QMessageBox::Cancel);
+            if (rc != QMessageBox::Yes) {
+                qDebug() << "User cancelled flash after backup failure";
+                return;
+            }
+        }
+        // Use a small delay so the info dialog dismisses before the
+        // bootloader trigger races with re-enumeration.
+        QTimer::singleShot(200, this, [this]() {
+            doEnterFlashMode();
+        });
+    }
 }
 
 // slot after sending the config
@@ -827,6 +945,40 @@ void MainWindow::blockWRConfigToDevice(bool block)
 {
     ui->pushButton_ReadConfig->setDisabled(block);
     ui->pushButton_WriteConfig->setDisabled(block);
+}
+
+void MainWindow::setConfigTabsEnabled(bool enabled)
+{
+    /* Pin / Button / Shifts&Timers / Axes / Curves / Shift Reg /
+     * Encoders / LED are device-state-bound: editing them only makes
+     * sense when the in-memory dev_config_t matches the connected
+     * device. Disable when the device is unrecognised so we don't
+     * mislead the user.
+     *
+     * Advanced Settings + Debug stay enabled regardless -- they're
+     * configurator-internal controls (firmware flasher, language,
+     * theme, etc.), not device state. */
+    const QList<QWidget *> deviceTabs = {
+        ui->tab_PinConfig,
+        ui->tab_ButtonConfig,
+        ui->tab_ShiftsTimers,
+        ui->tab_AxesConfig,
+        ui->tab_AxesCurves,
+        ui->tab_ShiftRegisters,
+        ui->tab_Encoders,
+        ui->tab_LED,
+    };
+    for (QWidget *tab : deviceTabs) {
+        const int idx = ui->tabWidget->indexOf(tab);
+        if (idx < 0) continue;
+        ui->tabWidget->setTabEnabled(idx, enabled);
+        ui->tabWidget->setTabToolTip(idx, enabled
+            ? QString()
+            : tr("Disabled because the connected device runs an "
+                 "unsupported firmware version. Flash a known-good "
+                 "build via Advanced Settings → Firmware flasher to "
+                 "regain access."));
+    }
 }
 
 
