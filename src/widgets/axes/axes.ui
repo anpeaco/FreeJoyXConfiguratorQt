@@ -114,31 +114,44 @@
         <property name="frameShadow">
          <enum>QFrame::Plain</enum>
         </property>
-        <layout class="QGridLayout" name="gridLayout" columnstretch="0,0,0" columnminimumwidth="0,0,0">
+        <!-- rowstretch and verticalSpacing mirror the parent gridLayout_2
+             above so the four calibration rows line up with the four
+             rows on the left:
+                row 0 (Calibrate / Reset) <-> outer row 0 (Out bar)
+                row 1 (Minimum)           <-> outer row 1 (Raw bar)
+                row 2 (Center / Set)      <-> outer row 2 (a2b slider)
+                row 3 (Maximum)           <-> outer row 3 (Axis source)
+             Row 0 takes all leftover height (stretch=1) just like the
+             Out bar, so the icon buttons centre on the same scanline. -->
+        <layout class="QGridLayout" name="gridLayout" rowstretch="1,0,0,0" rowminimumheight="0,0,40,0" columnstretch="0,0,0" columnminimumwidth="0,0,0">
          <property name="leftMargin">
           <number>8</number>
          </property>
          <property name="topMargin">
-          <number>4</number>
+          <number>0</number>
          </property>
          <property name="rightMargin">
           <number>8</number>
          </property>
          <property name="bottomMargin">
-          <number>4</number>
+          <number>3</number>
          </property>
          <property name="horizontalSpacing">
           <number>6</number>
          </property>
          <property name="verticalSpacing">
-          <number>3</number>
+          <number>6</number>
          </property>
          <!-- Row 2: top action row. Single HBox spans all three grid
               columns so the Calibrate button can grow horizontally
               right up to the Reset icon button. Without spanning,
               Calibrate would sit in col 0 (sized to fit "Minimum"/
-              "Maximum" labels) and leave a 50+ px gap before Reset. -->
-         <item row="2" column="0" colspan="3">
+              "Maximum" labels) and leave a 50+ px gap before Reset.
+              alignment="Qt::AlignVCenter" so the HBox keeps its
+              preferred height and the buttons sit on the vertical
+              centre of the (rowstretch=1) row, matching the Out bar
+              centre on the left. -->
+         <item row="2" column="0" colspan="3" alignment="Qt::AlignVCenter">
           <layout class="QHBoxLayout" name="layoutH_TopActions">
            <property name="spacing">
             <number>4</number>
