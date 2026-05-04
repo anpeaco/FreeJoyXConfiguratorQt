@@ -65,7 +65,7 @@
      <property name="title">
       <string>GroupBox</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_2" rowstretch="1,0,0,0" columnstretch="0,0,0,0,7,2" columnminimumwidth="0,0,0,0,0,0">
+     <layout class="QGridLayout" name="gridLayout_2" rowstretch="1,0,0,0" columnstretch="0,0,0,0,7,2" columnminimumwidth="0,0,0,0,0,185">
       <property name="bottomMargin">
        <number>3</number>
       </property>
@@ -100,314 +100,194 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="5" rowspan="4">
-       <widget class="QFrame" name="frame_4">
-        <property name="minimumSize">
-         <size>
-          <width>185</width>
-          <height>140</height>
-         </size>
-        </property>
-        <property name="frameShape">
-         <enum>QFrame::NoFrame</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Plain</enum>
-        </property>
-        <!-- rowstretch and verticalSpacing mirror the parent gridLayout_2
-             above so the four calibration rows line up with the four
-             rows on the left:
-                row 0 (Calibrate / Reset) <-> outer row 0 (Out bar)
-                row 1 (Minimum)           <-> outer row 1 (Raw bar)
-                row 2 (Center / Set)      <-> outer row 2 (a2b slider)
-                row 3 (Maximum)           <-> outer row 3 (Axis source)
-             Row 0 takes all leftover height (stretch=1) just like the
-             Out bar, so the icon buttons centre on the same scanline. -->
-        <layout class="QGridLayout" name="gridLayout" rowstretch="1,0,0,0" rowminimumheight="0,0,40,0" columnstretch="0,0,0" columnminimumwidth="0,0,0">
-         <property name="leftMargin">
-          <number>8</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>8</number>
-         </property>
-         <property name="bottomMargin">
-          <number>3</number>
-         </property>
-         <property name="horizontalSpacing">
-          <number>6</number>
-         </property>
-         <property name="verticalSpacing">
-          <number>6</number>
-         </property>
-         <!-- Row 2: top action row. Single HBox spans all three grid
-              columns so the Calibrate button can grow horizontally
-              right up to the Reset icon button. Without spanning,
-              Calibrate would sit in col 0 (sized to fit "Minimum"/
-              "Maximum" labels) and leave a 50+ px gap before Reset.
-              alignment="Qt::AlignVCenter" so the HBox keeps its
-              preferred height and the buttons sit on the vertical
-              centre of the (rowstretch=1) row, matching the Out bar
-              centre on the left. -->
-         <item row="2" column="0" colspan="3" alignment="Qt::AlignVCenter">
-          <layout class="QHBoxLayout" name="layoutH_TopActions">
-           <property name="spacing">
-            <number>4</number>
-           </property>
-           <item>
-            <widget class="QPushButton" name="pushButton_StartCalib">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>Calibrate</string>
-             </property>
-             <property name="autoDefault">
-              <bool>false</bool>
-             </property>
-             <property name="default">
-              <bool>false</bool>
-             </property>
-             <property name="checkable">
-              <bool>true</bool>
-             </property>
-             <property name="checked">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_ResetCalib">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size><width>26</width><height>26</height></size>
-             </property>
-             <property name="maximumSize">
-              <size><width>26</width><height>26</height></size>
-             </property>
-             <property name="toolTip">
-              <string>Reset calibration (Min / Center / Max back to factory defaults)</string>
-             </property>
-             <property name="text">
-              <string notr="true"/>
-             </property>
-             <property name="icon">
-              <iconset resource="../../resources.qrc">
-               <normaloff>:/Images/icons/lucide/rotate-ccw.svg</normaloff>:/Images/icons/lucide/rotate-ccw.svg</iconset>
-             </property>
-             <property name="iconSize">
-              <size><width>18</width><height>18</height></size>
-             </property>
-             <property name="autoDefault">
-              <bool>false</bool>
-             </property>
-             <property name="default">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
+      <!-- Calibration column. Each row is placed DIRECTLY in the outer
+           gridLayout_2 at column 5 in the matching row, so row heights
+           are shared with the Out bar / Raw bar / a2b slider / Axis
+           source content on the left. No inner frame_4 wrapper, no
+           inner gridLayout. Vertical alignment is automatic.
+           All spinboxes are pinned to a 95 px fixed width so their
+           right edges line up across rows; the 26x26 Reset and Set
+           Center buttons inherit the same right edge by sitting at
+           the right end of their HBox. -->
 
-         <!-- Row 3: Minimum -->
-         <item row="3" column="0">
-          <widget class="QLabel" name="text_minimum">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Minimum</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="2">
-          <widget class="QSpinBox" name="spinBox_CalibMin">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-           <property name="minimum">
-            <number>-32767</number>
-           </property>
-           <property name="maximum">
-            <number>32767</number>
-           </property>
-           <property name="value">
-            <number>-32767</number>
-           </property>
-          </widget>
-         </item>
+      <!-- Row 0 (Out bar row): Calibrate + Reset -->
+      <item row="0" column="5" alignment="Qt::AlignVCenter">
+       <layout class="QHBoxLayout" name="layoutH_CalRow0">
+        <property name="spacing"><number>4</number></property>
+        <property name="leftMargin"><number>8</number></property>
+        <property name="rightMargin"><number>8</number></property>
+        <item>
+         <widget class="QPushButton" name="pushButton_StartCalib">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text"><string>Calibrate</string></property>
+          <property name="autoDefault"><bool>false</bool></property>
+          <property name="default"><bool>false</bool></property>
+          <property name="checkable"><bool>true</bool></property>
+          <property name="checked"><bool>false</bool></property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_ResetCalib">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize"><size><width>26</width><height>26</height></size></property>
+          <property name="maximumSize"><size><width>26</width><height>26</height></size></property>
+          <property name="toolTip"><string>Reset calibration (Min / Center / Max back to factory defaults)</string></property>
+          <property name="text"><string notr="true"/></property>
+          <property name="icon">
+           <iconset resource="../../resources.qrc">
+            <normaloff>:/Images/icons/lucide/rotate-ccw.svg</normaloff>:/Images/icons/lucide/rotate-ccw.svg</iconset>
+          </property>
+          <property name="iconSize"><size><width>18</width><height>18</height></size></property>
+          <property name="autoDefault"><bool>false</bool></property>
+          <property name="default"><bool>false</bool></property>
+         </widget>
+        </item>
+       </layout>
+      </item>
 
-         <!-- Row 4: Center. Label is a plain QLabel (left-aligned to
-              match Minimum/Maximum); a stretch spacer pushes the
-              checkbox to the right edge of column 0 so it sits
-              immediately to the left of the Set Center icon button in
-              column 1. Row reads:
-                [Center            ☐] [⊕] [value]. -->
-         <item row="4" column="0">
-          <layout class="QHBoxLayout" name="layoutH_CenterRow">
-           <property name="spacing">
-            <number>4</number>
-           </property>
-           <item>
-            <widget class="QLabel" name="text_center">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>Center</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer_CenterRow">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size><width>0</width><height>0</height></size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="checkBox_Center">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="toolTip">
-              <string>Override the natural midpoint between Min and Max with a custom center value</string>
-             </property>
-             <property name="text">
-              <string notr="true"/>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <!-- alignment="Qt::AlignVCenter" so the 26x26 button vertically
-              centers in the row alongside the taller Center spinbox in
-              col 2. Without this, the icon button anchors to the top of
-              the cell and reads as visually low. -->
-         <item row="4" column="1" alignment="Qt::AlignVCenter">
-          <widget class="QPushButton" name="pushButton_SetCenter">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size><width>26</width><height>26</height></size>
-           </property>
-           <property name="maximumSize">
-            <size><width>26</width><height>26</height></size>
-           </property>
-           <property name="toolTip">
-            <string>Capture the current axis value as the new Center</string>
-           </property>
-           <property name="text">
-            <string notr="true"/>
-           </property>
-           <property name="icon">
-            <iconset resource="../../resources.qrc">
-             <normaloff>:/Images/icons/lucide/target.svg</normaloff>:/Images/icons/lucide/target.svg</iconset>
-           </property>
-           <property name="iconSize">
-            <size><width>18</width><height>18</height></size>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
-           </property>
-           <property name="default">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="2">
-          <widget class="QSpinBox" name="spinBox_CalibCenter">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-           <property name="minimum">
-            <number>-32767</number>
-           </property>
-           <property name="maximum">
-            <number>32767</number>
-           </property>
-          </widget>
-         </item>
+      <!-- Row 1 (Raw bar row): Minimum label + spinbox -->
+      <item row="1" column="5" alignment="Qt::AlignVCenter">
+       <layout class="QHBoxLayout" name="layoutH_CalRow1">
+        <property name="spacing"><number>4</number></property>
+        <property name="leftMargin"><number>8</number></property>
+        <property name="rightMargin"><number>8</number></property>
+        <item>
+         <widget class="QLabel" name="text_minimum">
+          <property name="text"><string>Minimum</string></property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="spacerH_MinRow">
+          <property name="orientation"><enum>Qt::Horizontal</enum></property>
+          <property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="spinBox_CalibMin">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize"><size><width>95</width><height>0</height></size></property>
+          <property name="maximumSize"><size><width>95</width><height>16777215</height></size></property>
+          <property name="alignment"><set>Qt::AlignCenter</set></property>
+          <property name="minimum"><number>-32767</number></property>
+          <property name="maximum"><number>32767</number></property>
+          <property name="value"><number>-32767</number></property>
+         </widget>
+        </item>
+       </layout>
+      </item>
 
-         <!-- Row 5: Maximum -->
-         <item row="5" column="0">
-          <widget class="QLabel" name="text_maximum">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Maximum</string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="2">
-          <widget class="QSpinBox" name="spinBox_CalibMax">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-           <property name="minimum">
-            <number>-32767</number>
-           </property>
-           <property name="maximum">
-            <number>32767</number>
-           </property>
-           <property name="value">
-            <number>32767</number>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
+      <!-- Row 2 (a2b slider row): Center label + checkbox + Set + spinbox -->
+      <item row="2" column="5" alignment="Qt::AlignVCenter">
+       <layout class="QHBoxLayout" name="layoutH_CalRow2">
+        <property name="spacing"><number>4</number></property>
+        <property name="leftMargin"><number>8</number></property>
+        <property name="rightMargin"><number>8</number></property>
+        <item>
+         <widget class="QLabel" name="text_center">
+          <property name="text"><string>Center</string></property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="spacerH_CenterRow">
+          <property name="orientation"><enum>Qt::Horizontal</enum></property>
+          <property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="checkBox_Center">
+          <property name="toolTip"><string>Override the natural midpoint between Min and Max with a custom center value</string></property>
+          <property name="text"><string notr="true"/></property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_SetCenter">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize"><size><width>26</width><height>26</height></size></property>
+          <property name="maximumSize"><size><width>26</width><height>26</height></size></property>
+          <property name="toolTip"><string>Capture the current axis value as the new Center</string></property>
+          <property name="text"><string notr="true"/></property>
+          <property name="icon">
+           <iconset resource="../../resources.qrc">
+            <normaloff>:/Images/icons/lucide/target.svg</normaloff>:/Images/icons/lucide/target.svg</iconset>
+          </property>
+          <property name="iconSize"><size><width>18</width><height>18</height></size></property>
+          <property name="autoDefault"><bool>false</bool></property>
+          <property name="default"><bool>false</bool></property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="spinBox_CalibCenter">
+          <property name="enabled"><bool>false</bool></property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize"><size><width>95</width><height>0</height></size></property>
+          <property name="maximumSize"><size><width>95</width><height>16777215</height></size></property>
+          <property name="alignment"><set>Qt::AlignCenter</set></property>
+          <property name="minimum"><number>-32767</number></property>
+          <property name="maximum"><number>32767</number></property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+
+      <!-- Row 3 (Axis source row): Maximum label + spinbox -->
+      <item row="3" column="5" alignment="Qt::AlignVCenter">
+       <layout class="QHBoxLayout" name="layoutH_CalRow3">
+        <property name="spacing"><number>4</number></property>
+        <property name="leftMargin"><number>8</number></property>
+        <property name="rightMargin"><number>8</number></property>
+        <item>
+         <widget class="QLabel" name="text_maximum">
+          <property name="text"><string>Maximum</string></property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="spacerH_MaxRow">
+          <property name="orientation"><enum>Qt::Horizontal</enum></property>
+          <property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="spinBox_CalibMax">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize"><size><width>95</width><height>0</height></size></property>
+          <property name="maximumSize"><size><width>95</width><height>16777215</height></size></property>
+          <property name="alignment"><set>Qt::AlignCenter</set></property>
+          <property name="minimum"><number>-32767</number></property>
+          <property name="maximum"><number>32767</number></property>
+          <property name="value"><number>32767</number></property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item row="2" column="3" colspan="2">
        <widget class="AxesToButtonsSlider" name="widget_A2bSlider" native="true">
