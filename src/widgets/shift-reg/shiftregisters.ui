@@ -67,18 +67,55 @@
         </property>
        </widget>
       </item>
+      <!-- Registers count is editable. Changing it auto-fills the
+           Button count to chips * 8 (and vice versa). See
+           shiftregisters.cpp for the sync logic. -->
       <item row="1" column="5">
-       <widget class="QLabel" name="label_RegistersCount">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string notr="true">0</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
+       <layout class="QGridLayout" name="gridLayout_RegisterCount" columnstretch="1,0,1">
+        <item row="0" column="1">
+         <spacer name="verticalSpacer_RC1">
+          <property name="orientation"><enum>Qt::Vertical</enum></property>
+          <property name="sizeType"><enum>QSizePolicy::Minimum</enum></property>
+          <property name="sizeHint" stdset="0"><size><width>20</width><height>10</height></size></property>
+         </spacer>
+        </item>
+        <item row="2" column="1">
+         <spacer name="verticalSpacer_RC2">
+          <property name="orientation"><enum>Qt::Vertical</enum></property>
+          <property name="sizeType"><enum>QSizePolicy::Minimum</enum></property>
+          <property name="sizeHint" stdset="0"><size><width>20</width><height>10</height></size></property>
+         </spacer>
+        </item>
+        <item row="1" column="0">
+         <spacer name="horizontalSpacer_RC1">
+          <property name="orientation"><enum>Qt::Horizontal</enum></property>
+          <property name="sizeType"><enum>QSizePolicy::Preferred</enum></property>
+          <property name="sizeHint" stdset="0"><size><width>20</width><height>20</height></size></property>
+         </spacer>
+        </item>
+        <item row="1" column="2">
+         <spacer name="horizontalSpacer_RC2">
+          <property name="orientation"><enum>Qt::Horizontal</enum></property>
+          <property name="sizeType"><enum>QSizePolicy::Preferred</enum></property>
+          <property name="sizeHint" stdset="0"><size><width>20</width><height>20</height></size></property>
+         </spacer>
+        </item>
+        <item row="1" column="1">
+         <widget class="QSpinBox" name="spinBox_RegistersCount">
+          <property name="enabled"><bool>false</bool></property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="alignment"><set>Qt::AlignCenter</set></property>
+          <property name="correctionMode"><enum>QAbstractSpinBox::CorrectToNearestValue</enum></property>
+          <property name="minimum"><number>0</number></property>
+          <property name="maximum"><number>16</number></property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item row="1" column="6">
        <layout class="QGridLayout" name="gridLayout_3" columnstretch="1,0,1">

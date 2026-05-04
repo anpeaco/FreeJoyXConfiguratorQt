@@ -41,11 +41,23 @@ signals:
     void buttonCountChanged(int currentCount, int previousCount);
 
 private slots:
-    void calcRegistersCount(int buttonCount);
+    void onButtonCountChanged(int buttonCount);
+    void onRegistersCountChanged(int chips);
 
 private:
     Ui::ShiftRegisters *ui;
     void setUiOnOff();
+
+    /* Inputs per chip. All four supported types (HC165 / CD4021,
+     * pull-up + pull-down variants) are 8-bit shift registers, so a
+     * single constant suffices. If a 16-bit type ever lands, derive
+     * this from the comboBox_ShiftRegType selection instead. */
+    static constexpr int kInputsPerChip = 8;
+
+    /* Guards bidirectional sync between spinBox_ButtonCount and
+     * spinBox_RegistersCount so each programmatic update doesn't
+     * re-fire the other's valueChanged and ping-pong. */
+    bool m_syncing = false;
 
     static QString m_notDefined;
     int m_buttonsCount;

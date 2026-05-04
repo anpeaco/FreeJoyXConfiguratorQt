@@ -28,7 +28,8 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
         ui->label_LatchPin->setText(m_notDefined);
     }
 
-    connect(ui->spinBox_ButtonCount, SIGNAL(valueChanged(int)), this, SLOT(calcRegistersCount(int)));
+    connect(ui->spinBox_ButtonCount, SIGNAL(valueChanged(int)), this, SLOT(onButtonCountChanged(int)));
+    connect(ui->spinBox_RegistersCount, SIGNAL(valueChanged(int)), this, SLOT(onRegistersCountChanged(int)));
 }
 
 ShiftRegisters::~ShiftRegisters()
@@ -41,14 +42,31 @@ void ShiftRegisters::retranslateUi()
     ui->retranslateUi(this);
 }
 
-void ShiftRegisters::calcRegistersCount(int count)
+void ShiftRegisters::onButtonCountChanged(int count)
 {
-    ui->label_RegistersCount->setNum(ceil(count / 8.0));
+    if (!m_syncing) {
+        m_syncing = true;
+        ui->spinBox_RegistersCount->setValue(static_cast<int>(ceil(count / static_cast<double>(kInputsPerChip))));
+        m_syncing = false;
+    }
 
     if (ui->spinBox_ButtonCount->isEnabled() == true) {
         emit buttonCountChanged(count, m_buttonsCount);
         m_buttonsCount = count;
     }
+}
+
+void ShiftRegisters::onRegistersCountChanged(int chips)
+{
+    /* User-driven chip count edit -> populate button count to fill
+     * the chips exactly (chips * 8). The button-count valueChanged
+     * then fires onButtonCountChanged, which emits buttonCountChanged
+     * (single source of truth for total accounting). m_syncing stops
+     * onButtonCountChanged from echoing back here. */
+    if (m_syncing) return;
+    m_syncing = true;
+    ui->spinBox_ButtonCount->setValue(chips * kInputsPerChip);
+    m_syncing = false;
 }
 
 void ShiftRegisters::setLatchPin(int latchPin, QString pinGuiName)
