@@ -51,3 +51,21 @@ QComboBox::down-arrow {
 QCheckBox::indicator:checked {
     image: url(:/Images/icons/lucide/check-light.svg);
 }
+
+/* "Show extended settings" toggle: render as a chevron rather than a
+ * checkbox so the affordance reads as "expand/collapse" instead of
+ * "yes/no". chevron-down when collapsed; chevron-up when expanded. */
+QCheckBox#checkBox_ShowExtend::indicator {
+    border: none;
+    background: transparent;
+    width: 14px;
+    height: 14px;
+    image: url(:/Images/icons/lucide/chevron-down-light.svg);
+}
+QCheckBox#checkBox_ShowExtend::indicator:hover {
+    border: none;
+    background: transparent;
+}
+QCheckBox#checkBox_ShowExtend::indicator:checked {
+    image: url(:/Images/icons/lucide/chevron-up-light.svg);
+}

@@ -74,6 +74,9 @@
       </property>
       <item row="3" column="4">
        <widget class="QCheckBox" name="checkBox_ShowExtend">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -89,6 +92,9 @@
         <property name="layoutDirection">
          <enum>Qt::RightToLeft</enum>
         </property>
+        <property name="toolTip">
+         <string>Toggle prescaler, resolution, and axes-to-buttons sliders for this axis</string>
+        </property>
         <property name="text">
          <string>Show extended settings</string>
         </property>
@@ -98,31 +104,34 @@
        <widget class="QFrame" name="frame_4">
         <property name="minimumSize">
          <size>
-          <width>155</width>
+          <width>185</width>
           <height>120</height>
          </size>
         </property>
         <property name="frameShape">
-         <enum>QFrame::Box</enum>
+         <enum>QFrame::NoFrame</enum>
         </property>
         <property name="frameShadow">
-         <enum>QFrame::Sunken</enum>
+         <enum>QFrame::Plain</enum>
         </property>
         <layout class="QGridLayout" name="gridLayout" columnstretch="0,0,0" columnminimumwidth="0,0,0">
          <property name="leftMargin">
-          <number>6</number>
+          <number>8</number>
          </property>
          <property name="topMargin">
-          <number>2</number>
+          <number>4</number>
          </property>
          <property name="rightMargin">
-          <number>6</number>
+          <number>8</number>
          </property>
          <property name="bottomMargin">
-          <number>2</number>
+          <number>4</number>
          </property>
-         <property name="spacing">
-          <number>0</number>
+         <property name="horizontalSpacing">
+          <number>6</number>
+         </property>
+         <property name="verticalSpacing">
+          <number>3</number>
          </property>
          <item row="2" column="0">
           <widget class="QPushButton" name="pushButton_StartCalib">
@@ -134,6 +143,12 @@
            </property>
            <property name="text">
             <string>Calibrate</string>
+           </property>
+           <property name="autoDefault">
+            <bool>false</bool>
+           </property>
+           <property name="default">
+            <bool>false</bool>
            </property>
            <property name="checkable">
             <bool>true</bool>
@@ -151,8 +166,11 @@
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
+           <property name="toolTip">
+            <string>Override the natural midpoint between Min and Max with a custom center value</string>
+           </property>
            <property name="text">
-            <string>Center</string>
+            <string>Use center</string>
            </property>
           </widget>
          </item>
@@ -179,7 +197,7 @@
            </property>
            <property name="sizeHint" stdset="0">
             <size>
-             <width>3</width>
+             <width>8</width>
              <height>20</height>
             </size>
            </property>
@@ -208,6 +226,12 @@
            </property>
            <property name="text">
             <string>Set Center</string>
+           </property>
+           <property name="autoDefault">
+            <bool>false</bool>
+           </property>
+           <property name="default">
+            <bool>false</bool>
            </property>
           </widget>
          </item>
@@ -287,6 +311,12 @@
            </property>
            <property name="text">
             <string>Reset calibration</string>
+           </property>
+           <property name="autoDefault">
+            <bool>false</bool>
+           </property>
+           <property name="default">
+            <bool>false</bool>
            </property>
           </widget>
          </item>
@@ -392,7 +422,7 @@
      background-color: rgb(139, 0, 0);
  }
 QProgressBar::chunk:disabled {
-     background-color: rgba(139, 0, 0, 80);;
+     background-color: rgba(139, 0, 0, 80);
  }</string>
           </property>
           <property name="minimum">
@@ -446,7 +476,7 @@ QProgressBar::chunk:disabled {
      background-color:rgb(85, 107, 47);
  }
 QProgressBar::chunk:disabled {
-     background-color: rgba(85, 107, 47, 80);;
+     background-color: rgba(85, 107, 47, 80);
  }</string>
           </property>
           <property name="minimum">
@@ -560,7 +590,7 @@ QProgressBar::chunk:disabled {
         </property>
         <property name="minimumSize">
          <size>
-          <width>95</width>
+          <width>140</width>
           <height>20</height>
          </size>
         </property>

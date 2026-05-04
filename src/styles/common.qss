@@ -312,6 +312,16 @@ QRadioButton::indicator:checked {
 }
 
 /* ----- Tabs --------------------------------------------------------- */
+/* Notes:
+ *  - All tabs share the same font weight. Qt 5.15 doesn't recompute
+ *    tabSizeHint() when QSS swaps font-weight on :selected, so a bolder
+ *    selected tab clips its leading character. Selection emphasis
+ *    comes from background + border instead.
+ *  - Unselected tabs carry visible borders so the strip reads as tabs,
+ *    not as plain text buttons.
+ *  - Selected tab uses a transparent bottom border that matches the
+ *    pane's fill so the tab visually "lifts" and merges with the
+ *    content below (the pane's `top: -1px` overlap finishes the join). */
 
 QTabWidget::pane {
     border: 1px solid palette(mid);
@@ -320,27 +330,30 @@ QTabWidget::pane {
     background: palette(window);
 }
 
-QTabBar::tab {
+QTabBar {
     background: transparent;
+}
+
+QTabBar::tab {
+    background: palette(alternate-base);
     color: palette(window-text);
     padding: 6px 14px;
     margin-right: 2px;
-    border: 1px solid transparent;
-    border-bottom: none;
+    border: 1px solid palette(mid);
+    border-bottom: 1px solid palette(mid);
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
 }
 
-QTabBar::tab:hover {
-    background: palette(alternate-base);
+QTabBar::tab:hover:!selected {
+    background: palette(midlight);
 }
 
 QTabBar::tab:selected {
     background: palette(window);
+    color: palette(window-text);
     border: 1px solid palette(mid);
     border-bottom: 1px solid palette(window);
-    color: palette(window-text);
-    font-weight: 600;
 }
 
 /* ----- Scrollbars (slim modern) ------------------------------------- */

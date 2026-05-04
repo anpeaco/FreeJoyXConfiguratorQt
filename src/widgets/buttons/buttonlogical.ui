@@ -166,6 +166,9 @@
        <height>26</height>
       </size>
      </property>
+     <property name="toolTip">
+      <string>Disable this button slot</string>
+     </property>
      <property name="text">
       <string/>
      </property>
@@ -221,6 +224,9 @@
        <width>28</width>
        <height>26</height>
       </size>
+     </property>
+     <property name="toolTip">
+      <string>Invert this button's input (HIGH becomes pressed, LOW becomes released)</string>
      </property>
      <property name="text">
       <string/>

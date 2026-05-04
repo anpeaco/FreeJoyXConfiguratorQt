@@ -124,7 +124,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox_axisConPA8"/>
+          <widget class="CenteredCBox" name="comboBox_axisConPA8"/>
          </item>
         </layout>
        </widget>
@@ -200,7 +200,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox_axisConPB1"/>
+          <widget class="CenteredCBox" name="comboBox_axisConPB1"/>
          </item>
         </layout>
        </widget>
@@ -276,7 +276,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox_axisConPB0"/>
+          <widget class="CenteredCBox" name="comboBox_axisConPB0"/>
          </item>
         </layout>
        </widget>
@@ -349,7 +349,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox_axisConPB4"/>
+          <widget class="CenteredCBox" name="comboBox_axisConPB4"/>
          </item>
         </layout>
        </widget>
@@ -410,7 +410,7 @@
            </size>
           </property>
           <property name="text">
-           <string>№</string>
+           <string>#</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -442,7 +442,7 @@
            </size>
           </property>
           <property name="text">
-           <string>Input №</string>
+           <string>Input #</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -901,6 +901,11 @@
    <class>AltSpinBox</class>
    <extends>QSpinBox</extends>
    <header>altspinbox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>CenteredCBox</class>
+   <extends>QComboBox</extends>
+   <header>centered_cbox.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

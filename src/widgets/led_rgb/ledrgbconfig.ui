@@ -135,7 +135,7 @@
         <item>
          <widget class="QLabel" name="label_RBBrightness">
           <property name="text">
-           <string>RB brightness</string>
+           <string>Rainbow brightness</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignBottom|Qt::AlignHCenter</set>
