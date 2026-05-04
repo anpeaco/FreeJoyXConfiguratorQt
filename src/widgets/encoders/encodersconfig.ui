@@ -62,7 +62,7 @@
           <string notr="true"/>
          </property>
          <property name="title">
-          <string>Fast Encoders</string>
+          <string>Fast encoders</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>

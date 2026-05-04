@@ -44,10 +44,10 @@
    <item>
     <widget class="QFrame" name="frame">
      <property name="frameShape">
-      <enum>QFrame::Box</enum>
+      <enum>QFrame::NoFrame</enum>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
+      <enum>QFrame::Plain</enum>
      </property>
      <layout class="QGridLayout" name="layoutG_AxisExtend" columnstretch="1,2,3,1,1,1,0,0" columnminimumwidth="95,0,0,0,0,0,0,0">
       <property name="leftMargin">

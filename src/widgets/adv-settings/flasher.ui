@@ -50,6 +50,9 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="toolTip">
+      <string>Reboots the device into bootloader (DFU) mode so it can accept a new firmware image. Required before clicking Flash Firmware.</string>
+     </property>
      <property name="text">
       <string>Enter Flasher Mode</string>
      </property>
@@ -78,6 +81,9 @@
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
+     </property>
+     <property name="toolTip">
+      <string>Pick a .bin firmware file and flash it to the device. The device must already be in flasher mode (click Enter Flasher Mode first).</string>
      </property>
      <property name="text">
       <string>Flash Firmware</string>
