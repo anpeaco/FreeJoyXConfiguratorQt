@@ -119,16 +119,21 @@ void AdvancedSettings::on_spinBox_FontSize_valueChanged(int fontSize)
 // about
 void AdvancedSettings::on_pushButton_About_clicked()
 {
-    const QString version("<p align=\"center\">FreeJoyConfiguratorQt v" + QStringLiteral(APP_VERSION) + " ");
+    const QString version = QString("<p align=\"center\">%1 Configurator v%2 "
+                                    "(fork of FreeJoy v%3)")
+                                .arg(FORK_NAME, FORK_VERSION, QStringLiteral(APP_VERSION));
     const QString source = tr("<br>Built with Qt %1 (%2)<br>"
-                              R"(Source code available under GPLv3 on <a style="color: #03A9F4; text-decoration:none;"
-                                href="https://github.com/FreeJoy-Team/FreeJoyConfiguratorQt">Github</a><br>)")
-                               .arg(QT_VERSION_STR, QSysInfo::buildCpuArchitecture()); //"Copyright © %3 Reksotiv and contributors"//, "2021"
+                              R"(Fork source on <a style="color: #03A9F4; text-decoration:none;"
+                                href="https://github.com/anpeaco/FreeJoyConfiguratorQtX">GitHub</a>;
+                                upstream <a style="color: #03A9F4; text-decoration:none;"
+                                href="https://github.com/FreeJoy-Team/FreeJoyConfiguratorQt">FreeJoyConfiguratorQt</a>.<br>
+                                Released under GPLv3.<br>)")
+                               .arg(QT_VERSION_STR, QSysInfo::buildCpuArchitecture());
 
-    const QString wiki(tr(R"(<br>Check <a style="color: #03A9F4; text-decoration:none;"
-                            href="https://github.com/FreeJoy-Team/FreeJoyWiki">our wiki </a>
-                            for detailed instructions.)"));
-    QMessageBox::about(this, tr("About FreeJoyQt"), version + source + wiki);
+    const QString wiki(tr(R"(<br>See the upstream <a style="color: #03A9F4; text-decoration:none;"
+                            href="https://github.com/FreeJoy-Team/FreeJoyWiki">FreeJoy wiki</a>
+                            for detailed wiring and sensor instructions.)"));
+    QMessageBox::about(this, tr("About %1 Configurator").arg(FORK_NAME), version + source + wiki);
 }
 
 // remove name from registry
