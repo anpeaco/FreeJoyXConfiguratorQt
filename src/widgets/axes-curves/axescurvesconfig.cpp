@@ -139,6 +139,11 @@ void AxesCurvesConfig::deviceStatus(bool isConnect)
     ui->widget_AxesCurves->deviceStatus(isConnect);
 }
 
+void AxesCurvesConfig::setAxisInUse(int axisNumber, bool inUse)
+{
+    ui->widget_AxesCurves->setAxisInUse(axisNumber, inUse);
+}
+
 //! QPixmap gray-scale image (an alpha map) to colored QPixmap
 QPixmap AxesCurvesConfig::coloringPixmap(QPixmap pixmap, const QColor &color)
 {

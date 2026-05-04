@@ -124,6 +124,19 @@ void Axes::mainSourceIndexChanged(int index)
     }
     applyOutputGuard();
     emit mainSourceChanged();
+    // applyOutputGuard may have flipped the Output checkbox to false
+    // when source went to None; that already fires outputActiveChanged
+    // via outputValueChanged. We still emit here so the source-changed
+    // path is covered when the checkbox state didn't change but the
+    // *active* state did (e.g. switching between two real sources --
+    // active stays true; covered via outputValueChanged not firing,
+    // but the check below short-circuits redundant re-emits).
+    emit outputActiveChanged(m_axisNumber, isOutputActive());
+}
+
+bool Axes::isOutputActive() const
+{
+    return hasMainSource() && ui->checkBox_Output->isChecked();
 }
 
 bool Axes::hasMainSource() const
@@ -247,6 +260,7 @@ void Axes::outputValueChanged(bool isChecked)
         ui->progressBar_Out->setEnabled(false);
         ui->progressBar_Raw->setEnabled(false);
     }
+    emit outputActiveChanged(m_axisNumber, isOutputActive());
 }
 
 void Axes::on_pushButton_SetCenter_clicked()
@@ -347,6 +361,11 @@ void Axes::readFromConfig()
     // through that path. This catches axes that load with source = None
     // and out_enabled = true (force-uncheck them).
     applyOutputGuard();
+    // Push current active state out so the Curves tab thumbnails get
+    // the right "not in use" overlay state on load. Same rationale as
+    // applyOutputGuard above: the toggled / index-changed signals may
+    // not have fired if the loaded values match defaults.
+    emit outputActiveChanged(m_axisNumber, isOutputActive());
 }
 
 void Axes::writeToConfig()

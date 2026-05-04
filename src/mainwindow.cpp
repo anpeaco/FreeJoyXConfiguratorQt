@@ -114,6 +114,12 @@ MainWindow::MainWindow(QWidget *parent)
     // add axes curves widget
     m_axesCurvesConfig = new AxesCurvesConfig(this);
     ui->layoutV_tabAxesCurvesConfig->addWidget(m_axesCurvesConfig);
+    // Per-axis "not in use" overlay on the curves thumbnails: any time
+    // an axis's main-source or Output checkbox changes, the curves tab
+    // greys-out that axis's preview so the user can see at a glance
+    // which curves are currently affecting device output.
+    connect(m_axesConfig, &AxesConfig::axisOutputActiveChanged,
+            m_axesCurvesConfig, &AxesCurvesConfig::setAxisInUse);
     qDebug()<<"curves config load time ="<< timer.restart() << "ms";
     // add shift registers widget
     m_shiftRegConfig = new ShiftRegistersConfig(this);

@@ -30,6 +30,13 @@ public:
     void updateAxesCurves();
     void deviceStatus(bool isConnect);
 
+public slots:
+    /* Relays AxesConfig::axisOutputActiveChanged into the inner
+     * AxesCurves widget so per-axis curve thumbnails show a
+     * "not in use" overlay when the axis isn't contributing to
+     * device output. */
+    void setAxisInUse(int axisNumber, bool inUse);
+
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 

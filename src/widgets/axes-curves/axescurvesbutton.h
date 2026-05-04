@@ -17,8 +17,15 @@ public:
     void setCheckable(bool chackable);
     void setDraggable(bool draggable);
 
+    bool isAxisInUse() const { return m_axisInUse; }
+
 public slots:
     void setChecked(bool checked);
+    /* Marks this axis's curve thumbnail as not contributing to the device
+     * output -- main source unset or Output checkbox off. The button stays
+     * fully interactive (so the user can still preview/edit the curve)
+     * but a "not in use" overlay is painted on top. */
+    void setAxisInUse(bool inUse);
 
 signals:
     void toggled(bool checked);
@@ -52,6 +59,7 @@ private:
     bool m_autoExclusive;
     bool m_checkable;
     bool m_draggable;
+    bool m_axisInUse;
 };
 
 #endif // AXESCURVESBUTTON_H

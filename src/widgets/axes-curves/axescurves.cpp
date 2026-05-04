@@ -131,6 +131,12 @@ void AxesCurves::updateAxis()
     //    }
 }
 
+void AxesCurves::setAxisInUse(int axisNumber, bool inUse)
+{
+    if (axisNumber < 0 || axisNumber >= m_curvesList.size()) return;
+    m_curvesList[axisNumber]->setAxisInUse(inUse);
+}
+
 void AxesCurves::deviceStatus(bool isConnect)
 {
     if (gEnv.pDeviceConfig->config.axis_config[m_lastSelectedIndex].source_main != -1 &&

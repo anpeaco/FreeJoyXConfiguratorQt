@@ -65,6 +65,12 @@ public:
      * Pass an empty map to clear all annotations. */
     void markSourcesInUse(const QMap<int, QStringList> &usedByOthers);
 
+    /* True iff the axis is currently contributing to the device output
+     * -- main source is set to a real pin AND the Output checkbox is
+     * checked. The Curves tab uses this to grey-out thumbnails for
+     * axes whose curves don't currently affect anything. */
+    bool isOutputActive() const;
+
 signals:
     void a2bCountChanged(int count, int previousCount);
 
@@ -73,6 +79,13 @@ signals:
      * the global per-source usage map and re-annotate every axis's
      * dropdown. */
     void mainSourceChanged();
+
+    /* Fires whenever isOutputActive() may have changed -- Output
+     * checkbox toggled, or main source switched between real / "None".
+     * AxesConfig forwards to AxesCurves so the per-axis curve thumbnails
+     * can paint a "not in use" overlay when the curve doesn't currently
+     * affect device output. */
+    void outputActiveChanged(int axisNumber, bool active);
 
 private:
     /* Enforce "no source -> do not output". When the main-source

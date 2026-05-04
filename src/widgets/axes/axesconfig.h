@@ -37,6 +37,11 @@ signals:
      * UI can sub-divide the "Axis-to-buttons" section by axis. */
     void a2bBreakdownChanged(const QList<int> &perAxis);
 
+    /* Forwarded from each Axes widget. AxesCurvesConfig listens to
+     * grey-out per-axis curve thumbnails when the matching axis is
+     * not contributing to device output. */
+    void axisOutputActiveChanged(int axisNumber, bool active);
+
 public slots:
     void addOrDeleteMainSource(int sourceEnum, QString sourceName, bool isAdd);
 private slots:
