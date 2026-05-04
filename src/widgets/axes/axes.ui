@@ -133,6 +133,8 @@
          <property name="verticalSpacing">
           <number>3</number>
          </property>
+         <!-- Row 2: top action row. Calibrate (text) on the left;
+              Reset Calibration (icon, square) on the right. -->
          <item row="2" column="0">
           <widget class="QPushButton" name="pushButton_StartCalib">
            <property name="sizePolicy">
@@ -158,35 +160,6 @@
            </property>
           </widget>
          </item>
-         <item row="4" column="0">
-          <widget class="QCheckBox" name="checkBox_Center">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="toolTip">
-            <string>Override the natural midpoint between Min and Max with a custom center value</string>
-           </property>
-           <property name="text">
-            <string>Use center</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
-          <widget class="QLabel" name="text_minimum">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Minimum</string>
-           </property>
-          </widget>
-         </item>
          <item row="2" column="1">
           <spacer name="horizontalSpacer">
            <property name="orientation">
@@ -203,8 +176,42 @@
            </property>
           </spacer>
          </item>
-         <item row="5" column="0">
-          <widget class="QLabel" name="text_maximum">
+         <item row="2" column="2">
+          <widget class="QPushButton" name="pushButton_ResetCalib">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size><width>26</width><height>26</height></size>
+           </property>
+           <property name="maximumSize">
+            <size><width>26</width><height>26</height></size>
+           </property>
+           <property name="toolTip">
+            <string>Reset calibration (Min / Center / Max back to factory defaults)</string>
+           </property>
+           <property name="text">
+            <string notr="true"/>
+           </property>
+           <property name="icon">
+            <iconset resource="../../resources.qrc">
+             <normaloff>:/Images/icons/lucide/rotate-ccw.svg</normaloff>:/Images/icons/lucide/rotate-ccw.svg</iconset>
+           </property>
+           <property name="autoDefault">
+            <bool>false</bool>
+           </property>
+           <property name="default">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+
+         <!-- Row 3: Minimum -->
+         <item row="3" column="0">
+          <widget class="QLabel" name="text_minimum">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
              <horstretch>0</horstretch>
@@ -212,26 +219,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>Maximum</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="2">
-          <widget class="QPushButton" name="pushButton_SetCenter">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Set Center</string>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
-           </property>
-           <property name="default">
-            <bool>false</bool>
+            <string>Minimum</string>
            </property>
           </widget>
          </item>
@@ -257,6 +245,90 @@
            </property>
           </widget>
          </item>
+
+         <!-- Row 4: Center. Label is a plain QLabel (left-aligned to
+              match Minimum/Maximum); the checkbox carries no text and
+              sits next to the label as the toggle indicator. Set Center
+              moves into column 1 as a square icon button so the row
+              reads: [Center  toggle]  [⊕]  [value]. -->
+         <item row="4" column="0">
+          <layout class="QHBoxLayout" name="layoutH_CenterRow">
+           <property name="spacing">
+            <number>4</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="text_center">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Center</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBox_Center">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="toolTip">
+              <string>Override the natural midpoint between Min and Max with a custom center value</string>
+             </property>
+             <property name="text">
+              <string notr="true"/>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_CenterRow">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size><width>0</width><height>0</height></size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+         <item row="4" column="1">
+          <widget class="QPushButton" name="pushButton_SetCenter">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size><width>26</width><height>26</height></size>
+           </property>
+           <property name="maximumSize">
+            <size><width>26</width><height>26</height></size>
+           </property>
+           <property name="toolTip">
+            <string>Capture the current axis value as the new Center</string>
+           </property>
+           <property name="text">
+            <string notr="true"/>
+           </property>
+           <property name="icon">
+            <iconset resource="../../resources.qrc">
+             <normaloff>:/Images/icons/lucide/crosshair.svg</normaloff>:/Images/icons/lucide/crosshair.svg</iconset>
+           </property>
+           <property name="autoDefault">
+            <bool>false</bool>
+           </property>
+           <property name="default">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
          <item row="4" column="2">
           <widget class="QSpinBox" name="spinBox_CalibCenter">
            <property name="enabled">
@@ -279,6 +351,21 @@
            </property>
           </widget>
          </item>
+
+         <!-- Row 5: Maximum -->
+         <item row="5" column="0">
+          <widget class="QLabel" name="text_maximum">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Maximum</string>
+           </property>
+          </widget>
+         </item>
          <item row="5" column="2">
           <widget class="QSpinBox" name="spinBox_CalibMax">
            <property name="sizePolicy">
@@ -298,25 +385,6 @@
            </property>
            <property name="value">
             <number>32767</number>
-           </property>
-          </widget>
-         </item>
-         <item row="6" column="0" colspan="3">
-          <widget class="QPushButton" name="pushButton_ResetCalib">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Reset calibration</string>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
-           </property>
-           <property name="default">
-            <bool>false</bool>
            </property>
           </widget>
          </item>
