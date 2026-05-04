@@ -139,15 +139,15 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
-          <property name="minimumSize"><size><width>26</width><height>26</height></size></property>
-          <property name="maximumSize"><size><width>26</width><height>26</height></size></property>
+          <property name="minimumSize"><size><width>22</width><height>22</height></size></property>
+          <property name="maximumSize"><size><width>22</width><height>22</height></size></property>
           <property name="toolTip"><string>Reset calibration (Min / Center / Max back to factory defaults)</string></property>
           <property name="text"><string notr="true"/></property>
           <property name="icon">
            <iconset resource="../../resources.qrc">
             <normaloff>:/Images/icons/lucide/rotate-ccw.svg</normaloff>:/Images/icons/lucide/rotate-ccw.svg</iconset>
           </property>
-          <property name="iconSize"><size><width>18</width><height>18</height></size></property>
+          <property name="iconSize"><size><width>14</width><height>14</height></size></property>
           <property name="autoDefault"><bool>false</bool></property>
           <property name="default"><bool>false</bool></property>
          </widget>
@@ -181,7 +181,7 @@
            </sizepolicy>
           </property>
           <property name="minimumSize"><size><width>95</width><height>0</height></size></property>
-          <property name="maximumSize"><size><width>95</width><height>16777215</height></size></property>
+          <property name="maximumSize"><size><width>95</width><height>22</height></size></property>
           <property name="alignment"><set>Qt::AlignCenter</set></property>
           <property name="minimum"><number>-32767</number></property>
           <property name="maximum"><number>32767</number></property>
@@ -222,15 +222,15 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
-          <property name="minimumSize"><size><width>26</width><height>26</height></size></property>
-          <property name="maximumSize"><size><width>26</width><height>26</height></size></property>
+          <property name="minimumSize"><size><width>22</width><height>22</height></size></property>
+          <property name="maximumSize"><size><width>22</width><height>22</height></size></property>
           <property name="toolTip"><string>Capture the current axis value as the new Center</string></property>
           <property name="text"><string notr="true"/></property>
           <property name="icon">
            <iconset resource="../../resources.qrc">
             <normaloff>:/Images/icons/lucide/target.svg</normaloff>:/Images/icons/lucide/target.svg</iconset>
           </property>
-          <property name="iconSize"><size><width>18</width><height>18</height></size></property>
+          <property name="iconSize"><size><width>14</width><height>14</height></size></property>
           <property name="autoDefault"><bool>false</bool></property>
           <property name="default"><bool>false</bool></property>
          </widget>
@@ -245,7 +245,7 @@
            </sizepolicy>
           </property>
           <property name="minimumSize"><size><width>95</width><height>0</height></size></property>
-          <property name="maximumSize"><size><width>95</width><height>16777215</height></size></property>
+          <property name="maximumSize"><size><width>95</width><height>22</height></size></property>
           <property name="alignment"><set>Qt::AlignCenter</set></property>
           <property name="minimum"><number>-32767</number></property>
           <property name="maximum"><number>32767</number></property>
@@ -280,7 +280,7 @@
            </sizepolicy>
           </property>
           <property name="minimumSize"><size><width>95</width><height>0</height></size></property>
-          <property name="maximumSize"><size><width>95</width><height>16777215</height></size></property>
+          <property name="maximumSize"><size><width>95</width><height>22</height></size></property>
           <property name="alignment"><set>Qt::AlignCenter</set></property>
           <property name="minimum"><number>-32767</number></property>
           <property name="maximum"><number>32767</number></property>
