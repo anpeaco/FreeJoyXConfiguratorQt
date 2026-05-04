@@ -90,10 +90,10 @@
          </sizepolicy>
         </property>
         <property name="minimumSize">
-         <size><width>70</width><height>0</height></size>
+         <size><width>110</width><height>0</height></size>
         </property>
         <property name="maximumSize">
-         <size><width>70</width><height>16777215</height></size>
+         <size><width>110</width><height>16777215</height></size>
         </property>
         <property name="text">
          <string>Delay timer</string>
@@ -112,10 +112,10 @@
          </sizepolicy>
         </property>
         <property name="minimumSize">
-         <size><width>70</width><height>0</height></size>
+         <size><width>110</width><height>0</height></size>
         </property>
         <property name="maximumSize">
-         <size><width>70</width><height>16777215</height></size>
+         <size><width>110</width><height>16777215</height></size>
         </property>
         <property name="text">
          <string>Press timer</string>

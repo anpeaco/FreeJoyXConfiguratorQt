@@ -42,14 +42,29 @@ ShiftsTimersConfig::ShiftsTimersConfig(QWidget *parent)
 
     /* Forward Timer 1/2/3 edits to a single buttonTimersChanged signal
      * so MainWindow can refresh Button Config's dropdown labels in one
-     * place, not three. Fires on user edits AND on readFromConfig's
-     * setValue calls -- same path either way. */
+     * place, not three. Each handler pushes the new value into
+     * gEnv.pDeviceConfig->config FIRST, then emits. The push is
+     * essential because timer_label.h::timerSlotDisplayName() reads
+     * from dev_config; without this, button_timerN_ms would still
+     * hold the value from the last writeToConfig and the dropdowns
+     * would render stale "(X ms)" suffixes until Write was clicked.
+     * Fires on user edits AND on readFromConfig's setValue calls --
+     * same path either way. */
     connect(ui->spinBox_Timer1, qOverload<int>(&QSpinBox::valueChanged),
-            this, &ShiftsTimersConfig::buttonTimersChanged);
+            this, [this](int v) {
+                gEnv.pDeviceConfig->config.button_timer1_ms = v;
+                emit buttonTimersChanged();
+            });
     connect(ui->spinBox_Timer2, qOverload<int>(&QSpinBox::valueChanged),
-            this, &ShiftsTimersConfig::buttonTimersChanged);
+            this, [this](int v) {
+                gEnv.pDeviceConfig->config.button_timer2_ms = v;
+                emit buttonTimersChanged();
+            });
     connect(ui->spinBox_Timer3, qOverload<int>(&QSpinBox::valueChanged),
-            this, &ShiftsTimersConfig::buttonTimersChanged);
+            this, [this](int v) {
+                gEnv.pDeviceConfig->config.button_timer3_ms = v;
+                emit buttonTimersChanged();
+            });
 }
 
 ShiftsTimersConfig::~ShiftsTimersConfig()

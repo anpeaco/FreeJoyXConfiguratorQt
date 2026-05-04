@@ -43,13 +43,24 @@ LedConfig::LedConfig(QWidget *parent)
     m_ledsRgb->setEnabled(false);
 
     /* Refresh LED row dropdowns whenever any of the four LED timer
-     * spinboxes change (user edit OR readFromConfig setValue). Self-
-     * contained: LED timers live on this same tab, so MainWindow
-     * doesn't need to be involved. */
-    for (auto *sb : { ui->spinBox_Timer1, ui->spinBox_Timer2, ui->spinBox_Timer3, ui->spinBox_Timer4 }) {
+     * spinboxes change (user edit OR readFromConfig setValue). Each
+     * handler pushes the new value into gEnv.pDeviceConfig->config
+     * FIRST so timerSlotDisplayName() sees the live value; without
+     * this, dropdowns would render the value from the last
+     * writeToConfig until Write was clicked. Self-contained: LED
+     * timers live on this same tab, so MainWindow doesn't need to
+     * be involved. */
+    auto wireLedTimer = [this](QSpinBox *sb, int slot) {
         connect(sb, qOverload<int>(&QSpinBox::valueChanged),
-                this, &LedConfig::refreshTimerLabels);
-    }
+                this, [this, slot](int v) {
+                    gEnv.pDeviceConfig->config.led_timer_ms[slot] = v;
+                    refreshTimerLabels();
+                });
+    };
+    wireLedTimer(ui->spinBox_Timer1, 0);
+    wireLedTimer(ui->spinBox_Timer2, 1);
+    wireLedTimer(ui->spinBox_Timer3, 2);
+    wireLedTimer(ui->spinBox_Timer4, 3);
 }
 
 void LedConfig::refreshTimerLabels()
