@@ -106,6 +106,12 @@ void ButtonLogical::setSpinBoxOnOff(int maxPhysButtons)
 
 void ButtonLogical::functionIndexChanged(int index)
 {
+    /* setCurrentIndex(-1) (combobox deselection) fires this slot with
+     * index=-1. Happens when readFromConfig calls setCurrentIndex with
+     * EnumToIndex(button->type, ...) that returned -1 for an unknown
+     * button type. m_logicFunctionList[-1] would QList-ASSERT-crash --
+     * guard and bail. */
+    if (index < 0 || index >= m_logicFunctionList.size()) return;
     int type = m_logicFunctionList[index].deviceEnumIndex;
 
     // Any function change clears the LOGIC-only fields back to their
@@ -139,9 +145,14 @@ void ButtonLogical::updateLogicWidgetsEnabled()
     const bool physSet  = ui->spinBox_PhysicalButtonNumber->value() > 0
                        && ui->spinBox_PhysicalButtonNumber->isEnabled();
     const bool isLogic  = (currentButtonType() == LOGIC);
-    const button_type_t curOp = m_logicOp_enumIndex.isEmpty()
+    /* Same -1 guard as currentButtonType: comboBox_LogicOp may be at -1
+     * when readFromConfig couldn't match the stored op. */
+    const int opIdx = ui->comboBox_LogicOp->currentIndex();
+    const button_type_t curOp = (m_logicOp_enumIndex.isEmpty() ||
+                                 opIdx < 0 ||
+                                 opIdx >= m_logicOp_enumIndex.size())
                                 ? 0
-                                : m_logicOp_enumIndex[ui->comboBox_LogicOp->currentIndex()];
+                                : m_logicOp_enumIndex[opIdx];
     const bool isUnary  = (curOp == LOGIC_OP_NOT);
 
     ui->comboBox_LogicOp->setEnabled(physSet && isLogic);
@@ -242,7 +253,12 @@ void ButtonLogical::disableButtonType(button_type_t type, bool disable)
 
 button_type_t ButtonLogical::currentButtonType()
 {
-    return m_logicFunc_enumIndex[ui->comboBox_ButtonFunction->currentIndex()];
+    /* combobox at -1 (deselected via setCurrentIndex(-1)) -> indexing
+     * m_logicFunc_enumIndex[-1] would QList-ASSERT-crash. Treat as the
+     * sentinel "no button type" (NORMAL = 0 is the safe default). */
+    const int idx = ui->comboBox_ButtonFunction->currentIndex();
+    if (idx < 0 || idx >= m_logicFunc_enumIndex.size()) return (button_type_t)0;
+    return m_logicFunc_enumIndex[idx];
 }
 
 int ButtonLogical::currentPhysicalNum() const

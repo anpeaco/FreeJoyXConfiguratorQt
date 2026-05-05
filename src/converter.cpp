@@ -23,6 +23,8 @@ int Converter::EnumToIndex(const int deviceEnum, const QVector<int> &list)
             return i;
         }
     }
-    qCritical() << "Converter::FindIndex returns -1";
+    qCritical() << "Converter::FindIndex returns -1 -- enum"
+                << deviceEnum << "not in list of size" << list.size()
+                << "list contents:" << list;
     return -1;
 }

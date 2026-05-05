@@ -96,6 +96,14 @@ void Axes::addOrDeleteMainSource(int sourceEnum, QString sourceName, bool isAdd)
 {
     if (isAdd == true) {
         const int pinIdx = Converter::EnumToIndex(sourceEnum, m_axesPinList);
+        /* sourceEnum can be a pin slot index that's not in m_axesPinList
+         * -- e.g. a board variant exposes a slot the universal list
+         * doesn't enumerate. Skip silently rather than indexing
+         * m_axesPinList[-1], which used to ASSERT-crash the configurator
+         * after a successful Read Config. */
+        if (pinIdx < 0) {
+            return;
+        }
         const QString baseText = m_axesPinList[pinIdx].guiName + " - " + sourceName;
         ui->comboBox_AxisSource1->addItem(baseText);
         m_mainSource_enumIndex.push_back(m_axesPinList[pinIdx].deviceEnumIndex);
@@ -117,6 +125,15 @@ void Axes::addOrDeleteMainSource(int sourceEnum, QString sourceName, bool isAdd)
 
 void Axes::mainSourceIndexChanged(int index)
 {
+    /* setCurrentIndex(-1) (deselection) fires this slot with index=-1.
+     * Indexing m_mainSource_enumIndex[-1] would QList-ASSERT-crash. */
+    if (index < 0 || index >= m_mainSource_enumIndex.size()) {
+        m_axesExtend->setI2CEnabled(false);
+        applyOutputGuard();
+        emit mainSourceChanged();
+        emit outputActiveChanged(m_axisNumber, isOutputActive());
+        return;
+    }
     if (m_mainSource_enumIndex[index] == I2C) {
         m_axesExtend->setI2CEnabled(true);
     } else {
@@ -347,9 +364,17 @@ void Axes::readFromConfig()
     ui->checkBox_Center->setChecked(axCfg->is_centered);
     ui->spinBox_CalibMax->setValue(axCfg->calib_max);
     // axes to buttons
-    ui->spinBox_A2bCount->setValue(a2bCfg->buttons_cnt);
-    if (a2bCfg->buttons_cnt > 0) {
-        for (int i = 0; i < a2bCfg->buttons_cnt + 1; ++i) {
+    /* Clamp buttons_cnt against the storage cap so a garbage value
+     * (e.g. an uninitialised field on a fresh-flashed board reading
+     * 192 / 0xC0) doesn't drive the loop past axis_to_buttons_t::points'
+     * 13-byte array OR past the slider's allocated point widgets. */
+    const int kMaxA2bPoints = sizeof(a2bCfg->points);
+    int a2bCount = a2bCfg->buttons_cnt;
+    if (a2bCount < 0) a2bCount = 0;
+    if (a2bCount > kMaxA2bPoints - 1) a2bCount = kMaxA2bPoints - 1;
+    ui->spinBox_A2bCount->setValue(a2bCount);
+    if (a2bCount > 0) {
+        for (int i = 0; i < a2bCount + 1 && i < kMaxA2bPoints; ++i) {
             ui->widget_A2bSlider->setPointValue(a2bCfg->points[i], i);
         }
     }

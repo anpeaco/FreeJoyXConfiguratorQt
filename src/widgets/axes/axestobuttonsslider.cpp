@@ -165,8 +165,16 @@ uint AxesToButtonsSlider::pointsCount() const
 
 void AxesToButtonsSlider::setPointValue(uint value, uint pointNumber)
 {
-    if (pointNumber > m_pointsCount) {
-        pointNumber = m_pointsCount;
+    /* Both lists are sized to MAX points at construction; m_pointsCount
+     * tracks the *active* count. The original guard used > and clamped
+     * to m_pointsCount itself, but m_pointPtrList[m_pointsCount] is one
+     * past the end of valid indices [0..m_pointsCount-1]. With a
+     * garbage buttons_cnt from the device (e.g. uninitialised
+     * a2bCfg->buttons_cnt = 192), Axes::readFromConfig would loop with
+     * pointNumber up to 192, fall through this guard, and ASSERT-crash
+     * on m_pointPtrList[192]. Bail on out-of-range. */
+    if (pointNumber >= uint(m_pointPtrList.size())) {
+        return;
     }
     uint pos = uint((value * (this->width() - m_kOffset * 2.0f) / m_kMaxPointValue)); // поколдовать
     // ?
