@@ -2,6 +2,7 @@
 #include <QDebug>
 #include <QElapsedTimer>
 #include <QMap>
+#include <QSet>
 #include <thread>
 #include <vector>
 #include <cstring>
@@ -100,8 +101,19 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                 // add devices ptr to list. since FJ v1.7 we have changed the name and made two interfaces.
                 // accept both upstream "FreeJoy" and our fork "FreeJoyX" so older boards still appear
                 // (they'll be flagged "incompatible firmware" by the version check downstream).
+                //
+                // F103 boards expose 4 interfaces (joystick HID #0, custom HID #1, CDC #2/#3) and
+                // the configurator's vendor protocol lives on interface #1. The F411 port uses a
+                // single-interface descriptor (everything on #0) -- usbd_freejoy_if.c:14 -- and
+                // because it's not a USB composite device, Windows/hidapi report its
+                // interface_number as -1 (no MI_xx in the device path). Accept all three here;
+                // the dedup pass after the walk drops the F103 joystick #0 entry whenever the
+                // matching #1 entry is also present, leaving the F411 lone entry intact.
                 const QString manufact = QString::fromWCharArray(hidDevInfo->manufacturer_string);
-                if ((manufact == FJ_MANUFACT_STR || manufact == UPSTREAM_MANUFACT_STR) && hidDevInfo->interface_number == 1) {
+                if ((manufact == FJ_MANUFACT_STR || manufact == UPSTREAM_MANUFACT_STR) &&
+                    (hidDevInfo->interface_number == 1  ||
+                     hidDevInfo->interface_number == 0  ||
+                     hidDevInfo->interface_number == -1)) {
                     tmp_HidList.append(qMakePair(false, hidDevInfo));
                 }
                 // search the old firmware device
@@ -113,6 +125,32 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                 hidDevInfo = hidDevInfo->next;
                 // all devices added
                 if (!hidDevInfo) {
+                    // Dedup pass: when a physical device exposes both interface 0 and
+                    // interface 1 (F103 layout: joystick HID + custom HID), keep only
+                    // the interface-1 entry. F411 single-interface devices have only
+                    // an interface-0 entry, which survives untouched. Match by serial
+                    // number -- both F103 and F411 firmware derive a stable per-chip
+                    // serial from the MCU UID.
+                    QSet<QString> serialsWithIf1;
+                    for (const auto &entry : tmp_HidList) {
+                        if (entry.second->interface_number == 1 && entry.second->serial_number) {
+                            serialsWithIf1.insert(QString::fromWCharArray(entry.second->serial_number));
+                        }
+                    }
+                    if (!serialsWithIf1.isEmpty()) {
+                        QList<QPair<bool, hid_device_info*>> dedup;
+                        dedup.reserve(tmp_HidList.size());
+                        for (const auto &entry : tmp_HidList) {
+                            if (entry.second->interface_number == 0 && entry.second->serial_number) {
+                                const QString serial = QString::fromWCharArray(entry.second->serial_number);
+                                if (serialsWithIf1.contains(serial)) {
+                                    continue;
+                                }
+                            }
+                            dedup.append(entry);
+                        }
+                        tmp_HidList = dedup;
+                    }
                     // old devices count != new devices count
                     std::lock_guard<std::mutex> lock(m_mutex);
                     if (m_hidDevicesList.size() != tmp_HidList.size()) {  // mutex
