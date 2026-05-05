@@ -412,14 +412,42 @@ void ButtonLogical::writeToConfig()
     button->is_disabled = ui->checkBox_IsDisable->isChecked();
     button->is_inverted = ui->checkBox_IsInvert->isChecked();
 
-    button->type = m_logicFunc_enumIndex[ui->comboBox_ButtonFunction->currentIndex()];
+    /* Each combobox may be at -1 if Read populated it from a config
+     * field whose stored value didn't match any list entry (e.g. raw
+     * 0xFF / 0xC0 / 0xA3 garbage from a fresh-flashed F411). Indexing
+     * any of the lookup vectors with -1 would QList-ASSERT-crash on
+     * Write. Preserve the prior field value when the index is invalid
+     * -- a blank combobox effectively means "leave this slot alone". */
+    auto safeAt = [](const QVector<int> &v, int idx, int fallback) -> int {
+        return (idx >= 0 && idx < v.size()) ? v[idx] : fallback;
+    };
+    button->type = safeAt(m_logicFunc_enumIndex,
+                          ui->comboBox_ButtonFunction->currentIndex(),
+                          button->type);
     button->op = m_logicOp_enumIndex.isEmpty()
                  ? 0
-                 : m_logicOp_enumIndex[ui->comboBox_LogicOp->currentIndex()];
+                 : safeAt(m_logicOp_enumIndex,
+                          ui->comboBox_LogicOp->currentIndex(),
+                          button->op);
     button->src_b = ui->spinBox_SourceB->value() - 1;	// spinBox 0 -> stored -1 (unset)
-    button->shift_modificator = m_shiftList[ui->comboBox_ShiftIndex->currentIndex()].deviceEnumIndex;
-    button->delay_timer = m_timerList[ui->comboBox_DelayTimerIndex->currentIndex()].deviceEnumIndex;
-    button->press_timer = m_timerList[ui->comboBox_PressTimerIndex->currentIndex()].deviceEnumIndex;
+    {
+        const int idx = ui->comboBox_ShiftIndex->currentIndex();
+        if (idx >= 0 && idx < SHIFT_COUNT) {
+            button->shift_modificator = m_shiftList[idx].deviceEnumIndex;
+        }
+    }
+    {
+        const int idx = ui->comboBox_DelayTimerIndex->currentIndex();
+        if (idx >= 0 && idx < TIMER_COUNT) {
+            button->delay_timer = m_timerList[idx].deviceEnumIndex;
+        }
+    }
+    {
+        const int idx = ui->comboBox_PressTimerIndex->currentIndex();
+        if (idx >= 0 && idx < TIMER_COUNT) {
+            button->press_timer = m_timerList[idx].deviceEnumIndex;
+        }
+    }
 }
 
 void ButtonLogical::refreshTimerLabels()

@@ -400,17 +400,33 @@ void Axes::writeToConfig()
     // output, inverted
     axCfg->out_enabled = ui->checkBox_Output->isChecked();
     axCfg->inverted = ui->checkBox_Inverted->isChecked();
-    // I2C, sources, function
-    axCfg->source_main = m_mainSource_enumIndex[ui->comboBox_AxisSource1->currentIndex()];
+    // I2C, sources, function. Combobox may be at -1 if Read populated
+    // it with an unmappable enum (garbage in flash on a fresh-flashed
+    // board); preserve the existing field rather than indexing
+    // m_mainSource_enumIndex[-1] and crashing.
+    {
+        const int idx = ui->comboBox_AxisSource1->currentIndex();
+        if (idx >= 0 && idx < m_mainSource_enumIndex.size()) {
+            axCfg->source_main = m_mainSource_enumIndex[idx];
+        }
+    }
     // calibration
     axCfg->calib_min = ui->spinBox_CalibMin->value();
     axCfg->calib_center = ui->spinBox_CalibCenter->value();
     axCfg->is_centered = ui->checkBox_Center->isChecked();
     axCfg->calib_max = ui->spinBox_CalibMax->value();
-    // axes to buttons
-    a2bCfg->buttons_cnt = ui->spinBox_A2bCount->value();
-    for (int i = 0; i < ui->spinBox_A2bCount->value() + 1; ++i) {
-        a2bCfg->points[i] = ui->widget_A2bSlider->pointValue(i);
+    // axes to buttons. Same buttons_cnt clamp as readFromConfig --
+    // the spinbox's value is bounded by its setRange(), but defending
+    // explicitly costs nothing and matches the read path.
+    {
+        const int kMaxA2bPoints = sizeof(a2bCfg->points);
+        int a2bCount = ui->spinBox_A2bCount->value();
+        if (a2bCount < 0) a2bCount = 0;
+        if (a2bCount > kMaxA2bPoints - 1) a2bCount = kMaxA2bPoints - 1;
+        a2bCfg->buttons_cnt = a2bCount;
+        for (int i = 0; i < a2bCount + 1 && i < kMaxA2bPoints; ++i) {
+            a2bCfg->points[i] = ui->widget_A2bSlider->pointValue(i);
+        }
     }
     // axes extended settings
     m_axesExtend->writeToConfig();

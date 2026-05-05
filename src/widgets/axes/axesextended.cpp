@@ -120,18 +120,37 @@ void AxesExtended::readFromConfig()
 void AxesExtended::writeToConfig()
 {
     axis_config_t *axisCfg = &gEnv.pDeviceConfig->config.axis_config[m_axisNumber];
+    /* Each combobox can be at -1 if Read couldn't map the stored value
+     * to a list entry (garbage in flash on a fresh-flashed F411).
+     * Indexing list[-1] would QList-ASSERT-crash on Write. Preserve
+     * the prior field value when the index is invalid. */
+    auto safeAt = [](const QVector<deviceEnum_guiName_t> &v, int idx, int fallback) -> int {
+        return (idx >= 0 && idx < v.size()) ? v[idx].deviceEnumIndex : fallback;
+    };
     // I2C, sources, function
-    axisCfg->i2c_address = m_i2cPtrList[ui->comboBox_I2cAddress->currentIndex()].deviceEnumIndex;
-    axisCfg->source_secondary = axesList()[ui->comboBox_AxisSource2->currentIndex()].deviceEnumIndex;
-    axisCfg->function = m_functionList[ui->comboBox_Function->currentIndex()].deviceEnumIndex;
+    axisCfg->i2c_address = safeAt(m_i2cPtrList,
+                                  ui->comboBox_I2cAddress->currentIndex(),
+                                  axisCfg->i2c_address);
+    axisCfg->source_secondary = safeAt(axesList(),
+                                       ui->comboBox_AxisSource2->currentIndex(),
+                                       axisCfg->source_secondary);
+    axisCfg->function = safeAt(m_functionList,
+                               ui->comboBox_Function->currentIndex(),
+                               axisCfg->function);
     // chanel
     axisCfg->channel = ui->spinBox_ChanelEncoder->value();
     // buttons
-    axisCfg->button1_type = m_button_1_3_list[ui->comboBox_Button1->currentIndex()].deviceEnumIndex;
+    axisCfg->button1_type = safeAt(m_button_1_3_list,
+                                   ui->comboBox_Button1->currentIndex(),
+                                   axisCfg->button1_type);
     axisCfg->button1 = ui->spinBox_Button1->value() - 1;
-    axisCfg->button2_type = m_button_2_list[ui->comboBox_Button2->currentIndex()].deviceEnumIndex;
+    axisCfg->button2_type = safeAt(m_button_2_list,
+                                   ui->comboBox_Button2->currentIndex(),
+                                   axisCfg->button2_type);
     axisCfg->button2 = ui->spinBox_Button2->value() - 1;
-    axisCfg->button3_type = m_button_1_3_list[ui->comboBox_Button3->currentIndex()].deviceEnumIndex;
+    axisCfg->button3_type = safeAt(m_button_1_3_list,
+                                   ui->comboBox_Button3->currentIndex(),
+                                   axisCfg->button3_type);
     axisCfg->button3 = ui->spinBox_Button3->value() - 1;
     // divider, prescaler
     axisCfg->divider = ui->spinBox_StepDiv->value();
