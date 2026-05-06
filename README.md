@@ -1,5 +1,9 @@
 # FreeJoy Configurator X
 
+**STILL IN INITIAL DEVELOPMENT STAGES**
+
+*Repo is up for feedback and suggestions, I'll update this when it's ready to try.*
+
 FreeJoyConfiguratorQtX is a fork of [FreeJoyConfiguratorQt](https://github.com/FreeJoy-Team/FreeJoyConfiguratorQt) — the visual utility for setting up a [FreeJoyX](../FreeJoyX) device. This fork follows the FreeJoyX firmware feature set and stays in lockstep with its wire format.
 
 <img src="https://github.com/FreeJoy-Team/FreeJoyWiki/blob/master/images/main.jpg" width="800"/>
