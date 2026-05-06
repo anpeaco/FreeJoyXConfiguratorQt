@@ -173,6 +173,17 @@ private:
     QString writePreWriteDeviceBackup();
     void doActualWriteToDevice();
 
+    /* Snapshot of the device's USB Product String (device_name field of
+     * dev_config_t) captured during the pre-write Read. Compared against
+     * the new device_name on configSent(true) -- if they differ, the
+     * user is prompted to re-enumerate the device in Device Manager,
+     * because Windows caches iProduct in HKLM\...\Enum\USB and won't
+     * refresh on a soft USB re-enumerate from firmware. Empty when no
+     * pre-write Read happened (e.g. unrecognised firmware version, no
+     * backup possible) -- in that case the prompt is skipped because we
+     * have no reliable baseline to compare against. */
+    QString m_preWriteDeviceName;
+
     /* Post-flash health check. Starts a timer when the flasher emits
      * flashTerminated(true). Cleared when the device reconnects (a
      * successful firmware boot fires deviceConnected / paramsPacketReceived).

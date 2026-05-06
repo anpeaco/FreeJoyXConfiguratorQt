@@ -821,15 +821,20 @@ void MainWindow::UiWriteToConfig()
     // metadata; firmware allocates the bytes but never reads them.
     m_buttonConfig->captureBreakdownToConfig();
 
-    // remove device name from registry. sometimes windows does not update the name in gaming devices and has to be deleted in the registry
+    // remove device name from registry. sometimes windows does not update
+    // the name in gaming devices and has to be deleted from the joy.cpl
+    // OEMName cache. The cache is keyed by VID+PID in zero-padded 4-digit
+    // hex (e.g. "VID_0483&PID_5750"); QString::number(x, 16) doesn't pad,
+    // so values like 0x0483 produced "VID_483&PID_5750" and the clear
+    // silently no-op'd against a non-existent key. arg(x, 4, 16, '0') pads.
 #ifdef Q_OS_WIN
         qDebug()<<"Remove device OEMName from registry";
         QString path("HKEY_CURRENT_USER\\System\\CurrentControlSet\\Control\\MediaProperties\\PrivateProperties\\Joystick\\OEM\\VID_%1&PID_%2");
         QString path2("HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Control\\MediaProperties\\PrivateProperties\\Joystick\\OEM\\VID_%1&PID_%2");
-        QSettings(path.arg(QString::number(gEnv.pDeviceConfig->config.vid, 16), QString::number(gEnv.pDeviceConfig->config.pid, 16)),
-                  QSettings::NativeFormat).remove("OEMName");
-        QSettings(path2.arg(QString::number(gEnv.pDeviceConfig->config.vid, 16), QString::number(gEnv.pDeviceConfig->config.pid, 16)),
-                  QSettings::NativeFormat).remove("OEMName");
+        const QString vidHex = QStringLiteral("%1").arg(gEnv.pDeviceConfig->config.vid, 4, 16, QChar('0'));
+        const QString pidHex = QStringLiteral("%1").arg(gEnv.pDeviceConfig->config.pid, 4, 16, QChar('0'));
+        QSettings(path.arg(vidHex, pidHex), QSettings::NativeFormat).remove("OEMName");
+        QSettings(path2.arg(vidHex, pidHex), QSettings::NativeFormat).remove("OEMName");
 #endif
 }
 
@@ -929,10 +934,24 @@ void MainWindow::configReceived(bool success)
     if (m_backupBeforeWritePending) {
         m_backupBeforeWritePending = false;
         if (success) {
+            /* Snapshot the device's pre-write USB Product String so
+             * configSent can detect a name change and prompt the user
+             * to re-enumerate (Windows caches iProduct and won't
+             * refresh on soft re-enumeration). char[26] may or may not
+             * be NUL-terminated; qstrnlen bounds the read. */
+            const char *namePtr = gEnv.pDeviceConfig->config.device_name;
+            const int nameLen = qstrnlen(namePtr,
+                sizeof(gEnv.pDeviceConfig->config.device_name));
+            m_preWriteDeviceName = QString::fromLatin1(namePtr, nameLen);
+
             const QString path = writePreWriteDeviceBackup();
             qInfo() << "Pre-write device-config backup saved to" << path;
             ui->pushButton_WriteConfig->setText(tr("Backup OK, writing..."));
         } else {
+            /* Read failed -- no reliable baseline for the name-change
+             * prompt. Skip it on this write. */
+            m_preWriteDeviceName.clear();
+
             const QMessageBox::StandardButton rc = QMessageBox::warning(this,
                 tr("Pre-write backup failed"),
                 tr("<p>Could not read the device's current config to "
@@ -1053,6 +1072,50 @@ void MainWindow::configSent(bool success)
                 blockWRConfigToDevice(false);
             }
         });
+
+        /* If the device's USB name actually changed, prompt the user to
+         * re-enumerate the device. Windows caches the iProduct string
+         * in HKLM\...\Enum\USB and a soft USB re-enumerate from firmware
+         * doesn't bust that cache; until the device is uninstalled +
+         * reconnected, both the OS and our device dropdown will keep
+         * showing the old name. Defer with singleShot(0) so the "Sent"
+         * pulse paints first and the modal doesn't visually preempt the
+         * write-success feedback. */
+        const char *newNamePtr = gEnv.pDeviceConfig->config.device_name;
+        const int newNameLen = qstrnlen(newNamePtr,
+            sizeof(gEnv.pDeviceConfig->config.device_name));
+        const QString newName = QString::fromLatin1(newNamePtr, newNameLen);
+        if (!m_preWriteDeviceName.isEmpty() && newName != m_preWriteDeviceName) {
+            const QString shownName = newName.isEmpty()
+                ? QStringLiteral("FreeJoyX HID")
+                : newName;
+            QTimer::singleShot(0, this, [this, shownName] {
+                QMessageBox::information(this,
+                    tr("USB device name changed"),
+                    tr("<p>The device's USB name was changed to "
+                       "<b>%1</b>.</p>"
+                       "<p>Windows caches USB names per device and "
+                       "won't refresh on its own when the firmware "
+                       "renames itself. Until the device is "
+                       "re-enumerated, this dropdown and Device "
+                       "Manager will keep showing the old name.</p>"
+                       "<p>To see the new name now:</p>"
+                       "<ol>"
+                       "<li>Open <b>Device Manager</b></li>"
+                       "<li>Right-click the FreeJoy HID device "
+                       "(under <i>Human Interface Devices</i>)</li>"
+                       "<li>Choose <b>Uninstall device</b> "
+                       "(do <i>not</i> tick \"Delete the driver\")</li>"
+                       "<li>Unplug and reconnect the device</li>"
+                       "</ol>"
+                       "<p>The new name will appear on the next "
+                       "plug-in.</p>")
+                        .arg(shownName.toHtmlEscaped()));
+            });
+        }
+        /* One-shot baseline: clear so we don't re-prompt on the next
+         * Write unless that one also captures a fresh pre-write name. */
+        m_preWriteDeviceName.clear();
     } else {
         ui->pushButton_WriteConfig->setText(tr("Error"));
         freejoy_style::setRole(ui->pushButton_WriteConfig, "feedback", "error");
@@ -1075,15 +1138,20 @@ void MainWindow::configSent(bool success)
         });
     }
 
-    // remove device name from registry. sometimes windows does not update the name in gaming devices and has to be deleted in the registry
+    // remove device name from registry. sometimes windows does not update
+    // the name in gaming devices and has to be deleted from the joy.cpl
+    // OEMName cache. The cache is keyed by VID+PID in zero-padded 4-digit
+    // hex (e.g. "VID_0483&PID_5750"); QString::number(x, 16) doesn't pad,
+    // so values like 0x0483 produced "VID_483&PID_5750" and the clear
+    // silently no-op'd against a non-existent key. arg(x, 4, 16, '0') pads.
 #ifdef Q_OS_WIN
         qDebug()<<"Remove device OEMName from registry";
         QString path("HKEY_CURRENT_USER\\System\\CurrentControlSet\\Control\\MediaProperties\\PrivateProperties\\Joystick\\OEM\\VID_%1&PID_%2");
         QString path2("HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Control\\MediaProperties\\PrivateProperties\\Joystick\\OEM\\VID_%1&PID_%2");
-        QSettings(path.arg(QString::number(gEnv.pDeviceConfig->config.vid, 16), QString::number(gEnv.pDeviceConfig->config.pid, 16)),
-                  QSettings::NativeFormat).remove("OEMName");
-        QSettings(path2.arg(QString::number(gEnv.pDeviceConfig->config.vid, 16), QString::number(gEnv.pDeviceConfig->config.pid, 16)),
-                  QSettings::NativeFormat).remove("OEMName");
+        const QString vidHex = QStringLiteral("%1").arg(gEnv.pDeviceConfig->config.vid, 4, 16, QChar('0'));
+        const QString pidHex = QStringLiteral("%1").arg(gEnv.pDeviceConfig->config.pid, 4, 16, QChar('0'));
+        QSettings(path.arg(vidHex, pidHex), QSettings::NativeFormat).remove("OEMName");
+        QSettings(path2.arg(vidHex, pidHex), QSettings::NativeFormat).remove("OEMName");
 #endif
 }
 
@@ -1341,7 +1409,10 @@ void MainWindow::on_pushButton_WriteConfig_clicked()
         return;
     }
 
-    /* No backup possible -- proceed straight to write. */
+    /* No backup possible -- proceed straight to write. No baseline name
+     * to compare against either, so suppress the name-change prompt for
+     * this write. */
+    m_preWriteDeviceName.clear();
     blockWRConfigToDevice(true);
     doActualWriteToDevice();
 }
