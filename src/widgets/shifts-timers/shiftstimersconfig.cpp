@@ -4,9 +4,9 @@
 
 #include <QSpinBox>
 
-// SHIFT_COUNT lives in buttonlogical.h (5 shifts + "No shift" sentinel).
-// Pulled in here for the shiftStateChanged() loop that mirrors the device's
-// active-shift bitmap onto the label highlights.
+// SHIFT_COUNT lives in buttonlogical.h (MAX_SHIFTS_NUM shifts + "No shift"
+// sentinel). Pulled in here for the shiftStateChanged() loop that mirrors
+// the device's active-shift bitmap onto the label highlights.
 #include "buttonlogical.h"
 
 static const int TICKS_NS = 500;
@@ -17,11 +17,31 @@ ShiftsTimersConfig::ShiftsTimersConfig(QWidget *parent)
 {
     ui->setupUi(this);
     m_isShifts_act = false;
-    m_shift1_act = false;
-    m_shift2_act = false;
-    m_shift3_act = false;
-    m_shift4_act = false;
-    m_shift5_act = false;
+    for (int i = 0; i < MAX_SHIFTS_NUM; ++i) {
+        m_shift_act[i] = false;
+    }
+
+    /* Per-slot widget tables. v1.7.8 (issue anpeaco/FreeJoyX#1) refactored
+     * the prior hand-unrolled per-slot code into loops over these arrays;
+     * the .ui carries spinBox_Shift1..8 / text_shiftN_logicalButton labels
+     * for slots 1..MAX_SHIFTS_NUM, addressed here as 0..MAX_SHIFTS_NUM-1. */
+    m_spinBoxes[0] = ui->spinBox_Shift1;
+    m_spinBoxes[1] = ui->spinBox_Shift2;
+    m_spinBoxes[2] = ui->spinBox_Shift3;
+    m_spinBoxes[3] = ui->spinBox_Shift4;
+    m_spinBoxes[4] = ui->spinBox_Shift5;
+    m_spinBoxes[5] = ui->spinBox_Shift6;
+    m_spinBoxes[6] = ui->spinBox_Shift7;
+    m_spinBoxes[7] = ui->spinBox_Shift8;
+
+    m_labels[0] = ui->text_shift1_logicalButton;
+    m_labels[1] = ui->text_shift2_logicalButton;
+    m_labels[2] = ui->text_shift3_logicalButton;
+    m_labels[3] = ui->text_shift4_logicalButton;
+    m_labels[4] = ui->text_shift5_logicalButton;
+    m_labels[5] = ui->text_shift6_logicalButton;
+    m_labels[6] = ui->text_shift7_logicalButton;
+    m_labels[7] = ui->text_shift8_logicalButton;
 
     // Polling spinboxes round to TICKS_NS multiples on user edit. Same
     // helper that ButtonConfig used to own.
@@ -81,11 +101,9 @@ void ShiftsTimersConfig::readFromConfig()
 {
     dev_config_t *devc = &gEnv.pDeviceConfig->config;
 
-    ui->spinBox_Shift1->setValue(devc->shift_config[0].button + 1);
-    ui->spinBox_Shift2->setValue(devc->shift_config[1].button + 1);
-    ui->spinBox_Shift3->setValue(devc->shift_config[2].button + 1);
-    ui->spinBox_Shift4->setValue(devc->shift_config[3].button + 1);
-    ui->spinBox_Shift5->setValue(devc->shift_config[4].button + 1);
+    for (int i = 0; i < MAX_SHIFTS_NUM; ++i) {
+        m_spinBoxes[i]->setValue(devc->shift_config[i].button + 1);
+    }
 
     ui->spinBox_Timer1->setValue(devc->button_timer1_ms);
     ui->spinBox_Timer2->setValue(devc->button_timer2_ms);
@@ -106,11 +124,9 @@ void ShiftsTimersConfig::readFromConfig()
 void ShiftsTimersConfig::writeToConfig()
 {
     dev_config_t *devc = &gEnv.pDeviceConfig->config;
-    devc->shift_config[0].button = ui->spinBox_Shift1->value() - 1;
-    devc->shift_config[1].button = ui->spinBox_Shift2->value() - 1;
-    devc->shift_config[2].button = ui->spinBox_Shift3->value() - 1;
-    devc->shift_config[3].button = ui->spinBox_Shift4->value() - 1;
-    devc->shift_config[4].button = ui->spinBox_Shift5->value() - 1;
+    for (int i = 0; i < MAX_SHIFTS_NUM; ++i) {
+        devc->shift_config[i].button = m_spinBoxes[i]->value() - 1;
+    }
 
     devc->button_timer1_ms = ui->spinBox_Timer1->value();
     devc->button_timer2_ms = ui->spinBox_Timer2->value();
@@ -131,61 +147,34 @@ void ShiftsTimersConfig::writeToConfig()
 void ShiftsTimersConfig::setUiOnOff(int value)
 {
     const bool on = (value > 0);
-    ui->spinBox_Shift1->setEnabled(on);
-    ui->spinBox_Shift2->setEnabled(on);
-    ui->spinBox_Shift3->setEnabled(on);
-    ui->spinBox_Shift4->setEnabled(on);
-    ui->spinBox_Shift5->setEnabled(on);
+    for (int i = 0; i < MAX_SHIFTS_NUM; ++i) {
+        m_spinBoxes[i]->setEnabled(on);
+    }
 }
 
 void ShiftsTimersConfig::shiftStateChanged()
 {
+    /* Mirror paramsRep->shift_button_data (one bit per shift slot) onto
+     * the per-slot label "shiftActive" highlight. v1.7.8 (issue
+     * anpeaco/FreeJoyX#1) collapsed the prior 5 hand-unrolled if/else
+     * chains into this loop -- which incidentally fixes a bug where
+     * every "shift cleared" branch checked `i == 0` regardless of the
+     * actual slot, so only slot 1's clear ever fired. */
     params_report_t *paramsRep = &gEnv.pDeviceConfig->paramsReport;
 
-    for (int i = 0; i < SHIFT_COUNT; ++i)
-    {
-        if (paramsRep->shift_button_data & (1 << (i & 0x07))) {
-            m_isShifts_act = true;
-
-            if (i == 0 && m_shift1_act == false) {
-                freejoy_style::setRole(ui->text_shift1_logicalButton, "shiftActive", true);
-                m_shift1_act = true;
-            } else if (i == 1 && m_shift2_act == false) {
-                freejoy_style::setRole(ui->text_shift2_logicalButton, "shiftActive", true);
-                m_shift2_act = true;
-            } else if (i == 2 && m_shift3_act == false) {
-                freejoy_style::setRole(ui->text_shift3_logicalButton, "shiftActive", true);
-                m_shift3_act = true;
-            } else if (i == 3 && m_shift4_act == false) {
-                freejoy_style::setRole(ui->text_shift4_logicalButton, "shiftActive", true);
-                m_shift4_act = true;
-            } else if (i == 4 && m_shift5_act == false) {
-                freejoy_style::setRole(ui->text_shift5_logicalButton, "shiftActive", true);
-                m_shift5_act = true;
+    bool any_active = false;
+    for (int i = 0; i < MAX_SHIFTS_NUM; ++i) {
+        const bool active = (paramsRep->shift_button_data & (1 << i)) != 0;
+        if (active) {
+            any_active = true;
+            if (!m_shift_act[i]) {
+                freejoy_style::setRole(m_labels[i], "shiftActive", true);
+                m_shift_act[i] = true;
             }
-
-        } else if (m_isShifts_act == true) {
-            if (i == 0 && m_shift1_act == true) {
-                freejoy_style::clearRole(ui->text_shift1_logicalButton, "shiftActive");
-                m_shift1_act = false;
-            } else if (i == 0 && m_shift2_act == true) {
-                freejoy_style::clearRole(ui->text_shift2_logicalButton, "shiftActive");
-                m_shift2_act = false;
-            } else if (i == 0 && m_shift3_act == true) {
-                freejoy_style::clearRole(ui->text_shift3_logicalButton, "shiftActive");
-                m_shift3_act = false;
-            } else if (i == 0 && m_shift4_act == true) {
-                freejoy_style::clearRole(ui->text_shift4_logicalButton, "shiftActive");
-                m_shift4_act = false;
-            } else if (i == 0 && m_shift5_act == true) {
-                freejoy_style::clearRole(ui->text_shift5_logicalButton, "shiftActive");
-                m_shift5_act = false;
-            }
-
-            if (m_shift1_act == false && m_shift2_act == false && m_shift3_act == false && m_shift4_act == false
-                && m_shift5_act == false) {
-                m_isShifts_act = false;
-            }
+        } else if (m_shift_act[i]) {
+            freejoy_style::clearRole(m_labels[i], "shiftActive");
+            m_shift_act[i] = false;
         }
     }
+    m_isShifts_act = any_active;
 }

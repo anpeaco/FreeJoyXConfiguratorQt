@@ -285,7 +285,10 @@ typedef struct button_t
     // src_b: Source B for type == LOGIC && op is binary; -1 / unused otherwise.
     int8_t					src_b;
 
-    uint8_t					shift_modificator : 3;
+    // shift_modificator widened :3 -> :4 in v1.7.8 (issue anpeaco/FreeJoyX#1)
+    // to encode 0=none, 1..8 = shift_config[0..7]. Crosses the 8-bit
+    // storage-unit boundary -- gcc/g++ allocates a second uint8_t.
+    uint8_t					shift_modificator : 4;
     uint8_t					is_inverted :1;
     uint8_t					is_disabled :1;
     // op: logic_op_t for type == LOGIC; 3 bits = up to 8 operators (MVP
@@ -525,7 +528,7 @@ typedef struct
 
     // config 14
     shift_reg_config_t	shift_registers[4];
-    shift_modificator_t	shift_config[5];
+    shift_modificator_t	shift_config[MAX_SHIFTS_NUM];
     uint16_t						vid;
     uint16_t						pid;
 
@@ -624,10 +627,20 @@ typedef struct
  * arm-none-eabi-gcc) without an intentional bump of FREEJOY_*_SIZE in
  * common_defines.h, the build fails here instead of silently corrupting
  * config R/W at runtime. Both .h files in both repos must stay in sync. */
+/* This header is included from both C++ (Qt translation units) and C
+ * (stm_main.c). C++11 has the static_assert keyword; C11 has _Static_assert.
+ * MinGW g++ 8.x rejects _Static_assert in C++ mode, so dispatch by language. */
+#ifdef __cplusplus
 static_assert(sizeof(dev_config_t)    == FREEJOY_DEV_CONFIG_SIZE,
     "dev_config_t size drifted -- bump FIRMWARE_VERSION, archive the old shape (legacy_types.h + legacy_migrator.cpp), and update FREEJOY_DEV_CONFIG_SIZE in common_defines.h. See CLAUDE.md wire-format archival rule.");
 static_assert(sizeof(params_report_t) == FREEJOY_PARAMS_REPORT_SIZE,
     "params_report_t size drifted -- bump FIRMWARE_VERSION and update FREEJOY_PARAMS_REPORT_SIZE in common_defines.h.");
+#else
+_Static_assert(sizeof(dev_config_t)    == FREEJOY_DEV_CONFIG_SIZE,
+    "dev_config_t size drifted -- see common_defines.h");
+_Static_assert(sizeof(params_report_t) == FREEJOY_PARAMS_REPORT_SIZE,
+    "params_report_t size drifted -- see common_defines.h");
+#endif
 
 
 #endif 	/* __COMMON_TYPES_H__ */

@@ -2,6 +2,8 @@
 #define SHIFTSTIMERSCONFIG_H
 
 #include <QWidget>
+#include <QSpinBox>
+#include <QLabel>
 
 #include "common_defines.h"
 #include "common_types.h"
@@ -49,11 +51,16 @@ private:
     Ui::ShiftsTimersConfig *ui;
 
     bool m_isShifts_act;
-    bool m_shift1_act;
-    bool m_shift2_act;
-    bool m_shift3_act;
-    bool m_shift4_act;
-    bool m_shift5_act;
+    /* Per-slot label-highlight tracking. Indexed [0..MAX_SHIFTS_NUM-1].
+     * Refactored from named flags (m_shift1_act..m_shift5_act) when slot
+     * count grew to 8 in v1.7.8 (issue anpeaco/FreeJoyX#1). */
+    bool m_shift_act[MAX_SHIFTS_NUM];
+
+    /* Pointer tables to the per-slot UI widgets. Populated in the
+     * constructor; lets readFromConfig / writeToConfig / setUiOnOff /
+     * shiftStateChanged loop instead of repeating per-slot code. */
+    QSpinBox *m_spinBoxes[MAX_SHIFTS_NUM] = {};
+    QLabel   *m_labels[MAX_SHIFTS_NUM]    = {};
 };
 
 #endif // SHIFTSTIMERSCONFIG_H

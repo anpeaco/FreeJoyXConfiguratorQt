@@ -824,11 +824,18 @@ dev_config_t InitConfig (void)
             .axes_to_buttons[7].buttons_cnt = 0,
 
 
+            /* All 8 slots enumerated -- designated initialisers default
+             * unmentioned slots to .button = 0 (a valid button index =
+             * shift stuck on). Mirror of FreeJoyX/application/Inc/main.h.
+             * Issue anpeaco/FreeJoyX#1. */
             .shift_config[0].button = -1,
             .shift_config[1].button = -1,
             .shift_config[2].button = -1,
             .shift_config[3].button = -1,
             .shift_config[4].button = -1,
+            .shift_config[5].button = -1,
+            .shift_config[6].button = -1,
+            .shift_config[7].button = -1,
 
             .encoders[0] = ENCODER_CONF_2x,
             .encoders[1] = ENCODER_CONF_2x,

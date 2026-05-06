@@ -14,7 +14,9 @@
 #define BUTTON_ROW_MIME "application/x-fjbutton-row"
 
 #define TIMER_COUNT 4 // "NO timer" + count
-#define SHIFT_COUNT 6
+// SHIFT_COUNT = MAX_SHIFTS_NUM + 1 ("-" / no-shift sentinel). Bumped 6 -> 9
+// in v1.7.8 (issue anpeaco/FreeJoyX#1) to match the widened :4 field.
+#define SHIFT_COUNT 9
 
 namespace Ui {
 class ButtonLogical;
@@ -118,6 +120,9 @@ private:
         {3,        tr("Shift 3")},
         {4,        tr("Shift 4")},
         {5,        tr("Shift 5")},
+        {6,        tr("Shift 6")},
+        {7,        tr("Shift 7")},
+        {8,        tr("Shift 8")},
     };
     //static deviceEnum_guiName_t logical_function_list_[LOGICAL_FUNCTION_COUNT];
 

@@ -15,7 +15,7 @@ FreeJoyConfiguratorQtX is a fork of [FreeJoyConfiguratorQt](https://github.com/F
 * Digital input configuration (buttons, toggle switches, encoders, etc.)
 * **Logic button configuration** — pick `Logic` in the Function dropdown to unlock Operator (`AND`, `OR`, `NOT`, `NOR`, `NAND`, `XOR`, `A AND NOT B`), Source B, and per-slot Debounce cells
 * **Long-press / Double-tap button types** — appear in the Function dropdown with the per-physical coexistence filter that limits a single physical input to `{ NORMAL, LONG_PRESS, DOUBLE_TAP }`
-* **Shifts & Timers tab** — the five shift modifiers and the global timers (Timer 1/2/3, Debounce, Long-press threshold, Double-tap window) live in a dedicated tab, decluttering the Buttons tab
+* **Shifts & Timers tab** — the eight shift modifiers (bumped from 5 in v1.7.8) and the global timers (Timer 1/2/3, Debounce, Long-press threshold, Double-tap window) live in a dedicated tab, decluttering the Buttons tab
 * **2 fast (hardware-quadrature) encoders** — Enc 1 on PA8/PA9, Enc 2 on PB6/PB7
 * Analog input configuration (calibration, smoothing, curve shapes, etc.)
 * Axes-to-buttons configuration
@@ -63,4 +63,8 @@ Release artefacts (configurator + per-board firmware images) are produced by the
 
 ## Wire-format compatibility
 
-`src/common_types.h` and `src/common_defines.h` are manually synced from the firmware repo's `application/Inc/` copies — they must change together. Every `FIRMWARE_VERSION` bump that crosses the `& 0xFFF0` mask boundary archives the outgoing `dev_config_t` shape into `src/legacy/legacy_types.h` and adds a matching migrator in `src/legacy/legacy_migrator.cpp`, wired into `migrateLegacyConfig()`. This guarantees any board running an older shipped version can be read and migrated by the latest configurator without losing the user's mapping.
+`src/common_types.h` and `src/common_defines.h` are manually synced from the firmware repo's `application/Inc/` copies — they must change together. Every `FIRMWARE_VERSION` bump that crosses the `& 0xFFF0` mask boundary archives the outgoing `dev_config_t` shape into `src/legacy/legacy_types.h` and adds a matching migrator in `src/legacy/legacy_migrator.cpp`, wired into `migrateLegacyConfig()`. This guarantees any board running an older shipped version can be read and migrated by the latest configurator without losing the user's mapping. Compile-time `_Static_assert` lines at the bottom of `common_types.h` (and the firmware copy) pin `sizeof(dev_config_t)` and `sizeof(params_report_t)` to constants in `common_defines.h` — drift between the firmware (arm-none-eabi-gcc) and configurator (MinGW g++) toolchains fails the build instead of corrupting config R/W.
+
+Currently archived legacy versions (in `src/legacy/legacy_types.h`):
+* **v1.7.0/v1.7.1** (`0x1700`/`0x1710`) — upstream FreeJoy. Migrates pre-FreeJoyX boards.
+* **v1.7.7** (`0x1770`) — outgoing FreeJoyX shape archived ahead of the v1.7.8 bump (issue [#1](https://github.com/anpeaco/FreeJoyX/issues/1)). Lets a board still running v1.7.7 be read and upgraded without losing the user's mapping.

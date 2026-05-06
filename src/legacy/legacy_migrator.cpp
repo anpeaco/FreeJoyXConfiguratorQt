@@ -198,6 +198,142 @@ static MigrateResult migrate_v1710_to_current(const uint8_t *raw, size_t len, de
 }
 
 /* ============================================================================
+ * v1770 -> current
+ * Source struct: legacy::v1770::dev_config_t. See legacy_types.h header for
+ * the field-level diff against the current shape. Two diffs:
+ *   1. shift_config[5] (5 slots, vs current 8). Spare slots default to -1.
+ *   2. button_t.shift_modificator was :3 (now :4). Per-button copy
+ *      preserves the value (range 0..7 fits in :4 cleanly).
+ * Everything else is byte-identical, so most fields memcpy through.
+ * ============================================================================
+ */
+static MigrateResult migrate_v1770_to_current(const uint8_t *raw, size_t len, dev_config_t &out)
+{
+    if (len < sizeof(v1770::dev_config_t)) {
+        return MigrateResult::BufferTooSmall;
+    }
+
+    const v1770::dev_config_t *old = reinterpret_cast<const v1770::dev_config_t *>(raw);
+
+    /* Seed with fresh defaults so any field added between v1770 and current
+     * starts at a sane value. Today there are none -- v1.7.8 is purely a
+     * shape change, no new fields -- but the seed is cheap insurance. */
+    out = ::InitConfig();
+
+    out.firmware_version = FIRMWARE_VERSION;
+    out.board_id         = old->board_id;
+    out.reserved_layout  = old->reserved_layout;
+
+    memcpy(out.device_name, old->device_name, sizeof(old->device_name));
+
+    out.button_debounce_ms       = old->button_debounce_ms;
+    out.encoder_press_time_ms    = old->encoder_press_time_ms;
+    out.exchange_period_ms       = old->exchange_period_ms;
+
+    /* Pin enum is unchanged between v1770 and current; direct copy. */
+    Q_STATIC_ASSERT(LV1770_USED_PINS_NUM == USED_PINS_NUM);
+    for (int i = 0; i < USED_PINS_NUM; ++i) {
+        out.pins[i] = (pin_t)old->pins[i];
+    }
+
+    /* axis_config_t is byte-identical. */
+    Q_STATIC_ASSERT(LV1770_MAX_AXIS_NUM == MAX_AXIS_NUM);
+    Q_STATIC_ASSERT(sizeof(axis_config_t) == sizeof(v1770::axis_config_t));
+    for (int i = 0; i < MAX_AXIS_NUM; ++i) {
+        memcpy(&out.axis_config[i], &old->axis_config[i], sizeof(axis_config_t));
+    }
+
+    /* button_t shape change: shift_modificator went :3 -> :4, growing the
+     * struct by 1 byte per slot. Copy field-by-field. shift_modificator
+     * range 0..7 (3-bit) fits cleanly into the new 4-bit field. */
+    Q_STATIC_ASSERT(LV1770_MAX_BUTTONS_NUM == MAX_BUTTONS_NUM);
+    for (int i = 0; i < MAX_BUTTONS_NUM; ++i) {
+        out.buttons[i].physical_num      = old->buttons[i].physical_num;
+        out.buttons[i].type              = (button_type_t)old->buttons[i].type;
+        out.buttons[i].src_b             = old->buttons[i].src_b;
+        out.buttons[i].shift_modificator = old->buttons[i].shift_modificator;
+        out.buttons[i].is_inverted       = old->buttons[i].is_inverted;
+        out.buttons[i].is_disabled       = old->buttons[i].is_disabled;
+        out.buttons[i].op                = old->buttons[i].op;
+        out.buttons[i].delay_timer       = old->buttons[i].delay_timer;
+        out.buttons[i].press_timer       = old->buttons[i].press_timer;
+    }
+
+    out.button_timer1_ms        = old->button_timer1_ms;
+    out.button_timer2_ms        = old->button_timer2_ms;
+    out.button_timer3_ms        = old->button_timer3_ms;
+    out.a2b_debounce_ms         = old->a2b_debounce_ms;
+    out.long_press_threshold_ms = old->long_press_threshold_ms;
+    out.double_tap_window_ms    = old->double_tap_window_ms;
+
+    Q_STATIC_ASSERT(sizeof(axis_to_buttons_t) == sizeof(v1770::axis_to_buttons_t));
+    for (int i = 0; i < MAX_AXIS_NUM; ++i) {
+        memcpy(&out.axes_to_buttons[i], &old->axes_to_buttons[i], sizeof(axis_to_buttons_t));
+    }
+
+    Q_STATIC_ASSERT(sizeof(shift_reg_config_t) == sizeof(v1770::shift_reg_config_t));
+    Q_STATIC_ASSERT(LV1770_MAX_SHIFT_REG_NUM == MAX_SHIFT_REG_NUM);
+    for (int i = 0; i < MAX_SHIFT_REG_NUM; ++i) {
+        memcpy(&out.shift_registers[i], &old->shift_registers[i], sizeof(shift_reg_config_t));
+    }
+
+    /* Shift modificators: copy the 5 v1770 slots; the upper 3 slots (5..7)
+     * are left at InitConfig's -1 default. */
+    Q_STATIC_ASSERT(sizeof(shift_modificator_t) == sizeof(v1770::shift_modificator_t));
+    for (int i = 0; i < 5; ++i) {
+        out.shift_config[i].button = old->shift_config[i].button;
+    }
+    /* shift_config[5..7] keep the InitConfig-seeded -1 (= "not wired"). */
+
+    out.vid = old->vid;
+    out.pid = old->pid;
+
+    Q_STATIC_ASSERT(sizeof(led_pwm_config_t) == sizeof(v1770::led_pwm_config_t));
+    for (int i = 0; i < 4; ++i) {
+        memcpy(&out.led_pwm_config[i], &old->led_pwm_config[i], sizeof(led_pwm_config_t));
+    }
+
+    Q_STATIC_ASSERT(LV1770_MAX_LEDS_NUM == MAX_LEDS_NUM);
+    Q_STATIC_ASSERT(sizeof(led_config_t) == sizeof(v1770::led_config_t));
+    for (int i = 0; i < MAX_LEDS_NUM; ++i) {
+        memcpy(&out.leds[i], &old->leds[i], sizeof(led_config_t));
+    }
+    for (int i = 0; i < 4; ++i) {
+        out.led_timer_ms[i] = old->led_timer_ms[i];
+    }
+
+    Q_STATIC_ASSERT(LV1770_MAX_ENCODERS_NUM == MAX_ENCODERS_NUM);
+    for (int i = 0; i < MAX_ENCODERS_NUM; ++i) {
+        out.encoders[i] = old->encoders[i];
+    }
+
+    Q_STATIC_ASSERT(LV1770_MAX_FAST_ENCODER_NUM == MAX_FAST_ENCODER_NUM);
+    Q_STATIC_ASSERT(sizeof(fast_encoder_t) == sizeof(v1770::fast_encoder_t));
+    for (int i = 0; i < MAX_FAST_ENCODER_NUM; ++i) {
+        memcpy(&out.fast_encoders[i], &old->fast_encoders[i], sizeof(fast_encoder_t));
+    }
+
+    out.button_polling_interval_ticks  = old->button_polling_interval_ticks;
+    out.encoder_polling_interval_ticks = old->encoder_polling_interval_ticks;
+
+    out.rgb_effect     = old->rgb_effect;
+    out.rgb_count      = old->rgb_count;
+    out.rgb_brightness = old->rgb_brightness;
+    out.rgb_delay_ms   = old->rgb_delay_ms;
+
+    Q_STATIC_ASSERT(LV1770_NUM_RGB_LEDS == NUM_RGB_LEDS);
+    Q_STATIC_ASSERT(sizeof(argb_led_t) == sizeof(v1770::argb_led_t));
+    for (int i = 0; i < NUM_RGB_LEDS; ++i) {
+        memcpy(&out.rgb_leds[i], &old->rgb_leds[i], sizeof(argb_led_t));
+    }
+
+    Q_STATIC_ASSERT(sizeof(phys_breakdown_t) == sizeof(v1770::phys_breakdown_t));
+    memcpy(&out.saved_breakdown, &old->saved_breakdown, sizeof(phys_breakdown_t));
+
+    return MigrateResult::Ok;
+}
+
+/* ============================================================================
  * Public API
  * ============================================================================
  */
@@ -207,6 +343,7 @@ bool canMigrate(uint16_t firmware_version)
     switch (firmware_version & FW_MASK) {
         case 0x1700:  /* v1.7.0 -- shares struct shape with v1.7.1 */
         case 0x1710:  /* v1.7.1 -- the user's old boards */
+        case 0x1770:  /* v1.7.7 -- FreeJoyX immediately-outgoing shape */
             return true;
         default:
             return false;
@@ -219,6 +356,8 @@ size_t legacyConfigSize(uint16_t firmware_version)
         case 0x1700:
         case 0x1710:
             return sizeof(v1710::dev_config_t);
+        case 0x1770:
+            return sizeof(v1770::dev_config_t);
         default:
             return sizeof(dev_config_t);
     }
@@ -262,6 +401,12 @@ MigrateResult migrateLegacyConfig(const uint8_t *raw, size_t len, dev_config_t &
                     << "to current FIRMWARE_VERSION 0x"
                     << QString::number(FIRMWARE_VERSION, 16);
             return migrate_v1710_to_current(raw, len, out);
+
+        case 0x1770:
+            qInfo() << "Migrating dev_config_t from" << describeVersion(version)
+                    << "to current FIRMWARE_VERSION 0x"
+                    << QString::number(FIRMWARE_VERSION, 16);
+            return migrate_v1770_to_current(raw, len, out);
 
         default:
             qWarning() << "No migrator for firmware version 0x"
