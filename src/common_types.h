@@ -618,5 +618,16 @@ typedef struct
 #pragma pack(pop)
 
 
+/* Wire-format drift trip-wire. Issue anpeaco/FreeJoyX#10. The two structs
+ * below are the chunk-sized payloads exchanged with the firmware; if either
+ * shape changes (field add/remove, padding shift between MinGW g++ and
+ * arm-none-eabi-gcc) without an intentional bump of FREEJOY_*_SIZE in
+ * common_defines.h, the build fails here instead of silently corrupting
+ * config R/W at runtime. Both .h files in both repos must stay in sync. */
+static_assert(sizeof(dev_config_t)    == FREEJOY_DEV_CONFIG_SIZE,
+    "dev_config_t size drifted -- bump FIRMWARE_VERSION, archive the old shape (legacy_types.h + legacy_migrator.cpp), and update FREEJOY_DEV_CONFIG_SIZE in common_defines.h. See CLAUDE.md wire-format archival rule.");
+static_assert(sizeof(params_report_t) == FREEJOY_PARAMS_REPORT_SIZE,
+    "params_report_t size drifted -- bump FIRMWARE_VERSION and update FREEJOY_PARAMS_REPORT_SIZE in common_defines.h.");
+
 
 #endif 	/* __COMMON_TYPES_H__ */
