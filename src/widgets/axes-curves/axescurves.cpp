@@ -100,7 +100,7 @@ void AxesCurves::setExclusive(bool exclusive)
 
 void AxesCurves::updateAxis()
 {
-    //    static int tmp_raw_data = 0;      // оптимизация или?
+    //    static int tmp_raw_data = 0;      // an optimisation, or pointless?
     //    static int tmp_data = 0;
     //    if ((tmp_raw_data != gEnv.pDeviceConfig->gamepad_report.raw_axis_data[axis_number_] || tmp_data != gEnv.pDeviceConfig->gamepad_report.axis_data[axis_number_]))
     //    {

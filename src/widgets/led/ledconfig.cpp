@@ -87,7 +87,7 @@ void LedConfig::spawnLeds(int ledCount)
 {
     if (ledCount > MAX_LEDS_NUM) return;
 
-    for (int i = 0; i < MAX_LEDS_NUM; i++) // или проверка на скрытие и break; ?
+    for (int i = 0; i < MAX_LEDS_NUM; i++) // or check for hidden state and break?
     {
         m_ledPtrList[i]->hide();
     }

@@ -4,9 +4,9 @@
 #include <QFont>
 
 //! pinNumber cannot be less 1 and more than PINS_COUNT
-PinComboBox::PinComboBox(uint pinNumber, QWidget *parent) : // пины - первое, что я начал кодить в конфигураторе и спустя время
-    QWidget(parent),                                        // заявляю - это говнокод!1 который даже мне тяжело понять
-    ui(new Ui::PinComboBox)                                 // мои соболезнования тем кто будет разбираться)
+PinComboBox::PinComboBox(uint pinNumber, QWidget *parent) : // pin handling was the first thing I coded in the configurator, and in hindsight
+    QWidget(parent),                                        // it's hard to follow even for me
+    ui(new Ui::PinComboBox)                                 // condolences to anyone trying to understand it
 {
     ui->setupUi(this);
     // minimum pinNumber = enum PA_0 = 1
@@ -133,9 +133,9 @@ void PinComboBox::setIndex_iteraction(int index, int senderIndex)
 }
 
 //! Set pin items
-void PinComboBox::initializationPins(uint pin)      // pin_number_ - 1 так се
-{                                                   // это из-за того, что пустые значения структуры const cBox pin_types_[PIN_TYPE_COUNT]
-    m_pinNumber = pin;                              // инициализированы 0 и хер поймёшь код. возможно переделаю
+void PinComboBox::initializationPins(uint pin)      // pin_number_ - 1 -- not great
+{                                                   // this is because the empty values of const cBox pin_types_[PIN_TYPE_COUNT]
+    m_pinNumber = pin;                              // initialise to 0, making the code hard to follow. May rewrite.
 
     int typeExceptSize = sizeof(m_pinTypes->pinExcept) / sizeof(m_pinTypes->pinExcept[0]);
     int typeSize = sizeof(m_pinTypes->pinType) / sizeof(m_pinTypes->pinType[0]);
@@ -150,7 +150,7 @@ void PinComboBox::initializationPins(uint pin)      // pin_number_ - 1 так с
                 break;
             }
             if (m_pinTypes[i].pinExcept[c] == m_pinNumber){
-                //++i;  // нахера?
+                //++i;  // why?
                 tmp = true;
                 break;
             }
@@ -160,7 +160,7 @@ void PinComboBox::initializationPins(uint pin)      // pin_number_ - 1 так с
                     break;
                 }
                 if (m_pinTypes[i].pinExcept[c] == m_pinList[m_pinNumber-1].pinType[k]){
-                    //++i;  // нахера?
+                    //++i;  // why?
                     tmp = true;
                     break;
                 }

@@ -65,7 +65,7 @@ private:
     const QColor m_kPointerColor = QColor(1, 119, 215);
     const uint m_kMaxPointValue = 255;
     const int m_kOffset = 10;
-    const int m_kRangeBetween = 4; // минимальное расстояние между ближайшими указателями
+    const int m_kRangeBetween = 4; // minimum distance between adjacent markers
     const int m_kLabelWidth = 20;
     const int m_kMinHeight = 40; //45
 
@@ -82,7 +82,7 @@ private:
 
     QList<QLabel *> m_labelPtrList;
 
-    struct A2B_point // uint гемороя наделал
+    struct A2B_point // uint caused a lot of grief
     {
         QPolygon polygon;
         QColor color;

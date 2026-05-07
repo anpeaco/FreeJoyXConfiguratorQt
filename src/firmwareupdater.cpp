@@ -2,7 +2,7 @@
 
 #include <QDebug>
 FirmwareUpdater::FirmwareUpdater() {}
-// хз зачем мне статик постоянно висящий в памяти
+// not sure why this needs to be a static permanently resident in memory
 uint16_t FirmwareUpdater::table[256]{};
 unsigned short FirmwareUpdater::computeChecksum(const QByteArray *fileBytes)
 {

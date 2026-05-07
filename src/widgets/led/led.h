@@ -49,13 +49,13 @@ private:
 
     bool m_ledCurrentState;
 
-    const deviceEnum_guiName_t m_ledList[2] = // порядок обязан быть как в common_types.h!!!!!!!!!!!
+    const deviceEnum_guiName_t m_ledList[2] = // order MUST match common_types.h!
     {
         {LED_NORMAL, tr("Normal")},
         {LED_INVERTED, tr("Inverted")},
     };
 
-    const deviceEnum_guiName_t m_TimerList[5] = // порядок обязан быть как в common_types.h!!!!!!!!!!!
+    const deviceEnum_guiName_t m_TimerList[5] = // order MUST match common_types.h!
     {
          {-1, tr("-")},
          {0, tr("Timer 1")},

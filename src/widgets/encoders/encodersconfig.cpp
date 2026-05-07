@@ -61,7 +61,7 @@ void EncodersConfig::fastEncoderSelected(const QString &pinGuiName, bool isSelec
 }
 
 
-void EncodersConfig::encoderInputChanged(int encoder_A, int encoder_B)      // говнокод
+void EncodersConfig::encoderInputChanged(int encoder_A, int encoder_B)      // messy -- worth a rewrite
 {
     int tmp_add = 0;
 

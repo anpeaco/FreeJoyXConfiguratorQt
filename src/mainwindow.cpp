@@ -143,8 +143,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     // strong focus for mouse wheel
-    // без протекта можно при прокручивании страницы случайно навести на комбобокс и изменить его колесом мыши
-    // при установке setFocusPolicy(Qt::StrongFocus) и протекта на комбобокс придётся нажать, для прокручивания колесом
+    // without this guard, scrolling the page can accidentally hover over a combobox and change its value via the wheel
+    // with setFocusPolicy(Qt::StrongFocus) plus this guard, the combobox must be clicked first before wheel-scroll affects it
     for (auto &&child: this->findChildren<QSpinBox *>())
     {
         child->setFocusPolicy(Qt::StrongFocus);
@@ -156,7 +156,7 @@ MainWindow::MainWindow(QWidget *parent)
         child->setFocusPolicy(Qt::StrongFocus);
         child->installEventFilter(new MouseWheelGuard(child));
     }
-    // хз так или сверху исключать?
+    // unsure -- handle it here, or filter higher up?
     ui->comboBox_HidDeviceList->setFocusPolicy(Qt::WheelFocus);
     ui->comboBox_Configs->setFocusPolicy(Qt::WheelFocus);
     /* Placeholder for the device dropdown. Shown when currentIndex == -1
@@ -271,8 +271,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     // load default config // loading will occur after loading buttons config
-    // комбобоксы у кнопок заполняются после старта приложения и конфиг должен
-    // запускаться сигналом от кнопок
+    // the buttons' comboboxes are populated after app startup, so the config
+    // must be triggered by a signal from the buttons
     connect(m_buttonConfig, &ButtonConfig::logicalButtonsCreated, this, &MainWindow::finalInitialization);
 
     // set theme
@@ -345,7 +345,7 @@ void MainWindow::hideConnectDeviceInfo()
         m_debugWindow->resetPacketsCount();
     }
     // disable curve point
-    QTimer::singleShot(3000, this, [&] {   // не лучший способ
+    QTimer::singleShot(3000, this, [&] {   // not the best approach
         if (ui->pushButton_ReadConfig->isEnabled() == false) {
             m_axesCurvesConfig->deviceStatus(false);
         }
@@ -577,9 +577,9 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
     }
 
     // update button state without delay. fix gamepad_report.raw_button_data[0]
-    // из-за задержки может не ловить изменения первых физических 64 кнопок или оставшихся.
-    // Например, может подряд попасться gamepad_report.raw_button_data[0] = 0
-    // и не видеть оставшиеся физические 64 кнопки.
+    // because of the delay, changes to the first physical 64 buttons or the rest may be missed.
+    // For example, gamepad_report.raw_button_data[0] = 0 may come up consecutively
+    // and the remaining physical 64 buttons go unseen.
     if(ui->tab_ButtonConfig->isVisible() == true || m_debugWindow) {
         m_buttonConfig->buttonStateChanged();
     }

@@ -105,12 +105,12 @@ void LedRGB::setButtonState(bool state)
     updateLedColor();
 }
 
-// зачем?
+// why?
 QIcon LedRGB::icon() const
 {
     return baseIcon();
 }
-// зачем?
+// why?
 void LedRGB::setIcon(const QIcon &icon, const QColor &color)
 {
     m_color = color;

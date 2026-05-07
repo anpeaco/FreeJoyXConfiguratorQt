@@ -24,7 +24,7 @@ void CustomMessageHandler(QtMsgType type, const QMessageLogContext &context, con
 {
     // mutex?
     if (gEnv.pDebugWindow != nullptr) {
-        // для мультипотока, хз правильно ли, но работает // не уверен насчёт ссылки, мб надо копию передавать с мультипотоком
+        // for multithreading -- unsure if correct, but works // unsure about the reference; may need to pass a copy under multithreading
         QMetaObject::invokeMethod(gEnv.pDebugWindow, "printMsg", Qt::QueuedConnection, Q_ARG(QString, msg));
     }
 

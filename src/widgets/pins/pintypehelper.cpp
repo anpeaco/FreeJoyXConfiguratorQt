@@ -9,7 +9,7 @@ PinTypeHelper::PinTypeHelper(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    // не уверен как лучше сделать, так или создать новый класс HoverLabel унаследованный от QLabel
+    // not sure which is better -- this approach, or a new HoverLabel class inheriting from QLabel
     for (auto &&c : ui->groupBox->children()) {
         QLabel *label = qobject_cast<QLabel*>(c);
         if (label) {

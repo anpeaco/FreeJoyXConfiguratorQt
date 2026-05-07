@@ -4,7 +4,7 @@
 #include <QTranslator>
 #include "converter.h"
 
-const QVector <deviceEnum_guiName_t> &axesList()    // порядок обязан быть как в common_types.h!!!!!!!!!!!
+const QVector <deviceEnum_guiName_t> &axesList()    // order MUST match common_types.h!
 {
     static const QVector <deviceEnum_guiName_t> aL =
     {{
@@ -44,7 +44,7 @@ Axes::Axes(int axisNumber, QWidget *parent)
         m_baseDisplayTextByEnum.insert(m_axesPinList[i].deviceEnumIndex, m_axesPinList[i].guiName);
     }
 
-    // set a2b  // двойная работа? readFromConfig()
+    // set a2b  // duplicated work vs. readFromConfig()?
     ui->spinBox_A2bCount->setMaximum(MAX_A2B_BUTTONS);
     if (ui->spinBox_A2bCount->value() < m_kMinA2bButtons) {
         ui->widget_A2bSlider->setEnabled(false);
@@ -242,7 +242,7 @@ void Axes::on_pushButton_StartCalib_clicked(bool checked)
     m_calibrationStarted = checked;
     if (checked == true) {
         ui->pushButton_StartCalib->setText(m_kStopCalStr);
-        ui->spinBox_CalibMax->setValue(AXIS_MIN_VALUE); // не перепутано
+        ui->spinBox_CalibMax->setValue(AXIS_MIN_VALUE); // not swapped (intentional)
         ui->spinBox_CalibMin->setValue(AXIS_MAX_VALUE);
 
         connect(ui->progressBar_Raw, SIGNAL(valueChanged(int)), this, SLOT(calibrationStarted(int)));
@@ -325,7 +325,7 @@ void Axes::a2bSpinBoxChanged(int count)
     if (ui->widget_A2bSlider->isEnabled() == true) {
         emit a2bCountChanged(count, m_a2bButtonsCount);
         m_a2bButtonsCount = count;
-    } else { // необязательно?
+    } else { // optional?
         emit a2bCountChanged(0, m_a2bButtonsCount);
         m_a2bButtonsCount = 0;
     }

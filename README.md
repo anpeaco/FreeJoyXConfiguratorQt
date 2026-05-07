@@ -61,6 +61,12 @@ Release artefacts (configurator + per-board firmware images) are produced by the
 2. Open the project in Qt Creator or build from `qmake` on the command line:
    * `qmake FreeJoyQt.pro` then `make`
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for build, commit, and PR guidance.
+See [STYLE.md](STYLE.md) for the inherited Qt/C++ style, header-guard and
+naming conventions, and the wire-format lockstep rule.
+
 ## Wire-format compatibility
 
 `src/common_types.h` and `src/common_defines.h` are manually synced from the firmware repo's `application/Inc/` copies — they must change together. Every `FIRMWARE_VERSION` bump that crosses the `& 0xFFF0` mask boundary archives the outgoing `dev_config_t` shape into `src/legacy/legacy_types.h` and adds a matching migrator in `src/legacy/legacy_migrator.cpp`, wired into `migrateLegacyConfig()`. This guarantees any board running an older shipped version can be read and migrated by the latest configurator without losing the user's mapping. Compile-time `_Static_assert` lines at the bottom of `common_types.h` (and the firmware copy) pin `sizeof(dev_config_t)` and `sizeof(params_report_t)` to constants in `common_defines.h` — drift between the firmware (arm-none-eabi-gcc) and configurator (MinGW g++) toolchains fails the build instead of corrupting config R/W.

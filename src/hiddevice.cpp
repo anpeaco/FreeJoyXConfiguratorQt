@@ -337,7 +337,7 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                         hid_close(m_paramsRead);
                         m_paramsRead=nullptr;
                     } else {
-                        if (buffer[0] == REPORT_ID_PARAM) {   // перестраховка
+                        if (buffer[0] == REPORT_ID_PARAM) {   // safety check
                             memset(deviceBuffer, 0, BUFFERSIZE);
                             memcpy(deviceBuffer, buffer, BUFFERSIZE);
                             if (ReportConverter::paramReport(deviceBuffer) == -1) continue;
@@ -358,7 +358,7 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                     #endif
                 }
                 // write config to device
-                else if (currentWork == REPORT_ID_CONFIG_OUT) { ////////////// ХУЁВО ПАШЕТ. редко
+                else if (currentWork == REPORT_ID_CONFIG_OUT) { ////////////// works badly. rarely triggers
                     writeConfigToDevice(buffer);
                     // disconnect all devices
                     {
@@ -463,7 +463,7 @@ void HidDevice::readConfigFromDevice(uint8_t *buffer)
 
     while (timer.elapsed() < start_time + 5000)
     {
-        if (m_paramsRead)    // перестаховка
+        if (m_paramsRead)    // safety check
         {
             res=hid_read_timeout(m_paramsRead, buffer, BUFFERSIZE,100);
             if (res < 0) {
@@ -586,7 +586,7 @@ void HidDevice::writeConfigToDevice(uint8_t *buffer)
 
     while (timer.elapsed() < startTime + 5000)
     {
-        if (m_paramsRead)    // перестаховка
+        if (m_paramsRead)    // safety check
         {
             res = hid_read_timeout(m_paramsRead, buffer, BUFFERSIZE,100);
             if (res < 0) {
