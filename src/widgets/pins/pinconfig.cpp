@@ -13,9 +13,9 @@
 
 // todo: change "int pinNumber" to enum Pin
 
-PinConfig::PinConfig(QWidget *parent) :         // пины - первое, что я начал кодить в конфигураторе и спустя время
-    QWidget(parent),                            // заявляю - это говнокод!1 который даже мне тяжело понять
-    ui(new Ui::PinConfig),                      // мои соболезнования тем кто будет разбираться)
+PinConfig::PinConfig(QWidget *parent) :         // pin handling was the first thing I coded in the configurator, and in hindsight
+    QWidget(parent),                            // it's hard to follow even for me
+    ui(new Ui::PinConfig),                      // condolences to anyone trying to understand it
     m_bluePill{new PinsBluePill(this)},
     m_blackPill{new PinsBlackPill(this)},
     m_contrLite{new PinsContrLite(this)}
@@ -29,10 +29,10 @@ PinConfig::PinConfig(QWidget *parent) :         // пины - первое, чт
     m_shiftLatchCount = m_shiftDataCount = m_shiftClkCount = 0;
 
     // create pin combo box. i+1! start from 1
-    // возможно использовать одни и те же комбобоксы пинов в разных виджетах плат - изврат,
-    // но каждый виджет плат со своими комбобоксами тоже не лучший вариант.
-    // 99% польователей будут использовать Blue Pill и им постоянно придётся
-    // таскать комбобоксы с Controller Lite, которые, как минимум, увеличат время запуска приложения
+    // reusing the same pin comboboxes across different board widgets is awkward,
+    // but each board widget owning its own set isn't great either.
+    // 99% of users will be on the Blue Pill and would otherwise be carrying around
+    // the Controller Lite comboboxes too, which at minimum would slow app startup
     for (int i = 0; i < PINS_COUNT; ++i) {
         PinComboBox *pinComboBox = new PinComboBox(i+1, this);
         pinComboBox->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
@@ -67,7 +67,7 @@ PinConfig::PinConfig(QWidget *parent) :         // пины - первое, чт
             this, &PinConfig::boardChanged);
 
     for (int i = 0; i < m_pinCBoxPtrList.size(); ++i) {
-            connect(m_pinCBoxPtrList[i], &PinComboBox::valueChangedForInteraction,       // valgrind сообщает о утечке, но почему?
+            connect(m_pinCBoxPtrList[i], &PinComboBox::valueChangedForInteraction,       // valgrind reports a leak here -- why?
                         this, &PinConfig::pinInteraction);
             connect(m_pinCBoxPtrList[i], &PinComboBox::currentIndexChanged,
                         this, &PinConfig::pinIndexChanged);
@@ -199,7 +199,7 @@ void PinConfig::pinIndexChanged(int currentDeviceEnum, int previousDeviceEnum, i
     // signals for another widgets
     signalsForWidgets(currentDeviceEnum, previousDeviceEnum, pinNumber, pinName);
 
-    // pin type limit  // переизбыток функционала(изи менять в структуре), не думаю, что понадобится в будущем, можно было и захардкодить
+    // pin type limit  // over-engineered (easy to change in the structure); probably won't be needed -- could just have been hardcoded
     pinTypeLimit(currentDeviceEnum, previousDeviceEnum);
 
     // set current config and generate signals for another widgets
@@ -220,7 +220,7 @@ void PinConfig::pinIndexChanged(int currentDeviceEnum, int previousDeviceEnum, i
 
 void PinConfig::signalsForWidgets(int currentDeviceEnum, int previousDeviceEnum, int pinNumber, QString pinName)
 {
-    // здесь такой пиздец. индекс хуиндекс 1 = 0 намбер хуямбер. нахуевертил
+    // total mess here. confused indexing -- 1 vs 0, number vs raw, ended up convoluted
     int pinIndex = pinNumber - PA_0;
     //fast encoder selected
     if (currentDeviceEnum == FAST_ENCODER){

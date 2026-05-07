@@ -47,7 +47,7 @@ void AxesToButtonsSlider::setAxisOutputValue(int outValue, bool isEnable)
     update();
 }
 
-void AxesToButtonsSlider::paintEvent(QPaintEvent *event) // оптимизхировать width_ - offset_*2
+void AxesToButtonsSlider::paintEvent(QPaintEvent *event) // optimise width_ - offset_*2
 {
     Q_UNUSED(event)
     QPainter painter;
@@ -73,7 +73,7 @@ void AxesToButtonsSlider::paintEvent(QPaintEvent *event) // оптимизхир
                          (i * m_lineSpacing) + m_kOffset,
                          18 + m_kPaddingTop);
     }
-    // Antialiasing     // спорно, мазня
+    // Antialiasing     // debatable -- looks smudgy
     //painter.setRenderHint(QPainter::Antialiasing, true);
 
     // paint pointers
@@ -97,8 +97,8 @@ void AxesToButtonsSlider::drawPoint(const QPoint &pointPos, uint pointNumber)
     } else if (m_pointPtrList[pointNumber]->is_drag && pointPos.x() < this->width() + m_kOffset) {
         if (m_pointsCount > 1) {
             if (pointNumber > 0 && pointNumber < m_pointsCount - 1) {
-                if (uint(pointPos.x()) < m_pointPtrList[pointNumber - 1]->posX + m_kRangeBetween // баг при загрузке конфига?
-                    || uint(pointPos.x()) > m_pointPtrList[pointNumber + 1]->posX - m_kRangeBetween) // если точки впритык и происходит округление
+                if (uint(pointPos.x()) < m_pointPtrList[pointNumber - 1]->posX + m_kRangeBetween // bug on config load?
+                    || uint(pointPos.x()) > m_pointPtrList[pointNumber + 1]->posX - m_kRangeBetween) // when points are flush and rounding kicks in
                 {
                     return;
                 }
@@ -176,7 +176,7 @@ void AxesToButtonsSlider::setPointValue(uint value, uint pointNumber)
     if (pointNumber >= uint(m_pointPtrList.size())) {
         return;
     }
-    uint pos = uint((value * (this->width() - m_kOffset * 2.0f) / m_kMaxPointValue)); // поколдовать
+    uint pos = uint((value * (this->width() - m_kOffset * 2.0f) / m_kMaxPointValue)); // tweak
     // ?
     pos += m_kOffset;
     if (pos > uint(this->width() - m_kOffset)) {
@@ -204,7 +204,7 @@ uint AxesToButtonsSlider::calcPointValue(int currentPos) const
 
 void AxesToButtonsSlider::pointsPositionReset()
 {
-    float tmp_distance = (this->width() - m_kOffset * 2.0f) / (m_pointsCount - 1); // поколдовать
+    float tmp_distance = (this->width() - m_kOffset * 2.0f) / (m_pointsCount - 1); // tweak
     // apply color, position
     for (int i = 0; i < m_pointPtrList.size(); ++i) {
         if (this->isEnabled() == true) {
@@ -251,7 +251,7 @@ void AxesToButtonsSlider::mouseMoveEvent(QMouseEvent *event)
             } else {
                 m_pointPtrList[i]->color = m_kPointerColor;
             }
-        } else if (m_pointPtrList[i]->is_drag == true) { // много лишнего. потом чекнуть
+        } else if (m_pointPtrList[i]->is_drag == true) { // lots of redundancy here -- revisit later
             if (event->buttons() & Qt::LeftButton) {
                 drawPoint(event->pos(), i);
             }

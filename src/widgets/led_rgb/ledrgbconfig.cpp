@@ -72,7 +72,7 @@ void LedRGBConfig::contextMenu(const QPoint &pos)
 
 void LedRGBConfig::updateLedsButtonState()
 {
-    for (int i = 0; i < m_rgbPtrList.size(); ++i) // можно улучшить
+    for (int i = 0; i < m_rgbPtrList.size(); ++i) // can be improved
     {
         if (m_rgbPtrList[i]->buttonNumber() == gEnv.pDeviceConfig->config.rgb_leds[i].input_num + 1) {
             // logical buttons state
@@ -197,7 +197,7 @@ void LedRGBConfig::readFromConfig()
     dev_config_t *devc = &gEnv.pDeviceConfig->config;
 
     on_spinBox_ledsCount_valueChanged(devc->rgb_count); // change
-    // ИЗМЕНИТЬ ЭТУ ХУЙНЮ !!!! // забыл почему это написал
+    // REWRITE THIS MESS !!!! // forgot why I wrote this
     for (int i = 0; i < devc->rgb_count; ++i) {
         int red = devc->rgb_leds[i].color.r;
         int green = devc->rgb_leds[i].color.g;

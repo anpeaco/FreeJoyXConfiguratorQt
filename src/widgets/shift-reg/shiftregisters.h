@@ -66,7 +66,7 @@ private:
     int m_clkPin;
     int m_dataPin;
 
-    const deviceEnum_guiName_t m_shiftRegistersList[SHIFT_REG_TYPES] = // порядов обязан быть как в common_types.h!!!!!!!!!!!
+    const deviceEnum_guiName_t m_shiftRegistersList[SHIFT_REG_TYPES] = // order MUST match common_types.h!
     {
         {HC165_PULL_DOWN,   tr("HC165 Pull Down")},
         {CD4021_PULL_DOWN,  tr("CD4021 Pull Down")},

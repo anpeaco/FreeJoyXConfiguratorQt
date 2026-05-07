@@ -41,7 +41,7 @@ private slots:
 private:
     Ui::ShiftRegistersConfig *ui;
 
-    struct ShiftRegData_t // можно и глобальную deviceEnum_guiName_t взять
+    struct ShiftRegData_t // could just reuse the global deviceEnum_guiName_t
     {
         int pinNumber;
         QString guiName;

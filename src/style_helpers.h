@@ -1,4 +1,5 @@
-#pragma once
+#ifndef STYLE_HELPERS_H
+#define STYLE_HELPERS_H
 
 #include <QStyle>
 #include <QVariant>
@@ -31,3 +32,5 @@ inline void clearRole(QWidget *w, const char *property)
 }
 
 } // namespace freejoy_style
+
+#endif // STYLE_HELPERS_H

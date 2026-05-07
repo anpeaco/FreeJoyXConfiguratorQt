@@ -152,7 +152,7 @@ void ColorValueSlider::mousePressEvent(QMouseEvent *event)
         event->accept();
         setSliderDown(true);
 
-        double pos;  // дублируется !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        double pos;  // duplicated !!!
         if (orientation() == Qt::Horizontal) {
             if (geometry().width() > 5) {
                 pos = static_cast<double>(event->pos().x() - 2.5) / (geometry().width() - 5);
@@ -193,7 +193,7 @@ void ColorValueSlider::mouseMoveEvent(QMouseEvent *event)
     if (event->buttons() & Qt::LeftButton) {
         event->accept();
 
-        double pos;  // дублируется !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        double pos;  // duplicated !!!
         if (orientation() == Qt::Horizontal) {
             if (geometry().width() > 5) {
                 pos = static_cast<double>(event->pos().x() - 2.5) / (geometry().width() - 5);

@@ -16,7 +16,7 @@ struct GlobalEnvironment
 {
     QElapsedTimer *pApp_start_time = nullptr;
     DeviceConfig *pDeviceConfig = nullptr;
-    QSettings *pAppSettings = nullptr;  // нахера?
+    QSettings *pAppSettings = nullptr;  // why is this here?
     DebugWindow *pDebugWindow = nullptr;
     QTranslator *pTranslator = nullptr;
 

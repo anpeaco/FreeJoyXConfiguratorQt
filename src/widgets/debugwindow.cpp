@@ -58,7 +58,7 @@ void DebugWindow::devicePacketReceived()
         ui->label_PacketsSpeed->setText(QString::number((double(m_timer.restart()) / double(count)), 'f', 3)
                                         + tr(" ms"));
         count = 0;
-    } else if (m_timer.isValid() == false) { // валид-инвалид для правильного отображения при подключении-отключении девайса
+    } else if (m_timer.isValid() == false) { // valid/invalid toggle keeps display correct across device connect/disconnect
         m_timer.start();
     }
 
@@ -80,7 +80,7 @@ void DebugWindow::printMsg(const QString &msg)
 {
     QString log(QDateTime::currentDateTime().toString("hh:mm:ss.zzz") + ": " + msg + '\n');
     ui->textBrowser_DebugMsg->insertPlainText(log);         // append?
-    ui->textBrowser_DebugMsg->moveCursor(QTextCursor::End); // с plainTextEdit криво пашет
+    ui->textBrowser_DebugMsg->moveCursor(QTextCursor::End); // works oddly with plainTextEdit
 
     if (m_writeToFile) {
         QString date(QDateTime::currentDateTime().toString("YYYY-MM-DDTHH:MM"));

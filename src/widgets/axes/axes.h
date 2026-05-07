@@ -174,7 +174,7 @@ private:
     };
 
 
-    const QVector <deviceEnum_guiName_t> m_axesPinList =      // любая последовательность, но первые 2 добавляются в конструкторе
+    const QVector <deviceEnum_guiName_t> m_axesPinList =      // any order, but the first 2 are added in the constructor
     {{
         {None,     tr("None")},
         {Encoder,  tr("Encoder")},
@@ -211,7 +211,7 @@ private:
         {C15,      "C15"},
     }};
 
-    const QVector <deviceEnum_guiName_t> m_axisSourceMain =      // порядов обязан быть как в common_types.h!!!!!!!!!!!
+    const QVector <deviceEnum_guiName_t> m_axisSourceMain =      // order MUST match common_types.h!
     {{
         {None,          tr("None")},
         {Encoder,       tr("Encoder")},

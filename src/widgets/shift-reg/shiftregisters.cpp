@@ -10,7 +10,7 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
 {
     ui->setupUi(this);
 
-    // для перевода при старте приложения, надо определить после старта транслятора
+    // populated for translation at app start; must be set up after the translator initialises
     if (m_notDefined == nullptr) {
         m_notDefined = tr("Not defined");
     }

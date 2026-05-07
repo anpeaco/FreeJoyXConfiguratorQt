@@ -144,8 +144,8 @@ void ButtonConfig::logicaButtonsCreator()
         emit logicalButtonsCreated();
         return;
     }
-    // как я понял таймер срабатывает после полной загрузки приложения(оно отобразится)
-    // т.к. в LogicaButtonsCreator заходит при инициализации, но срабатывает после запуска приложения
+    // as far as I can tell the timer fires after the app fully loads (becomes visible)
+    // because LogicalButtonsCreator is entered during init but actually fires post-launch
     QTimer::singleShot(10, this, [&] {
         if (tmp == 0) {
             timer.start();
@@ -169,7 +169,7 @@ void ButtonConfig::logicaButtonsCreator()
         on_checkBox_AutoPhysBut_toggled(ui->checkBox_AutoPhysBut->isChecked());
         #endif
 #else
-        // MAX_BUTTONS_NUM(128)/8 = 16 ДОЛЖНО ДЕЛИТЬСЯ БЕЗ ОСТАТКА
+        // MAX_BUTTONS_NUM(128)/8 = 16 MUST DIVIDE EVENLY
         for (int i = 0; i < MAX_BUTTONS_NUM; i++) // old value =8 // useless atm
         {
             m_logicButtonPtrList[tmp]->initialization();

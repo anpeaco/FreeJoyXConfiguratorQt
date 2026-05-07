@@ -135,7 +135,7 @@ QPoint ColorWheel::colorToPos(const QColor &color)
     float ratio2 = 1;
     float ratio3 = 1;
 
-    // скорее всего код полное говно
+    // this code is probably terrible
     if (color != QColor(Qt::white) && color != QColor(Qt::black)) {
         QColor col(QColor::fromHsvF(color.toHsv().hueF(), 1.0f, 1.0f)); // color without gradient
 

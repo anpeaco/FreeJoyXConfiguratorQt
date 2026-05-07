@@ -114,7 +114,7 @@ private:
     {
         {AXIS_SOURCE,        {AXIS_ANALOG, TLE5011_CS, MCP3201_CS, MCP3202_CS, MCP3204_CS, MCP3208_CS, MLX90393_CS, MLX90363_CS, AS5048A_CS, TLE5012_CS}},
 
-        {BUTTON_FROM_AXES,   {678}},        // 678 в DeviceConfig
+        {BUTTON_FROM_AXES,   {678}},        // 678 in DeviceConfig
 
         {SINGLE_BUTTON,      {BUTTON_VCC, BUTTON_GND}},
         {ROW_OF_BUTTONS,     {BUTTON_ROW}},

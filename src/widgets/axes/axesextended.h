@@ -82,7 +82,7 @@ private:
         {AXIS_BUTTON_RESET,         tr("Reset")},
     }};
 
-    const QVector <deviceEnum_guiName_t> m_filterList =      // порядок обязан быть как в common_types.h!!!!!!!!!!!      // static?
+    const QVector <deviceEnum_guiName_t> m_filterList =      // order MUST match common_types.h!      // static?
     {{
         {FILTER_NO,           tr("off")},
         {FILTER_LEVEL_1,      tr("level 1")},

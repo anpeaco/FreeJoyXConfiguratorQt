@@ -141,7 +141,7 @@ void AxesCurvesPlot::setLineWidth(int width)
 
 void AxesCurvesPlot::setCurAxisPos(int posX, int posY)
 {
-    m_curAxisPos.posX = calcPointPosX(posX);   // увеличить Х scale
+    m_curAxisPos.posX = calcPointPosX(posX);   // increase X scale
     m_curAxisPos.posY = calcPointPosY(posY);
     update();
 }

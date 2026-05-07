@@ -8,7 +8,7 @@
 
 #define PINS_COUNT 30
 #define PIN_TYPE_COUNT 32
-enum // разделить и вынести отдельно?                 // все структуры в global.h?
+enum // split out into a separate file?                 // move all structs into global.h?
 {
   ANALOG_IN = 100,
   FAST_ENCODER_PIN,
@@ -104,8 +104,8 @@ private:
     uint m_interactCount;
     int m_call_interaction;
 
-    ////////////////////////////// СЛИШКОМ ЖИРНО СДЕЛАТЬ static!!///////////////////////
-    const pins m_pinList[PINS_COUNT] = // каждый пин хранит по структуре. а жирно не будет?
+    ////////////////////////////// WAY TOO HEAVY TO MAKE static!!///////////////////////
+    const pins m_pinList[PINS_COUNT] = // each pin stores its own struct -- will that be too heavy?
     {
         {PA_0,  {"A0"},    {tr("Pin A0")},     {ANALOG_IN}}, // pin device enum // GUI name // pin type
         {PA_1,  {"A1"},    {tr("Pin A1")},     {ANALOG_IN}}, // todo: add SERIAL, PWM...
