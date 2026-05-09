@@ -25,7 +25,13 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
 {
     // Mutex is used for thread-safe access to m_currentWork and m_ledState 
     // from both UI and worker threads, as processData() blocks without an event loop.
-    const QString FLASHER_PROD_STR ("FreeJoy Flasher");
+    /* "FreeJoyX Flasher" identifies the FreeJoyX bootloader (firmware
+     * commit anpeaco/FreeJoyX b7b1d27 onwards). "FreeJoy Flasher" is
+     * the upstream FreeJoy bootloader's product string -- still accepted
+     * so users coming from upstream can flash FreeJoyX firmware over
+     * their existing bootloader. */
+    const QString FLASHER_PROD_STR ("FreeJoyX Flasher");
+    const QString FLASHER_PROD_STR_LEGACY ("FreeJoy Flasher");
     const QString FJ_MANUFACT_STR (FORK_NAME);
     const QString UPSTREAM_MANUFACT_STR ("FreeJoy");
     const QString OLD_MANUFACT_STR ("STMicroelectronics");
@@ -60,7 +66,8 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
             while(hidDevInfo) {
                 // flasher search. flasher is here because we dont need read params buffer
                 // and we are not intrested in other devices when we flash firmware
-                if(QString::fromWCharArray(hidDevInfo->product_string) == FLASHER_PROD_STR) {
+                if (const QString prodStr = QString::fromWCharArray(hidDevInfo->product_string);
+                    prodStr == FLASHER_PROD_STR || prodStr == FLASHER_PROD_STR_LEGACY) {
                     // flasher found, remember path
                     if (m_flasherPath.isEmpty()) {
                         m_flasherPath = hidDevInfo->path;
