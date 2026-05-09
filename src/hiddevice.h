@@ -3,6 +3,8 @@
 
 #include <QObject>
 #include <mutex>
+#include <vector>
+#include <stdint.h>
 #include "hidapi.h"
 
 class HidDevice : public QObject
@@ -19,6 +21,16 @@ public:
      * pre-write one. Pass dev_config_t.config.vid / .pid from the
      * caller; matched against re-enumerated devices alongside serial. */
     void sendConfigToDevice(uint16_t expectedVid, uint16_t expectedPid);
+
+    /* Override the default current-shape source bytes for the next write.
+     * Used by MainWindow's pre-write step when the connected device runs
+     * an older firmware version: the reverse migrator packs the current
+     * dev_config_t into the legacy shape, the resulting bytes get parked
+     * here, and writeConfigToDevice picks them up on the very next call.
+     * The buffer is consumed (cleared) after one write so a subsequent
+     * write to a current-firmware device falls back to the live
+     * gEnv.pDeviceConfig->config bytes automatically. */
+    void setNextWriteSourceBytes(const std::vector<uint8_t> &bytes);
     void sendLedState(uint32_t bitmask);
 
     bool enterToFlashMode();
@@ -121,6 +133,11 @@ private:
     uint16_t m_targetExpectedVid = 0;
     uint16_t m_targetExpectedPid = 0;
     const QByteArray *m_firmware;
+
+    /* If non-empty when writeConfigToDevice() runs, send these bytes to
+     * the device instead of the current-shape gEnv.pDeviceConfig->config.
+     * Cleared after one write -- see setNextWriteSourceBytes(). */
+    std::vector<uint8_t> m_nextWriteSourceBytes;
 
     mutable std::mutex m_mutex;
 };

@@ -23,6 +23,7 @@ FreeJoyConfiguratorQtX is a fork of [FreeJoyConfiguratorQt](https://github.com/F
 * Saving and loading configuration to file
 * Flashing device firmware — picks the right per-board image (`freejoyx-f103-app-*.bin` / `freejoyx-f411-app-*.bin`) from the bundled `firmware/` folder
 * **Legacy config migrator** — `src/legacy/` archives every shipped `dev_config_t` shape so older boards are migrated forward losslessly when the configurator reads them
+* **Backwards-compatible writes** — the configurator can also write configs *to* older firmware versions without forcing a flash. Supported targets: upstream FreeJoy v1.7.0 / v1.7.1 / v1.7.3 and FreeJoyX v1.7.7. Each pre-write surfaces a confirmation dialog listing fields that won't fit in the older shape (fork-only button types, extra shift slots, fast encoder modes, RGB, etc.) before bytes go on the wire
 
 Check the upstream [FreeJoy wiki](https://github.com/FreeJoy-Team/FreeJoyWiki) for general usage; FreeJoyX-specific feature notes live in the plan files alongside the firmware repo.
 

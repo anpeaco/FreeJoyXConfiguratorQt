@@ -198,6 +198,148 @@ static MigrateResult migrate_v1710_to_current(const uint8_t *raw, size_t len, de
 }
 
 /* ============================================================================
+ * v1730 -> current
+ * Source struct: legacy::v1730::dev_config_t (upstream FreeJoy v1.7.3b0).
+ *
+ * Diffs vs current:
+ *   MISSING (default-fill from InitConfig): board_id + reserved_layout,
+ *     long_press_threshold_ms + double_tap_window_ms, fast_encoders[],
+ *     saved_breakdown.
+ *   button_t shape change: type widened from :5 to byte (values still
+ *     fit), src_b added (default -1), op added (default 0),
+ *     shift_modificator widened :3 -> :4 (range 0..7 still fits).
+ *   Everything else copies through cleanly -- led_config_t already has
+ *     timer:4, rgb_leds[] / led_timer_ms / polling intervals all match.
+ * ============================================================================
+ */
+static MigrateResult migrate_v1730_to_current(const uint8_t *raw, size_t len, dev_config_t &out)
+{
+    if (len < sizeof(v1730::dev_config_t)) {
+        return MigrateResult::BufferTooSmall;
+    }
+
+    const v1730::dev_config_t *old = reinterpret_cast<const v1730::dev_config_t *>(raw);
+
+    out = ::InitConfig();
+
+    out.firmware_version = FIRMWARE_VERSION;
+    /* upstream v1.7.3 was F103-only; tag the migrated config accordingly
+     * so per-board pin labels resolve correctly. */
+    out.board_id = BOARD_ID_F103_BLUEPILL;
+    out.reserved_layout = 0;
+
+    memcpy(out.device_name, old->device_name, sizeof(old->device_name));
+
+    out.button_debounce_ms      = old->button_debounce_ms;
+    out.encoder_press_time_ms   = old->encoder_press_time_ms;
+    out.exchange_period_ms      = old->exchange_period_ms;
+
+    Q_STATIC_ASSERT(LV1730_USED_PINS_NUM == USED_PINS_NUM);
+    for (int i = 0; i < USED_PINS_NUM; ++i) {
+        out.pins[i] = (pin_t)old->pins[i];
+    }
+
+    /* axis_config_t byte-identical. */
+    Q_STATIC_ASSERT(LV1730_MAX_AXIS_NUM == MAX_AXIS_NUM);
+    Q_STATIC_ASSERT(sizeof(axis_config_t) == sizeof(v1730::axis_config_t));
+    for (int i = 0; i < MAX_AXIS_NUM; ++i) {
+        memcpy(&out.axis_config[i], &old->axis_config[i], sizeof(axis_config_t));
+    }
+
+    /* button_t shape change (same as v1710 -> current). */
+    Q_STATIC_ASSERT(LV1730_MAX_BUTTONS_NUM == MAX_BUTTONS_NUM);
+    for (int i = 0; i < MAX_BUTTONS_NUM; ++i) {
+        out.buttons[i].physical_num      = old->buttons[i].physical_num;
+        out.buttons[i].type              = (button_type_t)old->buttons[i].type;
+        out.buttons[i].src_b             = -1;
+        out.buttons[i].shift_modificator = old->buttons[i].shift_modificator;
+        out.buttons[i].is_inverted       = old->buttons[i].is_inverted;
+        out.buttons[i].is_disabled       = old->buttons[i].is_disabled;
+        out.buttons[i].op                = 0;
+        out.buttons[i].delay_timer       = old->buttons[i].delay_timer;
+        out.buttons[i].press_timer       = old->buttons[i].press_timer;
+    }
+
+    out.button_timer1_ms = old->button_timer1_ms;
+    out.button_timer2_ms = old->button_timer2_ms;
+    out.button_timer3_ms = old->button_timer3_ms;
+    out.a2b_debounce_ms  = old->a2b_debounce_ms;
+    /* gesture timers stay at InitConfig defaults; v1730 had no gestures. */
+
+    Q_STATIC_ASSERT(sizeof(axis_to_buttons_t) == sizeof(v1730::axis_to_buttons_t));
+    for (int i = 0; i < MAX_AXIS_NUM; ++i) {
+        memcpy(&out.axes_to_buttons[i], &old->axes_to_buttons[i], sizeof(axis_to_buttons_t));
+    }
+
+    Q_STATIC_ASSERT(sizeof(shift_reg_config_t) == sizeof(v1730::shift_reg_config_t));
+    Q_STATIC_ASSERT(LV1730_MAX_SHIFT_REG_NUM == MAX_SHIFT_REG_NUM);
+    for (int i = 0; i < MAX_SHIFT_REG_NUM; ++i) {
+        memcpy(&out.shift_registers[i], &old->shift_registers[i], sizeof(shift_reg_config_t));
+    }
+
+    Q_STATIC_ASSERT(sizeof(shift_modificator_t) == sizeof(v1730::shift_modificator_t));
+    for (int i = 0; i < 5; ++i) {
+        out.shift_config[i].button = old->shift_config[i].button;
+    }
+    /* shift_config[5..7] keep InitConfig -1 default. */
+
+    out.vid = old->vid;
+    out.pid = old->pid;
+
+    Q_STATIC_ASSERT(sizeof(led_pwm_config_t) == sizeof(v1730::led_pwm_config_t));
+    for (int i = 0; i < 4; ++i) {
+        memcpy(&out.led_pwm_config[i], &old->led_pwm_config[i], sizeof(led_pwm_config_t));
+    }
+
+    /* led_config_t byte-identical at v1730 and current (timer:4 added in
+     * upstream v1.7.3 already). */
+    Q_STATIC_ASSERT(LV1730_MAX_LEDS_NUM == MAX_LEDS_NUM);
+    Q_STATIC_ASSERT(sizeof(led_config_t) == sizeof(v1730::led_config_t));
+    for (int i = 0; i < MAX_LEDS_NUM; ++i) {
+        memcpy(&out.leds[i], &old->leds[i], sizeof(led_config_t));
+    }
+    for (int i = 0; i < 4; ++i) {
+        out.led_timer_ms[i] = old->led_timer_ms[i];
+    }
+
+    Q_STATIC_ASSERT(LV1730_MAX_ENCODERS_NUM == MAX_ENCODERS_NUM);
+    for (int i = 0; i < MAX_ENCODERS_NUM; ++i) {
+        out.encoders[i] = old->encoders[i];
+    }
+
+    /* fast_encoders[] kept at InitConfig defaults; v1730 had no
+     * dedicated fast-encoder records (it relied on the implicit pin
+     * role). The pin promotion logic from the v1710 migrator applies
+     * the same way -- if FAST_ENCODER appears at slot 8/9 (PA8/PA9) or
+     * 17/18 (PB6/PB7) in the migrated pins[] table, default the
+     * corresponding fast_encoders[].mode to ENCODER_CONF_4x. */
+    if (out.pins[8] == FAST_ENCODER && out.pins[9] == FAST_ENCODER) {
+        out.fast_encoders[0].mode = ENCODER_CONF_4x;
+    }
+    if (out.pins[17] == FAST_ENCODER && out.pins[18] == FAST_ENCODER) {
+        out.fast_encoders[1].mode = ENCODER_CONF_4x;
+    }
+
+    out.button_polling_interval_ticks  = old->button_polling_interval_ticks;
+    out.encoder_polling_interval_ticks = old->encoder_polling_interval_ticks;
+
+    out.rgb_effect     = old->rgb_effect;
+    out.rgb_count      = old->rgb_count;
+    out.rgb_brightness = old->rgb_brightness;
+    out.rgb_delay_ms   = old->rgb_delay_ms;
+
+    Q_STATIC_ASSERT(LV1730_NUM_RGB_LEDS == NUM_RGB_LEDS);
+    Q_STATIC_ASSERT(sizeof(argb_led_t) == sizeof(v1730::argb_led_t));
+    for (int i = 0; i < NUM_RGB_LEDS; ++i) {
+        memcpy(&out.rgb_leds[i], &old->rgb_leds[i], sizeof(argb_led_t));
+    }
+
+    /* saved_breakdown stays at zero-init (no equivalent in v1730). */
+
+    return MigrateResult::Ok;
+}
+
+/* ============================================================================
  * v1770 -> current
  * Source struct: legacy::v1770::dev_config_t. See legacy_types.h header for
  * the field-level diff against the current shape. Two diffs:
@@ -343,6 +485,7 @@ bool canMigrate(uint16_t firmware_version)
     switch (firmware_version & FW_MASK) {
         case 0x1700:  /* v1.7.0 -- shares struct shape with v1.7.1 */
         case 0x1710:  /* v1.7.1 -- the user's old boards */
+        case 0x1730:  /* v1.7.3 -- last upstream release */
         case 0x1770:  /* v1.7.7 -- FreeJoyX immediately-outgoing shape */
             return true;
         default:
@@ -356,6 +499,8 @@ size_t legacyConfigSize(uint16_t firmware_version)
         case 0x1700:
         case 0x1710:
             return sizeof(v1710::dev_config_t);
+        case 0x1730:
+            return sizeof(v1730::dev_config_t);
         case 0x1770:
             return sizeof(v1770::dev_config_t);
         default:
@@ -401,6 +546,12 @@ MigrateResult migrateLegacyConfig(const uint8_t *raw, size_t len, dev_config_t &
                     << "to current FIRMWARE_VERSION 0x"
                     << QString::number(FIRMWARE_VERSION, 16);
             return migrate_v1710_to_current(raw, len, out);
+
+        case 0x1730:
+            qInfo() << "Migrating dev_config_t from" << describeVersion(version)
+                    << "to current FIRMWARE_VERSION 0x"
+                    << QString::number(FIRMWARE_VERSION, 16);
+            return migrate_v1730_to_current(raw, len, out);
 
         case 0x1770:
             qInfo() << "Migrating dev_config_t from" << describeVersion(version)

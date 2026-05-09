@@ -91,6 +91,7 @@ SOURCES += \
     widgets/shift-reg/shiftregistersconfig.cpp \
     widgets/shifts-timers/shiftstimersconfig.cpp \
     legacy/legacy_migrator.cpp \
+    legacy/legacy_reverse_migrator.cpp \
     firmwarelibrary.cpp
 
 HEADERS += \
@@ -154,6 +155,7 @@ HEADERS += \
     widgets/shifts-timers/shiftstimersconfig.h \
     legacy/legacy_types.h \
     legacy/legacy_migrator.h \
+    legacy/legacy_reverse_migrator.h \
     firmwarelibrary.h
 
 FORMS += \

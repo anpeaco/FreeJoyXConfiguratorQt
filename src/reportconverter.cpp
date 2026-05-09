@@ -60,10 +60,16 @@ void ReportConverter::getConfigFromDevice(uint8_t *hidBuf)
     }
 }
 
-void ReportConverter::sendConfigToDevice(uint8_t *hidBuf, uint8_t requestConfigNumber)
+void ReportConverter::sendConfigToDevice(uint8_t *hidBuf, uint8_t requestConfigNumber,
+                                         const uint8_t *src, size_t srcLen)
 {
-    uint8_t cfg_count = sizeof(dev_config_t) / 62;
-    uint8_t last_cfg_size = sizeof(dev_config_t) % 62;
+    /* Compute fragment count from the buffer's actual size. The legacy
+     * write path can hand us a v1770-shaped buffer that's smaller than
+     * sizeof(current dev_config_t); the device on the other end expects
+     * exactly its own dev_config_t size, which legacyConfigSize() returns
+     * to the caller. */
+    uint8_t cfg_count = uint8_t(srcLen / 62);
+    uint8_t last_cfg_size = uint8_t(srcLen % 62);
     if (last_cfg_size > 0) {
         cfg_count++;
     }
@@ -72,8 +78,8 @@ void ReportConverter::sendConfigToDevice(uint8_t *hidBuf, uint8_t requestConfigN
     hidBuf[1] = requestConfigNumber;
 
     if (requestConfigNumber == cfg_count && last_cfg_size > 0) {
-        memcpy(&hidBuf[2], (uint8_t *)&(gEnv.pDeviceConfig->config) + 62*(requestConfigNumber - 1), last_cfg_size);
+        memcpy(&hidBuf[2], src + 62*(requestConfigNumber - 1), last_cfg_size);
     } else {
-        memcpy(&hidBuf[2], (uint8_t *)&(gEnv.pDeviceConfig->config) + 62*(requestConfigNumber - 1), 62);
+        memcpy(&hidBuf[2], src + 62*(requestConfigNumber - 1), 62);
     }
 }

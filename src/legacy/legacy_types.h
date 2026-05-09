@@ -221,6 +221,202 @@ typedef struct
 
 
 /* ============================================================================
+ * v1730 -- upstream FreeJoy v1.7.3b0 (firmware_version 0x1730..0x173F)
+ *
+ * Source: github.com/FreeJoy-Team/FreeJoy at tag v1.7.3b0,
+ * application/Inc/common_types.h + common_defines.h. v1.7.3 was the last
+ * upstream release before our fork (Feb 2026).
+ *
+ * Shape relative to v1710 (already archived above):
+ *   ADDED inline: led_config_t.timer :4 (LED-on duration). led_config_t
+ *     grows from 2 bytes to 3-with-padding.
+ *   ADDED inline: led_timer_ms[4] right after leds[].
+ *   ADDED at tail (after encoders[]):
+ *     button_polling_interval_ticks, encoder_polling_interval_ticks
+ *     rgb_effect, rgb_count, rgb_brightness, rgb_delay_ms
+ *     argb_led_t rgb_leds[NUM_RGB_LEDS]   (NUM_RGB_LEDS = 50)
+ *
+ * Shape relative to current FreeJoyX (the forward migrator's target):
+ *   MISSING: board_id + reserved_layout (Phase 7)
+ *   MISSING: long_press_threshold_ms + double_tap_window_ms (Step 4)
+ *   MISSING: fast_encoders[MAX_FAST_ENCODER_NUM] (Step 1)
+ *   MISSING: saved_breakdown
+ *   MISSING (button_t shape): type widened to byte (was :5),
+ *                              src_b added, op:3 added.
+ *                              shift_modificator widened to :4 (was :3).
+ *
+ * button_t at v1730 is byte-identical to button_t at v1710 (upstream did
+ * not touch the button bitfield layout between v1.7.1 and v1.7.3); the
+ * reverse migrator can clamp type / shift_modificator the same way for
+ * either target.
+ * ============================================================================
+ */
+namespace v1730 {
+
+#define LV1730_USED_PINS_NUM         30
+#define LV1730_MAX_AXIS_NUM          8
+#define LV1730_MAX_BUTTONS_NUM       128
+#define LV1730_MAX_ENCODERS_NUM      16
+#define LV1730_MAX_LEDS_NUM          24
+#define LV1730_MAX_SHIFT_REG_NUM     4
+#define LV1730_NUM_RGB_LEDS          50
+
+typedef int16_t analog_data_t;
+typedef int8_t  pin_t;
+typedef uint8_t button_type_t;
+typedef uint8_t button_timer_t;
+typedef uint8_t encoder_t;
+
+/* axis_config_t: byte-identical to v1710 and current. */
+typedef struct
+{
+    analog_data_t   calib_min;
+    analog_data_t   calib_center;
+    analog_data_t   calib_max;
+    uint8_t         out_enabled:        1;
+    uint8_t         inverted:           1;
+    uint8_t         is_centered:        1;
+    uint8_t         function:           2;
+    uint8_t         filter:             3;
+
+    int8_t          curve_shape[11];
+    uint8_t         resolution:         4;
+    uint8_t         channel:            4;
+    uint8_t         deadband_size:      7;
+    uint8_t         is_dynamic_deadband: 1;
+
+    int8_t          source_main;
+    uint8_t         source_secondary:   3;
+    uint8_t         offset_angle:       5;
+
+    int8_t          button1;
+    int8_t          button2;
+    int8_t          button3;
+    uint8_t         divider;
+    uint8_t         i2c_address;
+    uint8_t         button1_type:       3;
+    uint8_t         button2_type:       2;
+    uint8_t         button3_type:       3;
+    uint8_t         prescaler;
+    uint8_t         reserved[1];
+
+} axis_config_t;
+
+/* button_t: byte-identical to v1710. type :5 + shift_modificator :3, no
+ * src_b, no op. */
+typedef struct button_t
+{
+    int8_t          physical_num;
+    button_type_t   type:               5;
+    uint8_t         shift_modificator:  3;
+
+    uint8_t         is_inverted:        1;
+    uint8_t         is_disabled:        1;
+    button_timer_t  delay_timer:        3;
+    button_timer_t  press_timer:        3;
+
+} button_t;
+
+typedef struct
+{
+    uint8_t  points[13];
+    uint8_t  buttons_cnt;
+
+} axis_to_buttons_t;
+
+typedef struct
+{
+    uint8_t  type;
+    uint8_t  button_cnt;
+    int8_t   reserved[2];
+
+} shift_reg_config_t;
+
+typedef struct
+{
+    int8_t   button;
+
+} shift_modificator_t;
+
+typedef struct
+{
+    uint8_t  duty_cycle;
+    uint8_t  axis_num:  3;
+    uint8_t  is_axis:   1;
+    uint8_t  :          0;
+
+} led_pwm_config_t;
+
+/* led_config_t at v1730: timer:4 added between type:3 and the :0
+ * aligner. Wire-shape difference vs v1710 (which had no timer field). */
+typedef struct
+{
+    int8_t   input_num;
+    uint8_t  type:      3;
+    int8_t   timer:     4;
+    uint8_t  :          0;
+
+} led_config_t;
+
+typedef struct
+{
+    uint8_t  r, g, b;
+} rgb_t;
+
+typedef struct
+{
+    rgb_t    color;
+    int8_t   input_num;
+    uint8_t  is_inverted: 1;
+    uint8_t  is_disabled: 1;
+    uint8_t  :            0;
+} argb_led_t;
+
+typedef struct
+{
+    uint16_t            firmware_version;
+    char                device_name[26];
+    uint16_t            button_debounce_ms;
+    uint8_t             encoder_press_time_ms;
+    uint8_t             exchange_period_ms;
+    pin_t               pins[LV1730_USED_PINS_NUM];
+
+    axis_config_t       axis_config[LV1730_MAX_AXIS_NUM];
+
+    button_t            buttons[LV1730_MAX_BUTTONS_NUM];
+    uint16_t            button_timer1_ms;
+    uint16_t            button_timer2_ms;
+    uint16_t            button_timer3_ms;
+    uint16_t            a2b_debounce_ms;
+
+    axis_to_buttons_t   axes_to_buttons[LV1730_MAX_AXIS_NUM];
+
+    shift_reg_config_t  shift_registers[LV1730_MAX_SHIFT_REG_NUM];
+    shift_modificator_t shift_config[5];                   /* v1730: 5 slots */
+    uint16_t            vid;
+    uint16_t            pid;
+
+    led_pwm_config_t    led_pwm_config[4];
+    led_config_t        leds[LV1730_MAX_LEDS_NUM];
+    uint16_t            led_timer_ms[4];
+
+    encoder_t           encoders[LV1730_MAX_ENCODERS_NUM];
+
+    uint8_t             button_polling_interval_ticks;
+    uint8_t             encoder_polling_interval_ticks;
+
+    uint8_t             rgb_effect;
+    uint8_t             rgb_count;
+    uint8_t             rgb_brightness;
+    uint16_t            rgb_delay_ms;
+    argb_led_t          rgb_leds[LV1730_NUM_RGB_LEDS];
+
+} dev_config_t;
+
+} /* namespace v1730 */
+
+
+/* ============================================================================
  * v1770 -- FreeJoyX v1.7.7 (firmware_version 0x1770..0x177F)
  *
  * Outgoing shape archived 2026-05-06 ahead of the v1.7.8 bump (issue
@@ -437,8 +633,7 @@ typedef struct
  *   already does the pin remap; an in-memory migrator would fold that logic
  *   here when populated.
  *
- * v1730 -- upstream v1.7.3b0. Similar shape to v1710 (need diff vs v1.7.1
- *   to confirm). Most fields preserved; check button_t bitfield layout.
+ * v1730 -- POPULATED above (upstream v1.7.3b0).
  *
  * v1733 / v1740 / v1750 / v1760 -- intermediate FreeJoyX-internal versions.
  *   Each FIRMWARE_VERSION bump in this codebase since the fork should add

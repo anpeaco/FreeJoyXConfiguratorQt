@@ -23,6 +23,7 @@
 #include "deviceconfig.h"
 #include "version.h"
 #include "legacy/legacy_migrator.h"
+#include "legacy/legacy_reverse_migrator.h"
 
 #include <QDebug>
 
@@ -566,7 +567,18 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
              */
             if (legacy::canMigrate(devVer)) {
                 ui->pushButton_ReadConfig->setDisabled(false);
-                ui->pushButton_WriteConfig->setDisabled(true);
+                /* Write Config used to be unconditionally disabled on a
+                 * legacy device because writing current-shape bytes to a
+                 * legacy-shape firmware would corrupt the device's flash.
+                 * With the reverse migrator (legacy_reverse_migrator.h)
+                 * that's no longer the case: if there's a reverse
+                 * migrator for the target version we can pack the config
+                 * down into the legacy shape and send it. on_pushButton_
+                 * WriteConfig_clicked detects the legacy device and runs
+                 * the reverse migrator + a confirmation dialog before
+                 * the bytes go on the wire. */
+                const bool canWriteLegacy = legacy::canReverseMigrate(devVer);
+                ui->pushButton_WriteConfig->setDisabled(!canWriteLegacy);
                 setConfigTabsEnabled(true);
                 freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-warning");
                 // Just "Legacy" -- the firmware version is already
@@ -1353,8 +1365,17 @@ void MainWindow::on_pushButton_WriteConfig_clicked()
     const uint16_t devVer = gEnv.pDeviceConfig
         ? gEnv.pDeviceConfig->paramsReport.firmware_version
         : 0;
-    const bool deviceReadable = (devVer != 0) &&
-        ((devVer & 0xFFF0) == (FIRMWARE_VERSION & 0xFFF0));
+    /* Pre-write backup is valuable on both current and legacy devices:
+     * the Read returns the device's current state (forward-migrated to
+     * current shape if it's a legacy device), and the resulting backup
+     * file is a clean restore-point if the write goes wrong. The legacy
+     * file is saved in current shape rather than the device's native
+     * shape -- a small fidelity loss, but the mapping data is preserved
+     * intact, and a later Write would round-trip back through the
+     * reverse migrator anyway. */
+    const bool deviceReadable = (devVer != 0) && (
+        ((devVer & 0xFFF0) == (FIRMWARE_VERSION & 0xFFF0)) ||
+        legacy::canMigrate(devVer));
     if (deviceReadable) {
         m_pendingWriteConfig = gEnv.pDeviceConfig->config;
         m_backupBeforeWritePending = true;
@@ -1374,6 +1395,70 @@ void MainWindow::doActualWriteToDevice()
     /* The actual write half. Called either directly from
      * on_pushButton_WriteConfig_clicked (when no backup was possible)
      * or from configReceived after the pre-write backup completes. */
+    UiWriteToConfig();
+
+    /* Legacy backwards-write gate. If the connected device runs an
+     * older firmware version with an in-tree reverse migrator, pack the
+     * config down into the legacy shape, surface any field-loss in a
+     * confirmation dialog, then stage the bytes for HidDevice to send
+     * (instead of the current-shape gEnv.pDeviceConfig->config). Run
+     * BEFORE setting m_postWriteRestarting / starting the fallback
+     * timer so a user cancel leaves the UI in a clean pre-click state. */
+    const uint16_t devVer = gEnv.pDeviceConfig
+        ? gEnv.pDeviceConfig->paramsReport.firmware_version
+        : 0;
+    const bool versionMatches = (devVer != 0) &&
+        ((devVer & 0xFFF0) == (FIRMWARE_VERSION & 0xFFF0));
+    if (!versionMatches && devVer != 0) {
+        if (!legacy::canReverseMigrate(devVer)) {
+            QMessageBox::warning(
+                this,
+                tr("Cannot write to this firmware version"),
+                tr("<p>The connected device runs <b>%1</b>, which this "
+                   "configurator doesn't have a reverse migrator for.</p>"
+                   "<p>To write a config, flash a current FreeJoyX firmware "
+                   "first (Advanced Settings -> Firmware flasher).</p>")
+                    .arg(legacy::describeVersion(devVer)));
+            blockWRConfigToDevice(false);
+            ui->pushButton_WriteConfig->setText(m_writeButtonDefaultText);
+            return;
+        }
+        legacy::ReverseResult r = legacy::reverseMigrate(gEnv.pDeviceConfig->config, devVer);
+        if (!r.ok()) {
+            QMessageBox::warning(
+                this,
+                tr("Reverse migration failed"),
+                tr("<p>Couldn't pack the current config into the %1 wire "
+                   "format. The device wasn't written to.</p>")
+                    .arg(legacy::describeVersion(devVer)));
+            blockWRConfigToDevice(false);
+            ui->pushButton_WriteConfig->setText(m_writeButtonDefaultText);
+            return;
+        }
+        if (!r.dropped.isEmpty()) {
+            QString detail = QStringLiteral("<ul><li>")
+                + r.dropped.join(QStringLiteral("</li><li>"))
+                + QStringLiteral("</li></ul>");
+            const QMessageBox::StandardButton rc = QMessageBox::question(
+                this,
+                tr("Write to %1 firmware?").arg(legacy::describeVersion(devVer)),
+                tr("<p>Writing to %1 firmware will lose the following:</p>"
+                   "%2"
+                   "<p>The configurator will keep its in-memory copy unchanged "
+                   "-- only the device will see the reduced config. "
+                   "Continue?</p>")
+                    .arg(legacy::describeVersion(devVer), detail),
+                QMessageBox::Yes | QMessageBox::Cancel,
+                QMessageBox::Cancel);
+            if (rc != QMessageBox::Yes) {
+                blockWRConfigToDevice(false);
+                ui->pushButton_WriteConfig->setText(m_writeButtonDefaultText);
+                return;
+            }
+        }
+        m_hidDeviceWorker->setNextWriteSourceBytes(r.bytes);
+    }
+
     // Mark the imminent disconnect+reconnect cycle as "restart, not
     // unplug". hideConnectDeviceInfo reads this to show the friendlier
     // "Restarting..." pill instead of the red "Disconnected".
@@ -1385,7 +1470,6 @@ void MainWindow::doActualWriteToDevice()
     // On timeout (still no match) we fall back to selecting index 0.
     m_postWriteFallbackTimer.start();
 
-    UiWriteToConfig();
     // Pass the post-write VID/PID so the worker can find the device
     // after it re-enumerates -- if the user edited those fields, the
     // device will come back with new IDs and the path-based lookup

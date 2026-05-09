@@ -583,9 +583,33 @@ void HidDevice::writeConfigToDevice(uint8_t *buffer)
     uint8_t reportCount = 0;
     uint8_t configOutBuf[BUFFERSIZE] = {REPORT_ID_CONFIG_OUT, 0};
 
+    /* Pick the source bytes for this write. If MainWindow has parked
+     * legacy-shape bytes via setNextWriteSourceBytes() (because the
+     * connected device runs an older firmware version), use those and
+     * size cfg_count to match. Otherwise fall through to the current
+     * shape -- the long-standing happy path. The legacy override is
+     * consumed (cleared) after this write so any subsequent write to a
+     * current-firmware device picks up live gEnv data automatically. */
+    const uint8_t *src = nullptr;
+    size_t srcLen = 0;
+    std::vector<uint8_t> stagedBytes;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (!m_nextWriteSourceBytes.empty()) {
+            stagedBytes = std::move(m_nextWriteSourceBytes);
+            m_nextWriteSourceBytes.clear();
+            src = stagedBytes.data();
+            srcLen = stagedBytes.size();
+        }
+    }
+    if (src == nullptr) {
+        src = reinterpret_cast<const uint8_t *>(&gEnv.pDeviceConfig->config);
+        srcLen = sizeof(dev_config_t);
+    }
+
     // 62 = BUFFERSIZE(64)-2 bytes (first - ID, second - cfg part)
-    uint8_t cfg_count = sizeof(dev_config_t) / 62;
-    uint8_t last_cfg_size = sizeof(dev_config_t) % 62;
+    uint8_t cfg_count = uint8_t(srcLen / 62);
+    uint8_t last_cfg_size = uint8_t(srcLen % 62);
     if (last_cfg_size > 0)
     {
         cfg_count++;
@@ -611,7 +635,7 @@ void HidDevice::writeConfigToDevice(uint8_t *buffer)
                     if (buffer[1] == configOutBuf[1] + 1)
                     {
                         configOutBuf[1] += 1;
-                        ReportConverter::sendConfigToDevice(configOutBuf, configOutBuf[1]);
+                        ReportConverter::sendConfigToDevice(configOutBuf, configOutBuf[1], src, srcLen);
                         //memcpy(configOutBuf, configOutBuf, BUFFERSIZE);
 
                         hid_write(m_paramsRead, configOutBuf, BUFFERSIZE);
@@ -812,6 +836,12 @@ void HidDevice::sendConfigToDevice(uint16_t expectedVid, uint16_t expectedPid)
     m_targetExpectedVid = expectedVid;
     m_targetExpectedPid = expectedPid;
     m_currentWork = REPORT_ID_CONFIG_OUT;
+}
+
+void HidDevice::setNextWriteSourceBytes(const std::vector<uint8_t> &bytes)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_nextWriteSourceBytes = bytes;
 }
 
 void HidDevice::sendLedState(uint32_t bitmask)
