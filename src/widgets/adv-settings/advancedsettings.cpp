@@ -195,9 +195,8 @@ void AdvancedSettings::on_spinBox_FontSize_valueChanged(int fontSize)
 // about
 void AdvancedSettings::on_pushButton_About_clicked()
 {
-    const QString version = QString("<p align=\"center\">%1 Configurator v%2 "
-                                    "(fork of FreeJoy v%3)")
-                                .arg(FORK_NAME, FORK_VERSION, QStringLiteral(APP_VERSION));
+    const QString version = QString("<p align=\"center\">%1 Configurator %2")
+                                .arg(FORK_NAME, QStringLiteral(FREEJOYX_VERSION));
     const QString source = tr("<br>Built with Qt %1 (%2)<br>"
                               R"(Fork source on <a style="color: #03A9F4; text-decoration:none;"
                                 href="https://github.com/anpeaco/FreeJoyConfiguratorQtX">GitHub</a>;

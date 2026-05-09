@@ -2,8 +2,8 @@
 #include "version.h"
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION     MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION, BUILD_VERSION
-PRODUCTVERSION  MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION, BUILD_VERSION
+FILEVERSION     FREEJOYX_VERSION_MAJOR, FREEJOYX_VERSION_MINOR, FREEJOYX_VERSION_PATCH, 0
+PRODUCTVERSION  FREEJOYX_VERSION_MAJOR, FREEJOYX_VERSION_MINOR, FREEJOYX_VERSION_PATCH, 0
 FILEOS          VOS_NT_WINDOWS32
 FILETYPE        VFT_APP
 BEGIN
@@ -11,14 +11,14 @@ BEGIN
     BEGIN
         BLOCK "000004B0"
         BEGIN
-            VALUE "FileVersion",      APP_VERSION
-            VALUE "ProductVersion",   APP_VERSION
-            VALUE "FileDescription",  "FreeJoyConfiguratorQt"
-            VALUE "ProductName",      "FreeJoyConfiguratorQt"
-            VALUE "InternalName",     "FreeJoyConfiguratorQt"
+            VALUE "FileVersion",      FREEJOYX_VERSION
+            VALUE "ProductVersion",   FREEJOYX_VERSION
+            VALUE "FileDescription",  "FreeJoyX Configurator"
+            VALUE "ProductName",      "FreeJoyX Configurator"
+            VALUE "InternalName",     "FreeJoyX Configurator"
             VALUE "OriginalFilename", "FreeJoyQt.exe"
-            VALUE "CompanyName",      "FreeJoy Team"
-            VALUE "LegalCopyright",   "Copyright © FreeJoy Team"
+            VALUE "CompanyName",      "FreeJoyX Project"
+            VALUE "LegalCopyright",   "Copyright Â© FreeJoyX Project contributors"
         END
     END
     BLOCK "VarFileInfo"

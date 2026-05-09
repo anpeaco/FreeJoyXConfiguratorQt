@@ -79,21 +79,18 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&m_postFlashHealthTimer, &QTimer::timeout,
             this, &MainWindow::onPostFlashHealthTimeout);
 
-    // firmware version
-    setWindowTitle(tr("%1 Configurator %2 (fork of FreeJoy v%3)")
-                       .arg(FORK_NAME).arg(FORK_VERSION).arg(APP_VERSION));
+    // window title -- single user-facing version. FORK_NAME stays in
+    // version.h as the USB manufacturer-string filter; it isn't versioned.
+    setWindowTitle(tr("%1 Configurator %2")
+                       .arg(FORK_NAME, QStringLiteral(FREEJOYX_VERSION)));
 
-    // App-group info card: shows the configurator's own expected
-    // firmware version, formatted identically to the device-info card's
-    // Firmware row so the two visually pair up for at-a-glance match
-    // checking. Compile-time constant, set once at startup.
-    {
-        const QString cfgStr = QString::number(FIRMWARE_VERSION, 16);
-        const QString cfgFmt = (cfgStr.size() == 4)
-            ? QString("v%1.%2.%3b%4").arg(cfgStr[0]).arg(cfgStr[1]).arg(cfgStr[2]).arg(cfgStr[3])
-            : QString("0x") + cfgStr;
-        ui->label_AppFirmwareVal->setText(cfgFmt);
-    }
+    // App-group info card: shows the configurator's own user-facing
+    // semver. Pre-issue#18 this used FIRMWARE_VERSION-derived "v1.7.8b0"
+    // formatting; now decoupled -- FREEJOYX_VERSION is the single
+    // "what version are you running?" answer. The device-info card's
+    // Firmware row continues to show the wire-format hex from the
+    // device for compat diagnostics.
+    ui->label_AppFirmwareVal->setText(QStringLiteral(FREEJOYX_VERSION));
 
     // load application config
     loadAppConfig();

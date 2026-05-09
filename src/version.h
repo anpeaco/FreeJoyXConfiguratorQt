@@ -1,25 +1,24 @@
 #ifndef VERSION_H
 #define VERSION_H
 
-#define MAJOR_VERSION 1
-#define MINOR_VERSION 7
-#define PATCH_VERSION 3
-#define BUILD_VERSION 0
+/* The configurator's user-facing version is FREEJOYX_VERSION, defined
+ * in the manually-synced common_defines.h pair (also visible to the
+ * firmware). Pre-2026-05 this file carried two parallel version
+ * concepts inherited from upstream (APP_VERSION = "1.7.3b0",
+ * FORK_VERSION = "0.2.0"); both are retired. See issue
+ * anpeaco/FreeJoyX#18 for the rationale.
+ *
+ * FORK_NAME stays here -- it's used as the USB manufacturer-string
+ * filter in HidDevice's enumeration (FreeJoyX vs upstream FreeJoy)
+ * and isn't versioned, so it's a separate concern from the semver. */
+
+#include "common_defines.h"
 
 #define FORK_NAME    "FreeJoyX"
-#define FORK_VERSION "0.2.0"
 
-#ifdef INNO_SETUP
-	#define APP_VERSION Str(MAJOR_VERSION) + "." + Str(MINOR_VERSION) + "." + Str(PATCH_VERSION) + "." + "b" + Str(BUILD_VERSION)
-#else
-	#define str(s) #s
-	#define xstr(s) str(s)
-	#define APP_VERSION xstr(MAJOR_VERSION) "." xstr(MINOR_VERSION) "." xstr(PATCH_VERSION) "b" xstr(BUILD_VERSION)
-
-	// If it is defined by the compiler, then it is a nightly build, and in the YYYYMMDD format.
-	#ifndef BUILD_VERSION
-		#define BUILD_VERSION 0
-	#endif
-#endif
+/* APP_VERSION kept as an alias for FREEJOYX_VERSION so the .rc file
+ * and any third-party reference still compile. Prefer FREEJOYX_VERSION
+ * in new code. */
+#define APP_VERSION  FREEJOYX_VERSION
 
 #endif // VERSION_H

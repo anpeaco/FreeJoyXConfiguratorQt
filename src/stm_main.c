@@ -19,14 +19,14 @@ dev_config_t InitConfig (void)
         {
             .firmware_version = FIRMWARE_VERSION,	// auto-syncs with the compiled version. Same fix as FreeJoyX/application/Inc/main.h: hardcoding here meant a fresh InitConfig() always seeded the legacy v1730 value, which then triggered the version-mismatch path on the device.
             /* Default device name shown in the OS dispatcher. Auto-
-               syncs to FIRMWARE_VERSION so a factory-reset device
-               reports its actual firmware version rather than the
-               upstream-inherited "FreeJoy v1.7.2" that lingered through
-               every bump. Mirror of FreeJoyX/application/Inc/main.h's
-               init_config.device_name -- both copies must change
-               together (this one drives the configurator's "Reset All"
-               and fresh-session defaults; the firmware's drives the
-               device's own factory-reset behaviour). */
+               syncs to FREEJOYX_VERSION (semver) so a factory-reset
+               device reports the project's user-facing version, not
+               the wire-format hex it used to. Mirror of
+               FreeJoyX/application/Inc/main.h's init_config.device_name
+               -- both copies must change together (this one drives the
+               configurator's "Reset All" and fresh-session defaults;
+               the firmware's drives the device's own factory-reset
+               behaviour). */
             .device_name[0] =  'F',
             .device_name[1] =  'r',
             .device_name[2] =  'e',
@@ -36,12 +36,12 @@ dev_config_t InitConfig (void)
             .device_name[6] =  'y',
             .device_name[7] =  'X',
             .device_name[8] =  ' ',
-            .device_name[9] =  'v',
-            .device_name[10] = '0' + ((FIRMWARE_VERSION >> 12) & 0xF),
-            .device_name[11] = '.',
-            .device_name[12] = '0' + ((FIRMWARE_VERSION >>  8) & 0xF),
-            .device_name[13] = '.',
-            .device_name[14] = '0' + ((FIRMWARE_VERSION >>  4) & 0xF),
+            .device_name[9] =  '0' + FREEJOYX_VERSION_MAJOR,
+            .device_name[10] = '.',
+            .device_name[11] = '0' + FREEJOYX_VERSION_MINOR,
+            .device_name[12] = '.',
+            .device_name[13] = '0' + FREEJOYX_VERSION_PATCH,
+            .device_name[14] = 0,
             .device_name[15] = 0,
             .device_name[16] = 0,
             .device_name[17] = 0,
