@@ -315,12 +315,24 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                         oldSelectedDevice = m_selectedDevice;
                         deviceCountChanged = false;
 
+                        /* Re-check m_selectedDevice bounds against the LIVE
+                         * m_deviceNames -- the detection thread can rebuild
+                         * the list between the unlock above and this relock
+                         * (post-write reconnect churn is especially noisy).
+                         * Without this guard a stale m_selectedDevice indexes
+                         * past the end of m_deviceNames and asserts in
+                         * QList::operator[]. The m_oldFirmwareSelected flag
+                         * is best-effort metadata; if we miss this window
+                         * the next iteration of the outer loop catches up. */
                         std::lock_guard<std::mutex> lock(m_mutex);
-                        // for old firmware
-                        if (m_deviceNames[m_selectedDevice].first) {
-                            m_oldFirmwareSelected = true;
-                        } else {
-                            m_oldFirmwareSelected = false;
+                        if (m_selectedDevice >= 0 &&
+                            m_selectedDevice < m_deviceNames.size()) {
+                            // for old firmware
+                            if (m_deviceNames[m_selectedDevice].first) {
+                                m_oldFirmwareSelected = true;
+                            } else {
+                                m_oldFirmwareSelected = false;
+                            }
                         }
                         // send params request
                         hid_write(m_paramsRead, paramsRequest, 1);
