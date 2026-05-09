@@ -476,6 +476,33 @@ static MigrateResult migrate_v1770_to_current(const uint8_t *raw, size_t len, de
 }
 
 /* ============================================================================
+ * v1780 -> current
+ * Source: current dev_config_t (NOT archived inline). The 0x1780 -> 0x1790
+ * bump added freejoyx_version_*_major/minor/patch to params_report_t but
+ * left dev_config_t byte-identical to current's shape. The forward
+ * migrator is therefore a memcpy + a version-stamp update; the legacy
+ * archive rule (memory: feedback_wire_format_archival.md) would normally
+ * require an inline copy of the v1780 shape under legacy::v1780::, but
+ * with no shape divergence the archive would just be a duplicate of
+ * common_types.h. If the next bump DOES change dev_config_t we'll then
+ * need to inline-archive the v1780 shape under namespace v1780; for now
+ * we take the byte-identical shortcut.
+ * ============================================================================
+ */
+static MigrateResult migrate_v1780_to_current(const uint8_t *raw, size_t len, dev_config_t &out)
+{
+    if (len < sizeof(dev_config_t)) {
+        return MigrateResult::BufferTooSmall;
+    }
+    /* Shape is identical -- direct copy. */
+    memcpy(&out, raw, sizeof(dev_config_t));
+    /* Update the stamp so the device-side mismatch check stops firing
+     * the legacy branch on the migrated config. */
+    out.firmware_version = FIRMWARE_VERSION;
+    return MigrateResult::Ok;
+}
+
+/* ============================================================================
  * Public API
  * ============================================================================
  */
@@ -486,7 +513,8 @@ bool canMigrate(uint16_t firmware_version)
         case 0x1700:  /* v1.7.0 -- shares struct shape with v1.7.1 */
         case 0x1710:  /* v1.7.1 -- the user's old boards */
         case 0x1730:  /* v1.7.3 -- last upstream release */
-        case 0x1770:  /* v1.7.7 -- FreeJoyX immediately-outgoing shape */
+        case 0x1770:  /* v1.7.7 -- FreeJoyX previous-outgoing shape */
+        case 0x1780:  /* v1.7.8 -- prior FreeJoyX, dev_config shape identical */
             return true;
         default:
             return false;
@@ -503,6 +531,8 @@ size_t legacyConfigSize(uint16_t firmware_version)
             return sizeof(v1730::dev_config_t);
         case 0x1770:
             return sizeof(v1770::dev_config_t);
+        case 0x1780:
+            return sizeof(dev_config_t);   /* shape identical to current */
         default:
             return sizeof(dev_config_t);
     }
@@ -558,6 +588,12 @@ MigrateResult migrateLegacyConfig(const uint8_t *raw, size_t len, dev_config_t &
                     << "to current FIRMWARE_VERSION 0x"
                     << QString::number(FIRMWARE_VERSION, 16);
             return migrate_v1770_to_current(raw, len, out);
+
+        case 0x1780:
+            qInfo() << "Migrating dev_config_t from" << describeVersion(version)
+                    << "to current FIRMWARE_VERSION 0x"
+                    << QString::number(FIRMWARE_VERSION, 16);
+            return migrate_v1780_to_current(raw, len, out);
 
         default:
             qWarning() << "No migrator for firmware version 0x"

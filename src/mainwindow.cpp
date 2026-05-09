@@ -409,6 +409,7 @@ void MainWindow::setDeviceInfo(const QString &vidHex, const QString &pidHex, con
     const QString placeholder = QStringLiteral("—");   // em dash
     if (vidHex.isEmpty() && pidHex.isEmpty() && serial.isEmpty()) {
         ui->label_FirmwareVal->setText(placeholder);
+        ui->label_VersionVal->setText(placeholder);
         ui->label_VidPidVal->setText(placeholder);
         ui->label_SerialVal->setText(placeholder);
         ui->label_BoardVal->setText(placeholder);
@@ -431,6 +432,7 @@ void MainWindow::setDeviceInfo(const QString &vidHex, const QString &pidHex, con
     // that never answers the params request) would leave the previous
     // device's firmware version + board name visible on the card.
     ui->label_FirmwareVal->setText(placeholder);
+    ui->label_VersionVal->setText(placeholder);
     ui->label_BoardVal->setText(placeholder);
 }
 
@@ -530,6 +532,20 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
         // firmware we still surface the version here -- the card is
         // strictly informational.
         ui->label_FirmwareVal->setText(verFmt);
+
+        /* Project version (FREEJOYX_VERSION) reported live by the
+         * firmware. Only valid when firmware is compatible -- on
+         * mismatch the params_report layout doesn't necessarily have
+         * the field at this offset, so trust nothing. */
+        if (firmwareCompatible) {
+            const auto &pr = gEnv.pDeviceConfig->paramsReport;
+            ui->label_VersionVal->setText(QStringLiteral("%1.%2.%3")
+                .arg(pr.freejoyx_version_major)
+                .arg(pr.freejoyx_version_minor)
+                .arg(pr.freejoyx_version_patch));
+        } else {
+            ui->label_VersionVal->setText(QStringLiteral("—"));
+        }
 
         // Phase 7: surface the device's self-reported board_id on the
         // info card and route it into the per-board pin-table selector.
