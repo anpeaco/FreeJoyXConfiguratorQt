@@ -859,9 +859,28 @@ void HidDevice::setNextWriteSourceBytes(const std::vector<uint8_t> &bytes)
 QList<HidDevice::ConnectedDevice> HidDevice::connectedDevices(bool excludeSelectedDevice) const
 {
     std::lock_guard<std::mutex> lock(m_mutex);
+    /* Capture the selected device's serial up front. We exclude by
+     * serial-match rather than index-match -- the detection thread
+     * may have rebuilt the list (and thus shifted m_selectedDevice)
+     * between two calls, but serial is chip-derived and stable. The
+     * index check below is kept as a belt-and-braces fallback for
+     * the case where m_selectedDevice points at a row whose serial
+     * isn't reported (rare; some bootloaders). */
+    std::wstring selectedSerial;
+    if (excludeSelectedDevice &&
+        m_selectedDevice >= 0 &&
+        m_selectedDevice < m_hidDevicesList.size()) {
+        selectedSerial = m_hidDevicesList[m_selectedDevice].serNum;
+    }
+
     QList<ConnectedDevice> out;
     for (int i = 0; i < m_hidDevicesList.size(); ++i) {
-        if (excludeSelectedDevice && i == m_selectedDevice) continue;
+        if (excludeSelectedDevice) {
+            if (i == m_selectedDevice) continue;
+            if (!selectedSerial.empty() && m_hidDevicesList[i].serNum == selectedSerial) {
+                continue;   /* duplicate-serial guard */
+            }
+        }
         const Device &d = m_hidDevicesList[i];
         ConnectedDevice c;
         c.vid = d.vid;

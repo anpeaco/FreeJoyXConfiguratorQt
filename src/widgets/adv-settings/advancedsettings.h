@@ -7,7 +7,6 @@
 QT_BEGIN_NAMESPACE
 class QFile;
 class QLabel;
-class QPushButton;
 QT_END_NAMESPACE
 
 namespace Ui {
@@ -58,12 +57,6 @@ signals:
 
     void fontChanged();
 
-    /* Fired when the user clicks the "Suggest unique PID" button next
-     * to the PID input. MainWindow handles it -- it has the connected-
-     * device list and chooses a free slot in the FreeJoyX-reserved
-     * range. */
-    void suggestFreePidRequested();
-
 private slots:
     void on_pushButton_LangEnglish_clicked();
     void on_pushButton_LangRussian_clicked();
@@ -108,7 +101,6 @@ private:
     QWidget     *m_pidConflictRow   = nullptr;
     QLabel      *m_pidConflictIcon  = nullptr;
     QLabel      *m_pidConflictLabel = nullptr;
-    QPushButton *m_suggestPidButton = nullptr;
 };
 
 #endif // ADVANCEDSETTINGS_H

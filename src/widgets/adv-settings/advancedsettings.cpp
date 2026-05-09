@@ -98,13 +98,6 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
     rowLayout->addWidget(m_pidConflictLabel, 1);
     m_pidConflictRow->setVisible(false);
 
-    m_suggestPidButton = new QPushButton(tr("Suggest unique PID"), this);
-    m_suggestPidButton->setToolTip(tr(
-        "Pick a free PID from the FreeJoyX-reserved range that doesn't "
-        "collide with any currently-connected device."));
-    connect(m_suggestPidButton, &QPushButton::clicked,
-            this, &AdvancedSettings::suggestFreePidRequested);
-
     /* Attach to the OUTER "USB settings" grid (gridLayout_3) which has
      * 7 columns; gridLayout_2 inside it is the narrow VID/PID column.
      * We span all columns so the warning text gets the full group-box
@@ -112,9 +105,7 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
     QGridLayout *outerGrid = findChild<QGridLayout *>(QStringLiteral("gridLayout_3"));
     if (outerGrid) {
         const int row = outerGrid->rowCount();
-        outerGrid->addWidget(m_pidConflictRow,    row,     0, 1, outerGrid->columnCount());
-        outerGrid->addWidget(m_suggestPidButton,  row + 1, 0, 1, outerGrid->columnCount(),
-                             Qt::AlignLeft);
+        outerGrid->addWidget(m_pidConflictRow, row, 0, 1, outerGrid->columnCount());
     }
 
     /* Live conflict check on every PID edit. */
@@ -274,7 +265,7 @@ void AdvancedSettings::onPidTextChanged(const QString &)
 
 void AdvancedSettings::refreshPidConflictPill()
 {
-    if (!m_pidConflictLabel || !m_suggestPidButton) return;
+    if (!m_pidConflictLabel) return;
 
     const uint16_t curVid = uint16_t(ui->lineEdit_VID->text().toInt(nullptr, 16));
     const uint16_t curPid = uint16_t(ui->lineEdit_PID->text().toInt(nullptr, 16));

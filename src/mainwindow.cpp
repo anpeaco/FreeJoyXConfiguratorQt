@@ -28,8 +28,6 @@
 #include <QDebug>
 #include <QFile>
 #include <QFileInfo>
-#include <QLineEdit>
-#include <QSet>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -241,11 +239,6 @@ MainWindow::MainWindow(QWidget *parent)
     // axes source changed//axesSourceChanged
     connect(m_pinConfig, &PinConfig::axesSourceChanged, m_axesConfig, &AxesConfig::addOrDeleteMainSource);
     // language changed
-    /* Advanced Settings -> "Suggest unique PID" button. Owner of the
-     * connected-device list is HidDevice; MainWindow bridges. */
-    connect(m_advSettings, &AdvancedSettings::suggestFreePidRequested,
-            this, &MainWindow::onSuggestFreePidRequested);
-
     connect(m_advSettings, &AdvancedSettings::languageChanged, this, &MainWindow::languageChanged);
     // theme changed
     connect(m_advSettings, &AdvancedSettings::themeChanged, this, &MainWindow::themeChanged);
@@ -1844,39 +1837,6 @@ void MainWindow::refreshOtherConnectedDevices()
         ds.append(d);
     }
     m_advSettings->setOtherConnectedDevices(ds);
-}
-
-void MainWindow::onSuggestFreePidRequested()
-{
-    /* FreeJoyX-reserved PID range. ST's vendor ID is 0x0483 and the
-     * historical FreeJoy default is PID 0x5750; we reserve 0x5750..
-     * 0x575F (16 slots) for FreeJoyX devices. Walks the connected list,
-     * picks the first slot not in use, and fills the PID input. */
-    if (!m_hidDeviceWorker || !m_advSettings) return;
-    const auto cs = m_hidDeviceWorker->connectedDevices(/*excludeSelected=*/true);
-    QSet<uint16_t> taken;
-    for (const auto &c : cs) {
-        taken.insert(c.pid);
-    }
-    constexpr uint16_t kReservedBase = 0x5750;
-    constexpr uint16_t kReservedEnd  = 0x575F;
-    uint16_t pick = 0;
-    for (uint16_t p = kReservedBase; p <= kReservedEnd; ++p) {
-        if (!taken.contains(p)) { pick = p; break; }
-    }
-    if (pick == 0) {
-        QMessageBox::information(this, tr("No free PID available"),
-            tr("All 16 PIDs in the FreeJoyX-reserved range "
-               "(0x5750..0x575F) are already in use by connected "
-               "devices. Pick one manually -- or unplug a device first."));
-        return;
-    }
-    /* Reach into AdvancedSettings' PID line edit via a public setter
-     * would be cleaner; for the same-process write here, find the
-     * widget by object name. */
-    if (auto *pidEdit = m_advSettings->findChild<QLineEdit *>(QStringLiteral("lineEdit_PID"))) {
-        pidEdit->setText(QString::number(pick, 16).toUpper().rightJustified(4, '0'));
-    }
 }
 
 void MainWindow::setFlashChainUiLocked(bool locked)

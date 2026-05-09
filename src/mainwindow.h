@@ -110,12 +110,6 @@ private slots:
      * and the limit/highlight logic. */
     void onFastEncoderEnableToggleRequested(int slotIndex, bool desiredEnabled);
 
-    /* "Suggest unique PID" button on the Advanced Settings tab. Walks
-     * the connected-FreeJoy list (from HidDevice) and proposes the
-     * first PID in the FreeJoyX-reserved range (0x5750..0x575F) not
-     * currently in use, then fills it into the PID input. */
-    void onSuggestFreePidRequested();
-
     /* Push the currently-connected FreeJoy device VID/PIDs (excluding
      * the selected device) into AdvancedSettings so the conflict pill
      * stays in sync. Called whenever the device list changes. */
