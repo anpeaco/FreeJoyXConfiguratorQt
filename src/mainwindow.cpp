@@ -521,10 +521,12 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
         m_postWriteRestarting = false;
         m_postWriteFallbackTimer.stop();
         const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
-        const QString devStr = QString::number(devVer, 16);
-        const QString verFmt = (devStr.size() == 4)
-            ? QString("v%1.%2.%3b%4").arg(devStr[0]).arg(devStr[1]).arg(devStr[2]).arg(devStr[3])
-            : QString("0x") + devStr;
+        /* Wire fmt is rendered as raw hex now that the FREEJOYX_VERSION
+         * 0.0.0 reset (#18) decoupled the user-facing semver from the
+         * wire-format token. The Version row above carries the project
+         * semver from the device; this row is purely the compat key. */
+        const QString verFmt = QStringLiteral("0x") +
+            QString::number(devVer, 16).toUpper().rightJustified(4, QChar('0'));
 
         // Push the firmware version into the device-info card. VID/PID/
         // serial are populated separately via setDeviceInfo() driven by
