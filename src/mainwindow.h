@@ -162,6 +162,24 @@ private:
     void    refreshUpgradeButtonState(); /* enables/disables based on connection + version + firmware availability */
     QString findUpgradeFirmwarePath(int boardId, QString *outVersion) const;
 
+    /* Whole-window lock applied during a flash chain (manual flasher OR
+     * one-click upgrade). Disables everything except the Advanced
+     * Settings tab so the user can't wander to other tabs and trigger
+     * actions that'd race with the in-flight flash + reconnect.
+     * Released on flash failure (onFlashTerminated(false)), post-flash
+     * timeout (onPostFlashHealthTimeout), and successful chain
+     * completion (getParamsPacket with compatible firmware after the
+     * device returns). */
+    bool    m_flashChainLocked = false;
+    void    setFlashChainUiLocked(bool locked);
+
+    /* True between the moment getParamsPacket schedules the post-upgrade
+     * auto-Write and the moment configSent fires its result. Lets us
+     * keep the flash-chain UI lock in effect across the auto-Write +
+     * device-reset window, instead of unlocking the moment the new
+     * firmware comes online. */
+    bool    m_postUpgradeWriteInFlight = false;
+
     /* Cached default text for the Read / Write Config buttons, captured
      * once in the constructor before any code path mutates them. We
      * previously used `static QString button_default_text =

@@ -629,9 +629,19 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
             m_upgradePending       = false;   /* one-shot */
             m_upgradeBoardId       = 0;
             m_upgradeFirmwarePath.clear();
+            /* Hold the flash-chain lock across the auto-Write +
+             * device-reset window; configSent will release it. */
+            m_postUpgradeWriteInFlight = true;
             QTimer::singleShot(300, this, [this]() {
                 on_pushButton_WriteConfig_clicked();
             });
+        } else if (m_flashChainLocked && firmwareCompatible &&
+                   !m_postUpgradeWriteInFlight) {
+            /* Manual flasher path: device returned successfully, no
+             * auto-Write to wait for. Release the lock so the user can
+             * use the configurator again. */
+            qDebug() << "Flash chain: device returned, releasing UI lock";
+            setFlashChainUiLocked(false);
         }
 
         /* Refresh the Upgrade button state on every params arrival --
@@ -707,6 +717,14 @@ void MainWindow::onFlashTerminated(bool success)
         m_upgradePending = false;
         m_upgradeBoardId = 0;
         m_upgradeFirmwarePath.clear();
+        m_postUpgradeWriteInFlight = false;
+        /* Release the UI lock so the user can recover via the Flasher
+         * tab (e.g. retry with a different .bin or use the bootloader
+         * dropdown). */
+        if (m_flashChainLocked) {
+            qDebug() << "Flash failed -- releasing UI lock";
+            setFlashChainUiLocked(false);
+        }
     }
 }
 
@@ -720,6 +738,13 @@ void MainWindow::onPostFlashHealthTimeout()
     m_upgradePending = false;
     m_upgradeBoardId = 0;
     m_upgradeFirmwarePath.clear();
+    m_postUpgradeWriteInFlight = false;
+    /* Release the UI lock -- the user needs the Flasher tab + recovery
+     * dropdown to dig out of this. */
+    if (m_flashChainLocked) {
+        qDebug() << "Post-flash health timeout -- releasing UI lock";
+        setFlashChainUiLocked(false);
+    }
 
     qWarning() << "Post-flash health timeout: device didn't reconnect "
                   "within 15 s of flash completion";
@@ -744,6 +769,13 @@ void MainWindow::onPostFlashHealthTimeout()
 
 void MainWindow::deviceFlasherController(bool isStartFlash)
 {
+    /* Lock the UI for the flash chain regardless of which leg we're on
+     * (Enter Flasher Mode -> doFlashFirmware via the user clicking the
+     * Flash button, OR Upgrade button orchestration). Idempotent --
+     * setFlashChainUiLocked early-returns if already in the requested
+     * state. */
+    setFlashChainUiLocked(true);
+
     if (isStartFlash) {
         // Already in flasher mode and the .bin is loaded -- no backup
         // possible (the bootloader doesn't expose application state).
@@ -1118,6 +1150,18 @@ void MainWindow::configSent(bool success)
 {
     // curves pointer activated
     m_axesCurvesConfig->deviceStatus(true);
+
+    /* End of the post-upgrade auto-Write window: release the flash-chain
+     * UI lock that's been held since the user clicked Upgrade. Fires
+     * regardless of write success/fail -- if the write failed we want
+     * the UI usable so the user can retry or recover. */
+    if (m_postUpgradeWriteInFlight) {
+        m_postUpgradeWriteInFlight = false;
+        if (m_flashChainLocked) {
+            qDebug() << "Upgrade chain complete (Write done) -- releasing UI lock";
+            setFlashChainUiLocked(false);
+        }
+    }
 
     if (success == true)
     {
@@ -1614,6 +1658,10 @@ void MainWindow::on_pushButton_UpgradeFirmware_clicked()
     m_upgradeTargetVersion = targetVer;
     m_upgradeFirmwarePath  = fwPath;
 
+    /* Lock the rest of the UI so the user can't wander to another tab
+     * mid-flash and trigger actions that'd race with the chain. */
+    setFlashChainUiLocked(true);
+
     /* Capture the device's identity (serial + post-flash vid/pid) into
      * HidDevice's reconnect target fields BEFORE we go into DFU. Without
      * this the post-flash detection-thread rebuild has no identity to
@@ -1722,6 +1770,44 @@ void MainWindow::doActualWriteToDevice()
     m_hidDeviceWorker->sendConfigToDevice(
         gEnv.pDeviceConfig->config.vid,
         gEnv.pDeviceConfig->config.pid);
+}
+
+void MainWindow::setFlashChainUiLocked(bool locked)
+{
+    if (m_flashChainLocked == locked) return;
+    m_flashChainLocked = locked;
+
+    /* Switch user to the Advanced Settings tab so they can watch the
+     * flash progress while everything else is locked. Only do this on
+     * the lock transition -- we don't want to re-route them on every
+     * event during the chain. */
+    if (locked) {
+        const int advIdx = ui->tabWidget->indexOf(ui->tab_AdvancedSettings);
+        if (advIdx >= 0) {
+            ui->tabWidget->setCurrentIndex(advIdx);
+        }
+    }
+
+    /* Disable every tab except Advanced Settings (which carries the
+     * flasher) and Debug (kept accessible for triage if a flash hangs).
+     * On unlock, re-enable everything; setConfigTabsEnabled and
+     * getParamsPacket re-apply per-device-state gating afterwards. */
+    for (int i = 0; i < ui->tabWidget->count(); ++i) {
+        QWidget *tab = ui->tabWidget->widget(i);
+        if (tab == ui->tab_AdvancedSettings || tab == ui->tab_Debug) continue;
+        ui->tabWidget->setTabEnabled(i, !locked);
+    }
+
+    /* Sidebar controls. Device dropdown locked so the user can't try
+     * to switch devices mid-flash; Load/Save/Reset locked so they can't
+     * mutate the in-memory config that's about to be written back; the
+     * three R/W/Upgrade buttons stay locked too via blockWRConfigToDevice
+     * (which itself routes through refreshUpgradeButtonState on unlock). */
+    ui->comboBox_HidDeviceList->setEnabled(!locked);
+    ui->pushButton_LoadFromFile->setEnabled(!locked);
+    ui->pushButton_SaveToFile->setEnabled(!locked);
+    ui->pushButton_ResetAllPins->setEnabled(!locked);
+    blockWRConfigToDevice(locked);
 }
 
 void MainWindow::onFastEncoderEnableToggleRequested(int slotIndex, bool desiredEnabled)
