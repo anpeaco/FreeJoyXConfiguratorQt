@@ -105,16 +105,15 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
     connect(m_showAllDevicesButton, &QPushButton::clicked,
             this, &AdvancedSettings::showAllConnectedDevicesRequested);
 
-    /* Attach to the OUTER "USB settings" grid (gridLayout_3) which has
-     * 7 columns; gridLayout_2 inside it is the narrow VID/PID column.
-     * We span all columns so the warning text gets the full group-box
-     * width to wrap into. */
-    QGridLayout *outerGrid = findChild<QGridLayout *>(QStringLiteral("gridLayout_3"));
-    if (outerGrid) {
-        const int row = outerGrid->rowCount();
-        outerGrid->addWidget(m_pidConflictRow,       row,     0, 1, outerGrid->columnCount());
-        outerGrid->addWidget(m_showAllDevicesButton, row + 1, 0, 1, outerGrid->columnCount(),
-                             Qt::AlignLeft);
+    /* Attach to the OUTER "USB settings" VBox (layoutV_USBSettings).
+     * Pill row first (full width, wrapping text), suggest button below
+     * (left-aligned). The .ui restructure to the horizontal Name/VID/PID
+     * row means we no longer have a grid to span -- a vertical layout
+     * with addWidget is the natural append. */
+    QVBoxLayout *outerVBox = findChild<QVBoxLayout *>(QStringLiteral("layoutV_USBSettings"));
+    if (outerVBox) {
+        outerVBox->addWidget(m_pidConflictRow);
+        outerVBox->addWidget(m_showAllDevicesButton, 0, Qt::AlignLeft);
     }
 
     /* Live conflict check on every PID edit. */

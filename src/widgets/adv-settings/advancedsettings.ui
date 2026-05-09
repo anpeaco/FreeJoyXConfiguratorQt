@@ -58,408 +58,213 @@
      <property name="title">
       <string>USB settings</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_3" columnstretch="1,1,1,5,1,0,0">
-      <property name="leftMargin">
-       <number>6</number>
-      </property>
-      <property name="topMargin">
-       <number>6</number>
-      </property>
-      <property name="rightMargin">
-       <number>6</number>
-      </property>
-      <property name="bottomMargin">
-       <number>9</number>
-      </property>
-      <property name="horizontalSpacing">
-       <number>6</number>
-      </property>
-      <property name="verticalSpacing">
-       <number>9</number>
-      </property>
-      <item row="1" column="0" colspan="3">
-       <widget class="QLineEdit" name="lineEdit_DeviceUSBName">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string notr="true">F103Joy</string>
-        </property>
-        <property name="maxLength">
-         <number>26</number>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QSpinBox" name="spinBox_USBExchangePeriod">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="frame">
-         <bool>true</bool>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-        </property>
-        <property name="correctionMode">
-         <enum>QAbstractSpinBox::CorrectToNearestValue</enum>
-        </property>
-        <property name="suffix">
-         <string> ms</string>
-        </property>
-        <property name="minimum">
-         <number>2</number>
-        </property>
-        <property name="maximum">
-         <number>255</number>
-        </property>
-        <property name="value">
-         <number>5</number>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="4">
-       <spacer name="horizontalSpacer_5">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="3" column="2">
-       <spacer name="horizontalSpacer_3">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="3" column="0">
-       <spacer name="horizontalSpacer_4">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="1" column="6">
-       <spacer name="horizontalSpacer_6">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="3" column="3">
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="0" column="5" rowspan="4">
-       <layout class="QGridLayout" name="gridLayout_2">
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="horizontalSpacing">
-         <number>1</number>
-        </property>
-        <property name="verticalSpacing">
-         <number>9</number>
-        </property>
-        <item row="1" column="0">
-         <widget class="QLabel" name="text_VID_0x">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string notr="true">0x</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
+     <layout class="QVBoxLayout" name="layoutV_USBSettings">
+      <property name="leftMargin"><number>6</number></property>
+      <property name="topMargin"><number>6</number></property>
+      <property name="rightMargin"><number>6</number></property>
+      <property name="bottomMargin"><number>9</number></property>
+      <property name="spacing"><number>9</number></property>
+
+      <!-- Top row: device name (expanding), VID, PID side-by-side -->
+      <item>
+       <layout class="QHBoxLayout" name="gridLayout_3" stretch="1,0,0">
+        <property name="spacing"><number>12</number></property>
+        <item>
+         <layout class="QVBoxLayout" name="layoutV_DeviceUSBName">
+          <property name="spacing"><number>2</number></property>
+          <item>
+           <widget class="QLabel" name="text_DeviceUSBName">
+            <property name="text"><string>Device USB name</string></property>
+            <property name="alignment"><set>Qt::AlignBottom|Qt::AlignLeft</set></property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="lineEdit_DeviceUSBName">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text"><string notr="true">F103Joy</string></property>
+            <property name="maxLength"><number>26</number></property>
+           </widget>
+          </item>
+         </layout>
         </item>
-        <item row="1" column="1">
-         <widget class="QLineEdit" name="lineEdit_VID">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>45</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="inputMask">
-           <string notr="true">HHHH</string>
-          </property>
-          <property name="text">
-           <string notr="true">0483</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
+        <item>
+         <layout class="QVBoxLayout" name="layoutV_VID">
+          <property name="spacing"><number>2</number></property>
+          <item>
+           <widget class="QLabel" name="text_VID">
+            <property name="text"><string>VID</string></property>
+            <property name="alignment"><set>Qt::AlignBottom|Qt::AlignHCenter</set></property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="layoutH_VID">
+            <property name="spacing"><number>3</number></property>
+            <item>
+             <widget class="QLabel" name="text_VID_0x">
+              <property name="text"><string notr="true">0x</string></property>
+              <property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEdit_VID">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="maximumSize"><size><width>55</width><height>16777215</height></size></property>
+              <property name="inputMask"><string notr="true">HHHH</string></property>
+              <property name="text"><string notr="true">0483</string></property>
+              <property name="alignment"><set>Qt::AlignCenter</set></property>
+             </widget>
+            </item>
+            <item>
+             <widget class="InfoLabel" name="info_VID">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="maximumSize"><size><width>18</width><height>18</height></size></property>
+              <property name="toolTip"><string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some values may not work on some operating systems (PID 5750 on Ubuntu, for example). After choosing the wrong value, the controller needs to be reflashed with ST-link/UART.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string></property>
+              <property name="text"><string/></property>
+              <property name="pixmap"><pixmap resource="../../resources.qrc">:/Images/icons/lucide/triangle-alert.svg</pixmap></property>
+              <property name="scaledContents"><bool>true</bool></property>
+              <property name="margin"><number>1</number></property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
         </item>
-        <item row="3" column="1">
-         <widget class="QLineEdit" name="lineEdit_PID">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>45</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="inputMask">
-           <string notr="true">HHHH</string>
-          </property>
-          <property name="text">
-           <string notr="true">5750</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QLabel" name="text_PID">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>PID</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignBottom|Qt::AlignHCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLabel" name="text_VID">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>VID</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignBottom|Qt::AlignHCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="text_PID_0x">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string notr="true">0x</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="InfoLabel" name="info_VID">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>18</width>
-            <height>18</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some values may not work on some operating systems (PID 5750 on Ubuntu, for example). After choosing the wrong value, the controller needs to be reflashed with ST-link/UART.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="pixmap">
-           <pixmap resource="../../resources.qrc">:/Images/icons/lucide/triangle-alert.svg</pixmap>
-          </property>
-          <property name="scaledContents">
-           <bool>true</bool>
-          </property>
-          <property name="margin">
-           <number>1</number>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="2">
-         <widget class="InfoLabel" name="info_PID">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>18</width>
-            <height>18</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some values may not work on some operating systems (PID 5750 on Ubuntu, for example). After choosing the wrong value, the controller needs to be reflashed with ST-link/UART.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="pixmap">
-           <pixmap resource="../../resources.qrc">:/Images/icons/lucide/triangle-alert.svg</pixmap>
-          </property>
-          <property name="scaledContents">
-           <bool>true</bool>
-          </property>
-          <property name="margin">
-           <number>1</number>
-          </property>
-         </widget>
+        <item>
+         <layout class="QVBoxLayout" name="layoutV_PID">
+          <property name="spacing"><number>2</number></property>
+          <item>
+           <widget class="QLabel" name="text_PID">
+            <property name="text"><string>PID</string></property>
+            <property name="alignment"><set>Qt::AlignBottom|Qt::AlignHCenter</set></property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="layoutH_PID">
+            <property name="spacing"><number>3</number></property>
+            <item>
+             <widget class="QLabel" name="text_PID_0x">
+              <property name="text"><string notr="true">0x</string></property>
+              <property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEdit_PID">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="maximumSize"><size><width>55</width><height>16777215</height></size></property>
+              <property name="inputMask"><string notr="true">HHHH</string></property>
+              <property name="text"><string notr="true">5750</string></property>
+              <property name="alignment"><set>Qt::AlignCenter</set></property>
+             </widget>
+            </item>
+            <item>
+             <widget class="InfoLabel" name="info_PID">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="maximumSize"><size><width>18</width><height>18</height></size></property>
+              <property name="toolTip"><string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some values may not work on some operating systems (PID 5750 on Ubuntu, for example). After choosing the wrong value, the controller needs to be reflashed with ST-link/UART.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string></property>
+              <property name="text"><string/></property>
+              <property name="pixmap"><pixmap resource="../../resources.qrc">:/Images/icons/lucide/triangle-alert.svg</pixmap></property>
+              <property name="scaledContents"><bool>true</bool></property>
+              <property name="margin"><number>1</number></property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
         </item>
        </layout>
       </item>
-      <item row="2" column="0" colspan="3">
-       <widget class="QLabel" name="text_USBExchangePeriod">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>USB exchange period</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignBottom|Qt::AlignHCenter</set>
-        </property>
-       </widget>
+
+      <!-- USB exchange period: small left-aligned block -->
+      <item>
+       <layout class="QHBoxLayout" name="layoutH_USBExchangePeriod" stretch="0,1">
+        <item>
+         <layout class="QVBoxLayout" name="layoutV_USBExchangePeriod">
+          <property name="spacing"><number>2</number></property>
+          <item>
+           <widget class="QLabel" name="text_USBExchangePeriod">
+            <property name="text"><string>USB exchange period</string></property>
+            <property name="alignment"><set>Qt::AlignBottom|Qt::AlignLeft</set></property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spinBox_USBExchangePeriod">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="alignment"><set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set></property>
+            <property name="correctionMode"><enum>QAbstractSpinBox::CorrectToNearestValue</enum></property>
+            <property name="suffix"><string> ms</string></property>
+            <property name="minimum"><number>2</number></property>
+            <property name="maximum"><number>255</number></property>
+            <property name="value"><number>5</number></property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation"><enum>Qt::Horizontal</enum></property>
+          <property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property>
+         </spacer>
+        </item>
+       </layout>
       </item>
-      <item row="0" column="0" colspan="3">
-       <widget class="QLabel" name="text_DeviceUSBName">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Device USB name</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignBottom|Qt::AlignHCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="5" colspan="2">
-       <widget class="QPushButton" name="pushButton_removeName">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sometimes Windows does not update the name in gaming devices and needs to be removed from the registry. This happens automatically when the config is written, but manual deletion may be required when the device is disconnected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="text">
-         <string>Remove name</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0" colspan="5">
-       <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0">
-        <property name="spacing">
-         <number>3</number>
-        </property>
+
+      <!-- Remove device name row (label + info + button) -->
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,1,0">
+        <property name="spacing"><number>3</number></property>
         <item>
          <widget class="QLabel" name="text_removeName">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sometimes Windows does not update the name in gaming devices and needs to be removed from the registry. This happens automatically when the config is written, but manual deletion may be required when the device is disconnected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Remove device name with selected VID/PID from registry</string>
-          </property>
+          <property name="toolTip"><string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sometimes Windows does not update the name in gaming devices and needs to be removed from the registry. This happens automatically when the config is written, but manual deletion may be required when the device is disconnected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string></property>
+          <property name="text"><string>Remove device name with selected VID/PID from registry</string></property>
          </widget>
         </item>
         <item>
          <widget class="InfoLabel" name="info_removeName">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sometimes Windows does not update the name in gaming devices and needs to be removed from the registry. This happens automatically when the config is written, but manual deletion may be required when the device is disconnected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
+          <property name="toolTip"><string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sometimes Windows does not update the name in gaming devices and needs to be removed from the registry. This happens automatically when the config is written, but manual deletion may be required when the device is disconnected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string></property>
+          <property name="text"><string/></property>
          </widget>
         </item>
         <item>
          <spacer name="horizontalSpacer">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
+          <property name="orientation"><enum>Qt::Horizontal</enum></property>
+          <property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property>
          </spacer>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_removeName">
+          <property name="toolTip"><string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sometimes Windows does not update the name in gaming devices and needs to be removed from the registry. This happens automatically when the config is written, but manual deletion may be required when the device is disconnected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string></property>
+          <property name="text"><string>Remove name</string></property>
+         </widget>
         </item>
        </layout>
       </item>
