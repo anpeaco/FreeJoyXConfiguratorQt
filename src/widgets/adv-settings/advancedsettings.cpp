@@ -261,9 +261,9 @@ void AdvancedSettings::writeToConfig()
 }
 
 void AdvancedSettings::setOtherConnectedDevices(
-    const QList<QPair<uint16_t, uint16_t>> &vidPids)
+    const QList<OtherDevice> &devices)
 {
-    m_otherConnectedVidPids = vidPids;
+    m_otherConnectedDevices = devices;
     refreshPidConflictPill();
 }
 
@@ -279,17 +279,19 @@ void AdvancedSettings::refreshPidConflictPill()
     const uint16_t curVid = uint16_t(ui->lineEdit_VID->text().toInt(nullptr, 16));
     const uint16_t curPid = uint16_t(ui->lineEdit_PID->text().toInt(nullptr, 16));
 
-    int conflicts = 0;
-    for (const auto &vp : m_otherConnectedVidPids) {
-        if (vp.first == curVid && vp.second == curPid) ++conflicts;
+    QStringList conflictNames;
+    for (const auto &d : m_otherConnectedDevices) {
+        if (d.vid == curVid && d.pid == curPid) {
+            conflictNames << (d.name.isEmpty() ? tr("(unnamed)") : d.name);
+        }
     }
 
-    if (conflicts > 0) {
+    if (!conflictNames.isEmpty()) {
+        const QString joined = conflictNames.join(QStringLiteral(", "));
         m_pidConflictLabel->setText(tr(
-            "This VID:PID is already used by %1 other connected device%2. "
+            "This VID:PID is already used by: <b>%1</b>. "
             "Pick a unique PID to avoid Windows OEMName cache collisions and "
-            "DirectInput confusion.")
-                .arg(conflicts).arg(conflicts == 1 ? "" : "s"));
+            "DirectInput confusion.").arg(joined));
         if (m_pidConflictRow) m_pidConflictRow->setVisible(true);
         ui->lineEdit_PID->setStyleSheet(QStringLiteral(
             "border: 1px solid #cc3333;"));

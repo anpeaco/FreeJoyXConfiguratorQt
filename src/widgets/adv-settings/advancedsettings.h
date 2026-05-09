@@ -31,13 +31,22 @@ public:
 
     Flasher *flasher() const; // const?
 
-    /* Push the latest "other connected FreeJoy devices'" VID/PID list
-     * into AdvancedSettings so the PID input can flag collisions live.
+    /* Single entry in the "other connected FreeJoy devices" list. Named
+     * for the conflict pill so colliding sibling devices can be
+     * identified by name, not just by count. */
+    struct OtherDevice {
+        uint16_t vid;
+        uint16_t pid;
+        QString  name;
+    };
+
+    /* Push the latest "other connected FreeJoy devices" list into
+     * AdvancedSettings so the PID input can flag collisions live.
      * The configurator's HidDevice worker is the source; MainWindow
      * forwards on every device-list rebuild. The list excludes the
      * currently-selected device so editing a device's PID doesn't
      * flag itself as a collision. */
-    void setOtherConnectedDevices(const QList<QPair<uint16_t, uint16_t>> &vidPids);
+    void setOtherConnectedDevices(const QList<OtherDevice> &devices);
 
 signals:
     void languageChanged(const QString &language);
@@ -78,9 +87,9 @@ private:
 
     /* "Other connected FreeJoy devices" list, fed by MainWindow on
      * every device-list rebuild from HidDevice. Used by
-     * onPidTextChanged to surface a live "PID in use by N device(s)"
-     * pill on the PID input. */
-    QList<QPair<uint16_t, uint16_t>> m_otherConnectedVidPids;
+     * onPidTextChanged to surface a live "PID in use by <name>" pill
+     * on the PID input. */
+    QList<OtherDevice> m_otherConnectedDevices;
 
     /* Refresh the conflict pill below lineEdit_PID against the current
      * VID+PID input vs. m_otherConnectedVidPids. Idempotent; safe to

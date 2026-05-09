@@ -52,6 +52,9 @@ public:
         uint16_t vid;
         uint16_t pid;
         QString  serialHex;     /* uppercase hex; matches HID API enumeration */
+        QString  name;          /* USB product string -- the firmware patches it
+                                 * with the user-set device_name on boot, so this
+                                 * is what the dropdown shows. */
     };
     QList<ConnectedDevice> connectedDevices(bool excludeSelectedDevice) const;
     void sendLedState(uint32_t bitmask);

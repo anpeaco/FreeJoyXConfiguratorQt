@@ -1711,16 +1711,19 @@ void MainWindow::doActualWriteToDevice()
     if (m_hidDeviceWorker) {
         const uint16_t newVid = gEnv.pDeviceConfig->config.vid;
         const uint16_t newPid = gEnv.pDeviceConfig->config.pid;
-        int conflicts = 0;
+        QStringList conflictNames;
         for (const auto &c : m_hidDeviceWorker->connectedDevices(/*excludeSelected=*/true)) {
-            if (c.vid == newVid && c.pid == newPid) ++conflicts;
+            if (c.vid == newVid && c.pid == newPid) {
+                conflictNames << (c.name.isEmpty() ? tr("(unnamed)") : c.name);
+            }
         }
-        if (conflicts > 0) {
+        if (!conflictNames.isEmpty()) {
+            const QString joined = conflictNames.join(QStringLiteral(", "));
             const QMessageBox::StandardButton rc = QMessageBox::question(
                 this,
                 tr("VID:PID already in use"),
-                tr("<p>VID <b>%1</b>:PID <b>%2</b> is currently used by "
-                   "<b>%3 other connected FreeJoy device%4</b>.</p>"
+                tr("<p>VID <b>%1</b>:PID <b>%2</b> is currently used by: "
+                   "<b>%3</b>.</p>"
                    "<p>Writing this config will give two devices the same "
                    "USB identity. Windows' OEMName cache is keyed by "
                    "VID+PID -- both devices will share one OEM name -- "
@@ -1729,8 +1732,7 @@ void MainWindow::doActualWriteToDevice()
                    "<p>Continue with the write anyway?</p>")
                     .arg(QString::number(newVid, 16).toUpper().rightJustified(4, '0'))
                     .arg(QString::number(newPid, 16).toUpper().rightJustified(4, '0'))
-                    .arg(conflicts)
-                    .arg(conflicts == 1 ? "" : "s"),
+                    .arg(joined),
                 QMessageBox::Yes | QMessageBox::Cancel,
                 QMessageBox::Cancel);
             if (rc != QMessageBox::Yes) {
@@ -1827,12 +1829,16 @@ void MainWindow::refreshOtherConnectedDevices()
 {
     if (!m_hidDeviceWorker || !m_advSettings) return;
     const auto cs = m_hidDeviceWorker->connectedDevices(/*excludeSelected=*/true);
-    QList<QPair<uint16_t, uint16_t>> vidPids;
-    vidPids.reserve(cs.size());
+    QList<AdvancedSettings::OtherDevice> ds;
+    ds.reserve(cs.size());
     for (const auto &c : cs) {
-        vidPids.append({c.vid, c.pid});
+        AdvancedSettings::OtherDevice d;
+        d.vid = c.vid;
+        d.pid = c.pid;
+        d.name = c.name;
+        ds.append(d);
     }
-    m_advSettings->setOtherConnectedDevices(vidPids);
+    m_advSettings->setOtherConnectedDevices(ds);
 }
 
 void MainWindow::onSuggestFreePidRequested()

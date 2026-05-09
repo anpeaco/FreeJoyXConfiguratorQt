@@ -867,6 +867,13 @@ QList<HidDevice::ConnectedDevice> HidDevice::connectedDevices(bool excludeSelect
         c.vid = d.vid;
         c.pid = d.pid;
         c.serialHex = QString::fromStdWString(d.serNum);
+        /* m_deviceNames is populated alongside m_hidDevicesList in the
+         * detection thread; same indexing. The QPair's .second holds
+         * the user-visible name (or "ONLY FLASH ..." for legacy). Be
+         * defensive in case the two go briefly out of sync mid-rebuild. */
+        if (i < m_deviceNames.size()) {
+            c.name = m_deviceNames[i].second;
+        }
         out.append(c);
     }
     return out;
