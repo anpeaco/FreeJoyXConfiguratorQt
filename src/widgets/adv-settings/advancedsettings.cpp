@@ -279,10 +279,20 @@ void AdvancedSettings::refreshPidConflictPill()
     const uint16_t curVid = uint16_t(ui->lineEdit_VID->text().toInt(nullptr, 16));
     const uint16_t curPid = uint16_t(ui->lineEdit_PID->text().toInt(nullptr, 16));
 
+    /* Collect colliding siblings; append a short serial suffix when
+     * names collide so two "F16 ICP" boards don't render as the same
+     * string in the warning. The suffix takes the last 4 chars of the
+     * serial -- enough to disambiguate visually without making the
+     * warning text noisy. */
     QStringList conflictNames;
     for (const auto &d : m_otherConnectedDevices) {
         if (d.vid == curVid && d.pid == curPid) {
-            conflictNames << (d.name.isEmpty() ? tr("(unnamed)") : d.name);
+            QString label = d.name.isEmpty() ? tr("(unnamed)") : d.name;
+            if (!d.serialHex.isEmpty()) {
+                const QString tail = d.serialHex.right(4);
+                label += QStringLiteral(" (#%1)").arg(tail);
+            }
+            conflictNames << label;
         }
     }
 

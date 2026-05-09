@@ -33,11 +33,15 @@ public:
 
     /* Single entry in the "other connected FreeJoy devices" list. Named
      * for the conflict pill so colliding sibling devices can be
-     * identified by name, not just by count. */
+     * identified by name, not just by count. Serial is included so
+     * same-named siblings (the common case when the user has two
+     * boards with identical device_name) get a disambiguating suffix
+     * in the warning text. */
     struct OtherDevice {
         uint16_t vid;
         uint16_t pid;
         QString  name;
+        QString  serialHex;
     };
 
     /* Push the latest "other connected FreeJoy devices" list into

@@ -1714,7 +1714,11 @@ void MainWindow::doActualWriteToDevice()
         QStringList conflictNames;
         for (const auto &c : m_hidDeviceWorker->connectedDevices(/*excludeSelected=*/true)) {
             if (c.vid == newVid && c.pid == newPid) {
-                conflictNames << (c.name.isEmpty() ? tr("(unnamed)") : c.name);
+                QString label = c.name.isEmpty() ? tr("(unnamed)") : c.name;
+                if (!c.serialHex.isEmpty()) {
+                    label += QStringLiteral(" (#%1)").arg(c.serialHex.right(4));
+                }
+                conflictNames << label;
             }
         }
         if (!conflictNames.isEmpty()) {
@@ -1836,6 +1840,7 @@ void MainWindow::refreshOtherConnectedDevices()
         d.vid = c.vid;
         d.pid = c.pid;
         d.name = c.name;
+        d.serialHex = c.serialHex;
         ds.append(d);
     }
     m_advSettings->setOtherConnectedDevices(ds);
