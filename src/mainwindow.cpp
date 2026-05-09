@@ -1411,6 +1411,12 @@ void MainWindow::saveAppConfig()
 void MainWindow::hidDeviceListChanged(int index)
 {
     m_hidDeviceWorker->setSelectedDevice(index);
+    /* Selection change re-evaluates which siblings are "other" --
+     * without this, the conflict pill on Advanced Settings keeps
+     * computing exclusion against the previously-selected device's
+     * serial, so the now-selected device shows up in the conflict
+     * list against itself. */
+    refreshOtherConnectedDevices();
 }
 
 // reset all pins
