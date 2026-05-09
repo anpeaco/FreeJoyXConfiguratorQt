@@ -64,12 +64,28 @@ packet. The configurator falls back to F103 in that case (correct for
 all known field-deployed v1.7.7 builds). The device-info card shows
 "—" for Board on these — that's expected, not a bug.
 
-### Versioning is in flux
+### Versioning: 0.0.0 is intentional
 
-The configurator window title still says "FreeJoyX Configurator 0.2.0
-(fork of FreeJoy v1.7.3b0)". That'll change to clean semver in a
-follow-up (`anpeaco/FreeJoyX#18`); for now the firmware version is the
-authoritative identifier — see the device-info card's "Firmware" row.
+This beta is **FreeJoyX 0.0.0**. If you're coming from upstream
+**FreeJoy 1.7.x** the number going "down" looks like a downgrade — it
+isn't. FreeJoyX is a separate project that restarts its own version
+line, and 0.x signals "pre-1.0, not yet judged stable". The brand
+difference (FreeJoyX vs FreeJoy) is the headline signal that this is a
+different line; the version number tracks FreeJoyX's own maturity, not
+its position in upstream's history. We'll move to 1.0.0 when the
+project is judged stable.
+
+The device-info card has two distinct version concepts:
+- **App** row (App settings group, top-right of the main view) shows
+  the configurator's `FREEJOYX_VERSION` (e.g. "0.0.0").
+- **Wire fmt** row (Device sidebar, hover for tooltip) shows the
+  device's wire-format compat token (e.g. "v1.7.8b0", rendered from
+  the firmware's internal `FIRMWARE_VERSION` hex). This is the
+  compatibility key for the read/write protocol -- a bump means the
+  config layout changed; a non-bump means it didn't. **Distinct from
+  the project version**; once the next wire-format bump lands, the
+  firmware will also report `FREEJOYX_VERSION` directly and the sidebar
+  will gain a proper "Version" row.
 
 ## Recovery — device stuck after a failed flash
 

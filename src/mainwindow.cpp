@@ -1502,16 +1502,19 @@ void MainWindow::on_pushButton_WriteConfig_clicked()
 
 QString MainWindow::findUpgradeFirmwarePath(int boardId, QString *outVersion) const
 {
-    /* Scan the configurator's firmware/ folder for the newest local
-     * "freejoyx-<board>-app-vX.Y.Z.bin" matching the connected board.
-     * Phase B intentionally only looks at LOCAL files -- the existing
-     * Flasher tab handles GitHub-fetched assets, but for one-click
-     * upgrade the user expects a deterministic outcome without needing
-     * an internet round-trip mid-orchestration.
+    /* Look for the firmware binary that matches THIS configurator's
+     * own FREEJOYX_VERSION. Issue anpeaco/FreeJoyX#18 made
+     * FREEJOYX_VERSION the project's user-facing version, shared by
+     * both repos via common_defines.h -- so a configurator built at
+     * v0.0.0 expects to flash v0.0.0 firmware. This is more
+     * deterministic than "pick the lexically-newest file in the
+     * folder", which mis-sorts mixed semver and old "v1.7.7b0"-style
+     * filenames (lexical "v1.7.8b0" > "v0.0.0" because '1' > '0' at
+     * position 6, so a stale 1.7.8 binary would beat a fresh 0.0.0).
      *
-     * Returns the absolute path to the chosen .bin and stamps
-     * *outVersion with the version string parsed from the filename
-     * ("v1.7.8b0"). Returns empty if no candidate is found. */
+     * Stale older binaries in firmware/ are simply ignored; the user
+     * can always reach them via the manual Flasher tab if they want a
+     * specific older version. */
     QString boardSlug;
     if (boardId == BOARD_ID_F103_BLUEPILL) {
         boardSlug = QStringLiteral("f103");
@@ -1521,40 +1524,19 @@ QString MainWindow::findUpgradeFirmwarePath(int boardId, QString *outVersion) co
         return QString();
     }
 
-    /* Same firmware folder the Flasher tab uses: <exe>/firmware/. */
     const QString firmwareDir = QCoreApplication::applicationDirPath()
                                 + QStringLiteral("/firmware");
     QDir dir(firmwareDir);
     if (!dir.exists()) return QString();
 
-    const QString prefix = QStringLiteral("freejoyx-") + boardSlug
-                           + QStringLiteral("-app-v");
-    QStringList candidates = dir.entryList(
-        { QStringLiteral("freejoyx-") + boardSlug + QStringLiteral("-app-v*.bin") },
-        QDir::Files);
+    const QString version  = QStringLiteral("v") + QStringLiteral(FREEJOYX_VERSION);
+    const QString filename = QStringLiteral("freejoyx-%1-app-%2.bin")
+                                 .arg(boardSlug, version);
+    const QString abs = dir.absoluteFilePath(filename);
+    if (!QFile::exists(abs)) return QString();
 
-    /* Sort lexically -- our naming convention puts the version inside
-     * the filename so lexical order matches version order for the
-     * v.M.m.pbN scheme. The scheme could be replaced with semver later
-     * (issue anpeaco/FreeJoyX#18); revisit this sort then. */
-    std::sort(candidates.begin(), candidates.end());
-
-    if (candidates.isEmpty()) return QString();
-
-    /* Pick the newest. */
-    const QString chosen = candidates.last();
-
-    /* Extract "vX.Y.ZbN" between "-v" and ".bin". */
-    QString ver = chosen;
-    const int idxV = ver.indexOf(QStringLiteral("-app-v"));
-    if (idxV >= 0) {
-        ver.remove(0, idxV + QStringLiteral("-app-").size());
-        if (ver.endsWith(QStringLiteral(".bin"))) {
-            ver.chop(4);
-        }
-    }
-    if (outVersion) *outVersion = ver;
-    return dir.absoluteFilePath(chosen);
+    if (outVersion) *outVersion = version;
+    return abs;
 }
 
 void MainWindow::refreshUpgradeButtonState()
@@ -1639,6 +1621,25 @@ void MainWindow::on_pushButton_UpgradeFirmware_clicked()
     const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
     const QString devVerText = legacy::describeVersion(devVer);
 
+    /* If the device's wire-format mask group is in the upstream FreeJoy
+     * range (anything with mask < 0x1770, i.e. v1.7.0/1.7.1/1.7.3) and
+     * we're flashing to FreeJoyX 0.0.0, the version number going
+     * "down" looks like a downgrade -- surface a one-line note so the
+     * user understands they're crossing project lines, not regressing. */
+    const uint16_t devMask = devVer & 0xFFF0;
+    const bool crossingFromUpstream = (devMask == 0x1700 ||
+                                       devMask == 0x1710 ||
+                                       devMask == 0x1730);
+    QString migrationNote;
+    if (crossingFromUpstream) {
+        migrationNote = QStringLiteral(
+            "<p style='color:#996600'><b>Note:</b> moving from upstream "
+            "FreeJoy to FreeJoyX. The version number restarts at 0.0.0 "
+            "because FreeJoyX is a separate project line (not a "
+            "downgrade of FreeJoy 1.7.x). Both share the same wire format "
+            "for older configs, so your existing mappings carry forward.</p>");
+    }
+
     const QMessageBox::StandardButton rc = QMessageBox::question(
         this,
         tr("Upgrade firmware?"),
@@ -1651,10 +1652,11 @@ void MainWindow::on_pushButton_UpgradeFirmware_clicked()
            "</ol>"
            "<p>Current firmware: <b>%2</b><br>"
            "Target firmware: <b>%3</b></p>"
+           "%4"
            "<p>If anything fails mid-flight the device may be left in "
            "DFU mode -- recover via STM32 Cube Programmer + ST-Link.</p>"
            "<p>Continue?</p>")
-            .arg(QFileInfo(fwPath).fileName(), devVerText, targetVer),
+            .arg(QFileInfo(fwPath).fileName(), devVerText, targetVer, migrationNote),
         QMessageBox::Yes | QMessageBox::Cancel,
         QMessageBox::Cancel);
     if (rc != QMessageBox::Yes) return;
