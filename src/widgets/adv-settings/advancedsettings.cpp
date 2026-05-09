@@ -4,7 +4,12 @@
 //#include <QFile>
 #include <QComboBox>
 #include <QFileDialog>
+#include <QGridLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QSettings>
 #include <QTextStream>
 #include <QTimer>
@@ -46,6 +51,44 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
 #endif
 
     ui->layoutG_Lang->setAlignment(Qt::AlignCenter);
+
+    /* PID-conflict surface. The .ui file's grid puts lineEdit_PID in
+     * row 3 col 1; we attach a pill (label) and a "Suggest" button to
+     * the same parent layout dynamically so the .ui doesn't need to
+     * change. The pill stays empty when no conflict; turns red and
+     * names the conflicting count when collisions exist. */
+    m_pidConflictLabel = new QLabel(this);
+    m_pidConflictLabel->setText(QString());
+    m_pidConflictLabel->setStyleSheet(QStringLiteral(
+        "color: #cc3333; font-weight: bold;"));
+    m_pidConflictLabel->setWordWrap(true);
+
+    m_suggestPidButton = new QPushButton(tr("Suggest unique PID"), this);
+    m_suggestPidButton->setToolTip(tr(
+        "Pick a free PID from the FreeJoyX-reserved range that doesn't "
+        "collide with any currently-connected device."));
+    connect(m_suggestPidButton, &QPushButton::clicked,
+            this, &AdvancedSettings::suggestFreePidRequested);
+
+    /* Reparent into the layout that holds lineEdit_PID. Walking up via
+     * parentWidget is more robust than guessing the layout name. */
+    if (QWidget *pidParent = ui->lineEdit_PID->parentWidget()) {
+        if (QGridLayout *grid = qobject_cast<QGridLayout *>(pidParent->layout())) {
+            /* Place pill below the inputs (row 4) spanning 2 cols, and
+             * suggest button beside it. Adjusts cleanly even if the
+             * parent grid grows other rows later. */
+            const int row = grid->rowCount();
+            grid->addWidget(m_pidConflictLabel, row, 0, 1, 2);
+            grid->addWidget(m_suggestPidButton, row + 1, 0, 1, 2);
+        }
+    }
+
+    /* Live conflict check on every PID edit. */
+    connect(ui->lineEdit_PID, &QLineEdit::textChanged,
+            this, &AdvancedSettings::onPidTextChanged);
+
+    /* Initial state -- empty pill, button shown but quiet. */
+    refreshPidConflictPill();
 }
 
 AdvancedSettings::~AdvancedSettings()
@@ -181,4 +224,42 @@ void AdvancedSettings::writeToConfig()
     }
     // usb exchange period
     gEnv.pDeviceConfig->config.exchange_period_ms = uint8_t(ui->spinBox_USBExchangePeriod->value());
+}
+
+void AdvancedSettings::setOtherConnectedDevices(
+    const QList<QPair<uint16_t, uint16_t>> &vidPids)
+{
+    m_otherConnectedVidPids = vidPids;
+    refreshPidConflictPill();
+}
+
+void AdvancedSettings::onPidTextChanged(const QString &)
+{
+    refreshPidConflictPill();
+}
+
+void AdvancedSettings::refreshPidConflictPill()
+{
+    if (!m_pidConflictLabel || !m_suggestPidButton) return;
+
+    const uint16_t curVid = uint16_t(ui->lineEdit_VID->text().toInt(nullptr, 16));
+    const uint16_t curPid = uint16_t(ui->lineEdit_PID->text().toInt(nullptr, 16));
+
+    int conflicts = 0;
+    for (const auto &vp : m_otherConnectedVidPids) {
+        if (vp.first == curVid && vp.second == curPid) ++conflicts;
+    }
+
+    if (conflicts > 0) {
+        m_pidConflictLabel->setText(tr(
+            "⚠ This VID:PID is already used by %1 other connected device%2. "
+            "Pick a unique PID to avoid Windows OEMName cache collisions and "
+            "DirectInput confusion.")
+                .arg(conflicts).arg(conflicts == 1 ? "" : "s"));
+        ui->lineEdit_PID->setStyleSheet(QStringLiteral(
+            "border: 1px solid #cc3333;"));
+    } else {
+        m_pidConflictLabel->setText(QString());
+        ui->lineEdit_PID->setStyleSheet(QString());
+    }
 }

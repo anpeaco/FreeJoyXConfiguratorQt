@@ -856,6 +856,22 @@ void HidDevice::setNextWriteSourceBytes(const std::vector<uint8_t> &bytes)
     m_nextWriteSourceBytes = bytes;
 }
 
+QList<HidDevice::ConnectedDevice> HidDevice::connectedDevices(bool excludeSelectedDevice) const
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    QList<ConnectedDevice> out;
+    for (int i = 0; i < m_hidDevicesList.size(); ++i) {
+        if (excludeSelectedDevice && i == m_selectedDevice) continue;
+        const Device &d = m_hidDevicesList[i];
+        ConnectedDevice c;
+        c.vid = d.vid;
+        c.pid = d.pid;
+        c.serialHex = QString::fromStdWString(d.serNum);
+        out.append(c);
+    }
+    return out;
+}
+
 void HidDevice::captureReconnectIdentity(uint16_t expectedVid, uint16_t expectedPid)
 {
     std::lock_guard<std::mutex> lock(m_mutex);

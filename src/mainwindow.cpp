@@ -28,6 +28,8 @@
 #include <QDebug>
 #include <QFile>
 #include <QFileInfo>
+#include <QLineEdit>
+#include <QSet>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -239,6 +241,11 @@ MainWindow::MainWindow(QWidget *parent)
     // axes source changed//axesSourceChanged
     connect(m_pinConfig, &PinConfig::axesSourceChanged, m_axesConfig, &AxesConfig::addOrDeleteMainSource);
     // language changed
+    /* Advanced Settings -> "Suggest unique PID" button. Owner of the
+     * connected-device list is HidDevice; MainWindow bridges. */
+    connect(m_advSettings, &AdvancedSettings::suggestFreePidRequested,
+            this, &MainWindow::onSuggestFreePidRequested);
+
     connect(m_advSettings, &AdvancedSettings::languageChanged, this, &MainWindow::languageChanged);
     // theme changed
     connect(m_advSettings, &AdvancedSettings::themeChanged, this, &MainWindow::themeChanged);
@@ -472,6 +479,10 @@ void MainWindow::hidDeviceList(const QList<QPair<bool, QString>> &deviceNames, i
         idx = -1;
     }
     ui->comboBox_HidDeviceList->setCurrentIndex(idx);
+
+    /* Push the latest "other connected" VID/PID list into Advanced
+     * Settings so the PID conflict pill stays in sync with reality. */
+    refreshOtherConnectedDevices();
 }
 
 void MainWindow::onPostWriteFallback()
@@ -1690,6 +1701,46 @@ void MainWindow::doActualWriteToDevice()
      * or from configReceived after the pre-write backup completes. */
     UiWriteToConfig();
 
+    /* PID-conflict gate. If the about-to-be-written VID:PID matches
+     * another currently-connected FreeJoy device, ask the user before
+     * sending. Two devices on the same VID:PID share the Windows
+     * OEMName cache (per memory: USB device-name UX) and confuse
+     * DirectInput. The Advanced Settings tab surfaces a live conflict
+     * pill, but a confirmation dialog at write-time is the backstop
+     * for users who clicked through without noticing. */
+    if (m_hidDeviceWorker) {
+        const uint16_t newVid = gEnv.pDeviceConfig->config.vid;
+        const uint16_t newPid = gEnv.pDeviceConfig->config.pid;
+        int conflicts = 0;
+        for (const auto &c : m_hidDeviceWorker->connectedDevices(/*excludeSelected=*/true)) {
+            if (c.vid == newVid && c.pid == newPid) ++conflicts;
+        }
+        if (conflicts > 0) {
+            const QMessageBox::StandardButton rc = QMessageBox::question(
+                this,
+                tr("VID:PID already in use"),
+                tr("<p>VID <b>%1</b>:PID <b>%2</b> is currently used by "
+                   "<b>%3 other connected FreeJoy device%4</b>.</p>"
+                   "<p>Writing this config will give two devices the same "
+                   "USB identity. Windows' OEMName cache is keyed by "
+                   "VID+PID -- both devices will share one OEM name -- "
+                   "and games using DirectInput may pick a random one or "
+                   "conflate them.</p>"
+                   "<p>Continue with the write anyway?</p>")
+                    .arg(QString::number(newVid, 16).toUpper().rightJustified(4, '0'))
+                    .arg(QString::number(newPid, 16).toUpper().rightJustified(4, '0'))
+                    .arg(conflicts)
+                    .arg(conflicts == 1 ? "" : "s"),
+                QMessageBox::Yes | QMessageBox::Cancel,
+                QMessageBox::Cancel);
+            if (rc != QMessageBox::Yes) {
+                blockWRConfigToDevice(false);
+                ui->pushButton_WriteConfig->setText(m_writeButtonDefaultText);
+                return;
+            }
+        }
+    }
+
     /* Legacy backwards-write gate. If the connected device runs an
      * older firmware version with an in-tree reverse migrator, pack the
      * config down into the legacy shape, surface any field-loss in a
@@ -1770,6 +1821,51 @@ void MainWindow::doActualWriteToDevice()
     m_hidDeviceWorker->sendConfigToDevice(
         gEnv.pDeviceConfig->config.vid,
         gEnv.pDeviceConfig->config.pid);
+}
+
+void MainWindow::refreshOtherConnectedDevices()
+{
+    if (!m_hidDeviceWorker || !m_advSettings) return;
+    const auto cs = m_hidDeviceWorker->connectedDevices(/*excludeSelected=*/true);
+    QList<QPair<uint16_t, uint16_t>> vidPids;
+    vidPids.reserve(cs.size());
+    for (const auto &c : cs) {
+        vidPids.append({c.vid, c.pid});
+    }
+    m_advSettings->setOtherConnectedDevices(vidPids);
+}
+
+void MainWindow::onSuggestFreePidRequested()
+{
+    /* FreeJoyX-reserved PID range. ST's vendor ID is 0x0483 and the
+     * historical FreeJoy default is PID 0x5750; we reserve 0x5750..
+     * 0x575F (16 slots) for FreeJoyX devices. Walks the connected list,
+     * picks the first slot not in use, and fills the PID input. */
+    if (!m_hidDeviceWorker || !m_advSettings) return;
+    const auto cs = m_hidDeviceWorker->connectedDevices(/*excludeSelected=*/true);
+    QSet<uint16_t> taken;
+    for (const auto &c : cs) {
+        taken.insert(c.pid);
+    }
+    constexpr uint16_t kReservedBase = 0x5750;
+    constexpr uint16_t kReservedEnd  = 0x575F;
+    uint16_t pick = 0;
+    for (uint16_t p = kReservedBase; p <= kReservedEnd; ++p) {
+        if (!taken.contains(p)) { pick = p; break; }
+    }
+    if (pick == 0) {
+        QMessageBox::information(this, tr("No free PID available"),
+            tr("All 16 PIDs in the FreeJoyX-reserved range "
+               "(0x5750..0x575F) are already in use by connected "
+               "devices. Pick one manually -- or unplug a device first."));
+        return;
+    }
+    /* Reach into AdvancedSettings' PID line edit via a public setter
+     * would be cleaner; for the same-process write here, find the
+     * widget by object name. */
+    if (auto *pidEdit = m_advSettings->findChild<QLineEdit *>(QStringLiteral("lineEdit_PID"))) {
+        pidEdit->setText(QString::number(pick, 16).toUpper().rightJustified(4, '0'));
+    }
 }
 
 void MainWindow::setFlashChainUiLocked(bool locked)

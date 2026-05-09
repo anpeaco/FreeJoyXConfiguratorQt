@@ -40,6 +40,20 @@ public:
      * detection-thread rebuild can re-pick the same physical device
      * once it re-enumerates with the new firmware. */
     void captureReconnectIdentity(uint16_t expectedVid, uint16_t expectedPid);
+
+    /* Snapshot of currently-detected FreeJoy device USB identities.
+     * Used by the configurator's PID-conflict surface so the user
+     * doesn't unknowingly flash two devices to the same PID -- which
+     * collapses the Windows OEMName cache (per VID+PID) and confuses
+     * DirectInput. excludeSelectedDevice=true skips the entry matching
+     * the currently-selected dropdown index, so the pill at the PID
+     * input only flags OTHER devices, not the one being edited. */
+    struct ConnectedDevice {
+        uint16_t vid;
+        uint16_t pid;
+        QString  serialHex;     /* uppercase hex; matches HID API enumeration */
+    };
+    QList<ConnectedDevice> connectedDevices(bool excludeSelectedDevice) const;
     void sendLedState(uint32_t bitmask);
 
     bool enterToFlashMode();
