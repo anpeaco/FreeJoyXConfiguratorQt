@@ -424,11 +424,26 @@ void ButtonLogical::writeToConfig()
     button->type = safeAt(m_logicFunc_enumIndex,
                           ui->comboBox_ButtonFunction->currentIndex(),
                           button->type);
-    button->op = m_logicOp_enumIndex.isEmpty()
-                 ? 0
-                 : safeAt(m_logicOp_enumIndex,
-                          ui->comboBox_LogicOp->currentIndex(),
-                          button->op);
+    /* Only LOGIC buttons carry a meaningful operator. For every other
+     * type the LogicOp combo is hidden but its currentIndex still
+     * defaults to 0, which maps to m_logicOp_enumIndex[0] = -1 (the UI
+     * "not chosen yet" sentinel). Assigning -1 into the :3 op bitfield
+     * truncates to 0b111 = 7, silently writing op=7 to every non-Logic
+     * button slot in flash. Skip the assignment for non-LOGIC types,
+     * and coerce the sentinel to 0 even when type IS LOGIC -- the
+     * isLogicConfigComplete() save-time check is supposed to catch the
+     * sentinel before we get here, but a defensive coerce avoids the
+     * bitfield-overflow trap if it ever leaks through. */
+    if (button->type == LOGIC) {
+        const int opVal = m_logicOp_enumIndex.isEmpty()
+                          ? 0
+                          : safeAt(m_logicOp_enumIndex,
+                                   ui->comboBox_LogicOp->currentIndex(),
+                                   button->op);
+        button->op = (opVal >= 0) ? static_cast<uint8_t>(opVal) : 0;
+    } else {
+        button->op = 0;
+    }
     button->src_b = ui->spinBox_SourceB->value() - 1;	// spinBox 0 -> stored -1 (unset)
     {
         const int idx = ui->comboBox_ShiftIndex->currentIndex();

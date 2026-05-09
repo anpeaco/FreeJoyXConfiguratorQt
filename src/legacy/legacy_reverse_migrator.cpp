@@ -87,12 +87,17 @@ static void packLegacyButton(const button_t &cur, LegacyButton &lb,
     lb.delay_timer = cur.delay_timer;
     lb.press_timer = cur.press_timer;
 
-    /* src_b and op don't exist in the legacy layout -- silently dropped,
-     * but we count populated values so the user gets warned. src_b = -1
-     * is "no Source B" (the LOGIC default), so only != -1 counts as
-     * populated. op = 0 is NO_OP, so only != 0 counts. */
-    if (cur.src_b != -1) ++s.droppedSrcB;
-    if (cur.op    != 0)  ++s.droppedOp;
+    /* src_b and op don't exist in the legacy layout. They're only
+     * meaningful for type==LOGIC buttons in current firmware; other
+     * types may have stale values left over from earlier UI passes
+     * (e.g. the now-fixed sentinel-truncation bug that wrote op=7 to
+     * every non-Logic button). Type-gate the warning so we don't false-
+     * positive on those, and don't punish the user for state they
+     * didn't configure. */
+    if (cur.type == TYPE_LOGIC) {
+        if (cur.src_b != -1) ++s.droppedSrcB;
+        if (cur.op    != 0)  ++s.droppedOp;
+    }
 }
 
 /* Pour ButtonPackStats into the user-facing dropped-fields list. Empty
@@ -392,12 +397,20 @@ static void reverse_v1710_from_current(const dev_config_t &cur, ReverseResult &r
         out->encoders[i] = cur.encoders[i];
     }
 
-    /* led_timer_ms[4]: warn if any populated. */
-    bool anyLedTimerMs = false;
-    for (int i = 0; i < 4; ++i) {
-        if (cur.led_timer_ms[i] != 0) { anyLedTimerMs = true; break; }
+    /* led_timer_ms[4]: only warn if LEDs are actually configured AND
+     * the user has deviated from InitConfig's factory defaults
+     * (50/100/150/200 ms). Without the "any LED configured" gate we
+     * fire on every fresh config; without the defaults check we'd
+     * still fire on a fresh load even with zero edits. */
+    bool anyLedConfigured = false;
+    for (int i = 0; i < MAX_LEDS_NUM; ++i) {
+        if (cur.leds[i].input_num >= 0) { anyLedConfigured = true; break; }
     }
-    if (anyLedTimerMs) {
+    const bool ledTimersAtDefault = (cur.led_timer_ms[0] == 50 &&
+                                     cur.led_timer_ms[1] == 100 &&
+                                     cur.led_timer_ms[2] == 150 &&
+                                     cur.led_timer_ms[3] == 200);
+    if (anyLedConfigured && !ledTimersAtDefault) {
         r.dropped << QStringLiteral(
             "Per-LED-group timer durations were configured (added in "
             "v1.7.3). Target firmware has no equivalent field.");
