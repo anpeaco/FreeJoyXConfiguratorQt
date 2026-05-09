@@ -1507,24 +1507,39 @@ QString MainWindow::findUpgradeFirmwarePath(int boardId, QString *outVersion) co
 void MainWindow::refreshUpgradeButtonState()
 {
     /* Enable when:
-     *   - A device is connected with a known board_id
+     *   - A device is connected with a board we can target
      *   - We can find a matching firmware in firmware/
-     *   - The firmware version on the device differs from the file
-     *     (or is unrecognised, which still benefits from a flash)
      * Disable otherwise. The Flasher tab remains the manual escape
-     * hatch when the auto-pick can't satisfy these conditions. */
+     * hatch when the auto-pick can't satisfy these conditions.
+     *
+     * board_id quirk: legacy firmware versions (mask group < current,
+     * notably v1.7.7 / 0x1770 and earlier) didn't always populate
+     * paramsReport.board_id, so the byte reads as 0 even on perfectly
+     * functional F103 hardware. Default to F103 in that case -- F411
+     * support landed only in current FreeJoyX firmware, so any device
+     * running on an older mask group is virtually guaranteed to be
+     * F103. The user's manual Flasher escape hatch handles the edge
+     * case where someone has an F411 prototype running v1.7.7. */
     if (!gEnv.pDeviceConfig) {
         ui->pushButton_UpgradeFirmware->setDisabled(true);
         return;
     }
-    const int boardId = gEnv.pDeviceConfig->paramsReport.board_id;
+    const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
+    const bool deviceConnected = (devVer != 0);
+    const bool versionMatchesCurrent =
+        (devVer & 0xFFF0) == (FIRMWARE_VERSION & 0xFFF0);
+
+    int boardId = gEnv.pDeviceConfig->paramsReport.board_id;
+    if (boardId == 0 && deviceConnected && !versionMatchesCurrent) {
+        /* Legacy firmware that didn't report board_id -- assume F103. */
+        boardId = BOARD_ID_F103_BLUEPILL;
+    }
+
     QString fileVer;
     const QString path = findUpgradeFirmwarePath(boardId, &fileVer);
     const bool haveFile = !path.isEmpty();
     const bool haveBoard = (boardId == BOARD_ID_F103_BLUEPILL ||
                             boardId == BOARD_ID_F411_BLACKPILL);
-    const bool deviceConnected =
-        gEnv.pDeviceConfig->paramsReport.firmware_version != 0;
     ui->pushButton_UpgradeFirmware->setDisabled(
         !(deviceConnected && haveBoard && haveFile));
 }
@@ -1540,7 +1555,17 @@ void MainWindow::on_pushButton_UpgradeFirmware_clicked()
         return;
     }
 
-    const int boardId = gEnv.pDeviceConfig->paramsReport.board_id;
+    /* Same board_id fallback as refreshUpgradeButtonState: legacy
+     * firmware (notably v1.7.7 / 0x1770) didn't report board_id, so
+     * default to F103 when the byte reads as 0 on a non-current
+     * firmware version. */
+    int boardId = gEnv.pDeviceConfig->paramsReport.board_id;
+    const uint16_t devVerLocal = gEnv.pDeviceConfig->paramsReport.firmware_version;
+    const bool versionMatchesCurrentLocal =
+        (devVerLocal & 0xFFF0) == (FIRMWARE_VERSION & 0xFFF0);
+    if (boardId == 0 && !versionMatchesCurrentLocal) {
+        boardId = BOARD_ID_F103_BLUEPILL;
+    }
     QString targetVer;
     const QString fwPath = findUpgradeFirmwarePath(boardId, &targetVer);
     if (fwPath.isEmpty()) {
