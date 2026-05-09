@@ -8,6 +8,8 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QPainter>
+#include <QPixmap>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QSettings>
@@ -52,16 +54,49 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
 
     ui->layoutG_Lang->setAlignment(Qt::AlignCenter);
 
-    /* PID-conflict surface. The .ui file's grid puts lineEdit_PID in
-     * row 3 col 1; we attach a pill (label) and a "Suggest" button to
-     * the same parent layout dynamically so the .ui doesn't need to
-     * change. The pill stays empty when no conflict; turns red and
-     * names the conflicting count when collisions exist. */
-    m_pidConflictLabel = new QLabel(this);
+    /* PID-conflict surface. Hosted on the OUTER "USB settings" group
+     * box layout (gridLayout_3) so the pill spans the full width of
+     * the group rather than being squeezed into the narrow VID/PID
+     * column. The pill stays empty when no conflict; surfaces a
+     * triangle-alert lucide icon + warning text when collisions exist. */
+    m_pidConflictRow = new QWidget(this);
+    auto *rowLayout = new QHBoxLayout(m_pidConflictRow);
+    rowLayout->setContentsMargins(0, 0, 0, 0);
+    rowLayout->setSpacing(8);
+
+    m_pidConflictIcon = new QLabel(m_pidConflictRow);
+    /* The lucide SVG renders to a pixmap at the host font's height for
+     * crisp visual pairing with the text. The pixmap is recoloured by
+     * pixmapToIcon-equivalent painting so it matches the warning hue
+     * regardless of theme. We paint once during construction; refresh
+     * just toggles visibility. */
+    {
+        const int h = qMax(16, fontMetrics().height());
+        QPixmap pix(":/Images/icons/lucide/triangle-alert.svg");
+        if (!pix.isNull()) {
+            pix = pix.scaledToHeight(h, Qt::SmoothTransformation);
+            QPixmap colored(pix.size());
+            colored.fill(Qt::transparent);
+            QPainter p(&colored);
+            p.setCompositionMode(QPainter::CompositionMode_Source);
+            p.drawPixmap(0, 0, pix);
+            p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+            p.fillRect(colored.rect(), QColor(0xCC, 0x33, 0x33));
+            p.end();
+            m_pidConflictIcon->setPixmap(colored);
+        }
+    }
+
+    m_pidConflictLabel = new QLabel(m_pidConflictRow);
     m_pidConflictLabel->setText(QString());
     m_pidConflictLabel->setStyleSheet(QStringLiteral(
         "color: #cc3333; font-weight: bold;"));
     m_pidConflictLabel->setWordWrap(true);
+    m_pidConflictLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+    rowLayout->addWidget(m_pidConflictIcon, 0, Qt::AlignTop);
+    rowLayout->addWidget(m_pidConflictLabel, 1);
+    m_pidConflictRow->setVisible(false);
 
     m_suggestPidButton = new QPushButton(tr("Suggest unique PID"), this);
     m_suggestPidButton->setToolTip(tr(
@@ -70,24 +105,23 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
     connect(m_suggestPidButton, &QPushButton::clicked,
             this, &AdvancedSettings::suggestFreePidRequested);
 
-    /* Reparent into the layout that holds lineEdit_PID. Walking up via
-     * parentWidget is more robust than guessing the layout name. */
-    if (QWidget *pidParent = ui->lineEdit_PID->parentWidget()) {
-        if (QGridLayout *grid = qobject_cast<QGridLayout *>(pidParent->layout())) {
-            /* Place pill below the inputs (row 4) spanning 2 cols, and
-             * suggest button beside it. Adjusts cleanly even if the
-             * parent grid grows other rows later. */
-            const int row = grid->rowCount();
-            grid->addWidget(m_pidConflictLabel, row, 0, 1, 2);
-            grid->addWidget(m_suggestPidButton, row + 1, 0, 1, 2);
-        }
+    /* Attach to the OUTER "USB settings" grid (gridLayout_3) which has
+     * 7 columns; gridLayout_2 inside it is the narrow VID/PID column.
+     * We span all columns so the warning text gets the full group-box
+     * width to wrap into. */
+    QGridLayout *outerGrid = findChild<QGridLayout *>(QStringLiteral("gridLayout_3"));
+    if (outerGrid) {
+        const int row = outerGrid->rowCount();
+        outerGrid->addWidget(m_pidConflictRow,    row,     0, 1, outerGrid->columnCount());
+        outerGrid->addWidget(m_suggestPidButton,  row + 1, 0, 1, outerGrid->columnCount(),
+                             Qt::AlignLeft);
     }
 
     /* Live conflict check on every PID edit. */
     connect(ui->lineEdit_PID, &QLineEdit::textChanged,
             this, &AdvancedSettings::onPidTextChanged);
 
-    /* Initial state -- empty pill, button shown but quiet. */
+    /* Initial state -- pill hidden, button shown. */
     refreshPidConflictPill();
 }
 
@@ -252,14 +286,16 @@ void AdvancedSettings::refreshPidConflictPill()
 
     if (conflicts > 0) {
         m_pidConflictLabel->setText(tr(
-            "⚠ This VID:PID is already used by %1 other connected device%2. "
+            "This VID:PID is already used by %1 other connected device%2. "
             "Pick a unique PID to avoid Windows OEMName cache collisions and "
             "DirectInput confusion.")
                 .arg(conflicts).arg(conflicts == 1 ? "" : "s"));
+        if (m_pidConflictRow) m_pidConflictRow->setVisible(true);
         ui->lineEdit_PID->setStyleSheet(QStringLiteral(
             "border: 1px solid #cc3333;"));
     } else {
         m_pidConflictLabel->setText(QString());
+        if (m_pidConflictRow) m_pidConflictRow->setVisible(false);
         ui->lineEdit_PID->setStyleSheet(QString());
     }
 }

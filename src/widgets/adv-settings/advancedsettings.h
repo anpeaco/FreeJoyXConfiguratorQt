@@ -89,7 +89,11 @@ private:
 
     /* Dynamically-created widgets that visually surface the PID
      * conflict state. Created in the constructor and reparented into
-     * the existing layout so the .ui file doesn't need editing. */
+     * the outer "USB settings" grid (gridLayout_3) so they span the
+     * full group-box width. The pill row holds an icon + text in a
+     * horizontal layout; the suggest button sits below it. */
+    QWidget     *m_pidConflictRow   = nullptr;
+    QLabel      *m_pidConflictIcon  = nullptr;
     QLabel      *m_pidConflictLabel = nullptr;
     QPushButton *m_suggestPidButton = nullptr;
 };
