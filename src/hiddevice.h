@@ -31,6 +31,15 @@ public:
      * write to a current-firmware device falls back to the live
      * gEnv.pDeviceConfig->config bytes automatically. */
     void setNextWriteSourceBytes(const std::vector<uint8_t> &bytes);
+
+    /* Capture the currently-selected device's serial + (vid, pid) into
+     * the post-write reconnect target fields. sendConfigToDevice does
+     * this internally for the Write Config flow; this public entry
+     * point lets the one-click Upgrade flow call the same capture
+     * before the device disappears into DFU mode, so the post-flash
+     * detection-thread rebuild can re-pick the same physical device
+     * once it re-enumerates with the new firmware. */
+    void captureReconnectIdentity(uint16_t expectedVid, uint16_t expectedPid);
     void sendLedState(uint32_t bitmask);
 
     bool enterToFlashMode();

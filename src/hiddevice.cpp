@@ -856,6 +856,18 @@ void HidDevice::setNextWriteSourceBytes(const std::vector<uint8_t> &bytes)
     m_nextWriteSourceBytes = bytes;
 }
 
+void HidDevice::captureReconnectIdentity(uint16_t expectedVid, uint16_t expectedPid)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (m_selectedDevice >= 0 && m_selectedDevice < m_hidDevicesList.size()) {
+        m_targetSerial = m_hidDevicesList[m_selectedDevice].serNum;
+    } else {
+        m_targetSerial.clear();
+    }
+    m_targetExpectedVid = expectedVid;
+    m_targetExpectedPid = expectedPid;
+}
+
 void HidDevice::sendLedState(uint32_t bitmask)
 {
     std::lock_guard<std::mutex> lock(m_mutex);

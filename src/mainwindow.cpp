@@ -1540,8 +1540,15 @@ void MainWindow::refreshUpgradeButtonState()
     const bool haveFile = !path.isEmpty();
     const bool haveBoard = (boardId == BOARD_ID_F103_BLUEPILL ||
                             boardId == BOARD_ID_F411_BLACKPILL);
+    /* Don't surface the Upgrade button when the device is already on
+     * the same mask group as the configurator -- there's nothing
+     * meaningful to upgrade to. The user can still reach the manual
+     * Flasher tab if they want to flash the same version (e.g. to
+     * recover a corrupted board), but the headline "one-click upgrade"
+     * affordance should only appear when it actually does something. */
+    const bool needsUpgrade = !versionMatchesCurrent;
     ui->pushButton_UpgradeFirmware->setDisabled(
-        !(deviceConnected && haveBoard && haveFile));
+        !(deviceConnected && haveBoard && haveFile && needsUpgrade));
 }
 
 void MainWindow::on_pushButton_UpgradeFirmware_clicked()
@@ -1606,6 +1613,18 @@ void MainWindow::on_pushButton_UpgradeFirmware_clicked()
     m_upgradeBoardId       = boardId;
     m_upgradeTargetVersion = targetVer;
     m_upgradeFirmwarePath  = fwPath;
+
+    /* Capture the device's identity (serial + post-flash vid/pid) into
+     * HidDevice's reconnect target fields BEFORE we go into DFU. Without
+     * this the post-flash detection-thread rebuild has no identity to
+     * match against -- the device shows up in the dropdown but the
+     * worker leaves it un-opened, and our Phase 9 auto-Write hook
+     * (in getParamsPacket) never fires. The post-flash device should
+     * report the same vid/pid the user has stored in gEnv (since the
+     * config persists across firmware flashes). */
+    m_hidDeviceWorker->captureReconnectIdentity(
+        gEnv.pDeviceConfig->config.vid,
+        gEnv.pDeviceConfig->config.pid);
 
     /* Kick off the existing backup-then-flash chain. configReceived's
      * m_backupBeforeFlashPending branch handles the backup save and
