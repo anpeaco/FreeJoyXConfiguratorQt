@@ -339,6 +339,14 @@
             <property name="text"><string>Write config to Device</string></property>
            </widget>
           </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_UpgradeFirmware">
+            <property name="enabled"><bool>false</bool></property>
+            <property name="minimumSize"><size><width>165</width><height>37</height></size></property>
+            <property name="text"><string>Upgrade firmware</string></property>
+            <property name="toolTip"><string>Read your current config, flash the latest matching firmware, then write the config back. One click.</string></property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>

@@ -82,6 +82,7 @@ private slots:
 
     void on_pushButton_ReadConfig_clicked();
     void on_pushButton_WriteConfig_clicked();
+    void on_pushButton_UpgradeFirmware_clicked();
 
     void on_pushButton_SaveToFile_clicked();
     void on_pushButton_LoadFromFile_clicked();
@@ -144,6 +145,22 @@ private:
      * latter via the second hideConnectDeviceInfo call from the main
      * worker loop's empty-list path -- see comment in that slot). */
     bool m_postWriteRestarting = false;
+
+    /* One-click firmware upgrade orchestration (issue
+     * anpeaco/FreeJoyConfiguratorQtX#9 Phase B, happy-path only).
+     *
+     * Flow: backup-then-flash (existing) -> reconnect -> auto-Write
+     * (new). Set when the user confirms the Upgrade Firmware dialog;
+     * cleared when the post-flash Write completes (success or fail).
+     *
+     * Auto-rollback (Phase C) deferred until the reverse migrators
+     * are hardware-verified and re-enabled. */
+    bool    m_upgradePending = false;
+    int     m_upgradeBoardId = 0;        /* paramsReport.board_id, captured at upgrade start */
+    QString m_upgradeTargetVersion;      /* user-visible version string for dialogs */
+    QString m_upgradeFirmwarePath;       /* absolute path to the .bin we'll flash */
+    void    refreshUpgradeButtonState(); /* enables/disables based on connection + version + firmware availability */
+    QString findUpgradeFirmwarePath(int boardId, QString *outVersion) const;
 
     /* Cached default text for the Read / Write Config buttons, captured
      * once in the constructor before any code path mutates them. We

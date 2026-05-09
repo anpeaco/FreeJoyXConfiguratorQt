@@ -23,6 +23,15 @@ public:
 
     const QByteArray *fileArray() const;
 
+    /* Public entry point for the one-click Upgrade Firmware flow on
+     * the main view. Loads the .bin into m_fileArray and emits
+     * startFlash(true) so MainWindow's existing pipeline picks up.
+     * Same semantics as the private startFlashFromFile -- exposed so
+     * callers outside the Flasher tab can reuse the flash path. */
+    void triggerFlashFromPath(const QString &filePath) {
+        startFlashFromFile(filePath);
+    }
+
 signals:
     void flashModeClicked(bool is_start_flash);
     void startFlash(bool is_start_flash);

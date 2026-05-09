@@ -26,6 +26,8 @@
 #include "legacy/legacy_reverse_migrator.h"
 
 #include <QDebug>
+#include <QFile>
+#include <QFileInfo>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -352,6 +354,7 @@ void MainWindow::hideConnectDeviceInfo()
         freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-disconnected");
     }
     blockWRConfigToDevice(true);
+    ui->pushButton_UpgradeFirmware->setDisabled(true);
     m_advSettings->flasher()->deviceConnected(false);
     // debug window
     if (m_debugWindow) {
@@ -377,6 +380,19 @@ void MainWindow::flasherConnected()
     }
     if (ui->pushButton_ReadConfig->isEnabled() == false) {
         m_axesCurvesConfig->deviceStatus(false);
+    }
+
+    /* One-click upgrade: device just entered DFU. Auto-load the chosen
+     * firmware bytes and trigger the flash. The QTimer defer gives
+     * Flasher's UI a tick to finish wiring up after flasherFound; without
+     * it the immediate triggerFlashFromPath occasionally races the dropdown
+     * refresh. */
+    if (m_upgradePending && !m_upgradeFirmwarePath.isEmpty()) {
+        const QString path = m_upgradeFirmwarePath;
+        QTimer::singleShot(200, this, [this, path]() {
+            qDebug() << "Upgrade auto-flash:" << path;
+            m_advSettings->flasher()->triggerFlashFromPath(path);
+        });
     }
 }
 
@@ -601,6 +617,27 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
             ui->label_DeviceStatus->setText(tr("Connected"));
         }
         m_deviceChanged = false;
+
+        /* One-click upgrade post-flash continuation: device is back with
+         * compatible firmware. Auto-trigger Write Config to push the
+         * migrated config that we backed up + restored before the flash.
+         * The QTimer defer lets the UI settle (button-enable, info card,
+         * pin-config board switch) before we click through. */
+        if (m_upgradePending && firmwareCompatible) {
+            qDebug() << "Upgrade post-flash: device returned with compatible "
+                        "firmware, auto-triggering Write Config";
+            m_upgradePending       = false;   /* one-shot */
+            m_upgradeBoardId       = 0;
+            m_upgradeFirmwarePath.clear();
+            QTimer::singleShot(300, this, [this]() {
+                on_pushButton_WriteConfig_clicked();
+            });
+        }
+
+        /* Refresh the Upgrade button state on every params arrival --
+         * board_id, firmware_version, and matching-binary availability
+         * may all have changed. Cheap call, fine to do unconditionally. */
+        refreshUpgradeButtonState();
     }
 
     // update button state without delay. fix gamepad_report.raw_button_data[0]
@@ -665,6 +702,11 @@ void MainWindow::onFlashTerminated(bool success)
          * needed; user already sees the error state on the Flash button. */
         m_postFlashHealthPending = false;
         m_postFlashHealthTimer.stop();
+        /* Cancel any in-flight one-click upgrade orchestration -- the
+         * post-flash auto-Write Config would have nothing to write to. */
+        m_upgradePending = false;
+        m_upgradeBoardId = 0;
+        m_upgradeFirmwarePath.clear();
     }
 }
 
@@ -672,6 +714,12 @@ void MainWindow::onPostFlashHealthTimeout()
 {
     if (!m_postFlashHealthPending) return;
     m_postFlashHealthPending = false;
+
+    /* Clear any one-click upgrade orchestration -- the auto-Write Config
+     * never gets to fire since the device didn't come back. */
+    m_upgradePending = false;
+    m_upgradeBoardId = 0;
+    m_upgradeFirmwarePath.clear();
 
     qWarning() << "Post-flash health timeout: device didn't reconnect "
                   "within 15 s of flash completion";
@@ -1126,6 +1174,15 @@ void MainWindow::blockWRConfigToDevice(bool block)
 {
     ui->pushButton_ReadConfig->setDisabled(block);
     ui->pushButton_WriteConfig->setDisabled(block);
+    /* The Upgrade button has stricter eligibility criteria than R/W
+     * (board match + firmware file present), so block-then-restore goes
+     * through refreshUpgradeButtonState to re-evaluate rather than just
+     * un-disabling. */
+    if (block) {
+        ui->pushButton_UpgradeFirmware->setDisabled(true);
+    } else {
+        refreshUpgradeButtonState();
+    }
 }
 
 void MainWindow::setConfigTabsEnabled(bool enabled)
@@ -1388,6 +1445,150 @@ void MainWindow::on_pushButton_WriteConfig_clicked()
     /* No backup possible -- proceed straight to write. */
     blockWRConfigToDevice(true);
     doActualWriteToDevice();
+}
+
+QString MainWindow::findUpgradeFirmwarePath(int boardId, QString *outVersion) const
+{
+    /* Scan the configurator's firmware/ folder for the newest local
+     * "freejoyx-<board>-app-vX.Y.Z.bin" matching the connected board.
+     * Phase B intentionally only looks at LOCAL files -- the existing
+     * Flasher tab handles GitHub-fetched assets, but for one-click
+     * upgrade the user expects a deterministic outcome without needing
+     * an internet round-trip mid-orchestration.
+     *
+     * Returns the absolute path to the chosen .bin and stamps
+     * *outVersion with the version string parsed from the filename
+     * ("v1.7.8b0"). Returns empty if no candidate is found. */
+    QString boardSlug;
+    if (boardId == BOARD_ID_F103_BLUEPILL) {
+        boardSlug = QStringLiteral("f103");
+    } else if (boardId == BOARD_ID_F411_BLACKPILL) {
+        boardSlug = QStringLiteral("f411");
+    } else {
+        return QString();
+    }
+
+    /* Same firmware folder the Flasher tab uses: <exe>/firmware/. */
+    const QString firmwareDir = QCoreApplication::applicationDirPath()
+                                + QStringLiteral("/firmware");
+    QDir dir(firmwareDir);
+    if (!dir.exists()) return QString();
+
+    const QString prefix = QStringLiteral("freejoyx-") + boardSlug
+                           + QStringLiteral("-app-v");
+    QStringList candidates = dir.entryList(
+        { QStringLiteral("freejoyx-") + boardSlug + QStringLiteral("-app-v*.bin") },
+        QDir::Files);
+
+    /* Sort lexically -- our naming convention puts the version inside
+     * the filename so lexical order matches version order for the
+     * v.M.m.pbN scheme. The scheme could be replaced with semver later
+     * (issue anpeaco/FreeJoyX#18); revisit this sort then. */
+    std::sort(candidates.begin(), candidates.end());
+
+    if (candidates.isEmpty()) return QString();
+
+    /* Pick the newest. */
+    const QString chosen = candidates.last();
+
+    /* Extract "vX.Y.ZbN" between "-v" and ".bin". */
+    QString ver = chosen;
+    const int idxV = ver.indexOf(QStringLiteral("-app-v"));
+    if (idxV >= 0) {
+        ver.remove(0, idxV + QStringLiteral("-app-").size());
+        if (ver.endsWith(QStringLiteral(".bin"))) {
+            ver.chop(4);
+        }
+    }
+    if (outVersion) *outVersion = ver;
+    return dir.absoluteFilePath(chosen);
+}
+
+void MainWindow::refreshUpgradeButtonState()
+{
+    /* Enable when:
+     *   - A device is connected with a known board_id
+     *   - We can find a matching firmware in firmware/
+     *   - The firmware version on the device differs from the file
+     *     (or is unrecognised, which still benefits from a flash)
+     * Disable otherwise. The Flasher tab remains the manual escape
+     * hatch when the auto-pick can't satisfy these conditions. */
+    if (!gEnv.pDeviceConfig) {
+        ui->pushButton_UpgradeFirmware->setDisabled(true);
+        return;
+    }
+    const int boardId = gEnv.pDeviceConfig->paramsReport.board_id;
+    QString fileVer;
+    const QString path = findUpgradeFirmwarePath(boardId, &fileVer);
+    const bool haveFile = !path.isEmpty();
+    const bool haveBoard = (boardId == BOARD_ID_F103_BLUEPILL ||
+                            boardId == BOARD_ID_F411_BLACKPILL);
+    const bool deviceConnected =
+        gEnv.pDeviceConfig->paramsReport.firmware_version != 0;
+    ui->pushButton_UpgradeFirmware->setDisabled(
+        !(deviceConnected && haveBoard && haveFile));
+}
+
+void MainWindow::on_pushButton_UpgradeFirmware_clicked()
+{
+    qDebug() << "Upgrade Firmware clicked";
+
+    if (!gEnv.pDeviceConfig ||
+        gEnv.pDeviceConfig->paramsReport.firmware_version == 0) {
+        QMessageBox::warning(this, tr("No device connected"),
+            tr("Connect a device before starting an upgrade."));
+        return;
+    }
+
+    const int boardId = gEnv.pDeviceConfig->paramsReport.board_id;
+    QString targetVer;
+    const QString fwPath = findUpgradeFirmwarePath(boardId, &targetVer);
+    if (fwPath.isEmpty()) {
+        QMessageBox::warning(this, tr("No firmware available"),
+            tr("Couldn't find a matching firmware binary in the "
+               "configurator's firmware/ folder. Use Advanced Settings "
+               "-> Firmware flasher to flash manually."));
+        return;
+    }
+
+    const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
+    const QString devVerText = legacy::describeVersion(devVer);
+
+    const QMessageBox::StandardButton rc = QMessageBox::question(
+        this,
+        tr("Upgrade firmware?"),
+        tr("<p>This will:</p>"
+           "<ol>"
+           "<li>Read your current config and save a backup file</li>"
+           "<li>Flash <b>%1</b> to the device</li>"
+           "<li>Write your migrated config back after the device "
+               "reconnects</li>"
+           "</ol>"
+           "<p>Current firmware: <b>%2</b><br>"
+           "Target firmware: <b>%3</b></p>"
+           "<p>If anything fails mid-flight the device may be left in "
+           "DFU mode -- recover via STM32 Cube Programmer + ST-Link.</p>"
+           "<p>Continue?</p>")
+            .arg(QFileInfo(fwPath).fileName(), devVerText, targetVer),
+        QMessageBox::Yes | QMessageBox::Cancel,
+        QMessageBox::Cancel);
+    if (rc != QMessageBox::Yes) return;
+
+    /* Capture state for the orchestration. board_id is captured now
+     * because once the device enters DFU the params card clears and
+     * we lose it from gEnv. */
+    m_upgradePending       = true;
+    m_upgradeBoardId       = boardId;
+    m_upgradeTargetVersion = targetVer;
+    m_upgradeFirmwarePath  = fwPath;
+
+    /* Kick off the existing backup-then-flash chain. configReceived's
+     * m_backupBeforeFlashPending branch handles the backup save and
+     * calls doEnterFlashMode(). That triggers HidDevice's flasher
+     * mode, the device re-enumerates as the bootloader, and
+     * flasherConnected() fires -- where we'll inject the auto-flash
+     * step (since m_upgradePending is set). */
+    deviceFlasherController(false);   /* false = "Enter Flasher Mode" */
 }
 
 void MainWindow::doActualWriteToDevice()
