@@ -227,6 +227,17 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                                 }
                             }
                         }
+                        // No matcher landed: the previously-selected device
+                        // isn't in the new list (typical case: it's
+                        // re-enumerating after a Write Config). Clear
+                        // m_selectedDevice so the main loop below doesn't
+                        // silently auto-open whatever now occupies the old
+                        // numeric index -- otherwise a multi-device user
+                        // sees the configurator jump to a sibling device
+                        // mid-restart.
+                        if (preferredIndex == -1) {
+                            m_selectedDevice = -1;
+                        }
                         // emit all connected FJ devices names
                         emit hidDeviceList(m_deviceNames, preferredIndex);
                         tmp_HidList.clear();
@@ -275,7 +286,7 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                 QString openVidStr, openPidStr, openSerialStr;
                 {
                     std::lock_guard<std::mutex> lock(m_mutex);
-                    if (!m_hidDevicesList.empty() && m_selectedDevice < m_hidDevicesList.size()) {  // mutex
+                    if (!m_hidDevicesList.empty() && m_selectedDevice >= 0 && m_selectedDevice < m_hidDevicesList.size()) {  // mutex
                         path = m_hidDevicesList[m_selectedDevice].path;
                         shouldOpen = true;
 

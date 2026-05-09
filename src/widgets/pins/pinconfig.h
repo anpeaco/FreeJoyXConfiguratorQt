@@ -43,6 +43,22 @@ public:
      * -> slot 2; ContrLite (slot 1) is user-selected only. */
     void setConnectedBoard(int boardId);
 
+    /* Programmatic pin-role manipulation -- used by the "Enable" toggle
+     * on the Encoders tab to assign / clear FAST_ENCODER on a pin pair
+     * without forcing the user to edit two combo boxes by hand.
+     *
+     * pin: a value from the global Pin enum (PA_0..PC_15).
+     * deviceEnum: a value from the pin-role enum (NOT_USED, FAST_ENCODER, ...).
+     *
+     * setPinRole returns true if the role is legal for that pin and
+     * was applied (or was already in effect). pinRole returns the
+     * pin's current role, or NOT_USED when the pin isn't recognised.
+     * pinRoleText returns the user-facing display name for the pin's
+     * current role (for confirmation dialogs). */
+    bool setPinRole(int pin, int deviceEnum);
+    int pinRole(int pin) const;
+    QString pinRoleText(int pin) const;
+
 signals:
     void totalButtonsValueChanged(int count);
     /* Forwarded from CurrentConfig::physicalButtonBreakdownChanged. Fires

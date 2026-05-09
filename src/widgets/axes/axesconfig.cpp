@@ -93,6 +93,54 @@ void AxesConfig::addOrDeleteMainSource(int sourceEnum, QString sourceName, bool 
     refreshSourceUsage();
 }
 
+void AxesConfig::fastEncoderPinChanged(const QString &pinGuiName, bool isAdd)
+{
+    const QList<int> prevSlots = completedEncoderSlots();
+    if (isAdd) {
+        m_fastEncoderPins.insert(pinGuiName);
+    } else {
+        m_fastEncoderPins.remove(pinGuiName);
+    }
+    const QList<int> nowSlots = completedEncoderSlots();
+
+    // Suppress per-pin churn -- only push when the set of *complete*
+    // encoder pairs actually changes (e.g. assigning the second half
+    // of a pair, or removing one half of a pair, both shift the slot
+    // list, but adding the first half of an unpaired encoder doesn't).
+    if (prevSlots == nowSlots) return;
+
+    for (int i = 0; i < m_axesPtrList.size(); ++i) {
+        m_axesPtrList[i]->setEncoderSlotsAvailable(nowSlots);
+    }
+    refreshSourceUsage();
+}
+
+QList<int> AxesConfig::completedEncoderSlots() const
+{
+    /* Encoder pin pairs are board-independent on F103 and F411:
+     *   slot 0 = Enc 1 = PA8 + PA9 (TIM1)
+     *   slot 1 = Enc 2 = PB6 + PB7 (TIM4)
+     * pinList[].guiName arrives as a tr() string like "Pin A8", so
+     * match by suffix (the same pattern encodersconfig.cpp::
+     * fastEncoderSelected uses for its slot dispatch) -- this stays
+     * correct under translation and any future "Pin "/"P"/"" prefix
+     * shifts in the pin combobox. */
+    auto hasPin = [&](const QString &suffix) {
+        for (const QString &name : m_fastEncoderPins) {
+            if (name.endsWith(suffix)) return true;
+        }
+        return false;
+    };
+    QList<int> completedSlots;
+    if (hasPin(QStringLiteral("A8")) && hasPin(QStringLiteral("A9"))) {
+        completedSlots.append(0);
+    }
+    if (hasPin(QStringLiteral("B6")) && hasPin(QStringLiteral("B7"))) {
+        completedSlots.append(1);
+    }
+    return completedSlots;
+}
+
 void AxesConfig::refreshSourceUsage()
 {
     // Build the global "source enum -> list of axis names" usage map.

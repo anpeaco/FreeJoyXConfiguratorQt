@@ -32,9 +32,31 @@ public:
 
     bool hasBothInputs() const;
 
+    /* Wire-format slot index for this encoder. Used by EncodersConfig
+     * + MainWindow when the user toggles Enable so the matching pin
+     * pair (slot 0 = PA8/PA9, slot 1 = PB6/PB7) can be set. */
+    int slotIndex() const { return m_index; }
+
+    /* Make the Enable checkbox match the current pin state. Public so
+     * the cancel path in MainWindow's toggle handler can revert the
+     * checkbox after the user dismisses the "pin already in use"
+     * confirmation -- without this, the visual checkbox state would
+     * lag behind the (unchanged) pin state. */
+    void refreshEnableCheckbox() { syncEnableCheckbox(); }
+
+signals:
+    /* Fired when the user toggles the Enable checkbox. desiredEnabled
+     * == true means the user wants both encoder pins assigned to
+     * FAST_ENCODER; false means they want both released. MainWindow
+     * handles the pin manipulation (and the "pin already in use"
+     * confirmation dialog) so we don't reach across widget boundaries
+     * from inside the Encoders tab. */
+    void enableToggleRequested(int slotIndex, bool desiredEnabled);
+
 private:
     Ui::FastEncoder *ui;
     void setUiOnOff();
+    void syncEnableCheckbox();
 
     int m_index;					// 0..MAX_FAST_ENCODER_NUM-1, indexes fast_encoders[]
     QString m_inputA;				// pin gui name in slot A (e.g. "Pin A8"), empty if unset

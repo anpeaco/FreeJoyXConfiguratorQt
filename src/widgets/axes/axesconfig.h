@@ -2,6 +2,8 @@
 #define AXESCONFIG_H
 
 #include "axes.h"
+#include <QSet>
+#include <QString>
 #include <QWidget>
 
 #include "deviceconfig.h"
@@ -44,6 +46,13 @@ signals:
 
 public slots:
     void addOrDeleteMainSource(int sourceEnum, QString sourceName, bool isAdd);
+
+    /* PinConfig::fastEncoderSelected fires per-pin every time a pin is
+     * (de-)assigned to FAST_ENCODER. Maintain a count and toggle the
+     * "Encoder" entry in every axis's main-source dropdown when the
+     * count crosses 0/1 -- so Encoder is only offered when at least one
+     * fast-encoder pin is actually wired up. */
+    void fastEncoderPinChanged(const QString &pinGuiName, bool isAdd);
 private slots:
     void a2bCountCalc(int count, int previousCount);
     void hideAxis(int index, bool hide);
@@ -62,6 +71,18 @@ private:
 
     QList<Axes *> m_axesPtrList;
     QList<QCheckBox *> m_hideChBoxes;
+
+    /* Set of pin GUI names currently assigned to FAST_ENCODER in
+     * Pin Config (e.g. "A8", "A9", "B6", "B7"). Maintained by
+     * fastEncoderPinChanged. completedEncoderSlots() turns it into
+     * the list of valid encoder slots (0 = Enc 1 on PA8+PA9,
+     * 1 = Enc 2 on PB6+PB7) -- both halves must be mapped for an
+     * encoder to be considered usable. */
+    QSet<QString> m_fastEncoderPins;
+
+    /* Pure helper -- given m_fastEncoderPins, returns the slots whose
+     * A and B pins are BOTH currently assigned. */
+    QList<int> completedEncoderSlots() const;
 };
 
 #endif // AXESCONFIG_H

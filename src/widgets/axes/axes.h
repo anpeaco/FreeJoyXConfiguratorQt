@@ -35,6 +35,16 @@ public:
 
     void addOrDeleteMainSource(int sourceEnum, QString sourceName, bool isAdd);
 
+    /* Update the "Encoder N" pseudo-source rows in the main-source
+     * dropdown. Driven by AxesConfig in response to FAST_ENCODER pin
+     * assignments in Pin Config: encoderSlots is the set of encoder
+     * slot indices (0 = Enc 1 on PA8+PA9, 1 = Enc 2 on PB6+PB7) whose
+     * A and B pins are BOTH currently assigned -- a half-mapped
+     * encoder isn't usable. The wire-format channel value written to
+     * axis_config_t.channel matches the slot index, so encoder N's
+     * dropdown selection round-trips through firmware unchanged. */
+    void setEncoderSlotsAvailable(const QList<int> &encoderSlots);
+
     /* Live a2b button count for this axis, mirroring m_a2bButtonsCount.
      * Returns 0 when this axis isn't contributing buttons (e.g. function
      * disabled). Used by AxesConfig to compose its per-axis breakdown. */
@@ -135,6 +145,13 @@ private:
     AxesExtended *m_axesExtend;
 
     QVector<int> m_mainSource_enumIndex;
+
+    /* Parallel to m_mainSource_enumIndex. For rows whose enum is
+     * Encoder, holds the encoder slot (0 = Enc 1 on PA8+PA9,
+     * 1 = Enc 2 on PB6+PB7) -- this is what gets written to
+     * axis_config_t.channel on save and read back on load. For
+     * non-Encoder rows the value is 0 and unused. */
+    QVector<int> m_mainSource_channelIndex;
 
     enum
     {

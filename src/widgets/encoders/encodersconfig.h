@@ -25,6 +25,20 @@ public:
 
     void retranslateUi();
 
+    /* Pull the FastEncoder's Enable checkbox back into sync with the
+     * actual pin state. Used by MainWindow's toggle handler after the
+     * user dismisses the "pin already in use" confirmation, so the
+     * checkbox doesn't get stuck on "checked" when no pin assignment
+     * happened. */
+    void refreshFastEncoderUi(int slotIndex);
+
+signals:
+    /* Forwarded from each FastEncoder when the user toggles its
+     * Enable checkbox. MainWindow handles the cross-tab work
+     * (checking PinConfig for current usage, prompting on conflict,
+     * applying / clearing the FAST_ENCODER assignment on both pins). */
+    void fastEncoderEnableToggleRequested(int slotIndex, bool desiredEnabled);
+
 public slots:
     void encoderInputChanged(int encoder_A, int encoder_B);
     void fastEncoderSelected(const QString &pinGuiName, bool isSelected);

@@ -60,6 +60,36 @@ const QVector<int> & PinComboBox::enumIndex() const
     return m_enumIndex;
 }
 
+int PinComboBox::rowForEnum(int deviceEnum) const
+{
+    for (int i = 0; i < m_enumIndex.size(); ++i) {
+        if (m_enumIndex[i] == deviceEnum) return i;
+    }
+    return -1;
+}
+
+QString PinComboBox::currentRoleText() const
+{
+    return ui->comboBox_PinsType->currentText();
+}
+
+bool PinComboBox::setRoleByEnum(int deviceEnum)
+{
+    const int row = rowForEnum(deviceEnum);
+    if (row < 0) return false;
+    if (ui->comboBox_PinsType->currentIndex() == row) {
+        return true;     // already in the requested role; nothing to do
+    }
+    /* setCurrentIndex emits currentIndexChanged on the QComboBox,
+     * which fires PinComboBox::indexChanged -> currentIndexChanged
+     * (this widget's own signal) and feeds the existing
+     * pinIndexChanged dispatch in PinConfig. So all downstream wiring
+     * (fastEncoderSelected, axesSourceChanged, pin-type-limit, etc.)
+     * runs exactly as it would for a user-driven role change. */
+    ui->comboBox_PinsType->setCurrentIndex(row);
+    return true;
+}
+
 uint PinComboBox::interactCount() const
 {
     return m_interactCount;

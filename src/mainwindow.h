@@ -97,6 +97,18 @@ private slots:
 
     void on_toolButton_ConfigsDir_clicked();
 
+    /* Bridge between the Encoders tab "Enable" checkbox and the Pin
+     * Config tab. Triggered by EncodersConfig::fastEncoderEnableToggleRequested
+     * (which is itself forwarded from FastEncoder's Enable checkbox).
+     * Inspects the pin pair for the requested encoder slot, prompts on
+     * conflict (a pin is currently assigned to something else), then
+     * applies FAST_ENCODER (or NOT_USED for the disable case) to both
+     * pins. The existing pinIndexChanged dispatch in PinConfig
+     * propagates the change back through axesSourceChanged,
+     * fastEncoderSelected (-> FastEncoder labels + checkbox sync),
+     * and the limit/highlight logic. */
+    void onFastEncoderEnableToggleRequested(int slotIndex, bool desiredEnabled);
+
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     void keyReleaseEvent(QKeyEvent *event) override;
@@ -132,6 +144,17 @@ private:
      * latter via the second hideConnectDeviceInfo call from the main
      * worker loop's empty-list path -- see comment in that slot). */
     bool m_postWriteRestarting = false;
+
+    /* Cached default text for the Read / Write Config buttons, captured
+     * once in the constructor before any code path mutates them. We
+     * previously used `static QString button_default_text =
+     * ui->pushButton_*->text();` inside configSent / configReceived, but
+     * because `static` initialises on first call, the Write button's
+     * "default" got captured as "Backup OK, writing..." (set by the
+     * pre-write backup branch before configSent's first run), leaving
+     * the button stuck on that label after every subsequent write. */
+    QString m_writeButtonDefaultText;
+    QString m_readButtonDefaultText;
 
     /* 5-second grace window after Write Config during which the
      * dropdown does NOT auto-select index 0 if the post-write rebuild

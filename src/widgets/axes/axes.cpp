@@ -35,14 +35,18 @@ Axes::Axes(int axisNumber, QWidget *parent)
     m_axisNumber = axisNumber;
     ui->groupBox_AxixName->setTitle(axesList()[m_axisNumber].guiName);
 
-    // add main source. Cache the original display text under each
-    // enum so markSourcesInUse() can append/restore "(used by X)"
-    // suffixes without compounding.
-    for (int i = 0; i < 2; ++i) {
-        ui->comboBox_AxisSource1->addItem(m_axesPinList[i].guiName);
-        m_mainSource_enumIndex.push_back(m_axesPinList[i].deviceEnumIndex);
-        m_baseDisplayTextByEnum.insert(m_axesPinList[i].deviceEnumIndex, m_axesPinList[i].guiName);
-    }
+    // Add the "None" placeholder unconditionally. The "Encoder"
+    // pseudo-source (m_axesPinList[1]) is added on demand by
+    // setEncoderSourceVisible() once Pin Config reports at least one
+    // FAST_ENCODER pin assignment -- selecting Encoder when nothing is
+    // wired up would point an axis at a peripheral that doesn't exist.
+    // Cache the original display text under each enum so
+    // markSourcesInUse() can append/restore "(used by X)" suffixes
+    // without compounding.
+    ui->comboBox_AxisSource1->addItem(m_axesPinList[0].guiName);
+    m_mainSource_enumIndex.push_back(m_axesPinList[0].deviceEnumIndex);
+    m_mainSource_channelIndex.push_back(0);
+    m_baseDisplayTextByEnum.insert(m_axesPinList[0].deviceEnumIndex, m_axesPinList[0].guiName);
 
     // set a2b  // duplicated work vs. readFromConfig()?
     ui->spinBox_A2bCount->setMaximum(MAX_A2B_BUTTONS);
@@ -107,6 +111,7 @@ void Axes::addOrDeleteMainSource(int sourceEnum, QString sourceName, bool isAdd)
         const QString baseText = m_axesPinList[pinIdx].guiName + " - " + sourceName;
         ui->comboBox_AxisSource1->addItem(baseText);
         m_mainSource_enumIndex.push_back(m_axesPinList[pinIdx].deviceEnumIndex);
+        m_mainSource_channelIndex.push_back(0);
         m_baseDisplayTextByEnum.insert(sourceEnum, baseText);
     } else {
         for (int i = 0; i < m_mainSource_enumIndex.size(); ++i) {
@@ -116,11 +121,67 @@ void Axes::addOrDeleteMainSource(int sourceEnum, QString sourceName, bool isAdd)
                 }
                 ui->comboBox_AxisSource1->removeItem(i);
                 m_mainSource_enumIndex.erase(m_mainSource_enumIndex.begin() + i);
+                m_mainSource_channelIndex.erase(m_mainSource_channelIndex.begin() + i);
                 m_baseDisplayTextByEnum.remove(sourceEnum);
                 break;
             }
         }
     }
+}
+
+void Axes::setEncoderSlotsAvailable(const QList<int> &encoderSlots)
+{
+    /* Snapshot the user's current selection so we can restore it after
+     * rebuilding the encoder rows. We track both the enum and (for
+     * Encoder rows) the channel slot, since two Encoder rows share
+     * the same enum and only differ by channel. */
+    const int prevIdx = ui->comboBox_AxisSource1->currentIndex();
+    int prevEnum = None;
+    int prevChannel = 0;
+    if (prevIdx >= 0 && prevIdx < m_mainSource_enumIndex.size()) {
+        prevEnum = m_mainSource_enumIndex[prevIdx];
+        prevChannel = m_mainSource_channelIndex[prevIdx];
+    }
+
+    /* Strip every existing Encoder row (potentially 0, 1, or 2 of
+     * them). Iterate from the end so removals don't shift the indices
+     * of rows still to be examined. */
+    for (int i = m_mainSource_enumIndex.size() - 1; i >= 0; --i) {
+        if (m_mainSource_enumIndex[i] == Encoder) {
+            ui->comboBox_AxisSource1->removeItem(i);
+            m_mainSource_enumIndex.erase(m_mainSource_enumIndex.begin() + i);
+            m_mainSource_channelIndex.erase(m_mainSource_channelIndex.begin() + i);
+        }
+    }
+
+    /* Insert one row per available encoder slot, immediately after
+     * "None" (index 0). Insertion order matches the slot order in
+     * encoderSlots so the visual ordering is stable -- Enc 1 above
+     * Enc 2 when both are present. */
+    int insertAt = 1;
+    for (int slot : encoderSlots) {
+        const QString label = tr("Encoder %1").arg(slot + 1);
+        ui->comboBox_AxisSource1->insertItem(insertAt, label);
+        m_mainSource_enumIndex.insert(insertAt, Encoder);
+        m_mainSource_channelIndex.insert(insertAt, slot);
+        ++insertAt;
+    }
+
+    /* Restore the prior selection where possible. For non-Encoder
+     * sources the enum is unique, so a plain enum match works. For
+     * Encoder, also match the channel -- if the user's previously
+     * selected encoder slot is no longer available the axis falls
+     * back to None (index 0), and the existing mainSourceIndexChanged
+     * machinery (Output checkbox, refreshSourceUsage) takes care of
+     * the rest via the setCurrentIndex side effect. */
+    int restoreIdx = -1;
+    for (int i = 0; i < m_mainSource_enumIndex.size(); ++i) {
+        if (m_mainSource_enumIndex[i] != prevEnum) continue;
+        if (prevEnum == Encoder && m_mainSource_channelIndex[i] != prevChannel) continue;
+        restoreIdx = i;
+        break;
+    }
+    ui->comboBox_AxisSource1->setCurrentIndex(restoreIdx >= 0 ? restoreIdx : 0);
 }
 
 void Axes::mainSourceIndexChanged(int index)
@@ -355,7 +416,23 @@ void Axes::readFromConfig()
     // output, inverted
     ui->checkBox_Output->setChecked(axCfg->out_enabled);
     ui->checkBox_Inverted->setChecked(axCfg->inverted);
-    int index = Converter::EnumToIndex(axCfg->source_main, m_mainSource_enumIndex);
+    /* Source row lookup. For Encoder we have to also match the channel
+     * (= encoder slot), since rows for Encoder 1 / Encoder 2 share the
+     * same source_main enum value and only differ by axCfg->channel.
+     * For everything else there's at most one matching row, so the
+     * channel comparison is a no-op (channel is 0 for non-Encoder rows). */
+    int index = -1;
+    if (axCfg->source_main == Encoder) {
+        for (int i = 0; i < m_mainSource_enumIndex.size(); ++i) {
+            if (m_mainSource_enumIndex[i] == Encoder &&
+                m_mainSource_channelIndex[i] == axCfg->channel) {
+                index = i;
+                break;
+            }
+        }
+    } else {
+        index = Converter::EnumToIndex(axCfg->source_main, m_mainSource_enumIndex);
+    }
     if (index == -1) index = 0;
     ui->comboBox_AxisSource1->setCurrentIndex(index);
     // calibration
@@ -408,6 +485,17 @@ void Axes::writeToConfig()
         const int idx = ui->comboBox_AxisSource1->currentIndex();
         if (idx >= 0 && idx < m_mainSource_enumIndex.size()) {
             axCfg->source_main = m_mainSource_enumIndex[idx];
+            /* axis_config_t.channel is the encoder slot when source is
+             * Encoder (read by analog.c::SOURCE_ENCODER branch as the
+             * encoders_state[] index). Write it for Encoder rows so
+             * Enc 1 vs Enc 2 round-trips cleanly; leave it at 0
+             * otherwise so we don't clobber the field for other
+             * sources that don't use it. */
+            if (axCfg->source_main == Encoder) {
+                axCfg->channel = m_mainSource_channelIndex[idx];
+            } else {
+                axCfg->channel = 0;
+            }
         }
     }
     // calibration

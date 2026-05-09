@@ -93,6 +93,29 @@ PinConfig::~PinConfig()
     delete ui;
 }
 
+bool PinConfig::setPinRole(int pin, int deviceEnum)
+{
+    /* Pin enum values start at PA_0 = 1 and m_pinCBoxPtrList[i]
+     * corresponds to pin number (i+1), so subtract 1 to index in. */
+    const int idx = pin - 1;
+    if (idx < 0 || idx >= m_pinCBoxPtrList.size()) return false;
+    return m_pinCBoxPtrList[idx]->setRoleByEnum(deviceEnum);
+}
+
+int PinConfig::pinRole(int pin) const
+{
+    const int idx = pin - 1;
+    if (idx < 0 || idx >= m_pinCBoxPtrList.size()) return NOT_USED;
+    return m_pinCBoxPtrList[idx]->currentDevEnum();
+}
+
+QString PinConfig::pinRoleText(int pin) const
+{
+    const int idx = pin - 1;
+    if (idx < 0 || idx >= m_pinCBoxPtrList.size()) return QString();
+    return m_pinCBoxPtrList[idx]->currentRoleText();
+}
+
 void PinConfig::retranslateUi()
 {
     ui->retranslateUi(this);

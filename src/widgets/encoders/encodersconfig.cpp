@@ -16,6 +16,8 @@ EncodersConfig::EncodersConfig(QWidget *parent) :
         FastEncoder *fe = new FastEncoder(i, this);
         ui->layoutV_FastEncoders->addWidget(fe);
         m_fastEncodersPtrList.append(fe);
+        connect(fe, &FastEncoder::enableToggleRequested,
+                this, &EncodersConfig::fastEncoderEnableToggleRequested);
     }
 
     // spawn slow-encoder rows below
@@ -41,6 +43,12 @@ void EncodersConfig::retranslateUi()
     for (int i = 0; i < m_encodersPtrList.size(); ++i) {
         m_encodersPtrList[i]->retranslateUi();
     }
+}
+
+void EncodersConfig::refreshFastEncoderUi(int slotIndex)
+{
+    if (slotIndex < 0 || slotIndex >= m_fastEncodersPtrList.size()) return;
+    m_fastEncodersPtrList[slotIndex]->refreshEnableCheckbox();
 }
 
 void EncodersConfig::fastEncoderSelected(const QString &pinGuiName, bool isSelected)

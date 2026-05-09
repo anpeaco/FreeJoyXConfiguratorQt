@@ -48,6 +48,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->setupUi(this);
 
+    /* Cache the buttons' default text BEFORE any code path mutates
+     * them. configSent / configReceived restore the button to this
+     * after their transient "Sent" / "Received" / "Error" feedback. */
+    m_writeButtonDefaultText = ui->pushButton_WriteConfig->text();
+    m_readButtonDefaultText = ui->pushButton_ReadConfig->text();
+
     QMainWindow::setWindowIcon(QIcon(":/Images/icon-32.png"));
 
     // Post-write grace window: started from on_pushButton_WriteConfig_clicked
@@ -212,6 +218,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_buttonConfig, &ButtonConfig::encoderInputChanged, m_encoderConfig, &EncodersConfig::encoderInputChanged);
     // fast encoder
     connect(m_pinConfig, &PinConfig::fastEncoderSelected, m_encoderConfig, &EncodersConfig::fastEncoderSelected);
+    // gate the "Encoder" main-source row in the Axes tab on whether
+    // any FAST_ENCODER pin is currently mapped in Pin Config
+    connect(m_pinConfig, &PinConfig::fastEncoderSelected, m_axesConfig, &AxesConfig::fastEncoderPinChanged);
+    // Encoders-tab Enable checkbox -> programmatic pin-pair assignment in PinConfig
+    connect(m_encoderConfig, &EncodersConfig::fastEncoderEnableToggleRequested,
+            this, &MainWindow::onFastEncoderEnableToggleRequested);
     // shift registers
     connect(m_pinConfig, &PinConfig::shiftRegSelected, m_shiftRegConfig, &ShiftRegistersConfig::shiftRegSelected);
     // a2b count
@@ -557,8 +569,11 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
                 ui->pushButton_WriteConfig->setDisabled(true);
                 setConfigTabsEnabled(true);
                 freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-warning");
-                ui->label_DeviceStatus->setText(
-                    tr("Legacy firmware (%1) — read to import").arg(verFmt));
+                // Just "Legacy" -- the firmware version is already
+                // shown in the device-info card below the dropdown,
+                // and the warning role colour signals the legacy
+                // state on its own.
+                ui->label_DeviceStatus->setText(tr("Legacy"));
             } else {
                 blockWRConfigToDevice(true);
                 setConfigTabsEnabled(false);
@@ -922,7 +937,6 @@ void MainWindow::legacyConfigMigrated(uint16_t oldFirmwareVersion)
 
 void MainWindow::configReceived(bool success)
 {
-    static QString button_default_text = ui->pushButton_ReadConfig->text();
 
     /* Pre-write backup branch (THOUGHTS #2): on_pushButton_WriteConfig
      * fired this Read silently to capture what was on the device
@@ -951,7 +965,7 @@ void MainWindow::configReceived(bool success)
             if (rc != QMessageBox::Yes) {
                 /* Restore staged edits and unblock; bail out. */
                 gEnv.pDeviceConfig->config = m_pendingWriteConfig;
-                ui->pushButton_WriteConfig->setText(button_default_text);
+                ui->pushButton_WriteConfig->setText(m_writeButtonDefaultText);
                 if (ui->comboBox_HidDeviceList->currentIndex() >= 0) {
                     blockWRConfigToDevice(false);
                 }
@@ -983,7 +997,7 @@ void MainWindow::configReceived(bool success)
         freejoy_style::setRole(ui->pushButton_ReadConfig, "feedback", "success");
         QTimer::singleShot(1500, this, [&] {
             freejoy_style::clearRole(ui->pushButton_ReadConfig, "feedback");
-            ui->pushButton_ReadConfig->setText(button_default_text);
+            ui->pushButton_ReadConfig->setText(m_readButtonDefaultText);
             if (ui->comboBox_HidDeviceList->currentIndex() >= 0){
                 blockWRConfigToDevice(false);
             }
@@ -993,7 +1007,7 @@ void MainWindow::configReceived(bool success)
         freejoy_style::setRole(ui->pushButton_ReadConfig, "feedback", "error");
         QTimer::singleShot(1500, this, [&] {
             freejoy_style::clearRole(ui->pushButton_ReadConfig, "feedback");
-            ui->pushButton_ReadConfig->setText(button_default_text);
+            ui->pushButton_ReadConfig->setText(m_readButtonDefaultText);
             if (ui->comboBox_HidDeviceList->currentIndex() >= 0) {
                 blockWRConfigToDevice(false);
             }
@@ -1042,7 +1056,6 @@ void MainWindow::configReceived(bool success)
 // slot after sending the config
 void MainWindow::configSent(bool success)
 {
-    static QString button_default_text = ui->pushButton_WriteConfig->text();
     // curves pointer activated
     m_axesCurvesConfig->deviceStatus(true);
 
@@ -1053,7 +1066,7 @@ void MainWindow::configSent(bool success)
 
         QTimer::singleShot(1500, this, [&] {
             freejoy_style::clearRole(ui->pushButton_WriteConfig, "feedback");
-            ui->pushButton_WriteConfig->setText(button_default_text);
+            ui->pushButton_WriteConfig->setText(m_writeButtonDefaultText);
             if (ui->comboBox_HidDeviceList->currentIndex() >= 0){
                 blockWRConfigToDevice(false);
             }
@@ -1073,7 +1086,7 @@ void MainWindow::configSent(bool success)
 
         QTimer::singleShot(1500, this, [&] {
             freejoy_style::clearRole(ui->pushButton_WriteConfig, "feedback");
-            ui->pushButton_WriteConfig->setText(button_default_text);
+            ui->pushButton_WriteConfig->setText(m_writeButtonDefaultText);
             if (ui->comboBox_HidDeviceList->currentIndex() >= 0){
                 blockWRConfigToDevice(false);
             }
@@ -1380,6 +1393,89 @@ void MainWindow::doActualWriteToDevice()
     m_hidDeviceWorker->sendConfigToDevice(
         gEnv.pDeviceConfig->config.vid,
         gEnv.pDeviceConfig->config.pid);
+}
+
+void MainWindow::onFastEncoderEnableToggleRequested(int slotIndex, bool desiredEnabled)
+{
+    /* Slot -> pin pair, board-independent on F103/F411 (TIM1 / TIM4).
+     * If the future brings additional encoder slots (Enc 3 on TIM2 etc.)
+     * this is the place to extend. */
+    int pinA = -1, pinB = -1;
+    if (slotIndex == 0) {
+        pinA = PA_8;
+        pinB = PA_9;
+    } else if (slotIndex == 1) {
+        pinA = PB_6;
+        pinB = PB_7;
+    } else {
+        m_encoderConfig->refreshFastEncoderUi(slotIndex);
+        return;
+    }
+
+    if (desiredEnabled) {
+        /* Conflict check on the ON path -- if either pin is in use for
+         * something other than NOT_USED or already-FAST_ENCODER, ask the
+         * user before overwriting. We list the actual roles in the
+         * dialog so the cost of the change is visible. */
+        const int roleA = m_pinConfig->pinRole(pinA);
+        const int roleB = m_pinConfig->pinRole(pinB);
+        const bool conflictA = (roleA != NOT_USED && roleA != FAST_ENCODER);
+        const bool conflictB = (roleB != NOT_USED && roleB != FAST_ENCODER);
+        if (conflictA || conflictB) {
+            /* Per-slot pin labels -- slot 0 is on PA8/PA9 (TIM1), slot 1
+             * is on PB6/PB7 (TIM4). Hard-coding by slot avoids a generic
+             * "pin enum -> short name" lookup just for this dialog. */
+            const QString pinALabel = (slotIndex == 0) ? QStringLiteral("A8") : QStringLiteral("B6");
+            const QString pinBLabel = (slotIndex == 0) ? QStringLiteral("A9") : QStringLiteral("B7");
+            QStringList lines;
+            if (conflictA) {
+                lines << tr("Pin %1 currently: <b>%2</b>")
+                             .arg(pinALabel, m_pinConfig->pinRoleText(pinA));
+            }
+            if (conflictB) {
+                lines << tr("Pin %1 currently: <b>%2</b>")
+                             .arg(pinBLabel, m_pinConfig->pinRoleText(pinB));
+            }
+            const QMessageBox::StandardButton rc = QMessageBox::question(
+                this,
+                tr("Reassign pins to Fast Encoder %1?").arg(slotIndex + 1),
+                tr("<p>Enabling Fast Encoder %1 needs both encoder pins free. "
+                   "The following pin%2 currently held other role%2:</p>"
+                   "<p>%3</p>"
+                   "<p>Replace with FAST_ENCODER?</p>")
+                    .arg(slotIndex + 1)
+                    .arg(lines.size() == 1 ? "" : "s")
+                    .arg(lines.join(QStringLiteral("<br>"))),
+                QMessageBox::Yes | QMessageBox::Cancel,
+                QMessageBox::Cancel);
+            if (rc != QMessageBox::Yes) {
+                m_encoderConfig->refreshFastEncoderUi(slotIndex);
+                return;
+            }
+        }
+        const bool okA = m_pinConfig->setPinRole(pinA, FAST_ENCODER);
+        const bool okB = m_pinConfig->setPinRole(pinB, FAST_ENCODER);
+        if (!okA || !okB) {
+            QMessageBox::warning(
+                this,
+                tr("Fast Encoder %1 unavailable").arg(slotIndex + 1),
+                tr("This board doesn't expose FAST_ENCODER as a legal role "
+                   "on at least one of the required pins. The encoder "
+                   "wasn't enabled."));
+        }
+        m_encoderConfig->refreshFastEncoderUi(slotIndex);
+    } else {
+        /* Disable path: set both pins to NOT_USED. No prompt -- the
+         * intent is unambiguous and the action is fully reversible by
+         * toggling the checkbox back on. */
+        if (m_pinConfig->pinRole(pinA) == FAST_ENCODER) {
+            m_pinConfig->setPinRole(pinA, NOT_USED);
+        }
+        if (m_pinConfig->pinRole(pinB) == FAST_ENCODER) {
+            m_pinConfig->setPinRole(pinB, NOT_USED);
+        }
+        m_encoderConfig->refreshFastEncoderUi(slotIndex);
+    }
 }
 
 QString MainWindow::writePreWriteDeviceBackup()

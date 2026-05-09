@@ -18,6 +18,17 @@ FastEncoder::FastEncoder(int fastEncoderIndex, QWidget *parent)
         ui->comboBox_EncoderType->addItem(m_encoderTypeList[i].guiName);
     }
 
+    /* The Enable checkbox is *user-facing only*; the persistent state
+     * (whether this encoder is enabled) is derived from whether both
+     * pins are mapped to FAST_ENCODER in Pin Config. We forward toggles
+     * upstream so MainWindow can do the pin-replace prompt + assignment;
+     * setInput / clearInput then drives the checkbox back to match the
+     * resulting pin state. */
+    connect(ui->checkBox_Enable, &QCheckBox::clicked,
+            this, [this](bool checked) {
+        emit enableToggleRequested(m_index, checked);
+    });
+
     setUiOnOff();
 }
 
@@ -63,8 +74,37 @@ bool FastEncoder::hasBothInputs() const
 void FastEncoder::setUiOnOff()
 {
     const bool on = hasBothInputs();
+    /* Children except the Enable checkbox follow the on-state -- when
+     * the encoder isn't fully wired the type dropdown and pin labels
+     * are read-only. The checkbox stays interactive so the user can
+     * always toggle the encoder on (which is the whole point of this
+     * affordance). */
     for (auto&& child : findChildren<QWidget *>()) {
+        if (child == ui->checkBox_Enable) continue;
         child->setEnabled(on);
+    }
+    syncEnableCheckbox();
+}
+
+void FastEncoder::syncEnableCheckbox()
+{
+    /* Reflect pin state in the checkbox without re-firing the toggle
+     * signal -- otherwise pin updates from Pin Config would loop back
+     * through enableToggleRequested. Tristate is set when exactly one
+     * of the two pins is mapped (legacy / hand-edited config); the user
+     * can click to either complete or clear the pair. */
+    QSignalBlocker bl(ui->checkBox_Enable);
+    const bool aSet = !m_inputA.isEmpty();
+    const bool bSet = !m_inputB.isEmpty();
+    if (aSet && bSet) {
+        ui->checkBox_Enable->setTristate(false);
+        ui->checkBox_Enable->setCheckState(Qt::Checked);
+    } else if (!aSet && !bSet) {
+        ui->checkBox_Enable->setTristate(false);
+        ui->checkBox_Enable->setCheckState(Qt::Unchecked);
+    } else {
+        ui->checkBox_Enable->setTristate(true);
+        ui->checkBox_Enable->setCheckState(Qt::PartiallyChecked);
     }
 }
 

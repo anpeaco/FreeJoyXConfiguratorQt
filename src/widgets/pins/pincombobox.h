@@ -75,6 +75,27 @@ public:
 
     void setIndexStatus(int index, bool status);
     void resetPin();
+
+    /* Programmatically set this pin's role by device-enum value.
+     * Returns true if the enum corresponds to an item currently in
+     * the dropdown for this pin (the legal-roles list varies per pin
+     * and per active interactions). On success the underlying
+     * QComboBox emits currentIndexChanged, so all the existing
+     * propagation (axesSourceChanged, fastEncoderSelected, etc.)
+     * fires exactly as if the user had clicked the dropdown. */
+    bool setRoleByEnum(int deviceEnum);
+
+    /* Look up an enum's row in this pin's current dropdown list. -1
+     * if the role isn't legal for this pin. Useful for "is FAST_ENCODER
+     * even available on PA8?" guards before attempting a programmatic
+     * assignment. */
+    int rowForEnum(int deviceEnum) const;
+
+    /* Friendly text for the currently-selected role (e.g. "Not Used",
+     * "Fast Encoder"). Used by callers that want to surface the
+     * existing role in a confirmation dialog without reaching into
+     * PinComboBox internals. */
+    QString currentRoleText() const;
     void setIndex_iteraction(int index, int senderIndex);
     void initializationPins(uint pin);
     void readFromConfig(uint pin);
