@@ -239,6 +239,8 @@ MainWindow::MainWindow(QWidget *parent)
     // axes source changed//axesSourceChanged
     connect(m_pinConfig, &PinConfig::axesSourceChanged, m_axesConfig, &AxesConfig::addOrDeleteMainSource);
     // language changed
+    connect(m_advSettings, &AdvancedSettings::showAllConnectedDevicesRequested,
+            this, &MainWindow::onShowAllConnectedDevicesRequested);
     connect(m_advSettings, &AdvancedSettings::languageChanged, this, &MainWindow::languageChanged);
     // theme changed
     connect(m_advSettings, &AdvancedSettings::themeChanged, this, &MainWindow::themeChanged);
@@ -1820,6 +1822,60 @@ void MainWindow::doActualWriteToDevice()
     m_hidDeviceWorker->sendConfigToDevice(
         gEnv.pDeviceConfig->config.vid,
         gEnv.pDeviceConfig->config.pid);
+}
+
+void MainWindow::onShowAllConnectedDevicesRequested()
+{
+    if (!m_hidDeviceWorker) return;
+
+    /* Use excludeSelectedDevice=false so the selected device is in the
+     * dump too -- the user wants the COMPLETE picture, not the
+     * collision-set view. We then mark the selected entry visually so
+     * it's obvious which is which. */
+    const auto cs = m_hidDeviceWorker->connectedDevices(/*excludeSelected=*/false);
+
+    /* Identify the selected device by serial so we can flag it in the
+     * list -- match what the conflict-pill exclusion uses. */
+    QString selectedSerial;
+    if (gEnv.pDeviceConfig) {
+        /* paramsReport doesn't carry serial; pull from m_currentDeviceSerial
+         * which is captured at setDeviceInfo time. */
+        selectedSerial = m_currentDeviceSerial;
+    }
+
+    QString body;
+    body += QStringLiteral("<table cellpadding='4'>");
+    body += QStringLiteral(
+        "<tr><th align='left'></th>"
+        "<th align='left'>Name</th>"
+        "<th align='left'>VID:PID</th>"
+        "<th align='left'>Serial</th></tr>");
+    if (cs.isEmpty()) {
+        body += QStringLiteral("<tr><td colspan='4'><i>")
+              + tr("No FreeJoy devices detected.")
+              + QStringLiteral("</i></td></tr>");
+    }
+    for (const auto &c : cs) {
+        const QString vidStr = QString::number(c.vid, 16).toUpper().rightJustified(4, '0');
+        const QString pidStr = QString::number(c.pid, 16).toUpper().rightJustified(4, '0');
+        const bool isSelected = !selectedSerial.isEmpty() &&
+                                c.serialHex.compare(selectedSerial, Qt::CaseInsensitive) == 0;
+        const QString marker = isSelected ? QStringLiteral("&#9658;") : QString();   /* right-arrow */
+        const QString nameCell = c.name.isEmpty() ? tr("(unnamed)") : c.name.toHtmlEscaped();
+        body += QStringLiteral("<tr><td>%1</td><td><b>%2</b></td><td>%3:%4</td><td>%5</td></tr>")
+            .arg(marker, nameCell, vidStr, pidStr, c.serialHex);
+    }
+    body += QStringLiteral("</table>");
+    body += QStringLiteral("<p style='color:#666666;font-size:small'>");
+    body += tr("&#9658; marks the device currently selected in the dropdown.");
+    body += QStringLiteral("</p>");
+
+    QMessageBox box(this);
+    box.setWindowTitle(tr("Connected FreeJoy devices"));
+    box.setTextFormat(Qt::RichText);
+    box.setText(body);
+    box.setStandardButtons(QMessageBox::Ok);
+    box.exec();
 }
 
 void MainWindow::refreshOtherConnectedDevices()

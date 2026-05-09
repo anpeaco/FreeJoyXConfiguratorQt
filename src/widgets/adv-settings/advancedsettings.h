@@ -7,6 +7,7 @@
 QT_BEGIN_NAMESPACE
 class QFile;
 class QLabel;
+class QPushButton;
 QT_END_NAMESPACE
 
 namespace Ui {
@@ -57,6 +58,11 @@ signals:
 
     void fontChanged();
 
+    /* User clicked "Show all connected devices". MainWindow handles
+     * it -- it has the full device list (including the selected
+     * device, which AdvancedSettings's "other" snapshot excludes). */
+    void showAllConnectedDevicesRequested();
+
 private slots:
     void on_pushButton_LangEnglish_clicked();
     void on_pushButton_LangRussian_clicked();
@@ -101,6 +107,11 @@ private:
     QWidget     *m_pidConflictRow   = nullptr;
     QLabel      *m_pidConflictIcon  = nullptr;
     QLabel      *m_pidConflictLabel = nullptr;
+
+    /* Diagnostic button beneath the PID input -- always visible. Lets
+     * the user dump the full connected-FreeJoy list when a phantom
+     * conflict shows up they can't otherwise account for. */
+    QPushButton *m_showAllDevicesButton = nullptr;
 };
 
 #endif // ADVANCEDSETTINGS_H

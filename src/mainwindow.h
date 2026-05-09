@@ -110,6 +110,12 @@ private slots:
      * and the limit/highlight logic. */
     void onFastEncoderEnableToggleRequested(int slotIndex, bool desiredEnabled);
 
+    /* Diagnostic dump: shows every detected FreeJoy device with full
+     * VID:PID, name, serial, and an indicator marking the currently-
+     * selected one. Triggered by the "Show all connected devices"
+     * button on the Advanced Settings tab. */
+    void onShowAllConnectedDevicesRequested();
+
     /* Push the currently-connected FreeJoy device VID/PIDs (excluding
      * the selected device) into AdvancedSettings so the conflict pill
      * stays in sync. Called whenever the device list changes. */

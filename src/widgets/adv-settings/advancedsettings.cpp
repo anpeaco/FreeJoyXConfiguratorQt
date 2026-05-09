@@ -98,6 +98,13 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
     rowLayout->addWidget(m_pidConflictLabel, 1);
     m_pidConflictRow->setVisible(false);
 
+    m_showAllDevicesButton = new QPushButton(tr("Show all connected devices"), this);
+    m_showAllDevicesButton->setToolTip(tr(
+        "Dump every detected FreeJoy device's USB identity (VID:PID, "
+        "name, serial). Useful for diagnosing phantom PID conflicts."));
+    connect(m_showAllDevicesButton, &QPushButton::clicked,
+            this, &AdvancedSettings::showAllConnectedDevicesRequested);
+
     /* Attach to the OUTER "USB settings" grid (gridLayout_3) which has
      * 7 columns; gridLayout_2 inside it is the narrow VID/PID column.
      * We span all columns so the warning text gets the full group-box
@@ -105,7 +112,9 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
     QGridLayout *outerGrid = findChild<QGridLayout *>(QStringLiteral("gridLayout_3"));
     if (outerGrid) {
         const int row = outerGrid->rowCount();
-        outerGrid->addWidget(m_pidConflictRow, row, 0, 1, outerGrid->columnCount());
+        outerGrid->addWidget(m_pidConflictRow,       row,     0, 1, outerGrid->columnCount());
+        outerGrid->addWidget(m_showAllDevicesButton, row + 1, 0, 1, outerGrid->columnCount(),
+                             Qt::AlignLeft);
     }
 
     /* Live conflict check on every PID edit. */
