@@ -605,28 +605,30 @@ static void reverse_v1770_from_current(const dev_config_t &cur, ReverseResult &r
  * ============================================================================
  */
 
-bool canReverseMigrate(uint16_t targetVersion)
+bool canReverseMigrate(uint16_t /*targetVersion*/)
 {
-    switch (targetVersion & FW_MASK) {
-        /* Upstream FreeJoy targets are temporarily disabled.
-         *
-         * Wire-layout parity is verified against upstream's actual
-         * headers at compile time (see upstream_layout_check.cpp), but
-         * a session 2026-05-09 test on a v1.7.1 device bricked the
-         * board after a write that should have been valid. Until we
-         * identify what off-layout factor made the firmware refuse to
-         * re-enumerate (build-letter stamp difference? a pin value the
-         * upstream firmware rejects?), the Write button stays disabled
-         * for upstream-flavored devices. Forward (Read) migration is
-         * unaffected -- canMigrate still covers these targets. */
-        // case 0x1700:  /* upstream v1.7.0 -- DISABLED pending root cause */
-        // case 0x1710:  /* upstream v1.7.1 -- DISABLED pending root cause */
-        // case 0x1730:  /* upstream v1.7.3 -- DISABLED pending root cause */
-        case 0x1770:  /* FreeJoyX v1.7.7 -- previous outgoing FreeJoyX shape */
-            return true;
-        default:
-            return false;
-    }
+    /* All reverse-migrate targets are temporarily disabled.
+     *
+     * Wire-layout parity is verified against upstream's actual headers
+     * at compile time (see upstream_layout_check.cpp), and the v1770
+     * archive is byte-identical to our previous outgoing shape. So the
+     * static layout is correct. But session 2026-05-09 testing bricked
+     * a v1.7.1 BluePill on a Read+edit+Write cycle the layout was
+     * supposed to handle, and we haven't identified what value the
+     * device firmware refused. Until we have a documented root cause
+     * AND hardware-verified all four target versions, the Write button
+     * stays disabled on every legacy device. Forward (Read) migration
+     * is unaffected -- canMigrate still covers all four mask groups. */
+    return false;
+
+    /* Re-enable individually as each target is verified. Original
+     * dispatch table preserved here as a comment so we don't lose
+     * track of the supported set:
+     *   case 0x1700:  upstream v1.7.0 (shares shape with v1.7.1)
+     *   case 0x1710:  upstream v1.7.1
+     *   case 0x1730:  upstream v1.7.3 (last upstream release)
+     *   case 0x1770:  FreeJoyX v1.7.7 (previous outgoing)
+     */
 }
 
 ReverseResult reverseMigrate(const dev_config_t &cur, uint16_t targetVersion)
