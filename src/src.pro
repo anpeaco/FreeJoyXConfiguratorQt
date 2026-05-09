@@ -92,6 +92,7 @@ SOURCES += \
     widgets/shifts-timers/shiftstimersconfig.cpp \
     legacy/legacy_migrator.cpp \
     legacy/legacy_reverse_migrator.cpp \
+    legacy/upstream_layout_check.cpp \
     firmwarelibrary.cpp
 
 HEADERS += \
