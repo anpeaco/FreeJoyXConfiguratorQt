@@ -81,14 +81,18 @@ Axes::Axes(int axisNumber, QWidget *parent)
     Q_ASSERT(ui->groupBox_AxixName->objectName() == QStringLiteral("groupBox_AxixName"));
 
     /* Detect button toggle drives AxesConfig's auto-detect arming.
-     * Checkable button is the right primitive: explicit click = "I want
-     * to bind this axis to whatever I rotate next", and the checked
-     * state itself communicates "armed" to the user (no extra status
-     * label needed). AxesConfig owns the baseline + watcher and calls
-     * setDetectArmed(false) to clear the visual on success/timeout. */
+     * Checkable QPushButton + iconset (target.svg) means the button's
+     * "pressed in" checked state is the only visual armed indicator
+     * needed -- no text swap (text would expand the fixed-size icon
+     * button into something taller than the row). Tooltip swap gives
+     * the user readable confirmation on hover. AxesConfig owns the
+     * baseline + watcher and calls setDetectArmed(false) to clear the
+     * visual on success/timeout. */
     connect(ui->pushButton_DetectSource, &QPushButton::toggled,
             this, [this](bool checked) {
-        ui->pushButton_DetectSource->setText(checked ? tr("Cancel") : tr("Detect"));
+        ui->pushButton_DetectSource->setToolTip(checked
+            ? tr("Armed -- rotate any connected axis to assign its source. Click again to cancel.")
+            : tr("Click then rotate any connected axis to set its source pin as this axis's source. Click again to cancel. Only works for pins already bound to some axis -- the firmware reports raw values per-axis, not per-pin."));
         emit detectSourceRequested(m_axisNumber, checked);
     });
 
@@ -202,13 +206,15 @@ void Axes::setSourceByEnum(int sourceEnum)
 
 void Axes::setDetectArmed(bool armed)
 {
-    /* Block toggled() so the visual sync from AxesConfig (e.g.
-     * disarming a previously-armed axis when the user clicks Detect
-     * on a different one, or restoring after a successful detection)
-     * doesn't loop back into onDetectToggled and re-arm the watcher. */
+    /* Block toggled() so the visual sync from AxesConfig (disarming
+     * a previously-armed axis when the user clicks Detect on a
+     * different one, or restoring after a successful detection or
+     * timeout) doesn't loop back into onDetectToggled. */
     QSignalBlocker blocker(ui->pushButton_DetectSource);
     ui->pushButton_DetectSource->setChecked(armed);
-    ui->pushButton_DetectSource->setText(armed ? tr("Cancel") : tr("Detect"));
+    ui->pushButton_DetectSource->setToolTip(armed
+        ? tr("Armed -- rotate any connected axis to assign its source. Click again to cancel.")
+        : tr("Click then rotate any connected axis to set its source pin as this axis's source. Click again to cancel. Only works for pins already bound to some axis -- the firmware reports raw values per-axis, not per-pin."));
 }
 
 void Axes::setEncoderSlotsAvailable(const QList<int> &encoderSlots)
