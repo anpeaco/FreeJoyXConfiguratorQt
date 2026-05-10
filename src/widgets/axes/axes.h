@@ -90,8 +90,30 @@ public:
      * cosmetic. */
     void setConnectedBoard(int boardId);
 
+    /* Programmatically set this axis's main-source dropdown by source
+     * enum (e.g. A0, B11, Encoder). No-op if the enum isn't present in
+     * the current dropdown. Used by AxesConfig's auto-detect path to
+     * push the rotated pin's source onto the focused axis row.
+     * setCurrentIndex emits currentIndexChanged so the existing
+     * mainSourceIndexChanged + applyOutputGuard + Output checkbox
+     * propagation runs as if the user had clicked. */
+    void setSourceByEnum(int sourceEnum);
+
+protected:
+    /* Catches FocusIn events on comboBox_AxisSource1 so AxesConfig can
+     * arm the auto-detect baseline-and-watch state when the user clicks
+     * into an axis's Source dropdown. Returns false to let normal
+     * combobox handling proceed. */
+    bool eventFilter(QObject *obj, QEvent *event) override;
+
 signals:
     void a2bCountChanged(int count, int previousCount);
+
+    /* Emitted when comboBox_AxisSource1 receives keyboard or mouse
+     * focus. AxesConfig listens to arm auto-detect: snapshots the
+     * current params_report_t.raw_axis_data[] and remembers this axis
+     * as the target for the next "rotation detected" event. */
+    void sourceComboFocused(int axisNumber);
 
     /* Fired whenever the main-source combobox selection changes (user
      * edit or readFromConfig-driven). AxesConfig listens to recompute

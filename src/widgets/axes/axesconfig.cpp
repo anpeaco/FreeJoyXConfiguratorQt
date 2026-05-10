@@ -1,5 +1,6 @@
 #include "axesconfig.h"
 #include "ui_axesconfig.h"
+#include <cstdlib>
 #include <QCheckBox>
 #include <QSettings>
 #include "global.h"
@@ -29,6 +30,11 @@ AxesConfig::AxesConfig(QWidget *parent)
         // currently affect device output.
         connect(axis, &Axes::outputActiveChanged,
                 this, &AxesConfig::axisOutputActiveChanged);
+        // Auto-detect: each axis's Source dropdown FocusIn arms the
+        // baseline-and-watch state. axesValueChanged() (driven by the
+        // MainWindow tick) consumes it.
+        connect(axis, &Axes::sourceComboFocused,
+                this, &AxesConfig::onSourceComboFocused);
         // added hidden axes checkboxes
         QCheckBox *chb = new QCheckBox(axesList()[i].guiName, this);
         ui->layoutH_HiddenAxes->addWidget(chb);
@@ -44,6 +50,12 @@ AxesConfig::AxesConfig(QWidget *parent)
         m_hideChBoxes[i]->setChecked(gEnv.pAppSettings->value(axesList()[i].guiName, "false").toBool());
     }
     gEnv.pAppSettings->endGroup();
+
+    /* Auto-detect baseline buffer sized once -- raw_axis_data[] is
+     * MAX_AXIS_NUM entries on every params report. */
+    m_baselineRaw.resize(MAX_AXIS_NUM);
+    connect(ui->checkBox_AutoDetectSource, &QCheckBox::toggled,
+            this, &AxesConfig::onAutoDetectToggled);
 }
 
 AxesConfig::~AxesConfig()
@@ -182,6 +194,66 @@ void AxesConfig::axesValueChanged()
         m_axesPtrList[i]->updateAxisOut();
         m_axesPtrList[i]->updateAxisRaw();
     }
+
+    /* Auto-detect: if armed, compare current raw_axis_data[] against
+     * the baseline captured at FocusIn. Pick the axis with the
+     * largest delta over m_kAutoDetectThresh -- that's the axis whose
+     * source pin the user is currently rotating. Look up that axis's
+     * source from dev_config_t and push it onto the armed axis's
+     * dropdown via setSourceByEnum. One-shot: disarm afterwards so a
+     * single rotation doesn't keep retriggering as the user wiggles
+     * to verify. The user re-clicks the dropdown to do another. */
+    if (!m_autoDetectEnabled || m_armedAxisIdx < 0) {
+        return;
+    }
+    const auto &raw = gEnv.pDeviceConfig->paramsReport.raw_axis_data;
+    int bestIdx = -1;
+    int bestDelta = 0;
+    for (int i = 0; i < MAX_AXIS_NUM; ++i) {
+        const int delta = std::abs(int(raw[i]) - m_baselineRaw[i]);
+        if (delta > bestDelta) {
+            bestDelta = delta;
+            bestIdx = i;
+        }
+    }
+    if (bestDelta < m_kAutoDetectThresh) return;
+
+    /* Skip the no-op case: the user wiggled the axis that's already
+     * the armed axis's own source. Nothing to assign. */
+    const int detectedSource = gEnv.pDeviceConfig->config.axis_config[bestIdx].source_main;
+    if (detectedSource < 0) {
+        /* Detected axis isn't bound to anything firmware can name --
+         * shouldn't happen for analog inputs but guards encoder/I2C
+         * sources whose source_main is the negative sentinel. Leave
+         * the watcher armed so a real pot rotation can still fire. */
+        m_baselineRaw[bestIdx] = raw[bestIdx];
+        return;
+    }
+    m_axesPtrList[m_armedAxisIdx]->setSourceByEnum(detectedSource);
+    m_armedAxisIdx = -1;
+}
+
+void AxesConfig::onSourceComboFocused(int axisNumber)
+{
+    if (!m_autoDetectEnabled) return;
+    /* Snapshot every axis's current raw value so the next axesValueChanged
+     * tick can detect a real rotation. Without the baseline reset on
+     * every FocusIn, switching from one axis dropdown to another would
+     * re-fire on stale deltas accumulated since the last arm. */
+    const auto &raw = gEnv.pDeviceConfig->paramsReport.raw_axis_data;
+    for (int i = 0; i < MAX_AXIS_NUM; ++i) {
+        m_baselineRaw[i] = raw[i];
+    }
+    m_armedAxisIdx = axisNumber;
+}
+
+void AxesConfig::onAutoDetectToggled(bool checked)
+{
+    m_autoDetectEnabled = checked;
+    /* Disarm any pending watch when the user disables the feature
+     * mid-flight -- otherwise an unintended rotation right after the
+     * checkbox toggles off could still trigger an assignment. */
+    if (!checked) m_armedAxisIdx = -1;
 }
 
 void AxesConfig::hideAxis(int index, bool hide)

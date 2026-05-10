@@ -71,6 +71,17 @@ private slots:
      * of readFromConfig and addOrDeleteMainSource. */
     void refreshSourceUsage();
 
+    /* Auto-detect support: arm the rotation watcher when the user
+     * focuses any axis's Source dropdown. Snapshots
+     * params_report_t.raw_axis_data[] as the baseline and remembers
+     * which axis to push the detected source onto. No-op when the
+     * checkbox is unchecked. Wired from each Axes::sourceComboFocused. */
+    void onSourceComboFocused(int axisNumber);
+
+    /* Auto-detect mode toggle. Disarms any in-flight watch when
+     * unchecked. Wired from checkBox_AutoDetectSource::toggled. */
+    void onAutoDetectToggled(bool checked);
+
 private:
     Ui::AxesConfig *ui;
     int m_a2bButtonsCount;
@@ -89,6 +100,24 @@ private:
     /* Pure helper -- given m_fastEncoderPins, returns the slots whose
      * A and B pins are BOTH currently assigned. */
     QList<int> completedEncoderSlots() const;
+
+    /* Auto-detect state. m_armedAxisIdx is the axis whose Source
+     * dropdown the user most recently focused (-1 = no axis armed).
+     * m_baselineRaw is the params_report_t.raw_axis_data[] snapshot
+     * captured at arm time. axesValueChanged() (called every ~17 ms
+     * by MainWindow's tick) compares current raw values against the
+     * baseline, and when one axis's delta exceeds m_kAutoDetectThresh,
+     * looks up that axis's source in dev_config_t and pushes it onto
+     * m_armedAxisIdx via Axes::setSourceByEnum. */
+    bool m_autoDetectEnabled = false;
+    int m_armedAxisIdx = -1;
+    QVector<int> m_baselineRaw;
+
+    /* Threshold in raw ADC LSBs (analog_data_t is int16_t, so the
+     * scale is roughly -32768..32767). Set generously to avoid noise
+     * triggers but low enough that a normal pot sweep crosses it
+     * within a single 17 ms tick. ~6% of full scale. */
+    static constexpr int m_kAutoDetectThresh = 4000;
 };
 
 #endif // AXESCONFIG_H

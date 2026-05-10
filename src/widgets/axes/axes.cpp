@@ -1,5 +1,6 @@
 #include "axes.h"
 #include "ui_axes.h"
+#include <QEvent>
 #include <QTimer>
 #include <QTranslator>
 #include "converter.h"
@@ -78,6 +79,13 @@ Axes::Axes(int axisNumber, QWidget *parent)
     connect(ui->spinBox_A2bCount, qOverload<int>(&QSpinBox::valueChanged), this, &Axes::a2bSpinBoxChanged);
 
     Q_ASSERT(ui->groupBox_AxixName->objectName() == QStringLiteral("groupBox_AxixName"));
+
+    /* Watch comboBox_AxisSource1 for FocusIn so AxesConfig can arm
+     * its auto-detect baseline-and-watch state on click. The combobox
+     * itself has no built-in "focused" signal -- event filter is the
+     * standard Qt route. We install on the combobox AND its line-edit
+     * child if any (combobox is non-editable here so just the box). */
+    ui->comboBox_AxisSource1->installEventFilter(this);
 
     // Default state at construction: combobox at "None" -> Output
     // checkbox starts disabled + unchecked. addOrDeleteMainSource will
@@ -167,6 +175,32 @@ void Axes::relabelMainSourceItems()
         m_baseDisplayTextByEnum[devEnum] = newLabel;
     }
     emit mainSourceChanged();
+}
+
+void Axes::setSourceByEnum(int sourceEnum)
+{
+    /* Find the row whose deviceEnum matches and switch the dropdown
+     * to it. setCurrentIndex emits currentIndexChanged on the
+     * QComboBox, which triggers mainSourceIndexChanged here -- so
+     * applyOutputGuard, mainSourceChanged emission, and the Output
+     * checkbox propagation all run as if the user had selected the
+     * row themselves. No-op if the enum isn't in the current dropdown
+     * (e.g. caller asked for a pin that hasn't been assigned as
+     * ANALOG_IN in Pin Config), or if it's already selected. */
+    for (int i = 0; i < m_mainSource_enumIndex.size(); ++i) {
+        if (m_mainSource_enumIndex[i] != sourceEnum) continue;
+        if (ui->comboBox_AxisSource1->currentIndex() == i) return;
+        ui->comboBox_AxisSource1->setCurrentIndex(i);
+        return;
+    }
+}
+
+bool Axes::eventFilter(QObject *obj, QEvent *event)
+{
+    if (obj == ui->comboBox_AxisSource1 && event->type() == QEvent::FocusIn) {
+        emit sourceComboFocused(m_axisNumber);
+    }
+    return QWidget::eventFilter(obj, event);
 }
 
 void Axes::setEncoderSlotsAvailable(const QList<int> &encoderSlots)
