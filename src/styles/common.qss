@@ -602,7 +602,6 @@ QFrame[role="info-card"] {
 /* Key labels (left column): muted so the values dominate visually.
  * Targeted by objectName suffix convention -- every key label in either
  * card is named *Key. */
-QFrame[role="info-card"] QLabel#label_FirmwareKey,
 QFrame[role="info-card"] QLabel#label_VidPidKey,
 QFrame[role="info-card"] QLabel#label_SerialKey,
 QFrame[role="info-card"] QLabel#label_AppFirmwareKey {
@@ -612,7 +611,6 @@ QFrame[role="info-card"] QLabel#label_AppFirmwareKey {
 /* Value labels (right column): monospace so 4-digit VID:PID pairs align
  * column-wise across rows and serial-number hex/digit strings stay
  * readable without ambiguity. */
-QFrame[role="info-card"] QLabel#label_FirmwareVal,
 QFrame[role="info-card"] QLabel#label_VidPidVal,
 QFrame[role="info-card"] QLabel#label_SerialVal,
 QFrame[role="info-card"] QLabel#label_AppFirmwareVal {

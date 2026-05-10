@@ -408,7 +408,6 @@ void MainWindow::setDeviceInfo(const QString &vidHex, const QString &pidHex, con
     // Empty strings = no device / disconnect; reset the card to "—".
     const QString placeholder = QStringLiteral("—");   // em dash
     if (vidHex.isEmpty() && pidHex.isEmpty() && serial.isEmpty()) {
-        ui->label_FirmwareVal->setText(placeholder);
         ui->label_VersionVal->setText(placeholder);
         ui->label_VidPidVal->setText(placeholder);
         ui->label_SerialVal->setText(placeholder);
@@ -425,13 +424,12 @@ void MainWindow::setDeviceInfo(const QString &vidHex, const QString &pidHex, con
     }
     ui->label_VidPidVal->setText(vidHex + QStringLiteral(":") + pidHex);
     ui->label_SerialVal->setText(serial.isEmpty() ? placeholder : serial);
-    // Clear the firmware + board rows on every new connection. The
+    // Clear the version + board rows on every new connection. The
     // params report path (getParamsPacket) populates them once the
     // device responds. Without these clears, switching from one device
     // to another (especially to a silent / very-incompatible device
     // that never answers the params request) would leave the previous
     // device's firmware version + board name visible on the card.
-    ui->label_FirmwareVal->setText(placeholder);
     ui->label_VersionVal->setText(placeholder);
     ui->label_BoardVal->setText(placeholder);
 }
@@ -521,32 +519,30 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
         m_postWriteRestarting = false;
         m_postWriteFallbackTimer.stop();
         const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
-        /* Wire fmt is rendered as raw hex now that the FREEJOYX_VERSION
-         * 0.0.0 reset (#18) decoupled the user-facing semver from the
-         * wire-format token. The Version row above carries the project
-         * semver from the device; this row is purely the compat key. */
-        const QString verFmt = QStringLiteral("0x") +
-            QString::number(devVer, 16).toUpper().rightJustified(4, QChar('0'));
 
-        // Push the firmware version into the device-info card. VID/PID/
-        // serial are populated separately via setDeviceInfo() driven by
-        // HidDevice::deviceInfo at open time. Even on incompatible
-        // firmware we still surface the version here -- the card is
-        // strictly informational.
-        ui->label_FirmwareVal->setText(verFmt);
-
-        /* Project version (FREEJOYX_VERSION) reported live by the
-         * firmware. Only valid when firmware is compatible -- on
-         * mismatch the params_report layout doesn't necessarily have
-         * the field at this offset, so trust nothing. */
+        /* Single Version row covers three cases:
+         *   1. Current FreeJoyX firmware -> use freejoyx_version_* fields
+         *      from params_report_t (only trustworthy when
+         *      firmwareCompatible, since older shapes don't have those
+         *      fields at the same offset).
+         *   2. Upstream FreeJoy / pre-reset FreeJoyX (anything with a
+         *      legacy migrator) -> nibble-parse the wire-format token,
+         *      which historically encoded the semver directly.
+         *   3. Unknown firmware -> raw hex of the wire-format token, so
+         *      the user has *something* to report when triaging. */
         if (firmwareCompatible) {
             const auto &pr = gEnv.pDeviceConfig->paramsReport;
-            ui->label_VersionVal->setText(QStringLiteral("%1.%2.%3")
+            ui->label_VersionVal->setText(QStringLiteral("FreeJoyX %1.%2.%3")
                 .arg(pr.freejoyx_version_major)
                 .arg(pr.freejoyx_version_minor)
                 .arg(pr.freejoyx_version_patch));
+        } else if (legacy::canMigrate(devVer)) {
+            ui->label_VersionVal->setText(QStringLiteral("FreeJoy %1")
+                .arg(QString::fromLatin1(legacy::describeVersion(devVer))));
         } else {
-            ui->label_VersionVal->setText(QStringLiteral("—"));
+            const QString hex = QStringLiteral("0x") +
+                QString::number(devVer, 16).toUpper().rightJustified(4, QChar('0'));
+            ui->label_VersionVal->setText(tr("Unknown (%1)").arg(hex));
         }
 
         // Phase 7: surface the device's self-reported board_id on the
