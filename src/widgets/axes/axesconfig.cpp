@@ -30,11 +30,11 @@ AxesConfig::AxesConfig(QWidget *parent)
         // currently affect device output.
         connect(axis, &Axes::outputActiveChanged,
                 this, &AxesConfig::axisOutputActiveChanged);
-        // Auto-detect: each axis's Source dropdown FocusIn arms the
-        // baseline-and-watch state. axesValueChanged() (driven by the
+        // Per-axis Detect button: arms the rotation watcher for
+        // exactly this axis. axesValueChanged() (driven by the
         // MainWindow tick) consumes it.
-        connect(axis, &Axes::sourceComboFocused,
-                this, &AxesConfig::onSourceComboFocused);
+        connect(axis, &Axes::detectSourceRequested,
+                this, &AxesConfig::onDetectToggled);
         // added hidden axes checkboxes
         QCheckBox *chb = new QCheckBox(axesList()[i].guiName, this);
         ui->layoutH_HiddenAxes->addWidget(chb);
@@ -54,8 +54,15 @@ AxesConfig::AxesConfig(QWidget *parent)
     /* Auto-detect baseline buffer sized once -- raw_axis_data[] is
      * MAX_AXIS_NUM entries on every params report. */
     m_baselineRaw.resize(MAX_AXIS_NUM);
-    connect(ui->checkBox_AutoDetectSource, &QCheckBox::toggled,
-            this, &AxesConfig::onAutoDetectToggled);
+
+    /* Single-shot timer disarms the watcher if no rotation lands
+     * within m_kDetectTimeoutMs. Otherwise an armed-but-untouched
+     * watcher would soak the next stray axis jitter long after the
+     * user has wandered off. */
+    m_detectTimeout.setSingleShot(true);
+    m_detectTimeout.setInterval(m_kDetectTimeoutMs);
+    connect(&m_detectTimeout, &QTimer::timeout,
+            this, &AxesConfig::onDetectTimeout);
 }
 
 AxesConfig::~AxesConfig()
@@ -195,17 +202,16 @@ void AxesConfig::axesValueChanged()
         m_axesPtrList[i]->updateAxisRaw();
     }
 
-    /* Auto-detect: if armed, compare current raw_axis_data[] against
-     * the baseline captured at FocusIn. Pick the axis with the
-     * largest delta over m_kAutoDetectThresh -- that's the axis whose
-     * source pin the user is currently rotating. Look up that axis's
-     * source from dev_config_t and push it onto the armed axis's
-     * dropdown via setSourceByEnum. One-shot: disarm afterwards so a
-     * single rotation doesn't keep retriggering as the user wiggles
-     * to verify. The user re-clicks the dropdown to do another. */
-    if (!m_autoDetectEnabled || m_armedAxisIdx < 0) {
-        return;
-    }
+    /* Auto-detect: if some axis's Detect button is armed, compare
+     * current raw_axis_data[] against the baseline captured at arm
+     * time. The axis with the largest delta over m_kDetectThresh is
+     * the axis whose source pin the user is currently rotating. Look
+     * up that axis's source from dev_config_t and push it onto the
+     * armed axis's dropdown via setSourceByEnum. One-shot: disarm
+     * afterwards so wiggling to verify doesn't re-trigger; the user
+     * clicks Detect again to re-arm. */
+    if (m_armedAxisIdx < 0) return;
+
     const auto &raw = gEnv.pDeviceConfig->paramsReport.raw_axis_data;
     int bestIdx = -1;
     int bestDelta = 0;
@@ -216,44 +222,59 @@ void AxesConfig::axesValueChanged()
             bestIdx = i;
         }
     }
-    if (bestDelta < m_kAutoDetectThresh) return;
+    if (bestDelta < m_kDetectThresh) return;
 
-    /* Skip the no-op case: the user wiggled the axis that's already
-     * the armed axis's own source. Nothing to assign. */
     const int detectedSource = gEnv.pDeviceConfig->config.axis_config[bestIdx].source_main;
     if (detectedSource < 0) {
         /* Detected axis isn't bound to anything firmware can name --
          * shouldn't happen for analog inputs but guards encoder/I2C
-         * sources whose source_main is the negative sentinel. Leave
-         * the watcher armed so a real pot rotation can still fire. */
+         * sources whose source_main is the negative sentinel. Refresh
+         * baseline for that axis so a real rotation can still fire. */
         m_baselineRaw[bestIdx] = raw[bestIdx];
         return;
     }
-    m_axesPtrList[m_armedAxisIdx]->setSourceByEnum(detectedSource);
+    const int armed = m_armedAxisIdx;
     m_armedAxisIdx = -1;
+    m_detectTimeout.stop();
+    m_axesPtrList[armed]->setSourceByEnum(detectedSource);
+    m_axesPtrList[armed]->setDetectArmed(false);
 }
 
-void AxesConfig::onSourceComboFocused(int axisNumber)
+void AxesConfig::onDetectToggled(int axisNumber, bool armed)
 {
-    if (!m_autoDetectEnabled) return;
-    /* Snapshot every axis's current raw value so the next axesValueChanged
-     * tick can detect a real rotation. Without the baseline reset on
-     * every FocusIn, switching from one axis dropdown to another would
-     * re-fire on stale deltas accumulated since the last arm. */
-    const auto &raw = gEnv.pDeviceConfig->paramsReport.raw_axis_data;
-    for (int i = 0; i < MAX_AXIS_NUM; ++i) {
-        m_baselineRaw[i] = raw[i];
+    if (armed) {
+        /* If a different axis was already armed, disarm it visually
+         * first -- only one watcher at a time, and the user just
+         * decided which axis they actually want. */
+        if (m_armedAxisIdx >= 0 && m_armedAxisIdx != axisNumber) {
+            m_axesPtrList[m_armedAxisIdx]->setDetectArmed(false);
+        }
+        /* Snapshot every axis's current raw value so the next tick
+         * detects a *real* rotation -- without the baseline reset
+         * we'd fire on stale deltas accumulated since the last arm. */
+        const auto &raw = gEnv.pDeviceConfig->paramsReport.raw_axis_data;
+        for (int i = 0; i < MAX_AXIS_NUM; ++i) {
+            m_baselineRaw[i] = raw[i];
+        }
+        m_armedAxisIdx = axisNumber;
+        m_detectTimeout.start();
+    } else {
+        /* User cancelled the same axis that was armed. */
+        if (m_armedAxisIdx == axisNumber) {
+            m_armedAxisIdx = -1;
+            m_detectTimeout.stop();
+        }
     }
-    m_armedAxisIdx = axisNumber;
 }
 
-void AxesConfig::onAutoDetectToggled(bool checked)
+void AxesConfig::onDetectTimeout()
 {
-    m_autoDetectEnabled = checked;
-    /* Disarm any pending watch when the user disables the feature
-     * mid-flight -- otherwise an unintended rotation right after the
-     * checkbox toggles off could still trigger an assignment. */
-    if (!checked) m_armedAxisIdx = -1;
+    if (m_armedAxisIdx < 0) return;
+    /* Restore the Detect button to idle without re-emitting toggled
+     * (which would re-enter onDetectToggled with armed=false and
+     * harmlessly clear m_armedAxisIdx again, but cleaner this way). */
+    m_axesPtrList[m_armedAxisIdx]->setDetectArmed(false);
+    m_armedAxisIdx = -1;
 }
 
 void AxesConfig::hideAxis(int index, bool hide)

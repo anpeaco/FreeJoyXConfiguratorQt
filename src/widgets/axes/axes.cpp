@@ -1,6 +1,6 @@
 #include "axes.h"
 #include "ui_axes.h"
-#include <QEvent>
+#include <QSignalBlocker>
 #include <QTimer>
 #include <QTranslator>
 #include "converter.h"
@@ -80,12 +80,17 @@ Axes::Axes(int axisNumber, QWidget *parent)
 
     Q_ASSERT(ui->groupBox_AxixName->objectName() == QStringLiteral("groupBox_AxixName"));
 
-    /* Watch comboBox_AxisSource1 for FocusIn so AxesConfig can arm
-     * its auto-detect baseline-and-watch state on click. The combobox
-     * itself has no built-in "focused" signal -- event filter is the
-     * standard Qt route. We install on the combobox AND its line-edit
-     * child if any (combobox is non-editable here so just the box). */
-    ui->comboBox_AxisSource1->installEventFilter(this);
+    /* Detect button toggle drives AxesConfig's auto-detect arming.
+     * Checkable button is the right primitive: explicit click = "I want
+     * to bind this axis to whatever I rotate next", and the checked
+     * state itself communicates "armed" to the user (no extra status
+     * label needed). AxesConfig owns the baseline + watcher and calls
+     * setDetectArmed(false) to clear the visual on success/timeout. */
+    connect(ui->pushButton_DetectSource, &QPushButton::toggled,
+            this, [this](bool checked) {
+        ui->pushButton_DetectSource->setText(checked ? tr("Cancel") : tr("Detect"));
+        emit detectSourceRequested(m_axisNumber, checked);
+    });
 
     // Default state at construction: combobox at "None" -> Output
     // checkbox starts disabled + unchecked. addOrDeleteMainSource will
@@ -195,12 +200,15 @@ void Axes::setSourceByEnum(int sourceEnum)
     }
 }
 
-bool Axes::eventFilter(QObject *obj, QEvent *event)
+void Axes::setDetectArmed(bool armed)
 {
-    if (obj == ui->comboBox_AxisSource1 && event->type() == QEvent::FocusIn) {
-        emit sourceComboFocused(m_axisNumber);
-    }
-    return QWidget::eventFilter(obj, event);
+    /* Block toggled() so the visual sync from AxesConfig (e.g.
+     * disarming a previously-armed axis when the user clicks Detect
+     * on a different one, or restoring after a successful detection)
+     * doesn't loop back into onDetectToggled and re-arm the watcher. */
+    QSignalBlocker blocker(ui->pushButton_DetectSource);
+    ui->pushButton_DetectSource->setChecked(armed);
+    ui->pushButton_DetectSource->setText(armed ? tr("Cancel") : tr("Detect"));
 }
 
 void Axes::setEncoderSlotsAvailable(const QList<int> &encoderSlots)

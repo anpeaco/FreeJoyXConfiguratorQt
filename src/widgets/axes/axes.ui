@@ -562,7 +562,7 @@ QProgressBar::chunk:disabled {
         </property>
        </widget>
       </item>
-      <item row="3" column="1" colspan="3">
+      <item row="3" column="1" colspan="2">
        <widget class="QLabel" name="text_axisSource">
         <property name="minimumSize">
          <size>
@@ -575,6 +575,25 @@ QProgressBar::chunk:disabled {
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="3">
+       <widget class="QPushButton" name="pushButton_DetectSource">
+        <property name="minimumSize">
+         <size>
+          <width>70</width>
+          <height>22</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Detect</string>
+        </property>
+        <property name="toolTip">
+         <string>Click then rotate any connected axis to set its source pin as this axis's source. Click again to cancel. Only works for pins already bound to some axis -- the firmware reports raw values per-axis, not per-pin.</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
         </property>
        </widget>
       </item>

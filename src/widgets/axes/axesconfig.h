@@ -4,6 +4,7 @@
 #include "axes.h"
 #include <QSet>
 #include <QString>
+#include <QTimer>
 #include <QWidget>
 
 #include "deviceconfig.h"
@@ -71,16 +72,20 @@ private slots:
      * of readFromConfig and addOrDeleteMainSource. */
     void refreshSourceUsage();
 
-    /* Auto-detect support: arm the rotation watcher when the user
-     * focuses any axis's Source dropdown. Snapshots
-     * params_report_t.raw_axis_data[] as the baseline and remembers
-     * which axis to push the detected source onto. No-op when the
-     * checkbox is unchecked. Wired from each Axes::sourceComboFocused. */
-    void onSourceComboFocused(int axisNumber);
+    /* Per-axis Detect button toggled (armed=true) or cancelled
+     * (armed=false). Arming snapshots params_report_t.raw_axis_data[]
+     * baseline, remembers axisNumber, starts a 5 s auto-disarm timer,
+     * and disarms any other previously-armed axis (only one axis at a
+     * time -- the previous one's Detect button gets unchecked via
+     * Axes::setDetectArmed(false)). Wired from each
+     * Axes::detectSourceRequested. */
+    void onDetectToggled(int axisNumber, bool armed);
 
-    /* Auto-detect mode toggle. Disarms any in-flight watch when
-     * unchecked. Wired from checkBox_AutoDetectSource::toggled. */
-    void onAutoDetectToggled(bool checked);
+    /* Auto-disarm timeout. Fires 5 s after arming if no rotation
+     * crossed the threshold. Restores the armed axis's Detect button
+     * to idle. Without this, an unattended armed state would silently
+     * soak the next stray axis jitter. */
+    void onDetectTimeout();
 
 private:
     Ui::AxesConfig *ui;
@@ -101,23 +106,30 @@ private:
      * A and B pins are BOTH currently assigned. */
     QList<int> completedEncoderSlots() const;
 
-    /* Auto-detect state. m_armedAxisIdx is the axis whose Source
-     * dropdown the user most recently focused (-1 = no axis armed).
-     * m_baselineRaw is the params_report_t.raw_axis_data[] snapshot
-     * captured at arm time. axesValueChanged() (called every ~17 ms
-     * by MainWindow's tick) compares current raw values against the
-     * baseline, and when one axis's delta exceeds m_kAutoDetectThresh,
-     * looks up that axis's source in dev_config_t and pushes it onto
-     * m_armedAxisIdx via Axes::setSourceByEnum. */
-    bool m_autoDetectEnabled = false;
+    /* Auto-detect state. m_armedAxisIdx is the axis whose Detect
+     * button is currently pressed (-1 = no axis armed). m_baselineRaw
+     * is the params_report_t.raw_axis_data[] snapshot captured at arm
+     * time. axesValueChanged() (called every ~17 ms by MainWindow's
+     * tick when the Axes Config tab is visible) compares current raw
+     * values against the baseline, and when one axis's |delta| exceeds
+     * m_kDetectThresh, looks up that axis's source in dev_config_t
+     * and pushes it onto m_armedAxisIdx via Axes::setSourceByEnum. */
     int m_armedAxisIdx = -1;
     QVector<int> m_baselineRaw;
+
+    /* Auto-disarm if no rotation crossed the threshold within this
+     * window (ms). Generous so a deliberate user has time to put down
+     * the mouse and rotate the right axis. */
+    QTimer m_detectTimeout;
 
     /* Threshold in raw ADC LSBs (analog_data_t is int16_t, so the
      * scale is roughly -32768..32767). Set generously to avoid noise
      * triggers but low enough that a normal pot sweep crosses it
      * within a single 17 ms tick. ~6% of full scale. */
-    static constexpr int m_kAutoDetectThresh = 4000;
+    static constexpr int m_kDetectThresh = 4000;
+
+    /* Timeout in ms before an armed-but-untouched watcher disarms. */
+    static constexpr int m_kDetectTimeoutMs = 5000;
 };
 
 #endif // AXESCONFIG_H
