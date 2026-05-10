@@ -561,6 +561,12 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
             ui->label_BoardVal->setText(boardName);
             if (boardId != 0) {
                 m_pinConfig->setConnectedBoard(boardId);
+                /* Per-board pin-name dispatch (pinboardnames.h) so the
+                 * Axes tab dropdowns show the right silkscreen label
+                 * (e.g. "B2" on F411 instead of the cross-board "B11"
+                 * identifier). Identity surfaces (INI keys, dev_config_t
+                 * pin enums) are unchanged -- this is purely cosmetic. */
+                m_axesConfig->setConnectedBoard(boardId);
             }
             /* LED tab is disabled on F411 until Phase 8 ports the LED
              * stack to LL. The struct fields persist so a config saved
@@ -1430,16 +1436,38 @@ void MainWindow::hidDeviceListChanged(int index)
     refreshOtherConnectedDevices();
 }
 
-// reset all pins
+// Reset every setting in dev_config_t to factory defaults (in-memory
+// only -- the user must click Write Config to apply to the device).
+// Despite the historical button objectName ("ResetAllPins") the scope
+// is the entire dev_config_t, not just the pin table: device name,
+// VID/PID, axes, buttons, encoders, gestures, logic, sensors, LEDs,
+// shifts & timers all revert. Confirmation dialog gates the change
+// because there's no built-in undo.
 void MainWindow::on_pushButton_ResetAllPins_clicked()
 {
-    qDebug()<<"Reset all started";
+    const QMessageBox::StandardButton rc = QMessageBox::question(
+        this,
+        tr("Reset all settings to defaults?"),
+        tr("<p>This resets every setting in the configurator -- pins, "
+           "axes, buttons, encoders, sensors, USB identity, gestures, "
+           "logic, LEDs, shifts &amp; timers -- to factory defaults.</p>"
+           "<p>The change is <b>in-memory only</b>. The connected "
+           "device keeps its current settings until you click "
+           "<b>Write Config</b>.</p>"
+           "<p>Continue?</p>"),
+        QMessageBox::Yes | QMessageBox::Cancel,
+        QMessageBox::Cancel);
+    if (rc != QMessageBox::Yes) return;
+
+    qDebug() << "Reset all started";
     gEnv.pDeviceConfig->resetConfig();
-
+    /* UiReadFromConfig() fans out to every tab widget's readFromConfig()
+     * (pins, axes, axes-curves, shift registers, encoders, LED, adv
+     * settings, buttons, shifts & timers) -- so the prior explicit
+     * m_pinConfig->resetAllPins() call after this point was redundant
+     * and has been dropped. */
     UiReadFromConfig();
-
-    m_pinConfig->resetAllPins();
-    qDebug()<<"done";
+    qDebug() << "Reset all done";
 }
 
 // read config from device

@@ -387,7 +387,8 @@
           <item>
            <widget class="QPushButton" name="pushButton_ResetAllPins">
             <property name="minimumSize"><size><width>165</width><height>37</height></size></property>
-            <property name="text"><string>Reset All</string></property>
+            <property name="text"><string>Reset All Settings</string></property>
+            <property name="toolTip"><string>Resets every setting (pins, axes, buttons, encoders, sensors, USB identity, gestures, logic, LEDs, shifts &amp; timers) to factory defaults. The change is in-memory only — click Write Config to apply it to the connected device.</string></property>
             <property name="checked"><bool>false</bool></property>
            </widget>
           </item>
