@@ -93,6 +93,16 @@ void AxesConfig::addOrDeleteMainSource(int sourceEnum, QString sourceName, bool 
     refreshSourceUsage();
 }
 
+void AxesConfig::setConnectedBoard(int boardId)
+{
+    for (int i = 0; i < MAX_AXIS_NUM; ++i) {
+        m_axesPtrList[i]->setConnectedBoard(boardId);
+    }
+    // Each Axes::setConnectedBoard emits mainSourceChanged after
+    // relabelling, which feeds refreshSourceUsage via the existing
+    // signal wiring -- no explicit refresh needed here.
+}
+
 void AxesConfig::fastEncoderPinChanged(const QString &pinGuiName, bool isAdd)
 {
     const QList<int> prevSlots = completedEncoderSlots();

@@ -53,6 +53,12 @@ public slots:
      * count crosses 0/1 -- so Encoder is only offered when at least one
      * fast-encoder pin is actually wired up. */
     void fastEncoderPinChanged(const QString &pinGuiName, bool isAdd);
+
+    /* Fan-out for Axes::setConnectedBoard. Driven from MainWindow when
+     * params_report_t.board_id arrives so per-board pin-name overrides
+     * (pinboardnames.h, e.g. "B11" -> "B2" on F411) reach every axis's
+     * main-source dropdown. */
+    void setConnectedBoard(int boardId);
 private slots:
     void a2bCountCalc(int count, int previousCount);
     void hideAxis(int index, bool hide);

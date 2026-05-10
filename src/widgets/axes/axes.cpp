@@ -3,6 +3,7 @@
 #include <QTimer>
 #include <QTranslator>
 #include "converter.h"
+#include "widgets/pins/pinboardnames.h"
 
 const QVector <deviceEnum_guiName_t> &axesList()    // order MUST match common_types.h!
 {
@@ -46,6 +47,7 @@ Axes::Axes(int axisNumber, QWidget *parent)
     ui->comboBox_AxisSource1->addItem(m_axesPinList[0].guiName);
     m_mainSource_enumIndex.push_back(m_axesPinList[0].deviceEnumIndex);
     m_mainSource_channelIndex.push_back(0);
+    m_mainSource_baseSourceName.push_back(m_axesPinList[0].guiName);
     m_baseDisplayTextByEnum.insert(m_axesPinList[0].deviceEnumIndex, m_axesPinList[0].guiName);
 
     // set a2b  // duplicated work vs. readFromConfig()?
@@ -108,10 +110,11 @@ void Axes::addOrDeleteMainSource(int sourceEnum, QString sourceName, bool isAdd)
         if (pinIdx < 0) {
             return;
         }
-        const QString baseText = m_axesPinList[pinIdx].guiName + " - " + sourceName;
+        const QString baseText = composePinLabel(pinIdx, sourceName);
         ui->comboBox_AxisSource1->addItem(baseText);
         m_mainSource_enumIndex.push_back(m_axesPinList[pinIdx].deviceEnumIndex);
         m_mainSource_channelIndex.push_back(0);
+        m_mainSource_baseSourceName.push_back(sourceName);
         m_baseDisplayTextByEnum.insert(sourceEnum, baseText);
     } else {
         for (int i = 0; i < m_mainSource_enumIndex.size(); ++i) {
@@ -122,11 +125,48 @@ void Axes::addOrDeleteMainSource(int sourceEnum, QString sourceName, bool isAdd)
                 ui->comboBox_AxisSource1->removeItem(i);
                 m_mainSource_enumIndex.erase(m_mainSource_enumIndex.begin() + i);
                 m_mainSource_channelIndex.erase(m_mainSource_channelIndex.begin() + i);
+                m_mainSource_baseSourceName.removeAt(i);
                 m_baseDisplayTextByEnum.remove(sourceEnum);
                 break;
             }
         }
     }
+}
+
+QString Axes::composePinLabel(int pinIdx, const QString &sourceName) const
+{
+    return pinDisplayName(m_boardId, m_axesPinList[pinIdx].guiName)
+        + QStringLiteral(" - ") + sourceName;
+}
+
+void Axes::setConnectedBoard(int boardId)
+{
+    if (boardId == m_boardId) return;
+    m_boardId = boardId;
+    relabelMainSourceItems();
+}
+
+void Axes::relabelMainSourceItems()
+{
+    /* Walk every row in the main-source dropdown. Pin rows: re-derive
+     * the display text from the stored sourceName + the pin's
+     * board-specific label. Non-pin rows (None/Encoder/I2C): leave
+     * untouched -- their labels don't include a pin name. The
+     * "used by X" annotations layered on top by markSourcesInUse
+     * become stale; re-emit mainSourceChanged so AxesConfig
+     * recomputes the per-source usage map and re-annotates. */
+    for (int i = 0; i < m_mainSource_enumIndex.size(); ++i) {
+        const int devEnum = m_mainSource_enumIndex[i];
+        if (devEnum == Encoder || devEnum == I2C || devEnum == None) {
+            continue;
+        }
+        const int pinIdx = Converter::EnumToIndex(devEnum, m_axesPinList);
+        if (pinIdx < 0) continue;
+        const QString newLabel = composePinLabel(pinIdx, m_mainSource_baseSourceName[i]);
+        ui->comboBox_AxisSource1->setItemText(i, newLabel);
+        m_baseDisplayTextByEnum[devEnum] = newLabel;
+    }
+    emit mainSourceChanged();
 }
 
 void Axes::setEncoderSlotsAvailable(const QList<int> &encoderSlots)
@@ -151,6 +191,7 @@ void Axes::setEncoderSlotsAvailable(const QList<int> &encoderSlots)
             ui->comboBox_AxisSource1->removeItem(i);
             m_mainSource_enumIndex.erase(m_mainSource_enumIndex.begin() + i);
             m_mainSource_channelIndex.erase(m_mainSource_channelIndex.begin() + i);
+            m_mainSource_baseSourceName.removeAt(i);
         }
     }
 
@@ -164,6 +205,7 @@ void Axes::setEncoderSlotsAvailable(const QList<int> &encoderSlots)
         ui->comboBox_AxisSource1->insertItem(insertAt, label);
         m_mainSource_enumIndex.insert(insertAt, Encoder);
         m_mainSource_channelIndex.insert(insertAt, slot);
+        m_mainSource_baseSourceName.insert(insertAt, label);
         ++insertAt;
     }
 

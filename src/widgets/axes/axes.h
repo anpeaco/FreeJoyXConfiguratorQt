@@ -81,6 +81,15 @@ public:
      * axes whose curves don't currently affect anything. */
     bool isOutputActive() const;
 
+    /* Switch the per-board display layer for pin names. Driven by
+     * AxesConfig in response to params_report_t.board_id changing
+     * (e.g. connecting an F411 BlackPill flips slot 22's label from
+     * the cross-board "B11" identifier to the BlackPill silkscreen
+     * "B2"). Identity surfaces (m_mainSource_enumIndex, INI keys,
+     * dev_config_t pin enums) are unchanged -- this is purely
+     * cosmetic. */
+    void setConnectedBoard(int boardId);
+
 signals:
     void a2bCountChanged(int count, int previousCount);
 
@@ -152,6 +161,32 @@ private:
      * axis_config_t.channel on save and read back on load. For
      * non-Encoder rows the value is 0 and unused. */
     QVector<int> m_mainSource_channelIndex;
+
+    /* Parallel to m_mainSource_enumIndex. For pin rows holds the
+     * source-name suffix passed to addOrDeleteMainSource (e.g.
+     * "Pin A0", "Pin B11"). For non-pin rows (None / Encoder / I2C)
+     * holds the full literal item text. relabelMainSourceItems()
+     * recomposes pin-row display text using this + the current
+     * board id when board_id changes. */
+    QStringList m_mainSource_baseSourceName;
+
+    /* Active board id used by the per-board pin-name display layer
+     * (see pinboardnames.h). Defaults to 0 (no override) so the
+     * configurator behaves exactly as it always did when no device
+     * is connected or board_id is unknown. Mutated only via
+     * setConnectedBoard. */
+    int m_boardId = 0;
+
+    /* Compose the visible item text for a pin-bearing source row:
+     * "<pin name with per-board override> - <source name>". Shared
+     * between addOrDeleteMainSource (initial add) and
+     * relabelMainSourceItems (board switch). */
+    QString composePinLabel(int pinIdx, const QString &sourceName) const;
+
+    /* Recompute the pin-prefixed display text for every pin row in
+     * the main-source dropdown using the current m_boardId. Called
+     * from setConnectedBoard. */
+    void relabelMainSourceItems();
 
     enum
     {
