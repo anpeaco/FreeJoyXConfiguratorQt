@@ -1,0 +1,43 @@
+name: Configurator build
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  build-linux:
+    name: Build (Ubuntu, Qt 5.15)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libudev-dev
+
+      - name: Install Qt 5.15.2
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          host: 'linux'
+          target: 'desktop'
+          arch: 'gcc_64'
+          modules: 'qtsvg'
+          cache: true
+
+      - name: qmake
+        run: qmake FreeJoyQt.pro
+
+      - name: make
+        run: make -j$(nproc)
+
+      - name: Upload configurator binary
+        uses: actions/upload-artifact@v7
+        with:
+          name: FreeJoyQt-linux
+          path: src/FreeJoyQt
+          if-no-files-found: error
+          retention-days: 30
