@@ -1,6 +1,7 @@
 # FreeJoy Configurator X
 
 [![Configurator build](https://github.com/anpeaco/FreeJoyXConfiguratorQt/actions/workflows/configurator.yml/badge.svg)](https://github.com/anpeaco/FreeJoyXConfiguratorQt/actions/workflows/configurator.yml)
+[![Wire-format header sync](https://github.com/anpeaco/FreeJoyXConfiguratorQt/actions/workflows/header-sync.yml/badge.svg)](https://github.com/anpeaco/FreeJoyXConfiguratorQt/actions/workflows/header-sync.yml)
 
 **STILL IN INITIAL DEVELOPMENT STAGES**
 
@@ -66,7 +67,10 @@ Release artefacts (configurator + per-board firmware images) are produced by the
 
 ## Continuous integration
 
-`configurator.yml` runs on every push: installs Qt 5.15.2 on Ubuntu via [`jurplel/install-qt-action`](https://github.com/jurplel/install-qt-action), runs `qmake FreeJoyQt.pro && make`, and uploads the resulting `FreeJoyQt` binary as an artifact. The companion [`anpeaco/FreeJoyX`](https://github.com/anpeaco/FreeJoyX) repo runs a cross-repo `header-sync.yml` check that fails CI on wire-format drift between this repo's `src/common_*.h` and the firmware's `application/Inc/common_*.h`.
+Two workflows run on every push:
+
+- **`configurator.yml`** — installs Qt 5.15.2 on Ubuntu via [`jurplel/install-qt-action`](https://github.com/jurplel/install-qt-action), runs `qmake FreeJoyQt.pro && make`, uploads the `FreeJoyQt` binary as an artifact.
+- **`header-sync.yml`** — clones [`anpeaco/FreeJoyX`](https://github.com/anpeaco/FreeJoyX) as a sibling and diffs `src/common_types.h` + `src/common_defines.h` against the firmware copies after stripping comments, whitespace, and `/* SYNC_SKIP_BEGIN ... SYNC_SKIP_END */` blocks. Catches wire-format drift on the configurator side; the mirror workflow in `anpeaco/FreeJoyX` catches it on the firmware side.
 
 ## Contributing
 
