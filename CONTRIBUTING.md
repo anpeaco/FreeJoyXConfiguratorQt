@@ -1,4 +1,4 @@
-# Contributing to FreeJoyConfiguratorQtX
+# Contributing to FreeJoyXConfiguratorQt
 
 This is a downstream fork of
 [FreeJoyConfiguratorQt](https://github.com/FreeJoy-Team/FreeJoyConfiguratorQt).
@@ -14,7 +14,7 @@ the parent project workspace and in the firmware repo.
    **STYLE.md → "Wire-format changes — the lockstep rule"**. Skipping
    any of the four lockstep items leaves boards in the field
    unmigratable.
-3. Check the GitHub Issues on `anpeaco/FreeJoyConfiguratorQtX` and
+3. Check the GitHub Issues on `anpeaco/FreeJoyXConfiguratorQt` and
    `anpeaco/FreeJoyX` for related work.
 
 ## Build
@@ -35,7 +35,7 @@ release build completes.
 
 - One logical change per commit. Wire-format bumps and their legacy
   migrators belong in the same commit (see lockstep rule).
-- Reference issues with `Closes anpeaco/FreeJoyConfiguratorQtX#NN` in
+- Reference issues with `Closes anpeaco/FreeJoyXConfiguratorQt#NN` in
   the commit trailer when the change resolves an issue.
 - Keep commits buildable. If a wire-format change spans firmware and
   configurator, the configurator-side commit must still build the
@@ -68,7 +68,7 @@ Don't hand-edit the `.qm` binaries.
 
 ## Reporting bugs
 
-Open an issue on `anpeaco/FreeJoyConfiguratorQtX`. Include:
+Open an issue on `anpeaco/FreeJoyXConfiguratorQt`. Include:
 
 - OS (Windows version, Linux distro, macOS version)
 - Qt version (`qmake -v`)

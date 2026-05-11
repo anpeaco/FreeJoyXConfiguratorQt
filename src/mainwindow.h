@@ -158,7 +158,7 @@ private:
     bool m_postWriteRestarting = false;
 
     /* One-click firmware upgrade orchestration (issue
-     * anpeaco/FreeJoyConfiguratorQtX#9 Phase B, happy-path only).
+     * anpeaco/FreeJoyXConfiguratorQt#9 Phase B, happy-path only).
      *
      * Flow: backup-then-flash (existing) -> reconnect -> auto-Write
      * (new). Set when the user confirms the Upgrade Firmware dialog;

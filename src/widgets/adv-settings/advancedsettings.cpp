@@ -203,7 +203,7 @@ void AdvancedSettings::on_pushButton_About_clicked()
                                 .arg(FORK_NAME, QStringLiteral(FREEJOYX_VERSION));
     const QString source = tr("<br>Built with Qt %1 (%2)<br>"
                               R"(Fork source on <a style="color: #03A9F4; text-decoration:none;"
-                                href="https://github.com/anpeaco/FreeJoyConfiguratorQtX">GitHub</a>;
+                                href="https://github.com/anpeaco/FreeJoyXConfiguratorQt">GitHub</a>;
                                 upstream <a style="color: #03A9F4; text-decoration:none;"
                                 href="https://github.com/FreeJoy-Team/FreeJoyConfiguratorQt">FreeJoyConfiguratorQt</a>.<br>
                                 Released under GPLv3.<br>)")

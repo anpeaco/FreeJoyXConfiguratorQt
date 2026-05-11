@@ -1,4 +1,4 @@
-# FreeJoyConfiguratorQtX Style Guide
+# FreeJoyXConfiguratorQt Style Guide
 
 This document captures the conventions for code in **this fork** of the
 FreeJoy configurator. The aim is to keep new code consistent with the

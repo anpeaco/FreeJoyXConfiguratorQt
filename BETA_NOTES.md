@@ -2,7 +2,7 @@
 
 Thanks for trying the beta. This document covers what's working, what
 isn't, and how to recover when things go sideways. **Please report bugs
-to** [`anpeaco/FreeJoyConfiguratorQtX`](https://github.com/anpeaco/FreeJoyConfiguratorQtX/issues)
+to** [`anpeaco/FreeJoyXConfiguratorQt`](https://github.com/anpeaco/FreeJoyXConfiguratorQt/issues)
 **and** [`anpeaco/FreeJoyX`](https://github.com/anpeaco/FreeJoyX/issues).
 A short repro (what you did, what you expected, what happened) plus a
 screenshot is usually all I need.
@@ -140,7 +140,7 @@ Please include in any report:
 - A screenshot of the relevant tab if anything looks visually off.
 
 Repos:
-- Configurator: https://github.com/anpeaco/FreeJoyConfiguratorQtX/issues
+- Configurator: https://github.com/anpeaco/FreeJoyXConfiguratorQt/issues
 - Firmware: https://github.com/anpeaco/FreeJoyX/issues
 
 Thanks!
