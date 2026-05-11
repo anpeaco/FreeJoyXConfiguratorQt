@@ -1,5 +1,7 @@
 # FreeJoy Configurator X
 
+[![Configurator build](https://github.com/anpeaco/FreeJoyXConfiguratorQt/actions/workflows/configurator.yml/badge.svg)](https://github.com/anpeaco/FreeJoyXConfiguratorQt/actions/workflows/configurator.yml)
+
 **STILL IN INITIAL DEVELOPMENT STAGES**
 
 *Repo is up for feedback and suggestions, I'll update this when it's ready to try.*
@@ -61,6 +63,10 @@ Release artefacts (configurator + per-board firmware images) are produced by the
    * Linux distros' package managers are fine if the packages are Qt 5.11+.
 2. Open the project in Qt Creator or build from `qmake` on the command line:
    * `qmake FreeJoyQt.pro` then `make`
+
+## Continuous integration
+
+`configurator.yml` runs on every push: installs Qt 5.15.2 on Ubuntu via [`jurplel/install-qt-action`](https://github.com/jurplel/install-qt-action), runs `qmake FreeJoyQt.pro && make`, and uploads the resulting `FreeJoyQt` binary as an artifact. The companion [`anpeaco/FreeJoyX`](https://github.com/anpeaco/FreeJoyX) repo runs a cross-repo `header-sync.yml` check that fails CI on wire-format drift between this repo's `src/common_*.h` and the firmware's `application/Inc/common_*.h`.
 
 ## Contributing
 
