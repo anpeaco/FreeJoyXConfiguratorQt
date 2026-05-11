@@ -410,7 +410,7 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                     #endif
                     QThread::msleep(200);
                 }
-                else if (currentWork == REPORT_ID_LED_HOST_CONTROL) {
+                else if (currentWork == REPORT_ID_LED) {
                     uint8_t ledBuffer[64] = {0};
                     uint32_t currentLedState = 0;
                     {
@@ -418,7 +418,7 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                         currentLedState = m_ledState;
                         m_currentWork = REPORT_ID_PARAM;
                     }
-                    ledBuffer[0] = REPORT_ID_LED_HOST_CONTROL;
+                    ledBuffer[0] = REPORT_ID_LED;
                     ledBuffer[1] = uint8_t(currentLedState & 0xFF);
                     ledBuffer[2] = uint8_t((currentLedState >> 8) & 0xFF);
                     ledBuffer[3] = uint8_t((currentLedState >> 16) & 0xFF);
@@ -921,7 +921,7 @@ void HidDevice::sendLedState(uint32_t bitmask)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_ledState = bitmask;
-    m_currentWork = REPORT_ID_LED_HOST_CONTROL;
+    m_currentWork = REPORT_ID_LED;
 }
 // button "flash firmware" clicked
 void HidDevice::flashFirmware(const QByteArray* firmware)

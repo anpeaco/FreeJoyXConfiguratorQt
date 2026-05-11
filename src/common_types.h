@@ -638,6 +638,7 @@ typedef struct
 /* This header is included from both C++ (Qt translation units) and C
  * (stm_main.c). C++11 has the static_assert keyword; C11 has _Static_assert.
  * MinGW g++ 8.x rejects _Static_assert in C++ mode, so dispatch by language. */
+/* SYNC_SKIP_BEGIN -- each side spells the static_assert in its own language (C vs C++); the size constants are what's actually mirrored */
 #ifdef __cplusplus
 static_assert(sizeof(dev_config_t)    == FREEJOY_DEV_CONFIG_SIZE,
     "dev_config_t size drifted -- bump FIRMWARE_VERSION, archive the old shape (legacy_types.h + legacy_migrator.cpp), and update FREEJOY_DEV_CONFIG_SIZE in common_defines.h. See CLAUDE.md wire-format archival rule.");
@@ -649,6 +650,7 @@ _Static_assert(sizeof(dev_config_t)    == FREEJOY_DEV_CONFIG_SIZE,
 _Static_assert(sizeof(params_report_t) == FREEJOY_PARAMS_REPORT_SIZE,
     "params_report_t size drifted -- see common_defines.h");
 #endif
+/* SYNC_SKIP_END */
 
 
 #endif 	/* __COMMON_TYPES_H__ */
