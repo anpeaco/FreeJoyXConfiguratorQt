@@ -95,9 +95,9 @@ private slots:
     void functionTypeChanged(button_type_t current, button_type_t previous, int buttonIndex);
     void setPhysicButton(int buttonIndex);
     void typeLimit(button_type_t current, button_type_t previous);
-    /* Step 4 coexistence rule: when any row binds LONG_PRESS or DOUBLE_TAP
+    /* Step 4 coexistence rule: when any row binds TAP or DOUBLE_TAP
      * to a physical input, sister rows on the same physical may host only
-     * { NORMAL, LONG_PRESS, DOUBLE_TAP }; conversely, when a sister row uses
+     * { NORMAL, TAP, DOUBLE_TAP }; conversely, when a sister row uses
      * any other type, gesture types are hidden from rows on that physical.
      * Reruns from both functionTypeChanged() and ButtonLogical's
      * physicalNumChanged signal so type and physical-num edits both retrigger

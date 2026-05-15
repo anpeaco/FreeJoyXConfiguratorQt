@@ -132,7 +132,7 @@ private:
         // rule -- see ButtonConfig::physicalConflictFilter).
         {BUTTON_NORMAL,        tr("Normal")},
         {DOUBLE_TAP,           tr("Double tap")},
-        {LONG_PRESS,           tr("Long press")},
+        {TAP,                  tr("Tap")},
         {LOGIC,                tr("Logic")},
         // Toggle family
         {BUTTON_TOGGLE,        tr("Toggle")},

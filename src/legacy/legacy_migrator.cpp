@@ -112,7 +112,7 @@ static MigrateResult migrate_v1710_to_current(const uint8_t *raw, size_t len, de
     out.button_timer2_ms = old->button_timer2_ms;
     out.button_timer3_ms = old->button_timer3_ms;
     out.a2b_debounce_ms  = old->a2b_debounce_ms;
-    /* long_press_threshold_ms / double_tap_window_ms: keep InitConfig
+    /* tap_cutoff_ms / double_tap_window_ms: keep InitConfig
      * defaults (500 / 300 ms). v1710 had no gestures. */
 
     /* ------- Axes-to-buttons ------- */
@@ -203,7 +203,7 @@ static MigrateResult migrate_v1710_to_current(const uint8_t *raw, size_t len, de
  *
  * Diffs vs current:
  *   MISSING (default-fill from InitConfig): board_id + reserved_layout,
- *     long_press_threshold_ms + double_tap_window_ms, fast_encoders[],
+ *     tap_cutoff_ms + double_tap_window_ms, fast_encoders[],
  *     saved_breakdown.
  *   button_t shape change: type widened from :5 to byte (values still
  *     fit), src_b added (default -1), op added (default 0),
@@ -405,8 +405,10 @@ static MigrateResult migrate_v1770_to_current(const uint8_t *raw, size_t len, de
     out.button_timer2_ms        = old->button_timer2_ms;
     out.button_timer3_ms        = old->button_timer3_ms;
     out.a2b_debounce_ms         = old->a2b_debounce_ms;
-    out.long_press_threshold_ms = old->long_press_threshold_ms;
-    out.double_tap_window_ms    = old->double_tap_window_ms;
+    /* v1770 archive's long_press_threshold_ms holds what is now tap_cutoff_ms;
+     * the byte/offset is identical, only the current-shape field name changed. */
+    out.tap_cutoff_ms        = old->long_press_threshold_ms;
+    out.double_tap_window_ms = old->double_tap_window_ms;
 
     Q_STATIC_ASSERT(sizeof(axis_to_buttons_t) == sizeof(v1770::axis_to_buttons_t));
     for (int i = 0; i < MAX_AXIS_NUM; ++i) {
