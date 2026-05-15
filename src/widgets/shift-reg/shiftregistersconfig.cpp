@@ -140,7 +140,12 @@ void ShiftRegistersConfig::shiftRegSelected(int latchPin, int clkPin, int dataPi
             for (uint i = 0; i < m_dataPinsArray.size(); ++i) {
                 if (dataPin == m_dataPinsArray[i].pinNumber){
                     m_dataPinsArray[i].pinNumber = 0;
-                    m_dataPinsArray[i].guiName = m_shiftRegsPtrList[i]->defaultText();      //?????????????????
+                    // m_dataPinsArray has MAX_SHIFT_REG_NUM+1 entries (trailing
+                    // scratch slot for the add-and-sort dance above); the widget
+                    // list has only MAX_SHIFT_REG_NUM, so [i] crashes when the
+                    // match lands in scratch. defaultText() is the same shared
+                    // placeholder on every widget -- mirror addPinAndSort's [0].
+                    m_dataPinsArray[i].guiName = m_shiftRegsPtrList[0]->defaultText();
                 }
             }
         }
