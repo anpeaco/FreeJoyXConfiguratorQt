@@ -17,6 +17,7 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
 
     m_buttonsCount = 0;
     m_latchPin = 0;
+    m_clkPin = 0;
     m_dataPin = 0;
     m_shiftRegNumber = shiftRegNumber;
     ui->label_ShiftIndex->setNum(shiftRegNumber + 1);
@@ -30,6 +31,15 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
 
     connect(ui->spinBox_ButtonCount, SIGNAL(valueChanged(int)), this, SLOT(onButtonCountChanged(int)));
     connect(ui->spinBox_RegistersCount, SIGNAL(valueChanged(int)), this, SLOT(onRegistersCountChanged(int)));
+
+    /* Without this the widget starts in whatever enabled state the .ui
+     * defines (enabled by default). If the device has a stale button_cnt
+     * in flash but no shift-reg-data pin is assigned, ShiftRegistersConfig::
+     * readFromConfig's setValue(N) would still emit buttonCountChanged
+     * because isEnabled() is true, and the per-register breakdown ends up
+     * showing phantom shift registers in the Button Config tab. Force the
+     * disabled-until-pins-assigned invariant from t=0. */
+    setUiOnOff();
 }
 
 ShiftRegisters::~ShiftRegisters()
