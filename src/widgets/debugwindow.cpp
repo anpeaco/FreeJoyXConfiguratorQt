@@ -18,7 +18,6 @@ DebugWindow::DebugWindow(QWidget *parent)
     ui->setupUi(this);
 
     m_packetsCount = 0;
-    m_writeToFile = false;
 
     QString docLoc = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     if (docLoc.isEmpty() == false) {
@@ -27,8 +26,16 @@ DebugWindow::DebugWindow(QWidget *parent)
     QSettings s(docLoc + "FreeJoySettings.conf", QSettings::IniFormat);
 
     s.beginGroup("OtherSettings");
-    ui->checkBox_WriteLog->setChecked(s.value("LogEnabled", "false").toBool());
+    const bool logEnabled = s.value("LogEnabled", false).toBool();
     s.endGroup();
+
+    /* Mirror the persisted setting into BOTH the UI checkbox state AND
+     * the m_writeToFile flag that printMsg actually gates on. Previous
+     * code only synced the UI; m_writeToFile stayed false until the
+     * user clicked the checkbox, so logging silently no-op'd until then
+     * even if the UI showed it as enabled. */
+    ui->checkBox_WriteLog->setChecked(logEnabled);
+    m_writeToFile = logEnabled;
 }
 
 DebugWindow::~DebugWindow()
