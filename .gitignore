@@ -5,3 +5,4 @@
 FreeJoyQt.pro.user
 .vscode
 /build
+/.claude/settings.local.json
