@@ -206,6 +206,18 @@ private:
     bool m_consolidatedAutoRestore = true;
     QString m_consolidatedBackupPath; /* backup file path; surfaced in terminal dialog states */
 
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#21: target firmware version
+     * captured from the binary's footer at flash start, compared
+     * against the post-flash paramsReport's firmware_version. A
+     * mismatch is a soft warning (rendered in the dialog's status
+     * log) rather than a hard failure -- the flash itself completed,
+     * we just want to flag that the device might be running something
+     * different from what was on disk. Zero means "binary lacked a
+     * footer / heuristic couldn't extract a version", so the check
+     * skips. */
+    uint16_t m_consolidatedTargetFwVersion = 0;
+    bool m_consolidatedVersionWarned = false;
+
     /* Whole-window lock applied during a flash chain (manual flasher OR
      * one-click upgrade). Disables everything except the Advanced
      * Settings tab so the user can't wander to other tabs and trigger

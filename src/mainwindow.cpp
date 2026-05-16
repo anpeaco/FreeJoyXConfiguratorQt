@@ -693,6 +693,34 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
          * migrated config that we backed up + restored before the flash.
          * The QTimer defer lets the UI settle (button-enable, info card,
          * pin-config board switch) before we click through. */
+        /* Issue #21: version-match check. Compares the freshly-arrived
+         * paramsReport's firmware_version against the version extracted
+         * from the flashed binary's footer. A mismatch surfaces as a
+         * soft warning in the dialog's status log -- it doesn't fail
+         * the flow (the flash itself succeeded; we just want to flag
+         * unexpected state). Skipped when m_consolidatedTargetFwVersion
+         * is zero (legacy binary, no footer). */
+        if (m_consolidatedFlashActive && !m_consolidatedVersionWarned &&
+            m_consolidatedTargetFwVersion != 0 &&
+            gEnv.pDeviceConfig) {
+            const uint16_t reported = gEnv.pDeviceConfig->paramsReport.firmware_version;
+            if (reported != 0 && reported != m_consolidatedTargetFwVersion) {
+                m_consolidatedVersionWarned = true;
+                if (m_flashProgress) {
+                    m_flashProgress->appendStatus(
+                        tr("WARNING: device reports firmware v0x%1 but the "
+                           "flashed binary's footer says v0x%2. "
+                           "Re-flash recommended.")
+                            .arg(reported, 4, 16, QChar('0'))
+                            .arg(m_consolidatedTargetFwVersion, 4, 16, QChar('0')));
+                }
+                qWarning() << "Post-flash version mismatch: device reports"
+                           << QString::number(reported, 16)
+                           << "but binary footer says"
+                           << QString::number(m_consolidatedTargetFwVersion, 16);
+            }
+        }
+
         if (m_upgradePending && firmwareCompatible) {
             qDebug() << "Upgrade post-flash: device returned with compatible "
                         "firmware, auto-triggering Write Config";
@@ -934,6 +962,14 @@ void MainWindow::onConsolidatedFlashRequested(const QString &filePath)
         FlashConfirmationDialog::verdictAllowsAutoRestore(v);
     qDebug() << "Consolidated flash verdict:" << int(v)
              << "auto-restore:" << m_consolidatedAutoRestore;
+
+    /* Issue #21: capture the target version from the binary's footer
+     * for the post-flash version-match check. Zero means the binary
+     * was a legacy build without a footer and the heuristic couldn't
+     * extract a version -- we skip the check rather than warn on
+     * every legacy flash. */
+    m_consolidatedTargetFwVersion = image.fwVersion();
+    m_consolidatedVersionWarned = false;
 
     /* Drive the existing one-click upgrade machinery. Reuses the same
      * m_upgradePending / m_upgradeFirmwarePath that the toolbar Upgrade
