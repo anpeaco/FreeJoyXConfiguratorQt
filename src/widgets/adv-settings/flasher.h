@@ -113,6 +113,18 @@ private:
      * deviceSelectionRequested emission and ping-pong with MainWindow. */
     bool m_suppressDeviceSelectionEmit = false;
 
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#18: state captured from
+     * existing signals so the FlashConfirmationDialog can be populated
+     * without threading extra arguments through every code path.
+     *  - m_inFlasherMode    : true once flasherFound(true) has fired
+     *                         and stays true until flasherFound(false).
+     *  - m_lastDeviceName   : the display string of the currently-
+     *                         highlighted sidebar row (matches the
+     *                         toolbar combobox). Pre-flash identity. */
+    bool m_inFlasherMode = false;
+    QString m_lastDeviceName;
+    QString m_lastDeviceSerial;
+
     /* Refresh the per-row "Selected firmware" info card from the picked
      * file path. Slice 4 (#17) wires this to filename / size only; the
      * full parsed binary metadata lands in slice 5 (#18) once

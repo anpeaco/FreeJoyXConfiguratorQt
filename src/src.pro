@@ -24,6 +24,7 @@ WIN_DESKTOP
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 INCLUDEPATH +="widgets" \
+    "dialogs" \
     "widgets/adv-settings" \
     "widgets/axes" \
     "widgets/axes-curves" \
@@ -45,6 +46,7 @@ SOURCES += \
     configtofile.cpp \
     converter.cpp \
     deviceconfig.cpp \
+    dialogs/flashconfirmationdialog.cpp \
     firmwareimage.cpp \
     firmwareupdater.cpp \
     hiddevice.cpp \
@@ -107,6 +109,7 @@ HEADERS += \
     configtofile.h \
     converter.h \
     deviceconfig.h \
+    dialogs/flashconfirmationdialog.h \
     firmwareimage.h \
     firmwareupdater.h \
     global.h \
@@ -162,6 +165,7 @@ HEADERS += \
     firmwarelibrary.h
 
 FORMS += \
+    dialogs/flashconfirmationdialog.ui \
     mainwindow.ui \
     widgets/adv-settings/advancedsettings.ui \
     widgets/axes-curves/axescurvesprofiles.ui \

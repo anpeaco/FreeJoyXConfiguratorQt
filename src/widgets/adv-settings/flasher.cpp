@@ -19,7 +19,10 @@
 #include <QLocale>
 #include <QSignalBlocker>
 
+#include "common_defines.h"
 #include "deviceconfig.h"
+#include "dialogs/flashconfirmationdialog.h"
+#include "firmwareimage.h"
 #include "global.h"
 #include "style_helpers.h"
 #include "firmwarelibrary.h"
@@ -100,6 +103,9 @@ void Flasher::deviceConnected(bool isConnect)
 
 void Flasher::flasherFound(bool isFound)
 {
+    /* Issue #18: track flasher-mode state so the confirmation dialog
+     * can classify a flash as Recovery vs normal. */
+    m_inFlasherMode = isFound;
     ui->pushButton_FlashFirmware->setEnabled(isFound);
     ui->pushButton_FlasherMode->setEnabled(!isFound);
     /* Abort is only relevant while the device is in flasher mode --
@@ -128,6 +134,10 @@ void Flasher::onFlasherDeviceInfo(const QString &manufacturer,
                                   ushort vid,
                                   ushort pid)
 {
+    /* Issue #18: hold the bootloader-side serial too so a Recovery
+     * flash dialog can show *some* identifier even when the app-mode
+     * paramsReport was never received. */
+    m_lastDeviceSerial = serial;
     /* Builds a single-line summary the user can scan to confirm the
      * right device is in flasher mode. Format mirrors the device-info
      * card on the main window: VID:PID hex + serial + product +
@@ -483,6 +493,45 @@ void Flasher::onAssetDownloaded(const QString &localPath, bool success)
 
 void Flasher::startFlashFromFile(const QString &filePath)
 {
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#18: gate every flash through
+     * the confirmation dialog. Parse the binary first so the dialog can
+     * show board + version + verdict; the parsed metadata also feeds
+     * the board-mismatch refusal -- the dialog returns reject() when
+     * Verdict::Incompatible, so we never reach the actual flash for a
+     * mismatched binary. */
+    FirmwareImage image;
+    if (!image.loadFromFile(filePath)) {
+        qWarning() << "Couldn't load firmware file for parsing:" << filePath;
+        QMessageBox::warning(this, tr("Couldn't open firmware"),
+            tr("Couldn't read the firmware file:\n%1\n\n"
+               "Check that the file exists and the configurator has "
+               "permission to read it.").arg(filePath));
+        return;
+    }
+
+    FlashConfirmationDialog::Inputs in;
+    /* Device identity: pulled from the live params report. The sidebar
+     * + main combobox display the same string, but we go to the source
+     * of truth (deviceconfig) so the dialog shows what the configurator
+     * actually thinks it's talking to. */
+    if (gEnv.pDeviceConfig) {
+        in.deviceFwVersion = gEnv.pDeviceConfig->paramsReport.firmware_version;
+        in.deviceBoardId = gEnv.pDeviceConfig->paramsReport.board_id;
+    }
+    in.deviceInRecoveryMode = m_inFlasherMode;
+    in.deviceName = m_lastDeviceName;
+    in.deviceSerial = m_lastDeviceSerial;
+    in.image = &image;
+
+    FlashConfirmationDialog dlg(in, this);
+    if (dlg.exec() != QDialog::Accepted) {
+        qDebug() << "Flash cancelled at confirmation dialog";
+        return;
+    }
+
+    /* Confirmed. Hand off to the existing flash path -- the state
+     * machine collapse (slice 6 / #19) replaces this with the
+     * FlashProgressDialog. */
     QFile file(filePath);
     if (file.open(QIODevice::ReadOnly)) {
         ui->pushButton_FlashFirmware->setEnabled(false);
@@ -601,6 +650,14 @@ void Flasher::setCurrentDeviceIndex(int index)
 
 void Flasher::on_listWidget_Devices_currentRowChanged(int row)
 {
+    /* Capture the row's display string so the confirmation dialog
+     * (#18) has a device-name to render even when the user hasn't
+     * changed selection in this session. */
+    if (row >= 0 && row < ui->listWidget_Devices->count()) {
+        m_lastDeviceName = ui->listWidget_Devices->item(row)->text();
+    } else {
+        m_lastDeviceName.clear();
+    }
     if (m_suppressDeviceSelectionEmit) {
         return;
     }
