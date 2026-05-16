@@ -45,6 +45,7 @@ SOURCES += \
     configtofile.cpp \
     converter.cpp \
     deviceconfig.cpp \
+    firmwareimage.cpp \
     firmwareupdater.cpp \
     hiddevice.cpp \
     main.cpp \
@@ -106,6 +107,7 @@ HEADERS += \
     configtofile.h \
     converter.h \
     deviceconfig.h \
+    firmwareimage.h \
     firmwareupdater.h \
     global.h \
     hidapi.h \
