@@ -9,8 +9,63 @@
 #include <QSettings>
 
 #include "global.h"
+#include "common_types.h"
+#include "deviceconfig.h"
 #include <QDebug>
 #include <QStandardPaths>
+
+namespace {
+
+/* Stable, ASCII, translation-independent label for a button_type_t.
+ * The dropdown's m_logicFunctionList in buttonlogical.h is deliberately
+ * NOT reused: its labels are tr()'d UI strings ("Double tap", "POV1 Up")
+ * which are unstable across locales and contain spaces that break
+ * key=value parsing. Caller frees nothing -- returns a literal or a
+ * heap QString constructed from a literal. */
+QString buttonTypeLabel(button_type_t t)
+{
+    switch (t) {
+        case BUTTON_NORMAL:     return QStringLiteral("NORMAL");
+        case BUTTON_TOGGLE:     return QStringLiteral("TOGGLE");
+        case TOGGLE_SWITCH:     return QStringLiteral("TOGGLE_SWITCH");
+        case TOGGLE_SWITCH_ON:  return QStringLiteral("TOGGLE_SWITCH_ON");
+        case TOGGLE_SWITCH_OFF: return QStringLiteral("TOGGLE_SWITCH_OFF");
+        case POV1_UP:           return QStringLiteral("POV1_UP");
+        case POV1_RIGHT:        return QStringLiteral("POV1_RIGHT");
+        case POV1_DOWN:         return QStringLiteral("POV1_DOWN");
+        case POV1_LEFT:         return QStringLiteral("POV1_LEFT");
+        case POV1_CENTER:       return QStringLiteral("POV1_CENTER");
+        case POV2_UP:           return QStringLiteral("POV2_UP");
+        case POV2_RIGHT:        return QStringLiteral("POV2_RIGHT");
+        case POV2_DOWN:         return QStringLiteral("POV2_DOWN");
+        case POV2_LEFT:         return QStringLiteral("POV2_LEFT");
+        case POV2_CENTER:       return QStringLiteral("POV2_CENTER");
+        case POV3_UP:           return QStringLiteral("POV3_UP");
+        case POV3_RIGHT:        return QStringLiteral("POV3_RIGHT");
+        case POV3_DOWN:         return QStringLiteral("POV3_DOWN");
+        case POV3_LEFT:         return QStringLiteral("POV3_LEFT");
+        case POV3_CENTER:       return QStringLiteral("POV3_CENTER");
+        case POV4_UP:           return QStringLiteral("POV4_UP");
+        case POV4_RIGHT:        return QStringLiteral("POV4_RIGHT");
+        case POV4_DOWN:         return QStringLiteral("POV4_DOWN");
+        case POV4_LEFT:         return QStringLiteral("POV4_LEFT");
+        case POV4_CENTER:       return QStringLiteral("POV4_CENTER");
+        case ENCODER_INPUT_A:   return QStringLiteral("ENCODER_A");
+        case ENCODER_INPUT_B:   return QStringLiteral("ENCODER_B");
+        case RADIO_BUTTON1:     return QStringLiteral("RADIO_1");
+        case RADIO_BUTTON2:     return QStringLiteral("RADIO_2");
+        case RADIO_BUTTON3:     return QStringLiteral("RADIO_3");
+        case RADIO_BUTTON4:     return QStringLiteral("RADIO_4");
+        case SEQUENTIAL_TOGGLE: return QStringLiteral("SEQ_TOGGLE");
+        case SEQUENTIAL_BUTTON: return QStringLiteral("SEQ_BUTTON");
+        case LOGIC:             return QStringLiteral("LOGIC");
+        case TAP:               return QStringLiteral("TAP");
+        case DOUBLE_TAP:        return QStringLiteral("DOUBLE_TAP");
+        default:                return QStringLiteral("TYPE_%1").arg(int(t));
+    }
+}
+
+} // namespace
 DebugWindow::DebugWindow(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::DebugWindow)
@@ -135,36 +190,59 @@ void DebugWindow::on_pushButton_LogMarker_clicked()
 
 void DebugWindow::logicalButtonState(int buttonNumber, bool state)
 {
+    /* Structured log line:
+     *   HH:mm:ss.zzz | LBTN slot=N type=TYPE phys=P state=ON|OFF
+     *
+     * buttonNumber is 1-indexed (comes from the UI slot label). Look
+     * up the slot's configured type and physical_num via the global
+     * device config to enrich the line. Defensive against out-of-range
+     * slot numbers or a null pDeviceConfig (theoretically possible
+     * during startup races) -- render '?' rather than crashing. */
     const QString stamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
-    const QString line = stamp + ": " + tr("Logical button ") + QString::number(buttonNumber)
-                       + (state ? tr(" pressed") : tr(" unpressed")) + '\n';
-
-    if (state) {
-        ui->textBrowser_ButtonsPressLog->insertPlainText(line);
-        ui->textBrowser_ButtonsPressLog->moveCursor(QTextCursor::End);
-    } else {
-        ui->textBrowser_ButtonsUnpressLog->insertPlainText(line);
-        ui->textBrowser_ButtonsUnpressLog->moveCursor(QTextCursor::End);
+    QString typeStr = QStringLiteral("?");
+    QString physStr = QStringLiteral("?");
+    if (gEnv.pDeviceConfig != nullptr
+        && buttonNumber >= 1 && buttonNumber <= MAX_BUTTONS_NUM)
+    {
+        const button_t &btn = gEnv.pDeviceConfig->config.buttons[buttonNumber - 1];
+        typeStr = buttonTypeLabel(btn.type);
+        physStr = (btn.physical_num < 0) ? QStringLiteral("-")
+                                         : QString::number(btn.physical_num + 1);
     }
+    const QString line = stamp + QStringLiteral(" | LBTN slot=") + QString::number(buttonNumber)
+                       + QStringLiteral(" type=") + typeStr
+                       + QStringLiteral(" phys=") + physStr
+                       + QStringLiteral(" state=") + (state ? QStringLiteral("ON") : QStringLiteral("OFF"))
+                       + '\n';
+
+    ui->textBrowser_ButtonsLog->insertPlainText(line);
+    ui->textBrowser_ButtonsLog->moveCursor(QTextCursor::End);
 
     appendToLogFile(line);
 }
 
 void DebugWindow::physicalButtonState(int buttonNumber, bool state)
 {
-    /* Physical button state changes go to the on-disk log only. No
-     * dedicated UI textBrowser -- the existing pin-state highlights on
-     * the Button Config tab already surface this live. */
+    /* Structured log line:
+     *   HH:mm:ss.zzz | PBTN phys=N state=ON|OFF
+     *
+     * Routed to both the merged in-app log panel and the on-disk log
+     * so the physical->logical correlation is visible in the UI during
+     * bench testing without tab-switching to the log file. */
     const QString stamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
-    const QString line = stamp + ": " + tr("Physical button ") + QString::number(buttonNumber)
-                       + (state ? tr(" pressed") : tr(" unpressed")) + '\n';
+    const QString line = stamp + QStringLiteral(" | PBTN phys=") + QString::number(buttonNumber)
+                       + QStringLiteral(" state=") + (state ? QStringLiteral("ON") : QStringLiteral("OFF"))
+                       + '\n';
+
+    ui->textBrowser_ButtonsLog->insertPlainText(line);
+    ui->textBrowser_ButtonsLog->moveCursor(QTextCursor::End);
+
     appendToLogFile(line);
 }
 
 void DebugWindow::buttonLogReset()
 {
-    ui->textBrowser_ButtonsPressLog->clear();
-    ui->textBrowser_ButtonsUnpressLog->clear(); // need to improve
+    ui->textBrowser_ButtonsLog->clear();
 }
 
 void DebugWindow::on_checkBox_WriteLog_clicked(bool checked)
