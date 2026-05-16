@@ -1,6 +1,9 @@
 #ifndef FLASHER_H
 #define FLASHER_H
 
+#include <QList>
+#include <QPair>
+#include <QString>
 #include <QWidget>
 
 namespace Ui {
@@ -42,9 +45,22 @@ signals:
      * pointing at the recovery dropdown. */
     void flashTerminated(bool success);
 
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#17: sidebar row click. Asks
+     * MainWindow to set the toolbar's comboBox_HidDeviceList index --
+     * single-source-of-truth stays on the main combobox; the sidebar
+     * is just a more visible re-render of the same selection. */
+    void deviceSelectionRequested(int index);
+
 public slots:
     void flasherFound(bool isFound);
     void flashStatus(int status, int bytes_sent, int bytes_total);
+
+    /* Sidebar feeds (issue #17). setDeviceList mirrors the toolbar
+     * combobox contents and lights up the same row preferredIndex
+     * selects there; setCurrentDeviceIndex pushes selection back when
+     * the user changes it from the toolbar combobox. */
+    void setDeviceList(const QList<QPair<bool, QString>> &deviceNames, int preferredIndex);
+    void setCurrentDeviceIndex(int index);
     /* Driven by HidDevice::flasherDeviceInfo. Populates the
      * "Connected flasher" info line in the Flasher tab so the user
      * can confirm the right device is in flasher mode before
@@ -61,6 +77,8 @@ private slots:
     void on_pushButton_AbortFlash_clicked();
     void on_pushButton_BrowseFirmware_clicked();
     void on_toolButton_OpenRecoveryDir_clicked();
+    void on_listWidget_Devices_itemActivated(class QListWidgetItem *item);
+    void on_listWidget_Devices_currentRowChanged(int row);
 
     void onReleasesUpdated();
     void onAssetDownloaded(const QString &localPath, bool success);
@@ -88,6 +106,18 @@ private:
     bool m_flashAfterDownload = false;
     QString m_pendingDownloadPath;
     void startFlashFromFile(const QString &filePath);
+
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#17: guards against the
+     * setCurrentRow re-entrancy that would otherwise turn an external
+     * selection update (driven by setCurrentDeviceIndex) into another
+     * deviceSelectionRequested emission and ping-pong with MainWindow. */
+    bool m_suppressDeviceSelectionEmit = false;
+
+    /* Refresh the per-row "Selected firmware" info card from the picked
+     * file path. Slice 4 (#17) wires this to filename / size only; the
+     * full parsed binary metadata lands in slice 5 (#18) once
+     * FirmwareImage is integrated. */
+    void refreshFirmwareInfoCard(const QString &filePath);
 };
 
 #endif // FLASHER_H

@@ -13,6 +13,12 @@
 #include <QAction>
 #include <QCursor>
 
+#include <QFileInfo>
+#include <QListWidget>
+#include <QListWidgetItem>
+#include <QLocale>
+#include <QSignalBlocker>
+
 #include "deviceconfig.h"
 #include "global.h"
 #include "style_helpers.h"
@@ -59,6 +65,18 @@ Flasher::Flasher(QWidget *parent)
      * refresh against GitHub. */
     refreshSourceList();
     m_library->fetchReleases();
+
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#17: refresh the binary info
+     * card whenever the user changes the source dropdown. Uses an
+     * untyped overload because the connect-pointer-to-member form ends
+     * up ambiguous for currentIndexChanged in Qt 5.15. */
+    connect(ui->comboBox_FlashSource,
+            QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this,
+            [this](int) { refreshFirmwareInfoCard(QString()); });
+
+    /* Slice 4 (#17): the listWidget connects via the auto-named
+     * on_listWidget_Devices_* slots above; nothing to do here. */
 }
 
 Flasher::~Flasher()
@@ -541,4 +559,116 @@ void Flasher::flashDone()
         m_fileArray.clear();
         m_fileArray.shrink_to_fit();
     });
+}
+
+/* --- Device sidebar (issue anpeaco/FreeJoyXConfiguratorQt#17) --------- */
+
+void Flasher::setDeviceList(const QList<QPair<bool, QString>> &deviceNames, int preferredIndex)
+{
+    /* Mirror MainWindow's existing combobox population. The first
+     * element of each pair flags an "old-firmware flash-only" device
+     * (we surface it as RECOVERY rather than the previous "ONLY FLASH"
+     * prefix); the second element is the human-readable name. */
+    QSignalBlocker bl(ui->listWidget_Devices);
+    ui->listWidget_Devices->clear();
+    for (int i = 0; i < deviceNames.size(); ++i) {
+        QString label = deviceNames[i].second;
+        if (deviceNames[i].first) {
+            label = tr("[RECOVERY] %1").arg(label);
+        }
+        ui->listWidget_Devices->addItem(label);
+    }
+    /* Match MainWindow's preferredIndex / placeholder behaviour: a
+     * negative preferred means "no selection yet". */
+    if (preferredIndex >= 0 && preferredIndex < deviceNames.size()) {
+        ui->listWidget_Devices->setCurrentRow(preferredIndex);
+    } else {
+        ui->listWidget_Devices->setCurrentRow(-1);
+    }
+}
+
+void Flasher::setCurrentDeviceIndex(int index)
+{
+    /* External selection update from MainWindow's combobox -- suppress
+     * the re-emit so we don't bounce the signal back. */
+    if (ui->listWidget_Devices->currentRow() == index) {
+        return;
+    }
+    m_suppressDeviceSelectionEmit = true;
+    ui->listWidget_Devices->setCurrentRow(index);
+    m_suppressDeviceSelectionEmit = false;
+}
+
+void Flasher::on_listWidget_Devices_currentRowChanged(int row)
+{
+    if (m_suppressDeviceSelectionEmit) {
+        return;
+    }
+    emit deviceSelectionRequested(row);
+}
+
+void Flasher::on_listWidget_Devices_itemActivated(QListWidgetItem *item)
+{
+    /* Double-click / enter on a row -- treat the same as currentRow
+     * change. Belt-and-suspenders so re-activating the already-selected
+     * row still re-asserts selection on MainWindow (useful if some
+     * other state has drifted). */
+    if (!item) return;
+    if (m_suppressDeviceSelectionEmit) return;
+    emit deviceSelectionRequested(ui->listWidget_Devices->row(item));
+}
+
+/* --- Firmware info card (issue anpeaco/FreeJoyXConfiguratorQt#17) ----- */
+
+void Flasher::refreshFirmwareInfoCard(const QString &filePath)
+{
+    /* Resolve which file to introspect:
+     *   1. Explicit filePath argument (e.g. after Browse).
+     *   2. Source combobox's local-file entry data (string).
+     *   3. Source combobox's remote entry's cached local path (in the
+     *      QVariantMap).
+     *   4. Nothing selected -- reset the card to placeholders.
+     *
+     * Slice 4 limits the card to filename + size + raw filename-derived
+     * board guess. Full parsed metadata (board + version from
+     * FirmwareImage's footer / heuristic) lands in slice 5 (#18). */
+    QString resolved = filePath;
+    if (resolved.isEmpty()) {
+        const QVariant data = ui->comboBox_FlashSource->currentData();
+        if (data.type() == QVariant::String) {
+            resolved = data.toString();
+        } else if (data.type() == QVariant::Map) {
+            resolved = data.toMap().value(kKeyLocal).toString();
+        }
+    }
+
+    if (resolved.isEmpty() || !QFileInfo::exists(resolved)) {
+        const QString dash = QStringLiteral("—");
+        ui->label_FwInfoFile->setText(dash);
+        ui->label_FwInfoBoard->setText(dash);
+        ui->label_FwInfoVersion->setText(dash);
+        ui->label_FwInfoSize->setText(dash);
+        ui->label_FwInfoVerdict->clear();
+        return;
+    }
+
+    const QFileInfo fi(resolved);
+    ui->label_FwInfoFile->setText(fi.fileName());
+    ui->label_FwInfoSize->setText(QLocale::system().formattedDataSize(fi.size()));
+
+    /* Filename-based board hint until FirmwareImage lands (#18). Names
+     * follow the freejoyx-<board>-<app|boot>-<version>.bin convention,
+     * so a substring match is reliable for our own releases; for hand-
+     * built or third-party files the hint stays "Unknown" and slice 5
+     * will inspect the bytes instead. */
+    const QString nameLower = fi.fileName().toLower();
+    if (nameLower.contains("f103")) {
+        ui->label_FwInfoBoard->setText(tr("F103 (from filename)"));
+    } else if (nameLower.contains("f411")) {
+        ui->label_FwInfoBoard->setText(tr("F411 (from filename)"));
+    } else {
+        ui->label_FwInfoBoard->setText(tr("Unknown"));
+    }
+    ui->label_FwInfoVersion->setText(QStringLiteral("—"));
+    ui->label_FwInfoVerdict->clear();
 }

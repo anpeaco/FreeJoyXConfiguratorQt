@@ -274,6 +274,27 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_hidDeviceWorker, &HidDevice::hidDeviceList, this, &MainWindow::hidDeviceList);
     connect(m_hidDeviceWorker, &HidDevice::deviceInfo, this, &MainWindow::setDeviceInfo);
 
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#17: keep the Flasher tab's
+     * device sidebar in lockstep with the toolbar combobox. Same source
+     * data feeds both views; selecting a row in either re-asserts on
+     * the other. The combobox stays single-source-of-truth -- the
+     * sidebar's deviceSelectionRequested signal lands here and we
+     * forward it into setCurrentIndex, which fires
+     * hidDeviceListChanged -> setSelectedDevice via the existing
+     * SIGNAL/SLOT line. */
+    connect(m_hidDeviceWorker, &HidDevice::hidDeviceList,
+            m_advSettings->flasher(), &Flasher::setDeviceList);
+    connect(m_advSettings->flasher(), &Flasher::deviceSelectionRequested,
+            this, [this](int idx) {
+                if (idx >= 0 && idx < ui->comboBox_HidDeviceList->count() &&
+                    ui->comboBox_HidDeviceList->currentIndex() != idx) {
+                    ui->comboBox_HidDeviceList->setCurrentIndex(idx);
+                }
+            });
+    connect(ui->comboBox_HidDeviceList,
+            QOverload<int>::of(&QComboBox::currentIndexChanged),
+            m_advSettings->flasher(), &Flasher::setCurrentDeviceIndex);
+
 
     // read config from device
     connect(m_hidDeviceWorker, &HidDevice::configReceived, this, &MainWindow::configReceived);
