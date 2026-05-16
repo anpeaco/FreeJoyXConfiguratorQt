@@ -532,10 +532,15 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
          *      the user has *something* to report when triaging. */
         if (firmwareCompatible) {
             const auto &pr = gEnv.pDeviceConfig->paramsReport;
-            ui->label_VersionVal->setText(QStringLiteral("FreeJoyX %1.%2.%3")
+            /* reserved_layout has been repurposed as a per-build counter
+             * (FIRMWARE_BUILD_ID, auto-incremented by armgcc/Makefile).
+             * Append " (b<N>)" so the user can verify the bin actually
+             * flashed onto the device matches the one they just built. */
+            ui->label_VersionVal->setText(QStringLiteral("FreeJoyX %1.%2.%3 (b%4)")
                 .arg(pr.freejoyx_version_major)
                 .arg(pr.freejoyx_version_minor)
-                .arg(pr.freejoyx_version_patch));
+                .arg(pr.freejoyx_version_patch)
+                .arg(pr.reserved_layout));
         } else if (legacy::canMigrate(devVer)) {
             ui->label_VersionVal->setText(QStringLiteral("FreeJoy %1")
                 .arg(QString::fromLatin1(legacy::describeVersion(devVer))));
