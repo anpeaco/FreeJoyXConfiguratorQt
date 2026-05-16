@@ -19,9 +19,11 @@
 #include "style_helpers.h"
 
 #include "common_types.h"
+#include "common_defines.h"
 #include "global.h"
 #include "deviceconfig.h"
 #include "version.h"
+#include "dialogs/flashprogressdialog.h"
 #include "legacy/legacy_migrator.h"
 #include "legacy/legacy_reverse_migrator.h"
 
@@ -295,6 +297,16 @@ MainWindow::MainWindow(QWidget *parent)
             QOverload<int>::of(&QComboBox::currentIndexChanged),
             m_advSettings->flasher(), &Flasher::setCurrentDeviceIndex);
 
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#19: consolidated Flash
+     * button kicks the new orchestrator. flashStatus also forks a
+     * second listener (the existing Flasher::flashStatus stays wired
+     * for the legacy widget; this one pushes bytes into the progress
+     * dialog if it's open). */
+    connect(m_advSettings->flasher(), &Flasher::consolidatedFlashRequested,
+            this, &MainWindow::onConsolidatedFlashRequested);
+    connect(m_hidDeviceWorker, &HidDevice::flashStatus,
+            this, &MainWindow::onFlashStatusToDialog);
+
 
     // read config from device
     connect(m_hidDeviceWorker, &HidDevice::configReceived, this, &MainWindow::configReceived);
@@ -408,6 +420,13 @@ void MainWindow::flasherConnected()
      * it the immediate triggerFlashFromPath occasionally races the dropdown
      * refresh. */
     if (m_upgradePending && !m_upgradeFirmwarePath.isEmpty()) {
+        /* Issue #19: consolidated flash transitions to Flash stage. The
+         * progress dialog renders byte counts from onFlashStatusToDialog
+         * as the DFU loop runs. */
+        if (m_consolidatedFlashActive && m_flashProgress) {
+            m_flashProgress->setStage(FlashProgressDialog::Stage::Flash,
+                tr("Bootloader ready. Beginning firmware transfer..."));
+        }
         const QString path = m_upgradeFirmwarePath;
         QTimer::singleShot(200, this, [this, path]() {
             qDebug() << "Upgrade auto-flash:" << path;
@@ -681,6 +700,11 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
             /* Hold the flash-chain lock across the auto-Write +
              * device-reset window; configSent will release it. */
             m_postUpgradeWriteInFlight = true;
+            /* Issue #19: consolidated-flash transition to Restore. */
+            if (m_consolidatedFlashActive && m_flashProgress) {
+                m_flashProgress->setStage(FlashProgressDialog::Stage::Restore,
+                    tr("Device back online. Writing saved configuration..."));
+            }
             QTimer::singleShot(300, this, [this]() {
                 on_pushButton_WriteConfig_clicked();
             });
@@ -814,6 +838,137 @@ void MainWindow::onPostFlashHealthTimeout()
            "<li>If you have a backup config, restore it via "
            "<b>Load config from file</b> after the recovery flash.</li>"
            "</ul>"));
+}
+
+/* Issue anpeaco/FreeJoyXConfiguratorQt#19: consolidated flash entry.
+ * Opens the progress dialog and delegates the device-side orchestration
+ * to the existing m_upgradePending machinery so the new flow inherits
+ * the proven backup -> bootloader -> auto-flash -> reconnect -> auto-
+ * write chain. The dialog is updated from the existing signal-handler
+ * sites (configReceived / flasherConnected / onFlashStatusToDialog /
+ * getParamsPacket / configSent). */
+void MainWindow::onConsolidatedFlashRequested(const QString &filePath)
+{
+    if (m_consolidatedFlashActive) {
+        qDebug() << "Consolidated flash already in progress, ignoring re-trigger";
+        return;
+    }
+
+    const bool deviceReady = gEnv.pDeviceConfig
+        && gEnv.pDeviceConfig->paramsReport.firmware_version != 0;
+    /* Recovery flash branch deferred to a polish step -- slice 6
+     * ships the happy-path normal-mode flow only. The legacy
+     * Enter Flasher Mode + Flash Firmware buttons still handle
+     * recovery flashes via the existing two-step path. */
+    if (!deviceReady) {
+        QMessageBox::warning(this, tr("No device detected"),
+            tr("Connect a FreeJoy device in normal mode before using the "
+               "consolidated Flash button. To flash a device already in "
+               "bootloader mode, use the <b>Flash Firmware</b> button "
+               "in the row below."));
+        return;
+    }
+
+    /* Open the modal progress dialog. The dialog stays alive until the
+     * user clicks Close on the terminal Done / TerminalError state. */
+    if (m_flashProgress) {
+        m_flashProgress->deleteLater();
+        m_flashProgress = nullptr;
+    }
+    m_flashProgress = new FlashProgressDialog(/* recovery */ false, this);
+    connect(m_flashProgress, &FlashProgressDialog::cancelRequested,
+            this, &MainWindow::onFlashProgressCancelRequested);
+    connect(m_flashProgress, &QDialog::finished, this, [this](int) {
+        if (m_flashProgress) {
+            m_flashProgress->deleteLater();
+            m_flashProgress = nullptr;
+        }
+        m_consolidatedFlashActive = false;
+    });
+    m_flashProgress->show();
+
+    /* Drive the existing one-click upgrade machinery. Reuses the same
+     * m_upgradePending / m_upgradeFirmwarePath that the toolbar Upgrade
+     * button uses; the dialog observes the same signals. */
+    m_consolidatedFlashActive = true;
+    m_upgradePending = true;
+    m_upgradeFirmwarePath = filePath;
+    m_upgradeBoardId = gEnv.pDeviceConfig->paramsReport.board_id;
+
+    /* Auto-trigger flash from the existing flasherConnected path won't
+     * stop to show the confirmation dialog -- the user already passed
+     * one from FlashConfirmationDialog. Arm the bypass. */
+    m_advSettings->flasher()->armConfirmationBypass();
+
+    m_flashProgress->setStage(FlashProgressDialog::Stage::Backup,
+                              tr("Reading current device configuration..."));
+
+    setFlashChainUiLocked(true);
+
+    /* Capture reconnect identity BEFORE entering DFU; the post-flash
+     * detection thread needs this to find the device when it returns. */
+    m_hidDeviceWorker->captureReconnectIdentity(
+        gEnv.pDeviceConfig->config.vid,
+        gEnv.pDeviceConfig->config.pid);
+
+    /* Kick the existing backup-then-flash chain. */
+    deviceFlasherController(/* isStartFlash */ false);
+}
+
+void MainWindow::onFlashProgressCancelRequested()
+{
+    /* Backup stage is the only cancel-safe phase. By the time we receive
+     * this signal we may already have moved on -- the dialog enables
+     * Cancel only in the cancel-safe stage but signal ordering means a
+     * stale click is possible. Guard against acting on it. */
+    if (!m_flashProgress) return;
+    if (m_flashProgress->stage() != FlashProgressDialog::Stage::Backup) return;
+
+    qDebug() << "Consolidated flash cancelled at backup stage";
+    m_consolidatedFlashActive = false;
+    m_upgradePending = false;
+    m_upgradeFirmwarePath.clear();
+    m_backupBeforeFlashPending = false;
+    setFlashChainUiLocked(false);
+    m_flashProgress->setStage(FlashProgressDialog::Stage::TerminalError,
+                              tr("Flash cancelled."));
+}
+
+void MainWindow::onFlashStatusToDialog(int status, int bytes_sent, int bytes_total)
+{
+    if (!m_flashProgress || !m_consolidatedFlashActive) return;
+
+    /* Status code constants mirror flasher.h: FINISHED=0xF000, IN_PROCESS,
+     * SIZE_ERROR=0xF001, CRC_ERROR=0xF002, ERASE_ERROR=0xF003. We treat
+     * any non-IN_PROCESS / non-FINISHED status as terminal-error. */
+    if (status == /* FINISHED */ 0xF000) {
+        m_flashProgress->setStage(FlashProgressDialog::Stage::WaitingForReset,
+                                  tr("Flash complete. Waiting for device to restart..."));
+        m_flashProgress->setFlashBytes(bytes_total, bytes_total);
+        return;
+    }
+    if (status == /* IN_PROCESS */ 0) {
+        /* On the first IN_PROCESS push, transition to Flash stage. The
+         * dialog ignores redundant setStage(Flash) calls. */
+        if (m_flashProgress->stage() != FlashProgressDialog::Stage::Flash) {
+            m_flashProgress->setStage(FlashProgressDialog::Stage::Flash);
+        }
+        m_flashProgress->setFlashBytes(bytes_sent, bytes_total);
+        return;
+    }
+    /* Any other status is a terminal error from the bootloader. */
+    QString detail;
+    switch (status) {
+        case 0xF001: detail = tr("Bootloader reported SIZE error -- the firmware "
+                                 "image exceeds the device's app region."); break;
+        case 0xF002: detail = tr("Bootloader reported CRC error -- the transferred "
+                                 "bytes do not match the expected checksum."); break;
+        case 0xF003: detail = tr("Bootloader reported ERASE error -- the device "
+                                 "flash could not be erased."); break;
+        default:     detail = tr("Bootloader reported unknown error (status=0x%1).")
+                                 .arg(status, 4, 16, QChar('0')); break;
+    }
+    m_flashProgress->setStage(FlashProgressDialog::Stage::TerminalError, detail);
 }
 
 void MainWindow::deviceFlasherController(bool isStartFlash)
@@ -1163,14 +1318,24 @@ void MainWindow::configReceived(bool success)
         m_backupBeforeFlashPending = false;
         if (success) {
             const QString path = writeAutoBackup();
-            QMessageBox::information(this, tr("Config backed up"),
-                tr("<p>Device config saved to:</p>"
-                   "<p><a href=\"file:///%1\">%2</a></p>"
-                   "<p>If anything goes wrong with the flash, you can restore "
-                   "by loading this file via <b>Load config from file</b> "
-                   "after flashing a known-good firmware.</p>"
-                   "<p>Now entering flasher mode...</p>")
-                    .arg(path, QDir::toNativeSeparators(path)));
+            /* Issue #19: in the consolidated flow the progress dialog
+             * surfaces the backup path -- skip the modal information
+             * message that would otherwise stack on top of it. */
+            if (m_consolidatedFlashActive && m_flashProgress) {
+                m_flashProgress->appendStatus(
+                    tr("Backup saved to %1").arg(QDir::toNativeSeparators(path)));
+                m_flashProgress->setStage(FlashProgressDialog::Stage::EnteringBootloader,
+                    tr("Rebooting device into bootloader mode..."));
+            } else {
+                QMessageBox::information(this, tr("Config backed up"),
+                    tr("<p>Device config saved to:</p>"
+                       "<p><a href=\"file:///%1\">%2</a></p>"
+                       "<p>If anything goes wrong with the flash, you can restore "
+                       "by loading this file via <b>Load config from file</b> "
+                       "after flashing a known-good firmware.</p>"
+                       "<p>Now entering flasher mode...</p>")
+                        .arg(path, QDir::toNativeSeparators(path)));
+            }
         } else {
             const QMessageBox::StandardButton rc = QMessageBox::warning(this,
                 tr("Backup failed"),
@@ -1209,6 +1374,17 @@ void MainWindow::configSent(bool success)
         if (m_flashChainLocked) {
             qDebug() << "Upgrade chain complete (Write done) -- releasing UI lock";
             setFlashChainUiLocked(false);
+        }
+        /* Issue #19: consolidated-flash dialog final transition. */
+        if (m_consolidatedFlashActive && m_flashProgress) {
+            m_flashProgress->setStage(
+                success ? FlashProgressDialog::Stage::Done
+                        : FlashProgressDialog::Stage::TerminalError,
+                success
+                    ? tr("Configuration restored. Flash complete.")
+                    : tr("Flash completed but the post-flash config write failed. "
+                         "Your backup is saved in the configurator's backups folder."));
+            m_consolidatedFlashActive = false;
         }
     }
 

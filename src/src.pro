@@ -47,6 +47,7 @@ SOURCES += \
     converter.cpp \
     deviceconfig.cpp \
     dialogs/flashconfirmationdialog.cpp \
+    dialogs/flashprogressdialog.cpp \
     firmwareimage.cpp \
     firmwareupdater.cpp \
     hiddevice.cpp \
@@ -110,6 +111,7 @@ HEADERS += \
     converter.h \
     deviceconfig.h \
     dialogs/flashconfirmationdialog.h \
+    dialogs/flashprogressdialog.h \
     firmwareimage.h \
     firmwareupdater.h \
     global.h \
@@ -166,6 +168,7 @@ HEADERS += \
 
 FORMS += \
     dialogs/flashconfirmationdialog.ui \
+    dialogs/flashprogressdialog.ui \
     mainwindow.ui \
     widgets/adv-settings/advancedsettings.ui \
     widgets/axes-curves/axescurvesprofiles.ui \

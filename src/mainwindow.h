@@ -27,6 +27,8 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
+class FlashProgressDialog;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -121,6 +123,18 @@ private slots:
      * stays in sync. Called whenever the device list changes. */
     void refreshOtherConnectedDevices();
 
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#19: orchestrate the
+     * consolidated one-click flash. Opens FlashProgressDialog, then
+     * drives the existing backup -> bootloader -> flash -> reset ->
+     * restore chain (reuses the m_upgradePending machinery) with
+     * stage transitions pushed into the dialog from existing signal
+     * handlers. */
+    void onConsolidatedFlashRequested(const QString &filePath);
+    void onFlashProgressCancelRequested();
+    /* Internal hook: forward HidDevice flashStatus into the progress
+     * dialog. Cheap if the dialog isn't open. */
+    void onFlashStatusToDialog(int status, int bytes_sent, int bytes_total);
+
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     void keyReleaseEvent(QKeyEvent *event) override;
@@ -172,6 +186,16 @@ private:
     QString m_upgradeFirmwarePath;       /* absolute path to the .bin we'll flash */
     void    refreshUpgradeButtonState(); /* enables/disables based on connection + version + firmware availability */
     QString findUpgradeFirmwarePath(int boardId, QString *outVersion) const;
+
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#19: consolidated flash flow
+     * state. m_flashProgress is the modal viewer; the existing
+     * m_upgradePending / m_upgradeFirmwarePath fields above are
+     * reused for the orchestration since the chain is identical.
+     * m_consolidatedFlashActive flags this as a sidebar/Flasher-tab
+     * trigger (vs the toolbar Upgrade button) so we only push stage
+     * transitions to the dialog when it's actually open. */
+    FlashProgressDialog *m_flashProgress = nullptr;
+    bool m_consolidatedFlashActive = false;
 
     /* Whole-window lock applied during a flash chain (manual flasher OR
      * one-click upgrade). Disables everything except the Advanced

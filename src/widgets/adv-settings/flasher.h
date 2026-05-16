@@ -35,9 +35,25 @@ public:
         startFlashFromFile(filePath);
     }
 
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#19: arm a one-shot bypass
+     * of the FlashConfirmationDialog on the next startFlashFromFile()
+     * call. Used by MainWindow's consolidated-flash orchestrator,
+     * which has already shown the confirmation dialog up front and
+     * doesn't want the user to see it a second time when the auto-
+     * trigger fires after the device enters DFU. */
+    void armConfirmationBypass() { m_skipNextConfirmation = true; }
+
 signals:
     void flashModeClicked(bool is_start_flash);
     void startFlash(bool is_start_flash);
+
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#19: consolidated one-click
+     * flash. Emitted by the new Flash button after the user accepts
+     * the FlashConfirmationDialog. Carries the resolved local file
+     * path of the firmware binary. MainWindow opens the
+     * FlashProgressDialog and orchestrates the backup -> bootloader ->
+     * flash -> re-enumerate -> restore chain in response. */
+    void consolidatedFlashRequested(const QString &filePath);
     /* Fires when flashStatus reaches a terminal state (FINISHED or
      * any error variant). MainWindow uses this to start a watchdog
      * timer expecting the device to reconnect within ~15s. If it
@@ -76,6 +92,7 @@ private slots:
     void on_pushButton_FlashFirmware_clicked();
     void on_pushButton_AbortFlash_clicked();
     void on_pushButton_BrowseFirmware_clicked();
+    void on_pushButton_FlashConsolidated_clicked();
     void on_toolButton_OpenRecoveryDir_clicked();
     void on_listWidget_Devices_itemActivated(class QListWidgetItem *item);
     void on_listWidget_Devices_currentRowChanged(int row);
@@ -124,6 +141,9 @@ private:
     bool m_inFlasherMode = false;
     QString m_lastDeviceName;
     QString m_lastDeviceSerial;
+
+    /* Issue #19: one-shot bypass armed by armConfirmationBypass(). */
+    bool m_skipNextConfirmation = false;
 
     /* Refresh the per-row "Selected firmware" info card from the picked
      * file path. Slice 4 (#17) wires this to filename / size only; the

@@ -76,7 +76,13 @@ Flasher::Flasher(QWidget *parent)
     connect(ui->comboBox_FlashSource,
             QOverload<int>::of(&QComboBox::currentIndexChanged),
             this,
-            [this](int) { refreshFirmwareInfoCard(QString()); });
+            [this](int) {
+                refreshFirmwareInfoCard(QString());
+                /* Enable the consolidated Flash button (#19) whenever
+                 * a real source is selected (data is non-empty). */
+                const QVariant d = ui->comboBox_FlashSource->currentData();
+                ui->pushButton_FlashConsolidated->setEnabled(d.isValid());
+            });
 
     /* Slice 4 (#17): the listWidget connects via the auto-named
      * on_listWidget_Devices_* slots above; nothing to do here. */
@@ -390,6 +396,62 @@ void Flasher::on_pushButton_BrowseFirmware_clicked()
     startFlashFromFile(filePath);
 }
 
+void Flasher::on_pushButton_FlashConsolidated_clicked()
+{
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#19: single-click flash flow.
+     * Resolve the picked source to a local path; if it's a remote
+     * release that hasn't been downloaded yet, the user should use the
+     * legacy two-button path (kicks the FirmwareLibrary download). The
+     * consolidated flow only operates on local files for now -- the
+     * progress dialog cannot meaningfully render a "downloading" stage
+     * yet, and we don't want to surprise the user with a download. */
+    const QVariant currentData = ui->comboBox_FlashSource->currentData();
+    if (!currentData.isValid()) {
+        QMessageBox::information(this, tr("Pick a firmware source"),
+            tr("Select a firmware build from the Source dropdown, or "
+               "click <b>Browse...</b> to pick a .bin from disk."));
+        return;
+    }
+    QString path;
+    if (currentData.type() == QVariant::String) {
+        path = currentData.toString();
+    } else if (currentData.type() == QVariant::Map) {
+        path = currentData.toMap().value(kKeyLocal).toString();
+    }
+    if (path.isEmpty() || !QFile::exists(path)) {
+        QMessageBox::information(this, tr("Firmware not available locally"),
+            tr("The selected firmware isn't downloaded yet. Use the legacy "
+               "<b>Enter Flasher Mode</b> / <b>Flash Firmware</b> buttons "
+               "below, which will fetch the binary on demand, or use the "
+               "Browse button to pick a local .bin."));
+        return;
+    }
+
+    /* Pop the confirmation dialog first (#18). On accept, hand off to
+     * MainWindow's orchestrator via consolidatedFlashRequested -- this
+     * widget doesn't see HidDevice directly. */
+    FirmwareImage image;
+    if (!image.loadFromFile(path)) {
+        QMessageBox::warning(this, tr("Couldn't open firmware"),
+            tr("Couldn't read the firmware file:\n%1").arg(path));
+        return;
+    }
+    FlashConfirmationDialog::Inputs in;
+    if (gEnv.pDeviceConfig) {
+        in.deviceFwVersion = gEnv.pDeviceConfig->paramsReport.firmware_version;
+        in.deviceBoardId = gEnv.pDeviceConfig->paramsReport.board_id;
+    }
+    in.deviceInRecoveryMode = m_inFlasherMode;
+    in.deviceName = m_lastDeviceName;
+    in.deviceSerial = m_lastDeviceSerial;
+    in.image = &image;
+    FlashConfirmationDialog dlg(in, this);
+    if (dlg.exec() != QDialog::Accepted) {
+        return;
+    }
+    emit consolidatedFlashRequested(path);
+}
+
 void Flasher::on_pushButton_FlashFirmware_clicked()
 {
     const QVariant currentData = ui->comboBox_FlashSource->currentData();
@@ -498,40 +560,46 @@ void Flasher::startFlashFromFile(const QString &filePath)
      * show board + version + verdict; the parsed metadata also feeds
      * the board-mismatch refusal -- the dialog returns reject() when
      * Verdict::Incompatible, so we never reach the actual flash for a
-     * mismatched binary. */
-    FirmwareImage image;
-    if (!image.loadFromFile(filePath)) {
-        qWarning() << "Couldn't load firmware file for parsing:" << filePath;
-        QMessageBox::warning(this, tr("Couldn't open firmware"),
-            tr("Couldn't read the firmware file:\n%1\n\n"
-               "Check that the file exists and the configurator has "
-               "permission to read it.").arg(filePath));
-        return;
+     * mismatched binary.
+     *
+     * Bypass (#19): when MainWindow's consolidated-flash orchestrator
+     * has already shown the confirmation, it arms a one-shot bypass so
+     * the auto-fire after DFU entry doesn't repeat the dialog. */
+    if (m_skipNextConfirmation) {
+        m_skipNextConfirmation = false;
+    } else {
+        FirmwareImage image;
+        if (!image.loadFromFile(filePath)) {
+            qWarning() << "Couldn't load firmware file for parsing:" << filePath;
+            QMessageBox::warning(this, tr("Couldn't open firmware"),
+                tr("Couldn't read the firmware file:\n%1\n\n"
+                   "Check that the file exists and the configurator has "
+                   "permission to read it.").arg(filePath));
+            return;
+        }
+
+        FlashConfirmationDialog::Inputs in;
+        /* Device identity: pulled from the live params report. The
+         * sidebar + main combobox display the same string, but we go
+         * to the source of truth (deviceconfig) so the dialog shows
+         * what the configurator actually thinks it's talking to. */
+        if (gEnv.pDeviceConfig) {
+            in.deviceFwVersion = gEnv.pDeviceConfig->paramsReport.firmware_version;
+            in.deviceBoardId = gEnv.pDeviceConfig->paramsReport.board_id;
+        }
+        in.deviceInRecoveryMode = m_inFlasherMode;
+        in.deviceName = m_lastDeviceName;
+        in.deviceSerial = m_lastDeviceSerial;
+        in.image = &image;
+
+        FlashConfirmationDialog dlg(in, this);
+        if (dlg.exec() != QDialog::Accepted) {
+            qDebug() << "Flash cancelled at confirmation dialog";
+            return;
+        }
     }
 
-    FlashConfirmationDialog::Inputs in;
-    /* Device identity: pulled from the live params report. The sidebar
-     * + main combobox display the same string, but we go to the source
-     * of truth (deviceconfig) so the dialog shows what the configurator
-     * actually thinks it's talking to. */
-    if (gEnv.pDeviceConfig) {
-        in.deviceFwVersion = gEnv.pDeviceConfig->paramsReport.firmware_version;
-        in.deviceBoardId = gEnv.pDeviceConfig->paramsReport.board_id;
-    }
-    in.deviceInRecoveryMode = m_inFlasherMode;
-    in.deviceName = m_lastDeviceName;
-    in.deviceSerial = m_lastDeviceSerial;
-    in.image = &image;
-
-    FlashConfirmationDialog dlg(in, this);
-    if (dlg.exec() != QDialog::Accepted) {
-        qDebug() << "Flash cancelled at confirmation dialog";
-        return;
-    }
-
-    /* Confirmed. Hand off to the existing flash path -- the state
-     * machine collapse (slice 6 / #19) replaces this with the
-     * FlashProgressDialog. */
+    /* Confirmed (or bypassed). Hand off to the existing flash path. */
     QFile file(filePath);
     if (file.open(QIODevice::ReadOnly)) {
         ui->pushButton_FlashFirmware->setEnabled(false);

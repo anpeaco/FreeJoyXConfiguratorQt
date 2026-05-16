@@ -36,7 +36,7 @@
         matches the tallest of the picker / action columns. Populated by
         Flasher::setDeviceList() from HidDevice::hidDeviceList; selection
         wired back to MainWindow's existing comboBox_HidDeviceList. -->
-   <item row="0" column="0" rowspan="3">
+   <item row="0" column="0" rowspan="4">
     <widget class="QListWidget" name="listWidget_Devices">
      <property name="toolTip">
       <string>Connected FreeJoy devices. Select one to make it the configurator's active device (same effect as the device dropdown in the toolbar). Rows tagged RECOVERY are stuck in bootloader mode -- they accept recovery flashes only.</string>
@@ -180,9 +180,9 @@
      </layout>
     </widget>
    </item>
-   <!-- Column 1, row 2: vertical spacer so the picker + info card sit at
-        the top of the column. -->
-   <item row="2" column="1">
+   <!-- Column 1, row 2 + 3: vertical spacer so the picker + info card
+        sit at the top of the column. -->
+   <item row="2" column="1" rowspan="2">
     <spacer name="verticalSpacer_Center">
      <property name="orientation"><enum>Qt::Vertical</enum></property>
      <property name="sizeHint" stdset="0">
@@ -190,11 +190,35 @@
      </property>
     </spacer>
    </item>
-   <!-- Column 2: action buttons stacked. Existing buttons stay wired
-        through slice 4 (UI refactor only -- state machine arrives in
-        slice 6 / #19). Enter Flasher Mode + Flash Firmware + Abort
-        collapse into a single Flash button at that point. -->
+   <!-- Column 2: consolidated Flash button on top (issue #19), legacy
+        Enter Flasher Mode / Flash Firmware / Abort buttons retained
+        underneath for manual control. The new Flash button drives the
+        FlashProgressDialog-owned state machine; the legacy buttons
+        keep the original two-step flow for users who want explicit
+        control. -->
    <item row="0" column="2">
+    <widget class="QPushButton" name="pushButton_FlashConsolidated">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="toolTip">
+      <string>Run the full backup -&gt; bootloader -&gt; flash -&gt; restore sequence in one click. Shows a confirmation dialog with the planned steps before any device state changes.</string>
+     </property>
+     <property name="text">
+      <string>Flash</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font-weight:600;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="2">
     <widget class="QPushButton" name="pushButton_FlasherMode">
      <property name="enabled">
       <bool>false</bool>
@@ -213,7 +237,7 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="2">
+   <item row="2" column="2">
     <widget class="QPushButton" name="pushButton_FlashFirmware">
      <property name="enabled">
       <bool>false</bool>
@@ -232,7 +256,7 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="2">
+   <item row="3" column="2">
     <widget class="QPushButton" name="pushButton_AbortFlash">
      <property name="enabled">
       <bool>false</bool>
@@ -255,7 +279,7 @@
         existing onFlasherDeviceInfo path -- redundant once the sidebar
         shows per-device info but kept until the state-machine slice
         formally retires it. -->
-   <item row="3" column="0" colspan="3">
+   <item row="4" column="0" colspan="3">
     <widget class="QFrame" name="frame_FlasherDeviceInfo">
      <property name="visible">
       <bool>false</bool>
@@ -287,7 +311,7 @@
      </layout>
     </widget>
    </item>
-   <item row="4" column="0" colspan="3">
+   <item row="5" column="0" colspan="3">
     <widget class="QProgressBar" name="progressBar_Flash">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
