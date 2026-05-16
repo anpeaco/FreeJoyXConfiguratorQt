@@ -73,14 +73,24 @@ public:
     Verdict verdict() const { return m_verdict; }
     bool flashEnabled() const { return m_verdict != Verdict::Incompatible; }
 
+    /* Compute the verdict from the inputs. Pure function -- depends only
+     * on the captured inputs, not on any external state, so it's
+     * straightforward to unit-test once test scaffolding lands.
+     * Exposed for MainWindow's consolidated-flash orchestrator
+     * (issue anpeaco/FreeJoyXConfiguratorQt#20), which needs to decide
+     * whether to run the post-flash auto-restore based on whether the
+     * verdict permits writing the backup back unchanged. */
+    static Verdict computeVerdict(const Inputs &inputs);
+
+    /* True when the verdict permits writing the (possibly-migrated)
+     * pre-flash dev_config_t back to the device after re-enumeration.
+     * False for Downgrade / UpgradeNoMigrator / Recovery /
+     * Incompatible -- those cases factory-reset the device. */
+    static bool verdictAllowsAutoRestore(Verdict v);
+
 private:
     Ui::FlashConfirmationDialog *ui;
     Verdict m_verdict = Verdict::Incompatible;
-
-    /* Compute the verdict from the inputs. Pure function -- depends only
-     * on the captured inputs, not on any external state, so it's
-     * straightforward to unit-test once test scaffolding lands. */
-    static Verdict computeVerdict(const Inputs &inputs);
 
     /* Render the verdict line + step list + warning into the form. The
      * verdict drives both visible content and the Flash button enable

@@ -22,7 +22,9 @@
 #include "common_defines.h"
 #include "global.h"
 #include "deviceconfig.h"
+#include "firmwareimage.h"
 #include "version.h"
+#include "dialogs/flashconfirmationdialog.h"
 #include "dialogs/flashprogressdialog.h"
 #include "legacy/legacy_migrator.h"
 #include "legacy/legacy_reverse_migrator.h"
@@ -697,6 +699,36 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
             m_upgradePending       = false;   /* one-shot */
             m_upgradeBoardId       = 0;
             m_upgradeFirmwarePath.clear();
+
+            /* Issue #20: gate the post-flash auto-write on the verdict
+             * captured at flash start. Downgrade / UpgradeNoMigrator
+             * paths skip the write -- the disk backup is the user's
+             * recovery path. Same-generation and migratable upgrades
+             * fall through to the standard auto-write below. */
+            if (m_consolidatedFlashActive && !m_consolidatedAutoRestore) {
+                qDebug() << "Consolidated flash: skipping auto-restore "
+                            "(verdict refused)";
+                if (m_flashProgress) {
+                    QString detail = tr("Device factory-reset. ");
+                    if (!m_consolidatedBackupPath.isEmpty()) {
+                        detail += tr("Your previous configuration is at:\n%1\n\n"
+                                     "Load it via <b>Load config from file</b>.")
+                                  .arg(QDir::toNativeSeparators(
+                                       m_consolidatedBackupPath));
+                    } else {
+                        detail += tr("No backup was taken (recovery flash). "
+                                     "You will need to reconfigure manually.");
+                    }
+                    m_flashProgress->setStage(FlashProgressDialog::Stage::Done,
+                                              detail);
+                }
+                m_consolidatedFlashActive = false;
+                if (m_flashChainLocked) {
+                    setFlashChainUiLocked(false);
+                }
+                return;
+            }
+
             /* Hold the flash-chain lock across the auto-Write +
              * device-reset window; configSent will release it. */
             m_postUpgradeWriteInFlight = true;
@@ -886,6 +918,22 @@ void MainWindow::onConsolidatedFlashRequested(const QString &filePath)
         m_consolidatedFlashActive = false;
     });
     m_flashProgress->show();
+
+    /* Issue #20: compute the verdict here too so we can decide whether
+     * to auto-restore the config post-flash. The dialog already showed
+     * the user the same verdict; recomputing matches what they saw. */
+    FirmwareImage image;
+    image.loadFromFile(filePath);
+    FlashConfirmationDialog::Inputs vIn;
+    vIn.deviceFwVersion = gEnv.pDeviceConfig->paramsReport.firmware_version;
+    vIn.deviceBoardId = gEnv.pDeviceConfig->paramsReport.board_id;
+    vIn.image = &image;
+    const FlashConfirmationDialog::Verdict v =
+        FlashConfirmationDialog::computeVerdict(vIn);
+    m_consolidatedAutoRestore =
+        FlashConfirmationDialog::verdictAllowsAutoRestore(v);
+    qDebug() << "Consolidated flash verdict:" << int(v)
+             << "auto-restore:" << m_consolidatedAutoRestore;
 
     /* Drive the existing one-click upgrade machinery. Reuses the same
      * m_upgradePending / m_upgradeFirmwarePath that the toolbar Upgrade
@@ -1318,6 +1366,10 @@ void MainWindow::configReceived(bool success)
         m_backupBeforeFlashPending = false;
         if (success) {
             const QString path = writeAutoBackup();
+            /* Issue #20: cache the path so the post-flash failure /
+             * refused-restore branches can surface it in the terminal
+             * dialog state. */
+            m_consolidatedBackupPath = path;
             /* Issue #19: in the consolidated flow the progress dialog
              * surfaces the backup path -- skip the modal information
              * message that would otherwise stack on top of it. */

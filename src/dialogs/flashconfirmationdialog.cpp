@@ -63,6 +63,16 @@ FlashConfirmationDialog::~FlashConfirmationDialog()
     delete ui;
 }
 
+bool FlashConfirmationDialog::verdictAllowsAutoRestore(Verdict v)
+{
+    /* Same generation and Upgrade-with-migrator are the only cases
+     * where we can write the pre-flash config (possibly through the
+     * legacy migrator chain) back into the post-flash device without
+     * corrupting state. Everything else leaves the device factory-
+     * reset and points the user at the disk backup. */
+    return v == Verdict::SameGeneration || v == Verdict::Upgrade;
+}
+
 FlashConfirmationDialog::Verdict
 FlashConfirmationDialog::computeVerdict(const Inputs &inputs)
 {

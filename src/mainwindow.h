@@ -197,6 +197,15 @@ private:
     FlashProgressDialog *m_flashProgress = nullptr;
     bool m_consolidatedFlashActive = false;
 
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#20: cross-version restore
+     * policy. Set at the start of a consolidated flash from the
+     * FlashConfirmationDialog's verdict. When true, the post-flash
+     * branch in getParamsPacket auto-writes the pre-flash config back;
+     * when false (Downgrade / UpgradeNoMigrator), the device stays
+     * factory-reset and the user is pointed at the disk backup. */
+    bool m_consolidatedAutoRestore = true;
+    QString m_consolidatedBackupPath; /* backup file path; surfaced in terminal dialog states */
+
     /* Whole-window lock applied during a flash chain (manual flasher OR
      * one-click upgrade). Disables everything except the Advanced
      * Settings tab so the user can't wander to other tabs and trigger
