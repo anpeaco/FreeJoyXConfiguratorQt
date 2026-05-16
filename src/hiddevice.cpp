@@ -734,7 +734,8 @@ void HidDevice::flashFirmwareToDevice()
         uint8_t flasher_device_buffer[BUFFERSIZE]{};
         uint16_t length = uint16_t(m_firmware->size());
         uint16_t crc16 = FirmwareUpdater::computeChecksum(m_firmware);
-        int update_percent = 0;
+        const int total_bytes = m_firmware->size();
+        int bytes_sent = 0;
 
         flash_buffer[0] = REPORT_ID_FLASH;
         flash_buffer[1] = 0;
@@ -774,25 +775,28 @@ void HidDevice::flashFirmwareToDevice()
                     if (cnt == 0xF001)  // firmware size error
                     {
                         hid_close(flasher);
-                        emit flashStatus(SIZE_ERROR, update_percent);
+                        emit flashStatus(SIZE_ERROR, bytes_sent, total_bytes);
                         return;
                     }
                     else if (cnt == 0xF002) // CRC error
                     {
                         hid_close(flasher);
-                        emit flashStatus(CRC_ERROR, update_percent);
+                        emit flashStatus(CRC_ERROR, bytes_sent, total_bytes);
                         return;
                     }
                     else if (cnt == 0xF003) // flash erase error
                     {
                         hid_close(flasher);
-                        emit flashStatus(ERASE_ERROR, update_percent);
+                        emit flashStatus(ERASE_ERROR, bytes_sent, total_bytes);
                         return;
                     }
                     else if (cnt == 0xF000) // OK
                     {
                         hid_close(flasher);
-                        emit flashStatus(FINISHED, update_percent);
+                        /* Force terminal counter to total so the progress
+                         * bar reads 100% on success even if the last
+                         * partial-packet emit left it short. */
+                        emit flashStatus(FINISHED, total_bytes, total_bytes);
                         return;
                     }
                 }
@@ -808,18 +812,18 @@ void HidDevice::flashFirmwareToDevice()
                     if (cnt * 60 < m_firmware->size())
                     {
                         memcpy(flash_buffer +4, m_firmware->constData() + (cnt - 1) * 60, 60);
-                        update_percent = ((cnt - 1) * 60 * 100 / m_firmware->size());
+                        bytes_sent = (cnt - 1) * 60;
                         hid_write(flasher, flash_buffer, 64);
-                        emit flashStatus(IN_PROCESS, update_percent);
+                        emit flashStatus(IN_PROCESS, bytes_sent, total_bytes);
 
                         qDebug()<<"Firmware packet sent:"<<cnt;
                     }
                     else
                     {
                         memcpy(flash_buffer +4, m_firmware->constData() + (cnt - 1) * 60, m_firmware->size() - (cnt - 1) * 60);
-                        update_percent = 0;
+                        bytes_sent = total_bytes;
                         hid_write(flasher, flash_buffer, 64);
-                        emit flashStatus(IN_PROCESS, update_percent);
+                        emit flashStatus(IN_PROCESS, bytes_sent, total_bytes);
 
                         qDebug()<<"Firmware packet sent:"<<cnt;
                     }
@@ -827,7 +831,7 @@ void HidDevice::flashFirmwareToDevice()
             }
         }
         hid_close(flasher);
-        emit flashStatus(666, update_percent);
+        emit flashStatus(666, bytes_sent, total_bytes);
     }
 }
 

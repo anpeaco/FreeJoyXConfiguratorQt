@@ -44,7 +44,7 @@ signals:
 
 public slots:
     void flasherFound(bool isFound);
-    void flashStatus(int status, int percent);
+    void flashStatus(int status, int bytes_sent, int bytes_total);
     /* Driven by HidDevice::flasherDeviceInfo. Populates the
      * "Connected flasher" info line in the Flasher tab so the user
      * can confirm the right device is in flasher mode before

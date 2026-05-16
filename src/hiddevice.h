@@ -93,7 +93,17 @@ signals:
     void deviceInfo(const QString &vidHex, const QString &pidHex, const QString &serial);
 
     void flasherFound(bool isFound);
-    void flashStatus(int status, int percent);
+    /* status: IN_PROCESS / FINISHED / SIZE_ERROR / CRC_ERROR / ERASE_ERROR
+     * (the status code enum is defined alongside the consumer in
+     * flasher.h). bytes_sent/bytes_total carry raw byte counts so the
+     * progress dialog (issue #19) can compute weighted overall progress
+     * and show a byte counter; the existing percent-based widget can
+     * derive its own percent locally. bytes_total stays at the full
+     * firmware size for the duration of the transfer; bytes_sent walks
+     * monotonically from 0 to bytes_total. On terminal status the most
+     * recent bytes_sent value is preserved (so a CRC error shows where
+     * the failure happened). */
+    void flashStatus(int status, int bytes_sent, int bytes_total);
 
     /* Carries the flasher (bootloader) USB identity so the Flasher tab
      * can show "you're about to flash device X" instead of just

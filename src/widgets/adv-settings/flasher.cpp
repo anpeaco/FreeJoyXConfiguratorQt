@@ -486,8 +486,15 @@ const QByteArray *Flasher::fileArray() const
     return &m_fileArray;
 }
 
-void Flasher::flashStatus(int status, int percent)
+void Flasher::flashStatus(int status, int bytes_sent, int bytes_total)
 {
+    /* Slice 3 (#16): derive percent locally now that the upstream signal
+     * carries byte counts -- the progress dialog (#19) consumes the raw
+     * counts and weights them across phases, but this legacy widget just
+     * needs the simple 0..100 mapping. */
+    const int percent = (bytes_total > 0)
+        ? int((qint64(bytes_sent) * 100) / bytes_total)
+        : 0;
     ui->progressBar_Flash->setValue(percent);
 
     if (percent == 1) {
