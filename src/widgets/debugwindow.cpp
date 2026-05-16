@@ -83,15 +83,39 @@ void DebugWindow::printMsg(const QString &msg)
     ui->textBrowser_DebugMsg->moveCursor(QTextCursor::End); // works oddly with plainTextEdit
 
     if (m_writeToFile) {
-        QString date(QDateTime::currentDateTime().toString("YYYY-MM-DDTHH:MM"));
-        QFile file(gEnv.pAppSettings->fileName().remove("FreeJoySettings.conf") + "log/" + "FJLog" + date + ".txt");
+        /* yyyy-MM-dd, not "YYYY-MM-DDTHH:MM" -- Qt's format tokens are
+         * case-sensitive (uppercase Y/D become literals; MM after T is
+         * month again, not minute) and ':' is illegal in Windows file
+         * names, so the previous version's QFile::open silently failed
+         * EVERY time. Daily granularity is enough for log review. */
+        const QString logDir = gEnv.pAppSettings->fileName().remove("FreeJoySettings.conf") + "log/";
+        /* mkpath the log dir if missing; otherwise QFile::open fails on a
+         * fresh install where the user enabled logging before anything
+         * created <Documents>/FreeJoy/log/. */
+        QDir().mkpath(logDir);
+        const QString date(QDateTime::currentDateTime().toString("yyyy-MM-dd"));
+        QFile file(logDir + "FJLog" + date + ".txt");
         if (!file.open(QIODevice::WriteOnly | QIODevice::Append)) {
-            qWarning() << "cant open file";
+            /* DO NOT qWarning() here -- the custom message handler routes
+             * back into printMsg, and with m_writeToFile still true we'd
+             * recurse straight back into this failing open and overflow
+             * the stack. Drop silently; the textBrowser still shows the
+             * original message even if disk write failed. */
             return;
         }
         QTextStream out(&file);
         out << log;
     }
+}
+
+void DebugWindow::on_pushButton_LogMarker_clicked()
+{
+    /* A distinctive line the user can grep for when reviewing the log
+     * file after a bench session. Routed through printMsg so it lands
+     * in both the in-app textBrowser and the on-disk log (if enabled). */
+    static int counter = 0;
+    ++counter;
+    printMsg(QString("================ MARKER #%1 ================").arg(counter));
 }
 
 void DebugWindow::logicalButtonState(int buttonNumber, bool state)
