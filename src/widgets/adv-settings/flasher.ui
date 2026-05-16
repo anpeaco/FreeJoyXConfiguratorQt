@@ -97,7 +97,7 @@
      </item>
     </layout>
    </item>
-   <!-- Column 1, row 1: binary info card. Placeholder fields in slice 4 --
+   <!-- Column 1, row 1: binary info card. Placeholder fields in slice 4;
         wired to FirmwareImage parser in slice 5 (#18). -->
    <item row="1" column="1">
     <widget class="QGroupBox" name="groupBox_FirmwareInfo">
@@ -121,7 +121,7 @@
       <item row="0" column="1">
        <widget class="QLabel" name="label_FwInfoFile">
         <property name="text">
-         <string notr="true">—</string>
+         <string notr="true">-</string>
         </property>
        </widget>
       </item>
@@ -135,7 +135,7 @@
       <item row="1" column="1">
        <widget class="QLabel" name="label_FwInfoBoard">
         <property name="text">
-         <string notr="true">—</string>
+         <string notr="true">-</string>
         </property>
        </widget>
       </item>
@@ -149,7 +149,7 @@
       <item row="2" column="1">
        <widget class="QLabel" name="label_FwInfoVersion">
         <property name="text">
-         <string notr="true">—</string>
+         <string notr="true">-</string>
         </property>
        </widget>
       </item>
@@ -163,7 +163,7 @@
       <item row="3" column="1">
        <widget class="QLabel" name="label_FwInfoSize">
         <property name="text">
-         <string notr="true">—</string>
+         <string notr="true">-</string>
         </property>
        </widget>
       </item>
@@ -276,7 +276,7 @@
     </widget>
    </item>
    <!-- Hidden device-info frame retained for compatibility with the
-        existing onFlasherDeviceInfo path -- redundant once the sidebar
+        existing onFlasherDeviceInfo path; redundant once the sidebar
         shows per-device info but kept until the state-machine slice
         formally retires it. -->
    <item row="4" column="0" colspan="3">

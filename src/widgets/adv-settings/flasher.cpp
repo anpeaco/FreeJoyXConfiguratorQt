@@ -768,7 +768,7 @@ void Flasher::refreshFirmwareInfoCard(const QString &filePath)
     }
 
     if (resolved.isEmpty() || !QFileInfo::exists(resolved)) {
-        const QString dash = QStringLiteral("—");
+        const QString dash = QStringLiteral("-");
         ui->label_FwInfoFile->setText(dash);
         ui->label_FwInfoBoard->setText(dash);
         ui->label_FwInfoVersion->setText(dash);
@@ -794,6 +794,6 @@ void Flasher::refreshFirmwareInfoCard(const QString &filePath)
     } else {
         ui->label_FwInfoBoard->setText(tr("Unknown"));
     }
-    ui->label_FwInfoVersion->setText(QStringLiteral("—"));
+    ui->label_FwInfoVersion->setText(QStringLiteral("-"));
     ui->label_FwInfoVerdict->clear();
 }

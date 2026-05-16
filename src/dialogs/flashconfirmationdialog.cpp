@@ -142,7 +142,7 @@ void FlashConfirmationDialog::renderForVerdict(const Inputs &inputs)
 {
     /* --- Device pane --- */
     ui->label_DeviceName->setText(
-        inputs.deviceName.isEmpty() ? QStringLiteral("—") : inputs.deviceName);
+        inputs.deviceName.isEmpty() ? QStringLiteral("-") : inputs.deviceName);
     ui->label_DeviceSerial->setText(shortSerial(inputs.deviceSerial));
     ui->label_DeviceBoard->setText(boardLabel(inputs.deviceBoardId));
     ui->label_DeviceFw->setText(
@@ -158,9 +158,9 @@ void FlashConfirmationDialog::renderForVerdict(const Inputs &inputs)
         ui->label_TargetFw->setText(
             v.isEmpty() ? tr("Legacy binary (no metadata)") : v);
     } else {
-        ui->label_TargetFile->setText(QStringLiteral("—"));
-        ui->label_TargetBoard->setText(QStringLiteral("—"));
-        ui->label_TargetFw->setText(QStringLiteral("—"));
+        ui->label_TargetFile->setText(QStringLiteral("-"));
+        ui->label_TargetBoard->setText(QStringLiteral("-"));
+        ui->label_TargetFw->setText(QStringLiteral("-"));
     }
 
     /* --- Verdict banner --- */
@@ -243,7 +243,7 @@ QString FlashConfirmationDialog::fwVersionLabel(uint16_t fw)
 
 QString FlashConfirmationDialog::shortSerial(const QString &full)
 {
-    if (full.isEmpty()) return QStringLiteral("—");
+    if (full.isEmpty()) return QStringLiteral("-");
     if (full.size() <= 6) return full;
     return QStringLiteral("…%1").arg(full.right(6));
 }
