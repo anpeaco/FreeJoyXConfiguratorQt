@@ -83,36 +83,44 @@ void DebugWindow::resetPacketsCount()
     buttonLogReset();
 }
 
+void DebugWindow::appendToLogFile(const QString &line)
+{
+    /* Shared file-write helper used by every code path that wants to
+     * land a line in the on-disk log: printMsg (app log), button-state
+     * change hooks (logical + physical), the marker button. Caller is
+     * responsible for the leading timestamp; this just appends the
+     * already-formatted line. */
+    if (!m_writeToFile) return;
+
+    /* yyyy-MM-dd, not "YYYY-MM-DDTHH:MM" -- Qt's format tokens are
+     * case-sensitive (uppercase Y/D become literals; MM after T is
+     * month again, not minute) and ':' is illegal in Windows file
+     * names, so the previous version's QFile::open silently failed
+     * EVERY time. Daily granularity is enough for log review. */
+    const QString logDir = gEnv.pAppSettings->fileName().remove("FreeJoySettings.conf") + "log/";
+    /* mkpath the log dir if missing; otherwise QFile::open fails on a
+     * fresh install where the user enabled logging before anything
+     * created <Documents>/FreeJoy/log/. */
+    QDir().mkpath(logDir);
+    const QString date(QDateTime::currentDateTime().toString("yyyy-MM-dd"));
+    QFile file(logDir + "FJLog" + date + ".txt");
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Append)) {
+        /* Silent fail -- qWarning here would route through the message
+         * handler back into printMsg -> appendToLogFile and recurse into
+         * the same failing open. */
+        return;
+    }
+    QTextStream out(&file);
+    out << line;
+}
+
 void DebugWindow::printMsg(const QString &msg)
 {
     QString log(QDateTime::currentDateTime().toString("hh:mm:ss.zzz") + ": " + msg + '\n');
     ui->textBrowser_DebugMsg->insertPlainText(log);         // append?
     ui->textBrowser_DebugMsg->moveCursor(QTextCursor::End); // works oddly with plainTextEdit
 
-    if (m_writeToFile) {
-        /* yyyy-MM-dd, not "YYYY-MM-DDTHH:MM" -- Qt's format tokens are
-         * case-sensitive (uppercase Y/D become literals; MM after T is
-         * month again, not minute) and ':' is illegal in Windows file
-         * names, so the previous version's QFile::open silently failed
-         * EVERY time. Daily granularity is enough for log review. */
-        const QString logDir = gEnv.pAppSettings->fileName().remove("FreeJoySettings.conf") + "log/";
-        /* mkpath the log dir if missing; otherwise QFile::open fails on a
-         * fresh install where the user enabled logging before anything
-         * created <Documents>/FreeJoy/log/. */
-        QDir().mkpath(logDir);
-        const QString date(QDateTime::currentDateTime().toString("yyyy-MM-dd"));
-        QFile file(logDir + "FJLog" + date + ".txt");
-        if (!file.open(QIODevice::WriteOnly | QIODevice::Append)) {
-            /* DO NOT qWarning() here -- the custom message handler routes
-             * back into printMsg, and with m_writeToFile still true we'd
-             * recurse straight back into this failing open and overflow
-             * the stack. Drop silently; the textBrowser still shows the
-             * original message even if disk write failed. */
-            return;
-        }
-        QTextStream out(&file);
-        out << log;
-    }
+    appendToLogFile(log);
 }
 
 void DebugWindow::on_pushButton_LogMarker_clicked()
@@ -127,19 +135,30 @@ void DebugWindow::on_pushButton_LogMarker_clicked()
 
 void DebugWindow::logicalButtonState(int buttonNumber, bool state)
 {
-    if (state) {
-        ui->textBrowser_ButtonsPressLog->insertPlainText(
-                    QDateTime::currentDateTime().toString("hh:mm:ss.zzz") + ": " + tr("Logical button ")
-                    + QString::number(buttonNumber) + tr(" pressed") + '\n');
+    const QString stamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
+    const QString line = stamp + ": " + tr("Logical button ") + QString::number(buttonNumber)
+                       + (state ? tr(" pressed") : tr(" unpressed")) + '\n';
 
+    if (state) {
+        ui->textBrowser_ButtonsPressLog->insertPlainText(line);
         ui->textBrowser_ButtonsPressLog->moveCursor(QTextCursor::End);
     } else {
-        ui->textBrowser_ButtonsUnpressLog->insertPlainText(
-                    QDateTime::currentDateTime().toString("hh:mm:ss.zzz") + ": " + tr("Logical button ")
-                    + QString::number(buttonNumber) + tr(" unpressed") + '\n');
-
+        ui->textBrowser_ButtonsUnpressLog->insertPlainText(line);
         ui->textBrowser_ButtonsUnpressLog->moveCursor(QTextCursor::End);
     }
+
+    appendToLogFile(line);
+}
+
+void DebugWindow::physicalButtonState(int buttonNumber, bool state)
+{
+    /* Physical button state changes go to the on-disk log only. No
+     * dedicated UI textBrowser -- the existing pin-state highlights on
+     * the Button Config tab already surface this live. */
+    const QString stamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
+    const QString line = stamp + ": " + tr("Physical button ") + QString::number(buttonNumber)
+                       + (state ? tr(" pressed") : tr(" unpressed")) + '\n';
+    appendToLogFile(line);
 }
 
 void DebugWindow::buttonLogReset()

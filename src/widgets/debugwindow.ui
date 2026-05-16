@@ -93,7 +93,23 @@
       <string>Write a timestamped marker line to the log so you can find this moment quickly when reviewing later</string>
      </property>
      <property name="text">
-      <string>Add log marker</string>
+      <string/>
+     </property>
+     <property name="icon">
+      <iconset resource="../resources.qrc">
+       <normaloff>:/Images/icons/lucide/bookmark.svg</normaloff>:/Images/icons/lucide/bookmark.svg</iconset>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>18</width>
+       <height>18</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>32</width>
+       <height>28</height>
+      </size>
      </property>
     </widget>
    </item>
@@ -156,6 +172,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections/>
 </ui>
