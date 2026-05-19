@@ -192,13 +192,13 @@ private:
         {LOGIC_OP_NOR,         tr("NOR")},
         {LOGIC_OP_NAND,        tr("NAND")},
         {LOGIC_OP_XOR,         tr("XOR")},
-        {LOGIC_OP_A_AND_NOT_B, tr("A AND NOT B")},
-        /* LOGIC_OP_NOT removed from the dropdown: NORMAL + is_inverted=1
-         * gives the same logical output (!A) without the configurator's
-         * Source-B-disabled special case. The enum value stays defined
-         * in common_types.h and the firmware still evaluates it so any
-         * shipped config that carries LOGIC_OP_NOT continues to work --
-         * but the configurator won't let users pick it for new slots. */
+        {LOGIC_OP_XNOR,        tr("XNOR")},
+        /* Removed from the dropdown but retained as enum values + firmware
+         * cases so shipped configs that already carry them keep working:
+         *   - LOGIC_OP_NOT          -- redundant with NORMAL + is_inverted=1
+         *   - LOGIC_OP_A_AND_NOT_B  -- non-standard "inhibit gate";
+         *                              build from AND with a NORMAL+invert
+         *                              of B in the source-B slot if needed. */
     }};
 };
 
