@@ -24,7 +24,7 @@
  * project is judged stable. */
 #define FREEJOYX_VERSION_MAJOR              0
 #define FREEJOYX_VERSION_MINOR              0
-#define FREEJOYX_VERSION_PATCH              2
+#define FREEJOYX_VERSION_PATCH              3
 #define FREEJOYX_VER_STR_HELPER(x)          #x
 #define FREEJOYX_VER_STR(x)                 FREEJOYX_VER_STR_HELPER(x)
 #define FREEJOYX_VERSION                    FREEJOYX_VER_STR(FREEJOYX_VERSION_MAJOR) "." \

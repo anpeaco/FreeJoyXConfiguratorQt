@@ -255,11 +255,18 @@ void ConfigToFile::loadDeviceConfigFromFile(QWidget *parent, const QString &file
 
 void ConfigToFile::crossBoardCheck(QWidget *parent, dev_config_t &devC)
 {
-    /* Phase 7: warn when an INI carries a board_id that doesn't match
-     * the connected device. The user can still proceed -- they may be
-     * editing a config offline ahead of plugging in the right board --
-     * but the firmware will reject the eventual write with 0xFE. The
-     * dialog is informational only; no automatic conversion. */
+    /* Detect a board_id mismatch between the loaded INI and the
+     * connected device, then offer to convert. 29 of the 30 wire-format
+     * pin slots map identically between BluePill and BlackPill -- the
+     * only physical difference is slot 22 (PB11 on BluePill / PB2 on
+     * BlackPill). PB2 on the F411 UFQFPN48 isn't bonded for I2C, so an
+     * I2C-on-slot-22 source config gets its I2C pair cleared on
+     * forward conversion. Other slot-22 usages are preserved and the
+     * user is warned to verify wiring.
+     *
+     * If the user declines the conversion the firmware will reject the
+     * eventual write with 0xFE (see FreeJoyX/application/Src/usb_app.c
+     * "Last packet received. Check version + board_id"). */
     const uint8_t fileBoard = devC.board_id;
     const uint8_t deviceBoard = gEnv.pDeviceConfig
         ? gEnv.pDeviceConfig->paramsReport.board_id
@@ -274,12 +281,79 @@ void ConfigToFile::crossBoardCheck(QWidget *parent, dev_config_t &devC)
             default:                      return QStringLiteral("Unknown (id=") + QString::number(id) + QStringLiteral(")");
         }
     };
-    const QString warning = QObject::tr(
-        "This config was saved for %1, but the connected device is %2. "
-        "Loading proceeded but writing this config to the device will be "
-        "refused. Edit pins or connect the matching board before writing.")
-        .arg(boardName(fileBoard), boardName(deviceBoard));
-    QMessageBox::warning(parent, QObject::tr("Cross-board config"), warning);
+
+    /* Describe what'll happen to slot 22 if the user accepts. */
+    QString slot22Note;
+    bool clearI2cPair = false;
+    int dependentI2cAxes = 0;
+    if (devC.pins[22] != NOT_USED || devC.pins[21] == I2C_SCL) {
+        const bool i2cInUse = (devC.pins[22] == I2C_SDA) || (devC.pins[21] == I2C_SCL);
+        if (deviceBoard == BOARD_ID_F411_BLACKPILL && i2cInUse) {
+            for (int i = 0; i < MAX_AXIS_NUM; ++i) {
+                if (devC.axis_config[i].source_main == SOURCE_I2C) ++dependentI2cAxes;
+            }
+            slot22Note = QObject::tr(
+                "I2C is configured on slots 21/22 (B10 SCL + B11 SDA on Blue Pill). "
+                "B2 on Black Pill isn't bonded for I2C on the F411 UFQFPN48 package, "
+                "so the I2C pair will be cleared during conversion.");
+            if (dependentI2cAxes > 0) {
+                slot22Note += QObject::tr(
+                    " %1 axis(es) sourced from I2C will also be reset to "
+                    "\"unused\" since the bus is being torn down.")
+                    .arg(dependentI2cAxes);
+            }
+            clearI2cPair = true;
+        } else if (devC.pins[22] != NOT_USED) {
+            slot22Note = QObject::tr(
+                "Slot 22 is in use. After conversion this slot routes to %1 instead "
+                "of %2 -- verify your physical wiring matches the slot index, not "
+                "the original pin name.")
+                .arg(deviceBoard == BOARD_ID_F411_BLACKPILL ? "PB2" : "PB11",
+                     deviceBoard == BOARD_ID_F411_BLACKPILL ? "PB11" : "PB2");
+        }
+    }
+
+    QString prompt = QObject::tr(
+        "This config was saved for %1, but the connected device is %2.\n\n"
+        "29 of the 30 pin slots map identically between the two boards. "
+        "The exception is slot 22 (PB11 on Blue Pill, PB2 on Black Pill).\n\n")
+            .arg(boardName(fileBoard), boardName(deviceBoard));
+    if (!slot22Note.isEmpty()) {
+        prompt += slot22Note + "\n\n";
+    }
+    prompt += QObject::tr("Convert this config for %1?\n\n"
+                          "Choosing No leaves the loaded config unchanged -- "
+                          "the device will refuse the write until you reconnect "
+                          "the matching board or convert.")
+                  .arg(boardName(deviceBoard));
+
+    const auto choice = QMessageBox::question(
+        parent,
+        QObject::tr("Cross-board config"),
+        prompt,
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::Yes);
+    if (choice != QMessageBox::Yes) {
+        return;
+    }
+
+    devC.board_id         = deviceBoard;
+    devC.firmware_version = FIRMWARE_VERSION;
+    if (clearI2cPair) {
+        if (devC.pins[21] == I2C_SCL) devC.pins[21] = NOT_USED;
+        if (devC.pins[22] == I2C_SDA) devC.pins[22] = NOT_USED;
+        /* Sweep dependent axis refs: anything sourced from I2C can no
+         * longer read its sensor since the bus is torn down. Set
+         * source_main to -1 (unused); leave the rest of the axis
+         * config alone so the user can re-source it elsewhere later
+         * without losing curve / calibration / button assignments. */
+        for (int i = 0; i < MAX_AXIS_NUM; ++i) {
+            if (devC.axis_config[i].source_main == SOURCE_I2C) {
+                devC.axis_config[i].source_main = -1;
+                devC.axis_config[i].i2c_address = 0;
+            }
+        }
+    }
 }
 
 
