@@ -136,7 +136,27 @@ void ButtonLogical::functionIndexChanged(int index)
 
 void ButtonLogical::logicOpIndexChanged(int /*index*/)
 {
-    // Only Source B's enabled state depends on the operator (NOT is unary).
+    /* When the user switches to NOT (unary), clear the persisted Source B
+     * value -- otherwise the previously-entered B index stays in src_b,
+     * gets written to the device on save, and shows in the (disabled)
+     * spinbox as a phantom "23"-style value. It's ignored by firmware
+     * (see buttons.c LOGIC_OP_NOT case == !a) but misleads the user into
+     * thinking B participates somehow. Setting the spinbox to 0 routes
+     * through the existing valueChanged chain to write src_b = -1 in
+     * devC, matching how the binary-op B-field starts out empty.
+     *
+     * Only Source B's enabled state depends on the operator; the rest
+     * of the row stays as-is.
+     */
+    const int opIdx = ui->comboBox_LogicOp->currentIndex();
+    const button_type_t curOp = (m_logicOp_enumIndex.isEmpty() ||
+                                 opIdx < 0 ||
+                                 opIdx >= m_logicOp_enumIndex.size())
+                                ? 0
+                                : m_logicOp_enumIndex[opIdx];
+    if (curOp == LOGIC_OP_NOT) {
+        ui->spinBox_SourceB->setValue(0);
+    }
     updateLogicWidgetsEnabled();
 }
 
