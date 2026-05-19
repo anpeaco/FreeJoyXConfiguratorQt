@@ -15,7 +15,8 @@ FreeJoyXConfiguratorQt is a fork of [FreeJoyConfiguratorQt](https://github.com/F
 
 ## Features
 
-* Per-board pin maps — F103 BluePill and F411 BlackPill are dispatched from the device's `board_id`; cross-board writes are rejected
+* Per-board pin maps — F103 BluePill and F411 BlackPill are dispatched from the device's `board_id`; cross-board writes are rejected by firmware (`0xFD`) with a distinct log line from the version-mismatch rejection (`0xFE`)
+* **Cross-board config converter** — loading a Blue Pill INI on a connected Black Pill (or vice versa) prompts to convert in place. 29 of 30 pin slots map identically; only slot 22 (PB11 on BluePill, PB2 on BlackPill) differs. The converter flips `board_id`, refreshes `firmware_version`, and -- for forward conversion to BlackPill where PB2 isn't I2C-bonded -- clears any I2C SCL/SDA pair on slots 21/22 along with axes sourced from I2C
 * Pin mapping configuration
 * Digital input configuration (buttons, toggle switches, encoders, etc.)
 * **Logic button configuration** — pick `Logic` in the Function dropdown to unlock Operator (`AND`, `OR`, `NOT`, `NOR`, `NAND`, `XOR`, `A AND NOT B`), Source B, and per-slot Debounce cells
