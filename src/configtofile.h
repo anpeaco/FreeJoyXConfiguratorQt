@@ -18,10 +18,14 @@ public:
 
 private:
     static void oldConfigHandler(QWidget *parent, dev_config_t &devC);
-    /* Phase 7: warn when the loaded INI's board_id doesn't match the
-     * connected device. No automatic conversion -- writes will be
-     * refused by firmware until the user edits the config or connects
-     * the matching board. */
+    /* If the loaded INI's board_id doesn't match the connected device,
+     * prompt the user to convert. Conversion is just board_id +
+     * firmware_version refresh -- the wire-format pin slots map
+     * identically across BluePill / BlackPill except for slot 22
+     * (PB11 vs PB2). I2C on slot 21/22 is cleared on forward
+     * conversion to BlackPill since PB2 isn't I2C-bonded on F411
+     * UFQFPN48. Other slot-22 usages are preserved with a
+     * physical-pin warning. */
     static void crossBoardCheck(QWidget *parent, dev_config_t &devC);
 
 };
