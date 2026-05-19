@@ -2,12 +2,16 @@
 #include "ui_buttonphysical.h"
 #include "style_helpers.h"
 
+#include "global.h"
+#include "widgets/debugwindow.h"
+
 ButtonPhysical::ButtonPhysical(int buttonNumber, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::ButtonPhysical)
 {
     ui->setupUi(this);
     m_currentState = false;
+    m_debugState = false;
     m_buttonIndex = buttonNumber;
     ui->label_PhysicalButton->setNum(m_buttonIndex + 1);
 
@@ -34,5 +38,15 @@ void ButtonPhysical::setButtonState(bool state)
                 m_currentState = state;
             }
         }
+    }
+    /* Independent of the render gating above: emit every real state edge
+     * to the debug log so the on-disk log captures the true edges, not
+     * the rendered ones. Mirrors the same pattern used in
+     * ButtonLogical::setButtonState. */
+    if (state != m_debugState) {
+        if (gEnv.pDebugWindow) {
+            gEnv.pDebugWindow->physicalButtonState(m_buttonIndex + 1, state);
+        }
+        m_debugState = state;
     }
 }

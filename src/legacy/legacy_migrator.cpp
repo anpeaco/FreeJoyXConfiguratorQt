@@ -112,7 +112,7 @@ static MigrateResult migrate_v1710_to_current(const uint8_t *raw, size_t len, de
     out.button_timer2_ms = old->button_timer2_ms;
     out.button_timer3_ms = old->button_timer3_ms;
     out.a2b_debounce_ms  = old->a2b_debounce_ms;
-    /* long_press_threshold_ms / double_tap_window_ms: keep InitConfig
+    /* tap_cutoff_ms / double_tap_window_ms: keep InitConfig
      * defaults (500 / 300 ms). v1710 had no gestures. */
 
     /* ------- Axes-to-buttons ------- */
@@ -203,7 +203,7 @@ static MigrateResult migrate_v1710_to_current(const uint8_t *raw, size_t len, de
  *
  * Diffs vs current:
  *   MISSING (default-fill from InitConfig): board_id + reserved_layout,
- *     long_press_threshold_ms + double_tap_window_ms, fast_encoders[],
+ *     tap_cutoff_ms + double_tap_window_ms, fast_encoders[],
  *     saved_breakdown.
  *   button_t shape change: type widened from :5 to byte (values still
  *     fit), src_b added (default -1), op added (default 0),
@@ -405,8 +405,10 @@ static MigrateResult migrate_v1770_to_current(const uint8_t *raw, size_t len, de
     out.button_timer2_ms        = old->button_timer2_ms;
     out.button_timer3_ms        = old->button_timer3_ms;
     out.a2b_debounce_ms         = old->a2b_debounce_ms;
-    out.long_press_threshold_ms = old->long_press_threshold_ms;
-    out.double_tap_window_ms    = old->double_tap_window_ms;
+    /* v1770 archive's long_press_threshold_ms holds what is now tap_cutoff_ms;
+     * the byte/offset is identical, only the current-shape field name changed. */
+    out.tap_cutoff_ms        = old->long_press_threshold_ms;
+    out.double_tap_window_ms = old->double_tap_window_ms;
 
     Q_STATIC_ASSERT(sizeof(axis_to_buttons_t) == sizeof(v1770::axis_to_buttons_t));
     for (int i = 0; i < MAX_AXIS_NUM; ++i) {
@@ -503,6 +505,31 @@ static MigrateResult migrate_v1780_to_current(const uint8_t *raw, size_t len, de
 }
 
 /* ============================================================================
+ * v0010 -> current
+ * Source: current dev_config_t (shape unchanged across the 0x0010 -> 0x0020
+ * bump -- see firmware-side common_defines.h FIRMWARE_VERSION comment).
+ *
+ * The reason for the version bump despite identical struct layout is
+ * SEMANTIC drift: the gesture enum value formerly named LONG_PRESS now
+ * means TAP (release-within-cutoff) instead of hold-style. The migrator
+ * can't repair the user's intent -- it just re-stamps the version so
+ * subsequent reads stop hitting this branch. The configurator surfaces
+ * a warning at load time so users know to re-verify any gesture-typed
+ * buttons.
+ * ============================================================================
+ */
+static MigrateResult migrate_v0010_to_current(const uint8_t *raw, size_t len, dev_config_t &out)
+{
+    if (len < sizeof(dev_config_t)) {
+        return MigrateResult::BufferTooSmall;
+    }
+    /* Shape identical -- direct copy. */
+    memcpy(&out, raw, sizeof(dev_config_t));
+    out.firmware_version = FIRMWARE_VERSION;
+    return MigrateResult::Ok;
+}
+
+/* ============================================================================
  * Public API
  * ============================================================================
  */
@@ -515,6 +542,7 @@ bool canMigrate(uint16_t firmware_version)
         case 0x1730:  /* v1.7.3 -- last upstream release */
         case 0x1770:  /* v1.7.7 -- FreeJoyX previous-outgoing shape */
         case 0x1780:  /* v1.7.8 -- prior FreeJoyX, dev_config shape identical */
+        case 0x0010:  /* FreeJoyX v0.0.x -- LONG_PRESS hold-style semantics */
             return true;
         default:
             return false;
@@ -533,6 +561,8 @@ size_t legacyConfigSize(uint16_t firmware_version)
             return sizeof(v1770::dev_config_t);
         case 0x1780:
             return sizeof(dev_config_t);   /* shape identical to current */
+        case 0x0010:
+            return sizeof(dev_config_t);   /* shape identical to current; semantic-only bump */
         default:
             return sizeof(dev_config_t);
     }
@@ -594,6 +624,13 @@ MigrateResult migrateLegacyConfig(const uint8_t *raw, size_t len, dev_config_t &
                     << "to current FIRMWARE_VERSION 0x"
                     << QString::number(FIRMWARE_VERSION, 16);
             return migrate_v1780_to_current(raw, len, out);
+
+        case 0x0010:
+            qInfo() << "Migrating dev_config_t from" << describeVersion(version)
+                    << "(LONG_PRESS hold-style semantics) to current"
+                    << "FIRMWARE_VERSION 0x" << QString::number(FIRMWARE_VERSION, 16)
+                    << "(TAP release-within-cutoff semantics). Re-verify gesture-typed buttons.";
+            return migrate_v0010_to_current(raw, len, out);
 
         default:
             qWarning() << "No migrator for firmware version 0x"

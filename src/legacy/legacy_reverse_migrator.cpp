@@ -32,7 +32,7 @@ static constexpr uint16_t FW_MASK = 0xFFF0;
  * sees "12 button(s) had X" rather than 12 separate dialog rows. */
 struct ButtonPackStats {
     int clampedShiftMod = 0;     /* shift_modificator > 7 forced to 0 */
-    int forkOnlyTypes = 0;       /* LOGIC / LONG_PRESS / DOUBLE_TAP */
+    int forkOnlyTypes = 0;       /* LOGIC / TAP / DOUBLE_TAP */
     int pov4Center = 0;          /* POV4_CENTER (=32, overflows :5) */
     int oversizedType = 0;       /* any other type value > 31 */
     int droppedSrcB = 0;         /* src_b != -1 in source */
@@ -45,7 +45,7 @@ struct ButtonPackStats {
  * just for two integer comparisons. */
 static constexpr int TYPE_POV4_CENTER = 32;
 static constexpr int TYPE_LOGIC       = 33;
-static constexpr int TYPE_LONG_PRESS  = 34;
+static constexpr int TYPE_TAP         = 34;  /* enum identifier renamed from LONG_PRESS; value unchanged */
 static constexpr int TYPE_DOUBLE_TAP  = 35;
 
 /* Pack one current button_t into the v1710/v1730 button layout (the two
@@ -58,7 +58,7 @@ static void packLegacyButton(const button_t &cur, LegacyButton &lb,
 {
     lb.physical_num = cur.physical_num;
 
-    if (cur.type == TYPE_LOGIC || cur.type == TYPE_LONG_PRESS || cur.type == TYPE_DOUBLE_TAP) {
+    if (cur.type == TYPE_LOGIC || cur.type == TYPE_TAP || cur.type == TYPE_DOUBLE_TAP) {
         /* Fork-specific types: legacy firmware would interpret the value
          * as garbage. Downgrade to NORMAL so the slot still acts as a
          * basic button rather than no-op'ing on the device. */
@@ -147,7 +147,7 @@ static void appendButtonPackWarnings(const ButtonPackStats &s, QStringList &drop
  *
  * Upstream FreeJoy v1.7.3b0. Diffs vs current:
  *   MISSING: board_id + reserved_layout (Phase 7)
- *   MISSING: long_press_threshold_ms + double_tap_window_ms (Step 4)
+ *   MISSING: tap_cutoff_ms + double_tap_window_ms (Step 4)
  *   MISSING: fast_encoders[MAX_FAST_ENCODER_NUM] (Step 1)
  *   MISSING: saved_breakdown
  *   button_t shape: type :5 (current is byte), shift_modificator :3
@@ -518,7 +518,9 @@ static void reverse_v1770_from_current(const dev_config_t &cur, ReverseResult &r
     out->button_timer2_ms        = cur.button_timer2_ms;
     out->button_timer3_ms        = cur.button_timer3_ms;
     out->a2b_debounce_ms         = cur.a2b_debounce_ms;
-    out->long_press_threshold_ms = cur.long_press_threshold_ms;
+    /* v1770 legacy field name is long_press_threshold_ms; current name is
+     * tap_cutoff_ms. Byte/offset is unchanged so the value carries 1:1. */
+    out->long_press_threshold_ms = cur.tap_cutoff_ms;
     out->double_tap_window_ms    = cur.double_tap_window_ms;
 
     Q_STATIC_ASSERT(sizeof(axis_to_buttons_t) == sizeof(v1770::axis_to_buttons_t));

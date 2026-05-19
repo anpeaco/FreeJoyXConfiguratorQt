@@ -1,6 +1,9 @@
 #ifndef FLASHER_H
 #define FLASHER_H
 
+#include <QList>
+#include <QPair>
+#include <QString>
 #include <QWidget>
 
 namespace Ui {
@@ -32,9 +35,25 @@ public:
         startFlashFromFile(filePath);
     }
 
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#19: arm a one-shot bypass
+     * of the FlashConfirmationDialog on the next startFlashFromFile()
+     * call. Used by MainWindow's consolidated-flash orchestrator,
+     * which has already shown the confirmation dialog up front and
+     * doesn't want the user to see it a second time when the auto-
+     * trigger fires after the device enters DFU. */
+    void armConfirmationBypass() { m_skipNextConfirmation = true; }
+
 signals:
     void flashModeClicked(bool is_start_flash);
     void startFlash(bool is_start_flash);
+
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#19: consolidated one-click
+     * flash. Emitted by the new Flash button after the user accepts
+     * the FlashConfirmationDialog. Carries the resolved local file
+     * path of the firmware binary. MainWindow opens the
+     * FlashProgressDialog and orchestrates the backup -> bootloader ->
+     * flash -> re-enumerate -> restore chain in response. */
+    void consolidatedFlashRequested(const QString &filePath);
     /* Fires when flashStatus reaches a terminal state (FINISHED or
      * any error variant). MainWindow uses this to start a watchdog
      * timer expecting the device to reconnect within ~15s. If it
@@ -42,9 +61,22 @@ signals:
      * pointing at the recovery dropdown. */
     void flashTerminated(bool success);
 
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#17: sidebar row click. Asks
+     * MainWindow to set the toolbar's comboBox_HidDeviceList index --
+     * single-source-of-truth stays on the main combobox; the sidebar
+     * is just a more visible re-render of the same selection. */
+    void deviceSelectionRequested(int index);
+
 public slots:
     void flasherFound(bool isFound);
-    void flashStatus(int status, int percent);
+    void flashStatus(int status, int bytes_sent, int bytes_total);
+
+    /* Sidebar feeds (issue #17). setDeviceList mirrors the toolbar
+     * combobox contents and lights up the same row preferredIndex
+     * selects there; setCurrentDeviceIndex pushes selection back when
+     * the user changes it from the toolbar combobox. */
+    void setDeviceList(const QList<QPair<bool, QString>> &deviceNames, int preferredIndex);
+    void setCurrentDeviceIndex(int index);
     /* Driven by HidDevice::flasherDeviceInfo. Populates the
      * "Connected flasher" info line in the Flasher tab so the user
      * can confirm the right device is in flasher mode before
@@ -60,7 +92,10 @@ private slots:
     void on_pushButton_FlashFirmware_clicked();
     void on_pushButton_AbortFlash_clicked();
     void on_pushButton_BrowseFirmware_clicked();
+    void on_pushButton_FlashConsolidated_clicked();
     void on_toolButton_OpenRecoveryDir_clicked();
+    void on_listWidget_Devices_itemActivated(class QListWidgetItem *item);
+    void on_listWidget_Devices_currentRowChanged(int row);
 
     void onReleasesUpdated();
     void onAssetDownloaded(const QString &localPath, bool success);
@@ -88,6 +123,33 @@ private:
     bool m_flashAfterDownload = false;
     QString m_pendingDownloadPath;
     void startFlashFromFile(const QString &filePath);
+
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#17: guards against the
+     * setCurrentRow re-entrancy that would otherwise turn an external
+     * selection update (driven by setCurrentDeviceIndex) into another
+     * deviceSelectionRequested emission and ping-pong with MainWindow. */
+    bool m_suppressDeviceSelectionEmit = false;
+
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#18: state captured from
+     * existing signals so the FlashConfirmationDialog can be populated
+     * without threading extra arguments through every code path.
+     *  - m_inFlasherMode    : true once flasherFound(true) has fired
+     *                         and stays true until flasherFound(false).
+     *  - m_lastDeviceName   : the display string of the currently-
+     *                         highlighted sidebar row (matches the
+     *                         toolbar combobox). Pre-flash identity. */
+    bool m_inFlasherMode = false;
+    QString m_lastDeviceName;
+    QString m_lastDeviceSerial;
+
+    /* Issue #19: one-shot bypass armed by armConfirmationBypass(). */
+    bool m_skipNextConfirmation = false;
+
+    /* Refresh the per-row "Selected firmware" info card from the picked
+     * file path. Slice 4 (#17) wires this to filename / size only; the
+     * full parsed binary metadata lands in slice 5 (#18) once
+     * FirmwareImage is integrated. */
+    void refreshFirmwareInfoCard(const QString &filePath);
 };
 
 #endif // FLASHER_H

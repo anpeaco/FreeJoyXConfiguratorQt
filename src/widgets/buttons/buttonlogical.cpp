@@ -251,6 +251,35 @@ void ButtonLogical::disableButtonType(button_type_t type, bool disable)
     }
 }
 
+void ButtonLogical::setTimerColumnsEnabled(bool delayEnabled, bool pressEnabled)
+{
+    /* Issue anpeaco/FreeJoyX#22: gesture-managed slots (TAP, DOUBLE_TAP,
+     * gesture-coexisting NORMAL) ignore delay_timer in firmware. Force
+     * the column to BUTTON_TIMER_NONE (combo index 0) and disable both
+     * the combo and the underlying config value so the user can't set a
+     * meaningless timer. press_timer stays editable on these slots --
+     * it becomes the per-slot minimum-hold floor. */
+    ui->comboBox_DelayTimerIndex->setEnabled(delayEnabled);
+    ui->comboBox_PressTimerIndex->setEnabled(pressEnabled);
+    if (!delayEnabled && ui->comboBox_DelayTimerIndex->currentIndex() != 0)
+    {
+        ui->comboBox_DelayTimerIndex->setCurrentIndex(0);
+    }
+    QString tip = delayEnabled
+        ? QString()
+        : tr("Disabled: gesture-managed slots are driven by the global "
+             "tap and double-tap windows.");
+    ui->comboBox_DelayTimerIndex->setToolTip(tip);
+    ui->comboBox_PressTimerIndex->setToolTip(
+        pressEnabled
+            ? (delayEnabled
+                ? QString()
+                : tr("Minimum-hold floor: guarantees the host sees the logical "
+                     "button high for at least this duration after the gesture "
+                     "fires. Minimum 20 ms."))
+            : QString());
+}
+
 button_type_t ButtonLogical::currentButtonType()
 {
     /* combobox at -1 (deselected via setCurrentIndex(-1)) -> indexing

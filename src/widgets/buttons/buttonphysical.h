@@ -24,6 +24,10 @@ private:
     Ui::ButtonPhysical *ui;
     int m_buttonIndex;
     bool m_currentState;
+    /* Separate from m_currentState: that one gates render via the 30ms
+     * debounce-against-flicker logic, but the debug log wants every
+     * real edge regardless of render timing. */
+    bool m_debugState;
 
     QElapsedTimer m_lastAct;
 };

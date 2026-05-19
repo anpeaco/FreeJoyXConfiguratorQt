@@ -13,7 +13,16 @@
 #include <QAction>
 #include <QCursor>
 
+#include <QFileInfo>
+#include <QListWidget>
+#include <QListWidgetItem>
+#include <QLocale>
+#include <QSignalBlocker>
+
+#include "common_defines.h"
 #include "deviceconfig.h"
+#include "dialogs/flashconfirmationdialog.h"
+#include "firmwareimage.h"
 #include "global.h"
 #include "style_helpers.h"
 #include "firmwarelibrary.h"
@@ -59,6 +68,24 @@ Flasher::Flasher(QWidget *parent)
      * refresh against GitHub. */
     refreshSourceList();
     m_library->fetchReleases();
+
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#17: refresh the binary info
+     * card whenever the user changes the source dropdown. Uses an
+     * untyped overload because the connect-pointer-to-member form ends
+     * up ambiguous for currentIndexChanged in Qt 5.15. */
+    connect(ui->comboBox_FlashSource,
+            QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this,
+            [this](int) {
+                refreshFirmwareInfoCard(QString());
+                /* Enable the consolidated Flash button (#19) whenever
+                 * a real source is selected (data is non-empty). */
+                const QVariant d = ui->comboBox_FlashSource->currentData();
+                ui->pushButton_FlashConsolidated->setEnabled(d.isValid());
+            });
+
+    /* Slice 4 (#17): the listWidget connects via the auto-named
+     * on_listWidget_Devices_* slots above; nothing to do here. */
 }
 
 Flasher::~Flasher()
@@ -82,6 +109,9 @@ void Flasher::deviceConnected(bool isConnect)
 
 void Flasher::flasherFound(bool isFound)
 {
+    /* Issue #18: track flasher-mode state so the confirmation dialog
+     * can classify a flash as Recovery vs normal. */
+    m_inFlasherMode = isFound;
     ui->pushButton_FlashFirmware->setEnabled(isFound);
     ui->pushButton_FlasherMode->setEnabled(!isFound);
     /* Abort is only relevant while the device is in flasher mode --
@@ -110,6 +140,10 @@ void Flasher::onFlasherDeviceInfo(const QString &manufacturer,
                                   ushort vid,
                                   ushort pid)
 {
+    /* Issue #18: hold the bootloader-side serial too so a Recovery
+     * flash dialog can show *some* identifier even when the app-mode
+     * paramsReport was never received. */
+    m_lastDeviceSerial = serial;
     /* Builds a single-line summary the user can scan to confirm the
      * right device is in flasher mode. Format mirrors the device-info
      * card on the main window: VID:PID hex + serial + product +
@@ -362,6 +396,62 @@ void Flasher::on_pushButton_BrowseFirmware_clicked()
     startFlashFromFile(filePath);
 }
 
+void Flasher::on_pushButton_FlashConsolidated_clicked()
+{
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#19: single-click flash flow.
+     * Resolve the picked source to a local path; if it's a remote
+     * release that hasn't been downloaded yet, the user should use the
+     * legacy two-button path (kicks the FirmwareLibrary download). The
+     * consolidated flow only operates on local files for now -- the
+     * progress dialog cannot meaningfully render a "downloading" stage
+     * yet, and we don't want to surprise the user with a download. */
+    const QVariant currentData = ui->comboBox_FlashSource->currentData();
+    if (!currentData.isValid()) {
+        QMessageBox::information(this, tr("Pick a firmware source"),
+            tr("Select a firmware build from the Source dropdown, or "
+               "click <b>Browse...</b> to pick a .bin from disk."));
+        return;
+    }
+    QString path;
+    if (currentData.type() == QVariant::String) {
+        path = currentData.toString();
+    } else if (currentData.type() == QVariant::Map) {
+        path = currentData.toMap().value(kKeyLocal).toString();
+    }
+    if (path.isEmpty() || !QFile::exists(path)) {
+        QMessageBox::information(this, tr("Firmware not available locally"),
+            tr("The selected firmware isn't downloaded yet. Use the legacy "
+               "<b>Enter Flasher Mode</b> / <b>Flash Firmware</b> buttons "
+               "below, which will fetch the binary on demand, or use the "
+               "Browse button to pick a local .bin."));
+        return;
+    }
+
+    /* Pop the confirmation dialog first (#18). On accept, hand off to
+     * MainWindow's orchestrator via consolidatedFlashRequested -- this
+     * widget doesn't see HidDevice directly. */
+    FirmwareImage image;
+    if (!image.loadFromFile(path)) {
+        QMessageBox::warning(this, tr("Couldn't open firmware"),
+            tr("Couldn't read the firmware file:\n%1").arg(path));
+        return;
+    }
+    FlashConfirmationDialog::Inputs in;
+    if (gEnv.pDeviceConfig) {
+        in.deviceFwVersion = gEnv.pDeviceConfig->paramsReport.firmware_version;
+        in.deviceBoardId = gEnv.pDeviceConfig->paramsReport.board_id;
+    }
+    in.deviceInRecoveryMode = m_inFlasherMode;
+    in.deviceName = m_lastDeviceName;
+    in.deviceSerial = m_lastDeviceSerial;
+    in.image = &image;
+    FlashConfirmationDialog dlg(in, this);
+    if (dlg.exec() != QDialog::Accepted) {
+        return;
+    }
+    emit consolidatedFlashRequested(path);
+}
+
 void Flasher::on_pushButton_FlashFirmware_clicked()
 {
     const QVariant currentData = ui->comboBox_FlashSource->currentData();
@@ -465,6 +555,51 @@ void Flasher::onAssetDownloaded(const QString &localPath, bool success)
 
 void Flasher::startFlashFromFile(const QString &filePath)
 {
+    /* Issue anpeaco/FreeJoyXConfiguratorQt#18: gate every flash through
+     * the confirmation dialog. Parse the binary first so the dialog can
+     * show board + version + verdict; the parsed metadata also feeds
+     * the board-mismatch refusal -- the dialog returns reject() when
+     * Verdict::Incompatible, so we never reach the actual flash for a
+     * mismatched binary.
+     *
+     * Bypass (#19): when MainWindow's consolidated-flash orchestrator
+     * has already shown the confirmation, it arms a one-shot bypass so
+     * the auto-fire after DFU entry doesn't repeat the dialog. */
+    if (m_skipNextConfirmation) {
+        m_skipNextConfirmation = false;
+    } else {
+        FirmwareImage image;
+        if (!image.loadFromFile(filePath)) {
+            qWarning() << "Couldn't load firmware file for parsing:" << filePath;
+            QMessageBox::warning(this, tr("Couldn't open firmware"),
+                tr("Couldn't read the firmware file:\n%1\n\n"
+                   "Check that the file exists and the configurator has "
+                   "permission to read it.").arg(filePath));
+            return;
+        }
+
+        FlashConfirmationDialog::Inputs in;
+        /* Device identity: pulled from the live params report. The
+         * sidebar + main combobox display the same string, but we go
+         * to the source of truth (deviceconfig) so the dialog shows
+         * what the configurator actually thinks it's talking to. */
+        if (gEnv.pDeviceConfig) {
+            in.deviceFwVersion = gEnv.pDeviceConfig->paramsReport.firmware_version;
+            in.deviceBoardId = gEnv.pDeviceConfig->paramsReport.board_id;
+        }
+        in.deviceInRecoveryMode = m_inFlasherMode;
+        in.deviceName = m_lastDeviceName;
+        in.deviceSerial = m_lastDeviceSerial;
+        in.image = &image;
+
+        FlashConfirmationDialog dlg(in, this);
+        if (dlg.exec() != QDialog::Accepted) {
+            qDebug() << "Flash cancelled at confirmation dialog";
+            return;
+        }
+    }
+
+    /* Confirmed (or bypassed). Hand off to the existing flash path. */
     QFile file(filePath);
     if (file.open(QIODevice::ReadOnly)) {
         ui->pushButton_FlashFirmware->setEnabled(false);
@@ -486,8 +621,15 @@ const QByteArray *Flasher::fileArray() const
     return &m_fileArray;
 }
 
-void Flasher::flashStatus(int status, int percent)
+void Flasher::flashStatus(int status, int bytes_sent, int bytes_total)
 {
+    /* Slice 3 (#16): derive percent locally now that the upstream signal
+     * carries byte counts -- the progress dialog (#19) consumes the raw
+     * counts and weights them across phases, but this legacy widget just
+     * needs the simple 0..100 mapping. */
+    const int percent = (bytes_total > 0)
+        ? int((qint64(bytes_sent) * 100) / bytes_total)
+        : 0;
     ui->progressBar_Flash->setValue(percent);
 
     if (percent == 1) {
@@ -534,4 +676,124 @@ void Flasher::flashDone()
         m_fileArray.clear();
         m_fileArray.shrink_to_fit();
     });
+}
+
+/* --- Device sidebar (issue anpeaco/FreeJoyXConfiguratorQt#17) --------- */
+
+void Flasher::setDeviceList(const QList<QPair<bool, QString>> &deviceNames, int preferredIndex)
+{
+    /* Mirror MainWindow's existing combobox population. The first
+     * element of each pair flags an "old-firmware flash-only" device
+     * (we surface it as RECOVERY rather than the previous "ONLY FLASH"
+     * prefix); the second element is the human-readable name. */
+    QSignalBlocker bl(ui->listWidget_Devices);
+    ui->listWidget_Devices->clear();
+    for (int i = 0; i < deviceNames.size(); ++i) {
+        QString label = deviceNames[i].second;
+        if (deviceNames[i].first) {
+            label = tr("[RECOVERY] %1").arg(label);
+        }
+        ui->listWidget_Devices->addItem(label);
+    }
+    /* Match MainWindow's preferredIndex / placeholder behaviour: a
+     * negative preferred means "no selection yet". */
+    if (preferredIndex >= 0 && preferredIndex < deviceNames.size()) {
+        ui->listWidget_Devices->setCurrentRow(preferredIndex);
+    } else {
+        ui->listWidget_Devices->setCurrentRow(-1);
+    }
+}
+
+void Flasher::setCurrentDeviceIndex(int index)
+{
+    /* External selection update from MainWindow's combobox -- suppress
+     * the re-emit so we don't bounce the signal back. */
+    if (ui->listWidget_Devices->currentRow() == index) {
+        return;
+    }
+    m_suppressDeviceSelectionEmit = true;
+    ui->listWidget_Devices->setCurrentRow(index);
+    m_suppressDeviceSelectionEmit = false;
+}
+
+void Flasher::on_listWidget_Devices_currentRowChanged(int row)
+{
+    /* Capture the row's display string so the confirmation dialog
+     * (#18) has a device-name to render even when the user hasn't
+     * changed selection in this session. */
+    if (row >= 0 && row < ui->listWidget_Devices->count()) {
+        m_lastDeviceName = ui->listWidget_Devices->item(row)->text();
+    } else {
+        m_lastDeviceName.clear();
+    }
+    if (m_suppressDeviceSelectionEmit) {
+        return;
+    }
+    emit deviceSelectionRequested(row);
+}
+
+void Flasher::on_listWidget_Devices_itemActivated(QListWidgetItem *item)
+{
+    /* Double-click / enter on a row -- treat the same as currentRow
+     * change. Belt-and-suspenders so re-activating the already-selected
+     * row still re-asserts selection on MainWindow (useful if some
+     * other state has drifted). */
+    if (!item) return;
+    if (m_suppressDeviceSelectionEmit) return;
+    emit deviceSelectionRequested(ui->listWidget_Devices->row(item));
+}
+
+/* --- Firmware info card (issue anpeaco/FreeJoyXConfiguratorQt#17) ----- */
+
+void Flasher::refreshFirmwareInfoCard(const QString &filePath)
+{
+    /* Resolve which file to introspect:
+     *   1. Explicit filePath argument (e.g. after Browse).
+     *   2. Source combobox's local-file entry data (string).
+     *   3. Source combobox's remote entry's cached local path (in the
+     *      QVariantMap).
+     *   4. Nothing selected -- reset the card to placeholders.
+     *
+     * Slice 4 limits the card to filename + size + raw filename-derived
+     * board guess. Full parsed metadata (board + version from
+     * FirmwareImage's footer / heuristic) lands in slice 5 (#18). */
+    QString resolved = filePath;
+    if (resolved.isEmpty()) {
+        const QVariant data = ui->comboBox_FlashSource->currentData();
+        if (data.type() == QVariant::String) {
+            resolved = data.toString();
+        } else if (data.type() == QVariant::Map) {
+            resolved = data.toMap().value(kKeyLocal).toString();
+        }
+    }
+
+    if (resolved.isEmpty() || !QFileInfo::exists(resolved)) {
+        const QString dash = QStringLiteral("-");
+        ui->label_FwInfoFile->setText(dash);
+        ui->label_FwInfoBoard->setText(dash);
+        ui->label_FwInfoVersion->setText(dash);
+        ui->label_FwInfoSize->setText(dash);
+        ui->label_FwInfoVerdict->clear();
+        return;
+    }
+
+    const QFileInfo fi(resolved);
+    ui->label_FwInfoFile->setText(fi.fileName());
+    ui->label_FwInfoSize->setText(QLocale::system().formattedDataSize(fi.size()));
+
+    /* Filename-based board hint until FirmwareImage lands (#18). Names
+     * follow the freejoyx-<board>-<app|boot>-<version>.bin convention,
+     * so a substring match is reliable for our own releases; for hand-
+     * built or third-party files the hint stays "Unknown" and slice 5
+     * will inspect the bytes instead. */
+    const QString nameLower = fi.fileName().toLower();
+    if (nameLower.contains("f103")) {
+        ui->label_FwInfoBoard->setText(tr("F103 (from filename)"));
+    } else if (nameLower.contains("f411")) {
+        ui->label_FwInfoBoard->setText(tr("F411 (from filename)"));
+    } else {
+        ui->label_FwInfoBoard->setText(tr("Unknown"));
+    }
+    ui->label_FwInfoVersion->setText(QStringLiteral("-"));
+    ui->label_FwInfoVerdict->clear();
 }

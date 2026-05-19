@@ -435,9 +435,9 @@ void ButtonConfig::setUiOnOff(int value)
 // Unified per-row dropdown filter. Applies BOTH active rules:
 //
 //   1) Per-physical gesture coexistence (Step 4): a physical input may host
-//      slots of types {BUTTON_NORMAL, LONG_PRESS, DOUBLE_TAP} only. If any
-//      sister row on the same physical uses a non-allowed type, hide LONG_PRESS
-//      and DOUBLE_TAP from this row's dropdown. If any sister uses LONG_PRESS
+//      slots of types {BUTTON_NORMAL, TAP, DOUBLE_TAP} only. If any
+//      sister row on the same physical uses a non-allowed type, hide TAP
+//      and DOUBLE_TAP from this row's dropdown. If any sister uses TAP
 //      or DOUBLE_TAP, hide every non-allowed type from this row's dropdown.
 //      Self-row excluded from the "sister" scan so the user can change a row's
 //      type *away* from gesture without the filter locking them in.
@@ -464,13 +464,13 @@ void ButtonConfig::physicalConflictFilter()
         RADIO_BUTTON1, RADIO_BUTTON2, RADIO_BUTTON3, RADIO_BUTTON4,
         SEQUENTIAL_TOGGLE, SEQUENTIAL_BUTTON,
         LOGIC,
-        LONG_PRESS, DOUBLE_TAP,
+        TAP, DOUBLE_TAP,
     };
     auto isAllowedWithGesture = [](button_type_t t) -> bool {
-        return t == BUTTON_NORMAL || t == LONG_PRESS || t == DOUBLE_TAP;
+        return t == BUTTON_NORMAL || t == TAP || t == DOUBLE_TAP;
     };
     auto isGesture = [](button_type_t t) -> bool {
-        return t == LONG_PRESS || t == DOUBLE_TAP;
+        return t == TAP || t == DOUBLE_TAP;
     };
 
     const int n = m_logicButtonPtrList.size();
@@ -514,6 +514,19 @@ void ButtonConfig::physicalConflictFilter()
 
             m_logicButtonPtrList[r]->disableButtonType(t, gestureHide || capHide);
         }
+
+        // Issue anpeaco/FreeJoyX#22: gate the per-row DelayTimer / PressTimer
+        // columns. A slot is "gesture-managed" if its own type is TAP /
+        // DOUBLE_TAP, or it is BUTTON_NORMAL on a physical that also hosts
+        // a TAP or DT sister. delay_timer is meaningless in the gesture
+        // model (the state machine has its own implicit delays); press_timer
+        // doubles as the minimum-hold floor and stays editable.
+        const bool selfIsGesture     = isGesture(selfType);
+        const bool selfIsCoexNormal  = (selfType == BUTTON_NORMAL && hasGestureSister);
+        const bool gestureManaged    = selfIsGesture || selfIsCoexNormal;
+        m_logicButtonPtrList[r]->setTimerColumnsEnabled(
+            /* delayEnabled */ !gestureManaged,
+            /* pressEnabled */ true);
     }
 }
 
@@ -582,6 +595,14 @@ void ButtonConfig::readFromConfig()
     for (int i = 0; i < m_logicButtonPtrList.size(); i++) {
         m_logicButtonPtrList[i]->readFromConfig();
     }
+
+    /* Issue anpeaco/FreeJoyX#22: refresh per-row timer-column enable state
+     * after the initial readFromConfig. ButtonLogical::editingOnOff
+     * unconditionally enables both timer combos when a physical is set,
+     * so without this re-run the gesture-managed slots would briefly
+     * show both columns active before the next user edit triggers the
+     * filter. */
+    physicalConflictFilter();
 }
 
 void ButtonConfig::writeToConfig()

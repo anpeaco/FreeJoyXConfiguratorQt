@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>FlashConfirmationDialog</class>
+ <widget class="QDialog" name="FlashConfirmationDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>540</width>
+    <height>460</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Confirm flash</string>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
+  <layout class="QVBoxLayout" name="layout_Root">
+   <property name="spacing"><number>10</number></property>
+   <property name="leftMargin"><number>14</number></property>
+   <property name="topMargin"><number>14</number></property>
+   <property name="rightMargin"><number>14</number></property>
+   <property name="bottomMargin"><number>14</number></property>
+   <item>
+    <widget class="QLabel" name="label_Headline">
+     <property name="text">
+      <string>Confirm flash</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font-size:14pt; font-weight:600;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_Device">
+     <property name="title">
+      <string>Device</string>
+     </property>
+     <layout class="QFormLayout" name="form_Device">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_DeviceNameTag">
+        <property name="text"><string>Name:</string></property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="label_DeviceName"><property name="text"><string notr="true">-</string></property></widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_DeviceSerialTag">
+        <property name="text"><string>Serial:</string></property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLabel" name="label_DeviceSerial"><property name="text"><string notr="true">-</string></property></widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_DeviceBoardTag">
+        <property name="text"><string>Board:</string></property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLabel" name="label_DeviceBoard"><property name="text"><string notr="true">-</string></property></widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_DeviceFwTag">
+        <property name="text"><string>Current firmware:</string></property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLabel" name="label_DeviceFw"><property name="text"><string notr="true">-</string></property></widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_Target">
+     <property name="title">
+      <string>Target firmware</string>
+     </property>
+     <layout class="QFormLayout" name="form_Target">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_TargetFileTag">
+        <property name="text"><string>File:</string></property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="label_TargetFile"><property name="text"><string notr="true">-</string></property></widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_TargetBoardTag">
+        <property name="text"><string>Board:</string></property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLabel" name="label_TargetBoard"><property name="text"><string notr="true">-</string></property></widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_TargetFwTag">
+        <property name="text"><string>Version:</string></property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLabel" name="label_TargetFw"><property name="text"><string notr="true">-</string></property></widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_Verdict">
+     <property name="text"><string notr="true"/></property>
+     <property name="wordWrap"><bool>true</bool></property>
+     <property name="styleSheet">
+      <string notr="true">padding:8px; border-radius:4px; font-weight:600;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_StepsHeading">
+     <property name="text"><string>The configurator will:</string></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_Steps">
+     <property name="text"><string notr="true"/></property>
+     <property name="wordWrap"><bool>true</bool></property>
+     <property name="textFormat"><enum>Qt::RichText</enum></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_Warning">
+     <property name="text">
+      <string>Approximately 30 seconds. Do not unplug the device during this process.</string>
+     </property>
+     <property name="wordWrap"><bool>true</bool></property>
+     <property name="styleSheet">
+      <string notr="true">color:#a05a00; font-style:italic;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>FlashConfirmationDialog</receiver>
+   <slot>reject()</slot>
+  </connection>
+ </connections>
+</ui>

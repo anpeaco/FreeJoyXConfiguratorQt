@@ -44,8 +44,8 @@ namespace legacy {
  *
  * Compared to the current FreeJoyX dev_config_t this version is missing:
  *   - board_id + reserved_layout (Phase 7 -- 2 bytes after firmware_version)
- *   - long_press_threshold_ms + double_tap_window_ms (Step 4 -- 4 bytes after
- *     a2b_debounce_ms)
+ *   - tap_cutoff_ms + double_tap_window_ms (Step 4 -- 4 bytes after
+ *     a2b_debounce_ms; tap_cutoff_ms was originally named long_press_threshold_ms)
  *   - led_timer_ms[4] (8 bytes after leds[])
  *   - fast_encoders[MAX_FAST_ENCODER_NUM] (Step 1)
  *   - button_polling / encoder_polling tick counters
@@ -238,7 +238,7 @@ typedef struct
  *
  * Shape relative to current FreeJoyX (the forward migrator's target):
  *   MISSING: board_id + reserved_layout (Phase 7)
- *   MISSING: long_press_threshold_ms + double_tap_window_ms (Step 4)
+ *   MISSING: tap_cutoff_ms + double_tap_window_ms (Step 4)
  *   MISSING: fast_encoders[MAX_FAST_ENCODER_NUM] (Step 1)
  *   MISSING: saved_breakdown
  *   MISSING (button_t shape): type widened to byte (was :5),

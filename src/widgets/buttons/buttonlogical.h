@@ -46,6 +46,14 @@ public:
     int currentFocusSrcB() const;
 
     void disableButtonType(button_type_t type, bool disable);
+
+    /* Issue anpeaco/FreeJoyX#22: drives the per-row enable state of the
+     * DelayTimer / PressTimer columns. ButtonConfig calls this from
+     * physicalConflictFilter for every row after the standard
+     * editingOnOff has run, so gesture-managed slots keep their timer
+     * columns gated even after the user re-binds a physical. */
+    void setTimerColumnsEnabled(bool delayEnabled, bool pressEnabled);
+
     button_type_t currentButtonType();
     // Returns the 0-indexed physical-button assignment, or -1 if unassigned.
     // Mirrors what writeToConfig() pushes into button->physical_num.
@@ -132,7 +140,7 @@ private:
         // rule -- see ButtonConfig::physicalConflictFilter).
         {BUTTON_NORMAL,        tr("Normal")},
         {DOUBLE_TAP,           tr("Double tap")},
-        {LONG_PRESS,           tr("Long press")},
+        {TAP,                  tr("Tap")},
         {LOGIC,                tr("Logic")},
         // Toggle family
         {BUTTON_TOGGLE,        tr("Toggle")},
