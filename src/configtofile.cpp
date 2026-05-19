@@ -285,13 +285,23 @@ void ConfigToFile::crossBoardCheck(QWidget *parent, dev_config_t &devC)
     /* Describe what'll happen to slot 22 if the user accepts. */
     QString slot22Note;
     bool clearI2cPair = false;
+    int dependentI2cAxes = 0;
     if (devC.pins[22] != NOT_USED || devC.pins[21] == I2C_SCL) {
         const bool i2cInUse = (devC.pins[22] == I2C_SDA) || (devC.pins[21] == I2C_SCL);
         if (deviceBoard == BOARD_ID_F411_BLACKPILL && i2cInUse) {
+            for (int i = 0; i < MAX_AXIS_NUM; ++i) {
+                if (devC.axis_config[i].source_main == SOURCE_I2C) ++dependentI2cAxes;
+            }
             slot22Note = QObject::tr(
                 "I2C is configured on slots 21/22 (B10 SCL + B11 SDA on Blue Pill). "
                 "B2 on Black Pill isn't bonded for I2C on the F411 UFQFPN48 package, "
                 "so the I2C pair will be cleared during conversion.");
+            if (dependentI2cAxes > 0) {
+                slot22Note += QObject::tr(
+                    " %1 axis(es) sourced from I2C will also be reset to "
+                    "\"unused\" since the bus is being torn down.")
+                    .arg(dependentI2cAxes);
+            }
             clearI2cPair = true;
         } else if (devC.pins[22] != NOT_USED) {
             slot22Note = QObject::tr(
@@ -332,6 +342,17 @@ void ConfigToFile::crossBoardCheck(QWidget *parent, dev_config_t &devC)
     if (clearI2cPair) {
         if (devC.pins[21] == I2C_SCL) devC.pins[21] = NOT_USED;
         if (devC.pins[22] == I2C_SDA) devC.pins[22] = NOT_USED;
+        /* Sweep dependent axis refs: anything sourced from I2C can no
+         * longer read its sensor since the bus is torn down. Set
+         * source_main to -1 (unused); leave the rest of the axis
+         * config alone so the user can re-source it elsewhere later
+         * without losing curve / calibration / button assignments. */
+        for (int i = 0; i < MAX_AXIS_NUM; ++i) {
+            if (devC.axis_config[i].source_main == SOURCE_I2C) {
+                devC.axis_config[i].source_main = -1;
+                devC.axis_config[i].i2c_address = 0;
+            }
+        }
     }
 }
 
