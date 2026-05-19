@@ -693,8 +693,20 @@ void HidDevice::writeConfigToDevice(uint8_t *buffer)
                 if (res < 0) {
                     hid_close(m_paramsRead);
                     m_paramsRead=nullptr;
-                } else if (buffer[1] == 0xFE) {
-                    qDebug() << "ERROR! Version doesnt match";
+                } else if (buffer[1] == 0xFE || buffer[1] == 0xFD) {
+                    /* Issue anpeaco/FreeJoyX#27: firmware splits the rejection
+                     * into two byte codes so the log can distinguish the
+                     * two failure modes. 0xFE = wire-format generation
+                     * mismatch (reflash firmware). 0xFD = board_id
+                     * mismatch (load a config saved for this board, or
+                     * use the cross-board converter on the load path).
+                     * Older firmware only sends 0xFE for either case --
+                     * the OR keeps that path working. */
+                    if (buffer[1] == 0xFE) {
+                        qDebug() << "ERROR! Version doesnt match -- the firmware wire-format generation differs from this config. Reflash the firmware.";
+                    } else {
+                        qDebug() << "ERROR! Board ID doesnt match -- the config was saved for a different board. Load it again and accept the cross-board conversion prompt, or use a config saved for this board.";
+                    }
                     {
                         std::lock_guard<std::mutex> lock(m_mutex);
                         m_currentWork = REPORT_ID_PARAM;
