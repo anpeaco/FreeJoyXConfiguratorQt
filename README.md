@@ -1,4 +1,4 @@
-# FreeJoy Configurator X
+# FreeJoyXConfiguratorQT
 
 [![Configurator build](https://github.com/anpeaco/FreeJoyXConfiguratorQt/actions/workflows/configurator.yml/badge.svg)](https://github.com/anpeaco/FreeJoyXConfiguratorQt/actions/workflows/configurator.yml)
 [![Wire-format header sync](https://github.com/anpeaco/FreeJoyXConfiguratorQt/actions/workflows/header-sync.yml/badge.svg)](https://github.com/anpeaco/FreeJoyXConfiguratorQt/actions/workflows/header-sync.yml)
