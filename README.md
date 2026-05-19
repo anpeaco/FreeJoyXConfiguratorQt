@@ -19,9 +19,9 @@ FreeJoyXConfiguratorQt is a fork of [FreeJoyConfiguratorQt](https://github.com/F
 * **Cross-board config converter** — loading a Blue Pill INI on a connected Black Pill (or vice versa) prompts to convert in place. 29 of 30 pin slots map identically; only slot 22 (PB11 on BluePill, PB2 on BlackPill) differs. The converter flips `board_id`, refreshes `firmware_version`, and -- for forward conversion to BlackPill where PB2 isn't I2C-bonded -- clears any I2C SCL/SDA pair on slots 21/22 along with axes sourced from I2C
 * Pin mapping configuration
 * Digital input configuration (buttons, toggle switches, encoders, etc.)
-* **Logic button configuration** — pick `Logic` in the Function dropdown to unlock Operator (`AND`, `OR`, `NOT`, `NOR`, `NAND`, `XOR`, `A AND NOT B`), Source B, and per-slot Debounce cells
-* **Long-press / Double-tap button types** — appear in the Function dropdown with the per-physical coexistence filter that limits a single physical input to `{ NORMAL, LONG_PRESS, DOUBLE_TAP }`
-* **Shifts & Timers tab** — the eight shift modifiers (bumped from 5 in v1.7.8) and the global timers (Timer 1/2/3, Debounce, Long-press threshold, Double-tap window) live in a dedicated tab, decluttering the Buttons tab
+* **Logic button configuration** — pick `Logic` in the Function dropdown to unlock Operator (`AND`, `OR`, `NAND`, `NOR`, `XOR`, `XNOR`), Source B, and per-slot Debounce cells. (`NOT` and `A AND NOT B` exist in the wire-format enum for back-compat with shipped configs but are no longer offered in the picker.)
+* **Tap / Double-tap button types** — appear in the Function dropdown with the per-physical coexistence filter that limits a single physical input to `{ NORMAL, TAP, DOUBLE_TAP }`
+* **Shifts & Timers tab** — the eight shift modifiers (bumped from 5 in v1.7.8) and the global timers (Timer 1/2/3, Debounce, Tap cutoff, Double tap cutoff) live in a dedicated tab, decluttering the Buttons tab. Tap cutoff and Double tap cutoff default to 200 ms.
 * **2 fast (hardware-quadrature) encoders** — Enc 1 on PA8/PA9, Enc 2 on PB6/PB7
 * Analog input configuration (calibration, smoothing, curve shapes, etc.)
 * Axes-to-buttons configuration
@@ -35,7 +35,9 @@ Check the upstream [FreeJoy wiki](https://github.com/FreeJoy-Team/FreeJoyWiki) f
 
 ## Downloads
 
-Release artefacts (configurator + per-board firmware images) are produced by the firmware repo's `make release RELEASE_VERSION=vX.Y.Z` and dropped into this repo's `firmware/` directory before packaging.
+Configurator binaries (currently Linux only) are published to this repo's [Releases](https://github.com/anpeaco/FreeJoyXConfiguratorQt/releases) by the tag-triggered `release.yml` workflow. Firmware binaries for both boards (F103 BluePill + F411 BlackPill, app + bootloader) live on the paired firmware repo's [Releases](https://github.com/anpeaco/FreeJoyX/releases). Tagging the same `vX.Y.Z` on both repos in lockstep produces matched configurator + firmware artefacts.
+
+For Windows builds, you currently have to build from source (see the [Building](#building) section below). A Windows-side `release.yml` covering MinGW packaging via `windeployqt` is a planned follow-up.
 
 ## Installation
 
@@ -88,3 +90,4 @@ naming conventions, and the wire-format lockstep rule.
 Currently archived legacy versions (in `src/legacy/legacy_types.h`):
 * **v1.7.0/v1.7.1** (`0x1700`/`0x1710`) — upstream FreeJoy. Migrates pre-FreeJoyX boards.
 * **v1.7.7** (`0x1770`) — outgoing FreeJoyX shape archived ahead of the v1.7.8 bump (issue [#1](https://github.com/anpeaco/FreeJoyX/issues/1)). Lets a board still running v1.7.7 be read and upgraded without losing the user's mapping.
+* **FreeJoyX v0.0.x** (`0x0010`) — first generation after the upstream-lineage reset. Shape identical to current; the bump to `0x0020` was a semantic change only (LONG_PRESS enum slot reinterpreted as TAP). Migrator is a memcpy + version restamp; the configurator logs the gesture-semantic shift so the user re-verifies any gesture-typed buttons on the migrated config.
