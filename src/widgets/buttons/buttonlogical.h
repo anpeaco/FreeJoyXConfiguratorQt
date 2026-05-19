@@ -189,11 +189,16 @@ private:
         {-1,                   tr("-")},
         {LOGIC_OP_AND,         tr("AND")},
         {LOGIC_OP_OR,          tr("OR")},
-        {LOGIC_OP_NOT,         tr("NOT")},
         {LOGIC_OP_NOR,         tr("NOR")},
         {LOGIC_OP_NAND,        tr("NAND")},
         {LOGIC_OP_XOR,         tr("XOR")},
         {LOGIC_OP_A_AND_NOT_B, tr("A AND NOT B")},
+        /* LOGIC_OP_NOT removed from the dropdown: NORMAL + is_inverted=1
+         * gives the same logical output (!A) without the configurator's
+         * Source-B-disabled special case. The enum value stays defined
+         * in common_types.h and the firmware still evaluates it so any
+         * shipped config that carries LOGIC_OP_NOT continues to work --
+         * but the configurator won't let users pick it for new slots. */
     }};
 };
 
