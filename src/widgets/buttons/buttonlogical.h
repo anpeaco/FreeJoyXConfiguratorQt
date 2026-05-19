@@ -187,12 +187,12 @@ private:
     const QVector <deviceEnum_guiName_t> m_logicOpList =
     {{
         {-1,                   tr("-")},
-        {LOGIC_OP_AND,         tr("AND")},
-        {LOGIC_OP_OR,          tr("OR")},
-        {LOGIC_OP_NOT,         tr("NOT")},
-        {LOGIC_OP_NOR,         tr("NOR")},
-        {LOGIC_OP_NAND,        tr("NAND")},
-        {LOGIC_OP_XOR,         tr("XOR")},
+        {LOGIC_OP_AND,         tr("A AND B")},
+        {LOGIC_OP_OR,          tr("A OR B")},
+        {LOGIC_OP_NOT,         tr("NOT A")},
+        {LOGIC_OP_NOR,         tr("A NOR B")},
+        {LOGIC_OP_NAND,        tr("A NAND B")},
+        {LOGIC_OP_XOR,         tr("A XOR B")},
         {LOGIC_OP_A_AND_NOT_B, tr("A AND NOT B")},
     }};
 };
