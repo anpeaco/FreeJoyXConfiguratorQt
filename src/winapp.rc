@@ -16,7 +16,7 @@ BEGIN
             VALUE "FileDescription",  "FreeJoyX Configurator"
             VALUE "ProductName",      "FreeJoyX Configurator"
             VALUE "InternalName",     "FreeJoyX Configurator"
-            VALUE "OriginalFilename", "FreeJoyQt.exe"
+            VALUE "OriginalFilename", "FreeJoyXConfiguratorQt.exe"
             VALUE "CompanyName",      "FreeJoyX Project"
             VALUE "LegalCopyright",   "Copyright © FreeJoyX Project contributors"
         END

@@ -50,6 +50,11 @@ public:
         Restore,
         Done,
         TerminalError,
+        /* Slice 3: device didn't reappear within the watcher's budget.
+         * Surfaces a clear "try unplugging" message; the Cancel button
+         * is re-enabled so the user can abort cleanly. The watcher keeps
+         * listening with no timeout. */
+        RecoveryPrompt,
     };
 
     /* True for a "recovery flash" -- the dialog skips Backup + Bootloader

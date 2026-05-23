@@ -28,6 +28,7 @@ class MainWindow;
 QT_END_NAMESPACE
 
 class FlashProgressDialog;
+class FlashSession;
 
 class MainWindow : public QMainWindow
 {
@@ -56,8 +57,6 @@ private slots:
      * the migration and the next-step (flash + write). */
     void legacyConfigMigrated(uint16_t oldFirmwareVersion);
     void blockWRConfigToDevice(bool block);
-
-    void deviceFlasherController(bool isStartFlash);
 
     void hidDeviceList(const QList<QPair<bool, QString>> &deviceNames, int preferredIndex);
     void hidDeviceListChanged(int index);
@@ -131,9 +130,32 @@ private slots:
      * handlers. */
     void onConsolidatedFlashRequested(const QString &filePath);
     void onFlashProgressCancelRequested();
-    /* Internal hook: forward HidDevice flashStatus into the progress
-     * dialog. Cheap if the dialog isn't open. */
-    void onFlashStatusToDialog(int status, int bytes_sent, int bytes_total);
+
+    /* Slice 4: shared entry that opens the progress dialog and starts a
+     * FlashSession. Used by both onConsolidatedFlashRequested (Flasher
+     * tab Flash button) and on_pushButton_UpgradeFirmware_clicked
+     * (toolbar Upgrade button). Caller has already shown the
+     * confirmation dialog; this assumes user consent. */
+    void startConsolidatedFlash(const QString &filePath);
+    /* onFlashStatusToDialog was the bridge from HidDevice::flashStatus
+     * into FlashProgressDialog before Slice 1. FlashSession's
+     * onFlashStatus + stateChanged supersede it. */
+
+    /* FlashSession signal handlers. The session emits `needs*` for every
+     * external step (read backup, enter BL, flash bytes, write restore);
+     * these slots dispatch to the existing MainWindow helpers. The
+     * session also emits stateChanged / flashBytesProgress /
+     * backupSavedPath / versionMismatch / finished which drive the
+     * FlashProgressDialog. */
+    void onFlashSessionStateChanged(int newState, const QString &detail);
+    void onFlashSessionFinished(bool success, const QString &finalDetail);
+    void onFlashSessionNeedsConfigRead();
+    void onFlashSessionNeedsConfigWrite();
+    void onFlashSessionNeedsEnterBootloader();
+    void onFlashSessionNeedsCaptureReconnectIdentity(uint16_t vid, uint16_t pid);
+    void onFlashSessionNeedsFlashFirmware(const QByteArray *firmware);
+    void onFlashSessionVersionMismatch(uint16_t reported, uint16_t expected);
+    void onFlashSessionBackupSaved(const QString &path);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
@@ -171,70 +193,25 @@ private:
      * worker loop's empty-list path -- see comment in that slot). */
     bool m_postWriteRestarting = false;
 
-    /* One-click firmware upgrade orchestration (issue
-     * anpeaco/FreeJoyXConfiguratorQt#9 Phase B, happy-path only).
-     *
-     * Flow: backup-then-flash (existing) -> reconnect -> auto-Write
-     * (new). Set when the user confirms the Upgrade Firmware dialog;
-     * cleared when the post-flash Write completes (success or fail).
-     *
-     * Auto-rollback (Phase C) deferred until the reverse migrators
-     * are hardware-verified and re-enabled. */
-    bool    m_upgradePending = false;
-    int     m_upgradeBoardId = 0;        /* paramsReport.board_id, captured at upgrade start */
-    QString m_upgradeTargetVersion;      /* user-visible version string for dialogs */
-    QString m_upgradeFirmwarePath;       /* absolute path to the .bin we'll flash */
+    /* One-click firmware upgrade button on the toolbar. The button
+     * itself is enabled/disabled per device state; the click handler
+     * routes through startConsolidatedFlash() so a single FlashSession
+     * drives every flash entry point. findUpgradeFirmwarePath locates
+     * the matching .bin in firmware/ for the connected device's board. */
     void    refreshUpgradeButtonState(); /* enables/disables based on connection + version + firmware availability */
     QString findUpgradeFirmwarePath(int boardId, QString *outVersion) const;
 
-    /* Issue anpeaco/FreeJoyXConfiguratorQt#19: consolidated flash flow
-     * state. m_flashProgress is the modal viewer; the existing
-     * m_upgradePending / m_upgradeFirmwarePath fields above are
-     * reused for the orchestration since the chain is identical.
-     * m_consolidatedFlashActive flags this as a sidebar/Flasher-tab
-     * trigger (vs the toolbar Upgrade button) so we only push stage
-     * transitions to the dialog when it's actually open. */
+    /* The progress dialog is owned by MainWindow for the duration of a
+     * flash session. Constructed in startConsolidatedFlash() and torn
+     * down on dialog close. */
     FlashProgressDialog *m_flashProgress = nullptr;
-    bool m_consolidatedFlashActive = false;
 
-    /* Issue anpeaco/FreeJoyXConfiguratorQt#20: cross-version restore
-     * policy. Set at the start of a consolidated flash from the
-     * FlashConfirmationDialog's verdict. When true, the post-flash
-     * branch in getParamsPacket auto-writes the pre-flash config back;
-     * when false (Downgrade / UpgradeNoMigrator), the device stays
-     * factory-reset and the user is pointed at the disk backup. */
-    bool m_consolidatedAutoRestore = true;
-    QString m_consolidatedBackupPath; /* backup file path; surfaced in terminal dialog states */
-
-    /* Issue anpeaco/FreeJoyXConfiguratorQt#21: target firmware version
-     * captured from the binary's footer at flash start, compared
-     * against the post-flash paramsReport's firmware_version. A
-     * mismatch is a soft warning (rendered in the dialog's status
-     * log) rather than a hard failure -- the flash itself completed,
-     * we just want to flag that the device might be running something
-     * different from what was on disk. Zero means "binary lacked a
-     * footer / heuristic couldn't extract a version", so the check
-     * skips. */
-    uint16_t m_consolidatedTargetFwVersion = 0;
-    bool m_consolidatedVersionWarned = false;
-
-    /* Whole-window lock applied during a flash chain (manual flasher OR
-     * one-click upgrade). Disables everything except the Advanced
-     * Settings tab so the user can't wander to other tabs and trigger
-     * actions that'd race with the in-flight flash + reconnect.
-     * Released on flash failure (onFlashTerminated(false)), post-flash
-     * timeout (onPostFlashHealthTimeout), and successful chain
-     * completion (getParamsPacket with compatible firmware after the
-     * device returns). */
+    /* Whole-window lock applied during a flash session. Disables
+     * everything except the Advanced Settings tab so the user can't
+     * wander to other tabs and trigger actions that'd race with the
+     * in-flight flash + reconnect. Released by onFlashSessionFinished. */
     bool    m_flashChainLocked = false;
     void    setFlashChainUiLocked(bool locked);
-
-    /* True between the moment getParamsPacket schedules the post-upgrade
-     * auto-Write and the moment configSent fires its result. Lets us
-     * keep the flash-chain UI lock in effect across the auto-Write +
-     * device-reset window, instead of unlocking the moment the new
-     * firmware comes online. */
-    bool    m_postUpgradeWriteInFlight = false;
 
     /* Cached default text for the Read / Write Config buttons, captured
      * once in the constructor before any code path mutates them. We
@@ -259,17 +236,28 @@ private:
 
     QString m_cfgDirPath;
 
-    /* Auto-backup-before-flash. When the user clicks "Enter Flasher Mode"
-     * with a recognised device connected, deviceFlasherController() sets
-     * this flag and triggers a Read. configReceived() picks up the chain:
-     * saves the migrated config to a timestamped backup file in
-     * <m_cfgDirPath>/backups/, surfaces the path, then resumes the flasher
-     * mode entry (via doEnterFlashMode()). On Read failure, asks the user
-     * whether to proceed without a backup. */
-    bool m_backupBeforeFlashPending = false;
+    /* Save a snapshot of the device's current config to
+     * <m_cfgDirPath>/backups/. Called from configReceived's
+     * m_flashSessionBackupPending branch as the BackingUp step of a
+     * FlashSession. */
     QString writeAutoBackup();
+
+    /* Worker-thread shims. doEnterFlashMode sends the "bootloader run"
+     * report; doFlashFirmwareBytes streams the .bin to the bootloader's
+     * REPORT_ID_FLASH receiver. Both block on m_threadGetSendConfig
+     * via QEventLoop until the underlying HID exchange returns. */
     void doEnterFlashMode();
-    void doFlashFirmware();
+    void doFlashFirmwareBytes(const QByteArray *firmware);
+
+    /* Owned by MainWindow; constructed in the ctor after m_hidDeviceWorker.
+     * One session at a time. Slice 1 routes the consolidated flow through
+     * it; later slices route the toolbar Upgrade button and the legacy
+     * two-button Flasher tab path through the same session. */
+    FlashSession *m_flashSession = nullptr;
+    /* True while the session-owned backup Read is in flight. Cleared on
+     * configReceived; lets configReceived distinguish a session-driven
+     * Read from the user's manual Read Config click. */
+    bool m_flashSessionBackupPending = false;
 
     /* Pre-write device-config backup. When the user clicks Write, the
      * configurator first reads the device's current config (no UI
@@ -286,16 +274,6 @@ private:
     QString m_currentDeviceSerial;
     QString writePreWriteDeviceBackup();
     void doActualWriteToDevice();
-
-    /* Post-flash health check. Starts a timer when the flasher emits
-     * flashTerminated(true). Cleared when the device reconnects (a
-     * successful firmware boot fires deviceConnected / paramsPacketReceived).
-     * If the timer fires without a reconnect, surfaces a "Flash may have
-     * failed" dialog pointing the user at the recovery dropdown. */
-    QTimer m_postFlashHealthTimer;
-    bool m_postFlashHealthPending = false;
-    void onFlashTerminated(bool success);
-    void onPostFlashHealthTimeout();
 
     /* Toggle the config-editing tabs (Pin / Button / Shifts&Timers /
      * Axes / Curves / Shift Reg / Encoders / LED). Disabled when an

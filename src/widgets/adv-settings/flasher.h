@@ -22,65 +22,39 @@ public:
 
     void retranslateUi();
 
-    void deviceConnected(bool isConnect);
-
-    const QByteArray *fileArray() const;
-
-    /* Public entry point for the one-click Upgrade Firmware flow on
-     * the main view. Loads the .bin into m_fileArray and emits
-     * startFlash(true) so MainWindow's existing pipeline picks up.
-     * Same semantics as the private startFlashFromFile -- exposed so
-     * callers outside the Flasher tab can reuse the flash path. */
-    void triggerFlashFromPath(const QString &filePath) {
-        startFlashFromFile(filePath);
-    }
-
-    /* Issue anpeaco/FreeJoyXConfiguratorQt#19: arm a one-shot bypass
-     * of the FlashConfirmationDialog on the next startFlashFromFile()
-     * call. Used by MainWindow's consolidated-flash orchestrator,
-     * which has already shown the confirmation dialog up front and
-     * doesn't want the user to see it a second time when the auto-
-     * trigger fires after the device enters DFU. */
-    void armConfirmationBypass() { m_skipNextConfirmation = true; }
+    /* True once HidDevice::flasherFound(true) has fired and stays true
+     * until flasherFound(false). MainWindow consults this from
+     * startConsolidatedFlash to dispatch a recovery flash (runBackup=false,
+     * triggerBootloader=false) instead of a normal flash when the device
+     * is already in bootloader mode. */
+    bool isInFlasherMode() const { return m_inFlasherMode; }
 
 signals:
-    void flashModeClicked(bool is_start_flash);
-    void startFlash(bool is_start_flash);
-
-    /* Issue anpeaco/FreeJoyXConfiguratorQt#19: consolidated one-click
-     * flash. Emitted by the new Flash button after the user accepts
-     * the FlashConfirmationDialog. Carries the resolved local file
-     * path of the firmware binary. MainWindow opens the
-     * FlashProgressDialog and orchestrates the backup -> bootloader ->
-     * flash -> re-enumerate -> restore chain in response. */
+    /* Consolidated one-click flash. Emitted by the Flash button after the
+     * user accepts the FlashConfirmationDialog. Carries the resolved
+     * local file path of the firmware binary. MainWindow opens the
+     * FlashProgressDialog and starts a FlashSession in response. */
     void consolidatedFlashRequested(const QString &filePath);
-    /* Fires when flashStatus reaches a terminal state (FINISHED or
-     * any error variant). MainWindow uses this to start a watchdog
-     * timer expecting the device to reconnect within ~15s. If it
-     * doesn't, MainWindow surfaces a "Flash may have failed" dialog
-     * pointing at the recovery dropdown. */
-    void flashTerminated(bool success);
 
-    /* Issue anpeaco/FreeJoyXConfiguratorQt#17: sidebar row click. Asks
-     * MainWindow to set the toolbar's comboBox_HidDeviceList index --
-     * single-source-of-truth stays on the main combobox; the sidebar
-     * is just a more visible re-render of the same selection. */
+    /* Sidebar row click. Asks MainWindow to set the toolbar's
+     * comboBox_HidDeviceList index -- single-source-of-truth stays on
+     * the main combobox; the sidebar is just a more visible re-render
+     * of the same selection. */
     void deviceSelectionRequested(int index);
 
 public slots:
     void flasherFound(bool isFound);
-    void flashStatus(int status, int bytes_sent, int bytes_total);
 
-    /* Sidebar feeds (issue #17). setDeviceList mirrors the toolbar
-     * combobox contents and lights up the same row preferredIndex
-     * selects there; setCurrentDeviceIndex pushes selection back when
-     * the user changes it from the toolbar combobox. */
+    /* Sidebar feeds. setDeviceList mirrors the toolbar combobox contents
+     * and lights up the same row preferredIndex selects there;
+     * setCurrentDeviceIndex pushes selection back when the user changes
+     * it from the toolbar combobox. */
     void setDeviceList(const QList<QPair<bool, QString>> &deviceNames, int preferredIndex);
     void setCurrentDeviceIndex(int index);
-    /* Driven by HidDevice::flasherDeviceInfo. Populates the
-     * "Connected flasher" info line in the Flasher tab so the user
-     * can confirm the right device is in flasher mode before
-     * committing to a flash. */
+
+    /* Driven by HidDevice::flasherDeviceInfo. Populates the "Connected
+     * flasher" info line in the Flasher tab so the user can confirm the
+     * right device is in flasher mode before committing to a flash. */
     void onFlasherDeviceInfo(const QString &manufacturer,
                              const QString &product,
                              const QString &serial,
@@ -88,9 +62,6 @@ public slots:
                              ushort pid);
 
 private slots:
-    void on_pushButton_FlasherMode_clicked();
-    void on_pushButton_FlashFirmware_clicked();
-    void on_pushButton_AbortFlash_clicked();
     void on_pushButton_BrowseFirmware_clicked();
     void on_pushButton_FlashConsolidated_clicked();
     void on_toolButton_OpenRecoveryDir_clicked();
@@ -101,13 +72,18 @@ private slots:
     void onAssetDownloaded(const QString &localPath, bool success);
 
 private:
+    /* Open the confirmation dialog with the given firmware path and, on
+     * accept, emit consolidatedFlashRequested. Shared by Browse and the
+     * Flash button's local + post-download paths. */
+    void requestConsolidatedFlash(const QString &filePath);
+
+    /* Path of the asset we kicked off a download for (set when the user
+     * clicks Flash on a not-yet-cached remote entry). Cleared by
+     * onAssetDownloaded. Non-empty -> a download is in flight. */
+    QString m_pendingDownloadPath;
+
     Ui::Flasher *ui;
     FirmwareLibrary *m_library;
-
-    QByteArray m_fileArray;
-    QString m_flashButtonText;
-    QString m_enterToFlash_BtnText;
-    void flashDone();
 
     /* Source dropdown holds three kinds of entries:
      *   - "Browse for file..."  (data = empty QVariant)
@@ -117,38 +93,31 @@ private:
      * FirmwareLibrary's last-known release list. */
     void refreshSourceList();
 
-    /* When the user picks a remote entry and clicks Flash, we trigger
-     * an async download via FirmwareLibrary. These hold the pending
-     * state so onAssetDownloaded knows to start the flash on success. */
-    bool m_flashAfterDownload = false;
-    QString m_pendingDownloadPath;
-    void startFlashFromFile(const QString &filePath);
-
-    /* Issue anpeaco/FreeJoyXConfiguratorQt#17: guards against the
-     * setCurrentRow re-entrancy that would otherwise turn an external
-     * selection update (driven by setCurrentDeviceIndex) into another
-     * deviceSelectionRequested emission and ping-pong with MainWindow. */
+    /* Guards against the setCurrentRow re-entrancy that would otherwise
+     * turn an external selection update (driven by setCurrentDeviceIndex)
+     * into another deviceSelectionRequested emission and ping-pong with
+     * MainWindow. */
     bool m_suppressDeviceSelectionEmit = false;
 
-    /* Issue anpeaco/FreeJoyXConfiguratorQt#18: state captured from
-     * existing signals so the FlashConfirmationDialog can be populated
-     * without threading extra arguments through every code path.
+    /* State captured from existing signals so the FlashConfirmationDialog
+     * can be populated without threading extra arguments through every
+     * code path.
      *  - m_inFlasherMode    : true once flasherFound(true) has fired
      *                         and stays true until flasherFound(false).
      *  - m_lastDeviceName   : the display string of the currently-
      *                         highlighted sidebar row (matches the
-     *                         toolbar combobox). Pre-flash identity. */
+     *                         toolbar combobox). Pre-flash identity.
+     *  - m_lastDeviceSerial : bootloader-side serial captured from
+     *                         HidDevice::flasherDeviceInfo, so the
+     *                         confirmation dialog has something to show
+     *                         even when the app-mode params never arrived
+     *                         (recovery flash). */
     bool m_inFlasherMode = false;
     QString m_lastDeviceName;
     QString m_lastDeviceSerial;
 
-    /* Issue #19: one-shot bypass armed by armConfirmationBypass(). */
-    bool m_skipNextConfirmation = false;
-
     /* Refresh the per-row "Selected firmware" info card from the picked
-     * file path. Slice 4 (#17) wires this to filename / size only; the
-     * full parsed binary metadata lands in slice 5 (#18) once
-     * FirmwareImage is integrated. */
+     * file path. */
     void refreshFirmwareInfoCard(const QString &filePath);
 };
 

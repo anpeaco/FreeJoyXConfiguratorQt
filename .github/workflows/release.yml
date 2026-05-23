@@ -3,12 +3,20 @@ name: Release
 on:
   push:
     tags: ['v*']
+  # Allow manual re-run against an existing tag to retro-add a new
+  # platform asset without cutting a new release.
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Tag to (re)build release for (e.g., v0.1.1)'
+        required: false
+        default: ''
 
 permissions:
-  contents: write  # softprops/action-gh-release needs write to create the Release
+  contents: write  # softprops/action-gh-release needs write to create / modify the Release
 
 jobs:
-  release:
+  build-linux:
     name: Build Linux release ${{ github.ref_name }}
     runs-on: ubuntu-latest
     steps:
@@ -37,13 +45,71 @@ jobs:
       - name: Package
         run: |
           mkdir -p dist
-          cp src/FreeJoyQt dist/
-          tar -czf FreeJoyQt-linux-${{ github.ref_name }}.tar.gz -C dist .
+          cp src/FreeJoyXConfiguratorQt dist/
+          tar -czf FreeJoyXConfiguratorQt-linux-${{ github.ref_name }}.tar.gz -C dist .
 
-      - name: Publish GitHub Release
+      - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: FreeJoyQt-linux-${{ github.ref_name }}.tar.gz
+          files: FreeJoyXConfiguratorQt-linux-${{ github.ref_name }}.tar.gz
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          draft: false
+
+  build-windows:
+    name: Build Windows release ${{ github.ref_name }}
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Qt 5.15.2 (MinGW 8.1.0)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_mingw81'
+          tools: 'tools_mingw,qt.tools.win64_mingw810'
+          cache: true
+
+      - name: Build
+        shell: cmd
+        run: |
+          set PATH=%IQTA_TOOLS%\mingw810_64\bin;%PATH%
+          qmake FreeJoyQt.pro
+          mingw32-make -j%NUMBER_OF_PROCESSORS%
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path dist | Out-Null
+          # qmake's subdirs template puts the exe under src\release\ when
+          # built from the repo root.
+          $exePath = "src\release\FreeJoyXConfiguratorQt.exe"
+          if (-not (Test-Path $exePath)) { $exePath = "src\FreeJoyXConfiguratorQt.exe" }
+          if (-not (Test-Path $exePath)) {
+            Write-Error "FreeJoyXConfiguratorQt.exe not found at expected locations"
+            exit 1
+          }
+          Copy-Item $exePath dist\
+          # windeployqt bundles Qt DLLs + plugins (imageformats, platforms,
+          # styles) the exe needs. Include the MinGW runtime so the bundle
+          # is self-contained -- end users don't need Qt or MinGW installed.
+          & "$env:Qt5_Dir\bin\windeployqt.exe" --release --no-translations dist\FreeJoyXConfiguratorQt.exe
+          # MinGW runtime DLLs that windeployqt doesn't always pick up.
+          $mingwBin = "$env:IQTA_TOOLS\mingw810_64\bin"
+          foreach ($dll in 'libgcc_s_seh-1.dll', 'libstdc++-6.dll', 'libwinpthread-1.dll') {
+            if (Test-Path "$mingwBin\$dll") {
+              Copy-Item "$mingwBin\$dll" dist\
+            }
+          }
+          Compress-Archive -Path dist\* -DestinationPath "FreeJoyXConfiguratorQt-windows-${{ github.ref_name }}.zip"
+
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: FreeJoyXConfiguratorQt-windows-${{ github.ref_name }}.zip
           generate_release_notes: true
           fail_on_unmatched_files: true
           draft: false
