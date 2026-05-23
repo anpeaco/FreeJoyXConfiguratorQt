@@ -96,7 +96,13 @@ jobs:
           # sets QT_ROOT_DIR to the Qt install root; Qt5_DIR points at the
           # cmake config subdir (lib/cmake) which is the wrong base for
           # finding bin/windeployqt.exe.
-          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --no-translations dist\FreeJoyXConfiguratorQt.exe
+          #
+          # Put Qt's bin dir on PATH first so windeployqt can locate the
+          # platforms/ plugin dir via Qt5Core.dll's neighbour-lookup; without
+          # that the deployment fails with "Unable to find the platform
+          # plugin." even though qwindows.dll exists at $QT_ROOT_DIR\plugins\.
+          $env:PATH = "$env:QT_ROOT_DIR\bin;" + $env:PATH
+          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --no-translations --dir dist dist\FreeJoyXConfiguratorQt.exe
           # MinGW runtime DLLs that windeployqt doesn't always pick up.
           $mingwBin = "$env:IQTA_TOOLS\mingw810_64\bin"
           foreach ($dll in 'libgcc_s_seh-1.dll', 'libstdc++-6.dll', 'libwinpthread-1.dll') {
