@@ -45,8 +45,9 @@ jobs:
       - name: Package
         run: |
           mkdir -p dist
-          # qmake's SUBDIRS template Release build lands at src/release/.
-          cp src/release/FreeJoyXConfiguratorQt dist/
+          # qmake's SUBDIRS template on Linux drops the binary at src/<TARGET>
+          # (no release/ subdir like the MinGW build on Windows).
+          cp src/FreeJoyXConfiguratorQt dist/
           tar -czf FreeJoyXConfiguratorQt-linux-${{ github.ref_name }}.tar.gz -C dist .
 
       - name: Publish to GitHub Release
