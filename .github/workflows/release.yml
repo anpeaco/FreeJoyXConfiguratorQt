@@ -79,7 +79,19 @@ jobs:
         run: |
           set PATH=%IQTA_TOOLS%\mingw810_64\bin;%PATH%
           qmake CONFIG+=release FreeJoyQt.pro
-          mingw32-make -j%NUMBER_OF_PROCESSORS%
+          rem mingw32-make -j with parallel jobs has been racing on Windows
+          rem and exiting before the linker finishes. Build serially so the
+          rem link runs to completion.
+          mingw32-make
+
+      - name: Diagnose build output
+        if: always()
+        shell: pwsh
+        run: |
+          Write-Host "=== Contents of src/release/ ==="
+          if (Test-Path src/release) { Get-ChildItem src/release | Format-Table Name, Length, LastWriteTime } else { Write-Host "(does not exist)" }
+          Write-Host "=== Any FreeJoyXConfigurator* anywhere ==="
+          Get-ChildItem -Recurse -Filter "FreeJoyXConfigurator*" -ErrorAction SilentlyContinue | Select-Object FullName, Length, LastWriteTime | Format-Table -AutoSize
 
       - name: Package
         shell: pwsh
