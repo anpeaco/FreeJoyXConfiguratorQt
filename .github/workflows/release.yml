@@ -93,25 +93,18 @@ jobs:
           }
           Copy-Item $exePath dist\
 
-          # Diagnose Qt install layout
-          Write-Host "=== QT_ROOT_DIR contents ==="
-          Get-ChildItem $env:QT_ROOT_DIR | Format-Table Name, Mode
-          Write-Host "=== plugins/ ==="
-          if (Test-Path "$env:QT_ROOT_DIR\plugins") {
-            Get-ChildItem "$env:QT_ROOT_DIR\plugins" | Format-Table Name, Mode
-          }
-          Write-Host "=== plugins/platforms/ ==="
-          if (Test-Path "$env:QT_ROOT_DIR\plugins\platforms") {
-            Get-ChildItem "$env:QT_ROOT_DIR\plugins\platforms"
-          }
-
-          # windeployqt: Qt's bin on PATH so Qt5Core.dll neighbour-lookup
-          # works, plus --qmake to pin Qt detection explicitly.
+          # windeployqt: Qt's bin on PATH so the exe under inspection can
+          # load Qt5Core.dll (which windeployqt needs to detect plugins).
+          # Invoke FROM dist/ with the bare exe name; full paths and
+          # --dir flag have historically confused plugin auto-detection.
           $env:PATH = "$env:QT_ROOT_DIR\bin;" + $env:PATH
-          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --no-translations `
-              --qmake "$env:QT_ROOT_DIR\bin\qmake.exe" `
-              --dir dist `
-              dist\FreeJoyXConfiguratorQt.exe
+          Push-Location dist
+          try {
+            & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --no-translations FreeJoyXConfiguratorQt.exe
+            if ($LASTEXITCODE -ne 0) { throw "windeployqt failed: $LASTEXITCODE" }
+          } finally {
+            Pop-Location
+          }
           # MinGW runtime DLLs that windeployqt doesn't always pick up.
           $mingwBin = "$env:IQTA_TOOLS\mingw810_64\bin"
           foreach ($dll in 'libgcc_s_seh-1.dll', 'libstdc++-6.dll', 'libwinpthread-1.dll') {
