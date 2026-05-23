@@ -31,21 +31,15 @@ jobs:
         run: qmake CONFIG+=release FreeJoyQt.pro
 
       - name: make
-        # mkdir for the DESTDIR override in src.pro -- on Linux gcc
-        # actually creates parent dirs but pre-creating costs nothing
-        # and keeps parity with the Windows release job.
-        run: |
-          mkdir -p build/release
-          make -j$(nproc)
+        run: make -j$(nproc)
 
       - name: Upload configurator binary
         uses: actions/upload-artifact@v7
         with:
-          # src.pro's DESTDIR override puts the linked binary at
-          # build/release/ (or build/debug/) instead of qmake's default
-          # in-tree src/. Keep CONFIG+=release in the qmake step above
-          # in sync with this path.
+          # qmake's SUBDIRS template lands the in-tree Release binary at
+          # src/release/<TARGET> on Linux (src/<TARGET> when built Debug).
+          # CONFIG+=release forces Release above so we know which path.
           name: FreeJoyXConfiguratorQt-linux
-          path: build/release/FreeJoyXConfiguratorQt
+          path: src/release/FreeJoyXConfiguratorQt
           if-no-files-found: error
           retention-days: 30

@@ -45,10 +45,8 @@ jobs:
       - name: Package
         run: |
           mkdir -p dist
-          # src.pro's DESTDIR override lands the binary at build/release/
-          # instead of src/. Keep CONFIG+=release in qmake step above in
-          # sync with this path.
-          cp build/release/FreeJoyXConfiguratorQt dist/
+          # qmake's SUBDIRS template Release build lands at src/release/.
+          cp src/release/FreeJoyXConfiguratorQt dist/
           tar -czf FreeJoyXConfiguratorQt-linux-${{ github.ref_name }}.tar.gz -C dist .
 
       - name: Publish to GitHub Release
@@ -81,34 +79,17 @@ jobs:
         run: |
           set PATH=%IQTA_TOOLS%\mingw810_64\bin;%PATH%
           qmake CONFIG+=release FreeJoyQt.pro
-          rem g++ on Windows won't create parent dirs for -o output, and
-          rem qmake's SUBDIRS template doesn't reliably mkdir cross-subdir
-          rem DESTDIRs before linking. Pre-create so the link succeeds.
-          mkdir build\release 2>nul
           mingw32-make -j%NUMBER_OF_PROCESSORS%
 
       - name: Package
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path dist | Out-Null
-          # src.pro's DESTDIR override SHOULD land the exe at
-          # build\release\, but on Windows the relative-path resolution
-          # has been inconsistent. Search wherever it actually landed.
-          $candidates = @(
-            'build\release\FreeJoyXConfiguratorQt.exe',
-            'src\build\release\FreeJoyXConfiguratorQt.exe',
-            'src\release\FreeJoyXConfiguratorQt.exe'
-          )
-          $exePath = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-          if (-not $exePath) {
-            $found = Get-ChildItem -Recurse -Filter FreeJoyXConfiguratorQt.exe -ErrorAction SilentlyContinue
-            if ($found) {
-              $exePath = $found[0].FullName
-              Write-Host "Found via recursive search: $exePath"
-            } else {
-              Write-Error "FreeJoyXConfiguratorQt.exe not found anywhere in the workspace"
-              exit 1
-            }
+          # qmake's SUBDIRS template Release build lands at src\release\.
+          $exePath = "src\release\FreeJoyXConfiguratorQt.exe"
+          if (-not (Test-Path $exePath)) {
+            Write-Error "FreeJoyXConfiguratorQt.exe not found at $exePath"
+            exit 1
           }
           Copy-Item $exePath dist\
           # windeployqt bundles Qt DLLs + plugins (imageformats, platforms,
