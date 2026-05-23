@@ -87,12 +87,24 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path dist | Out-Null
-          # src.pro's DESTDIR override lands the exe at build\release\
-          # instead of src\release\ or src\.
-          $exePath = "build\release\FreeJoyXConfiguratorQt.exe"
-          if (-not (Test-Path $exePath)) {
-            Write-Error "FreeJoyXConfiguratorQt.exe not found at $exePath"
-            exit 1
+          # src.pro's DESTDIR override SHOULD land the exe at
+          # build\release\, but on Windows the relative-path resolution
+          # has been inconsistent. Search wherever it actually landed.
+          $candidates = @(
+            'build\release\FreeJoyXConfiguratorQt.exe',
+            'src\build\release\FreeJoyXConfiguratorQt.exe',
+            'src\release\FreeJoyXConfiguratorQt.exe'
+          )
+          $exePath = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $exePath) {
+            $found = Get-ChildItem -Recurse -Filter FreeJoyXConfiguratorQt.exe -ErrorAction SilentlyContinue
+            if ($found) {
+              $exePath = $found[0].FullName
+              Write-Host "Found via recursive search: $exePath"
+            } else {
+              Write-Error "FreeJoyXConfiguratorQt.exe not found anywhere in the workspace"
+              exit 1
+            }
           }
           Copy-Item $exePath dist\
           # windeployqt bundles Qt DLLs + plugins (imageformats, platforms,
