@@ -28,7 +28,7 @@ jobs:
           cache: true
 
       - name: qmake
-        run: qmake FreeJoyQt.pro
+        run: qmake CONFIG+=release FreeJoyQt.pro
 
       - name: make
         run: make -j$(nproc)
@@ -36,7 +36,11 @@ jobs:
       - name: Upload configurator binary
         uses: actions/upload-artifact@v7
         with:
+          # src.pro's DESTDIR override puts the linked binary at
+          # build/release/ (or build/debug/) instead of qmake's default
+          # in-tree src/. Keep CONFIG+=release in the qmake step above
+          # in sync with this path.
           name: FreeJoyXConfiguratorQt-linux
-          path: src/FreeJoyXConfiguratorQt
+          path: build/release/FreeJoyXConfiguratorQt
           if-no-files-found: error
           retention-days: 30
