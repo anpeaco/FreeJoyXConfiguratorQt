@@ -93,25 +93,50 @@ jobs:
           }
           Copy-Item $exePath dist\
 
-          # windeployqt: Qt's bin on PATH so the exe under inspection can
-          # load Qt5Core.dll (which windeployqt needs to detect plugins).
-          # Invoke FROM dist/ with the bare exe name; full paths and
-          # --dir flag have historically confused plugin auto-detection.
-          $env:PATH = "$env:QT_ROOT_DIR\bin;" + $env:PATH
-          Push-Location dist
-          try {
-            & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --no-translations FreeJoyXConfiguratorQt.exe
-            if ($LASTEXITCODE -ne 0) { throw "windeployqt failed: $LASTEXITCODE" }
-          } finally {
-            Pop-Location
+          # Manual Qt deploy. windeployqt repeatedly failed with "Unable to
+          # find the platform plugin." on install-qt-action's Qt install
+          # layout despite plugins/platforms/qwindows.dll being present.
+          # Just copy what we know we need: src.pro uses Core/Gui/Network/
+          # Widgets/Svg, plus the windows platform plugin, plus image
+          # format plugins for SVG/PNG icons, plus the SQL light plugins
+          # for styles, plus MinGW runtime.
+          $qtBin = "$env:QT_ROOT_DIR\bin"
+          $qtPlug = "$env:QT_ROOT_DIR\plugins"
+
+          # Core Qt DLLs (Release MinGW build -- no debug suffix)
+          foreach ($dll in 'Qt5Core.dll', 'Qt5Gui.dll', 'Qt5Network.dll', 'Qt5Widgets.dll', 'Qt5Svg.dll') {
+            Copy-Item "$qtBin\$dll" dist\
           }
-          # MinGW runtime DLLs that windeployqt doesn't always pick up.
+
+          # Platform plugin (qwindows.dll) -- must live under platforms/
+          New-Item -ItemType Directory -Path dist\platforms | Out-Null
+          Copy-Item "$qtPlug\platforms\qwindows.dll" dist\platforms\
+
+          # Image format plugins for SVG icons + PNG resources
+          New-Item -ItemType Directory -Path dist\imageformats | Out-Null
+          foreach ($plug in 'qsvg.dll', 'qico.dll') {
+            if (Test-Path "$qtPlug\imageformats\$plug") {
+              Copy-Item "$qtPlug\imageformats\$plug" dist\imageformats\
+            }
+          }
+
+          # Styles plugin for native Windows look
+          New-Item -ItemType Directory -Path dist\styles | Out-Null
+          if (Test-Path "$qtPlug\styles\qwindowsvistastyle.dll") {
+            Copy-Item "$qtPlug\styles\qwindowsvistastyle.dll" dist\styles\
+          }
+
+          # MinGW runtime so end users don't need MinGW installed
           $mingwBin = "$env:IQTA_TOOLS\mingw810_64\bin"
           foreach ($dll in 'libgcc_s_seh-1.dll', 'libstdc++-6.dll', 'libwinpthread-1.dll') {
             if (Test-Path "$mingwBin\$dll") {
               Copy-Item "$mingwBin\$dll" dist\
             }
           }
+
+          Write-Host "=== dist/ contents ==="
+          Get-ChildItem -Recurse dist | Format-Table FullName, Length
+
           Compress-Archive -Path dist\* -DestinationPath "FreeJoyXConfiguratorQt-windows-${{ github.ref_name }}.zip"
 
       - name: Publish to GitHub Release
