@@ -9,7 +9,13 @@ CONFIG += static \
 
 RC_ICONS = Images/icon.ico
 
-TARGET = FreeJoyQt
+TARGET = FreeJoyXConfiguratorQt
+
+# Drop the linked exe at <repo>/build/release (or /debug) regardless of
+# Qt Creator's shadow-build dir layout. $$PWD here is <repo>/src/, so
+# ../build/release walks up to the repo root and into the build tree.
+CONFIG(release, debug|release): DESTDIR = $$PWD/../build/release
+CONFIG(debug,   debug|release): DESTDIR = $$PWD/../build/debug
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -25,6 +31,7 @@ WIN_DESKTOP
 
 INCLUDEPATH +="widgets" \
     "dialogs" \
+    "flash" \
     "widgets/adv-settings" \
     "widgets/axes" \
     "widgets/axes-curves" \
@@ -48,6 +55,8 @@ SOURCES += \
     deviceconfig.cpp \
     dialogs/flashconfirmationdialog.cpp \
     dialogs/flashprogressdialog.cpp \
+    flash/devicetransitionwatcher.cpp \
+    flash/flashsession.cpp \
     firmwareimage.cpp \
     firmwareupdater.cpp \
     hiddevice.cpp \
@@ -112,6 +121,8 @@ HEADERS += \
     deviceconfig.h \
     dialogs/flashconfirmationdialog.h \
     dialogs/flashprogressdialog.h \
+    flash/devicetransitionwatcher.h \
+    flash/flashsession.h \
     firmwareimage.h \
     firmwareupdater.h \
     global.h \

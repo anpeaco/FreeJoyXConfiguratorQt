@@ -36,7 +36,7 @@ jobs:
       - name: Upload configurator binary
         uses: actions/upload-artifact@v7
         with:
-          name: FreeJoyQt-linux
-          path: src/FreeJoyQt
+          name: FreeJoyXConfiguratorQt-linux
+          path: src/FreeJoyXConfiguratorQt
           if-no-files-found: error
           retention-days: 30

@@ -7,7 +7,7 @@
 #define MyAppVersion APP_VERSION
 #define MyAppPublisher "FreeJoy"
 #define MyAppURL ""
-#define MyAppExeName "FreeJoyQt.exe"
+#define MyAppExeName "FreeJoyXConfiguratorQt.exe"
 
 
 [Setup]

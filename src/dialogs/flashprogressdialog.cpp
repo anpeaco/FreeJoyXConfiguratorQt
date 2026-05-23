@@ -113,19 +113,24 @@ void FlashProgressDialog::refreshProgressBar()
         const int chunk = (int)((qint64(m_bytesSent) * 80) / m_bytesTotal);
         progress = base + chunk;
     }
-    if (progress < 0) progress = 0;
+    /* -1 from stageBaseProgress means "leave the bar alone" (used by
+     * TerminalError and RecoveryPrompt -- we don't want a regression to
+     * 0% when we pause on a stuck device, or when the flow fails
+     * partway). */
+    if (progress < 0) return;
     if (progress > 100) progress = 100;
     ui->progressBar_Overall->setValue(progress);
 }
 
 bool FlashProgressDialog::cancelEnabledForStage() const
 {
-    /* Backup is the only cancel-safe stage in this slice. Once we've
+    /* Backup is the only cancel-safe stage in normal-flow. Once we've
      * sent the bootloader-run report we're committed -- the device's
      * application is gone and only a full flash can restore it.
-     * WaitingForReset becomes partially cancel-safe in a future slice
-     * via a "Skip waiting" prompt after 5s. */
-    return m_stage == Stage::Backup;
+     * RecoveryPrompt re-enables Cancel so the user can give up cleanly
+     * after a timeout (the cancel emits cancelRequested; MainWindow
+     * routes that to FlashSession::abortFromRecovery). */
+    return m_stage == Stage::Backup || m_stage == Stage::RecoveryPrompt;
 }
 
 QString FlashProgressDialog::stageLabel(Stage s)
@@ -139,6 +144,7 @@ QString FlashProgressDialog::stageLabel(Stage s)
         case Stage::Restore:            return tr("Step 5 of 5: Restoring config...");
         case Stage::Done:               return tr("Done.");
         case Stage::TerminalError:      return tr("Flash failed.");
+        case Stage::RecoveryPrompt:     return tr("Device didn't return — unplug and replug to recover");
     }
     return QString();
 }
@@ -160,6 +166,7 @@ int FlashProgressDialog::stageBaseProgress(Stage s, bool recoveryFlash)
             case Stage::Restore:
             case Stage::Done:             return 100;
             case Stage::TerminalError:    return -1; /* unchanged */
+            case Stage::RecoveryPrompt:   return -1; /* unchanged -- pause the bar */
         }
         return 0;
     }
@@ -172,6 +179,7 @@ int FlashProgressDialog::stageBaseProgress(Stage s, bool recoveryFlash)
         case Stage::Restore:             return 95;
         case Stage::Done:                return 100;
         case Stage::TerminalError:       return -1;
+        case Stage::RecoveryPrompt:      return -1; /* unchanged -- pause the bar */
     }
     return 0;
 }

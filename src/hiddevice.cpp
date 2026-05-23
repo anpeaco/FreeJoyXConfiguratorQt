@@ -767,8 +767,19 @@ void HidDevice::flashFirmwareToDevice()
             if (flasher){
                 res=hid_read_timeout(flasher, buffer, BUFFERSIZE,5000);  // 5000?
                 if (res < 0) {
+                    /* HID read errored mid-flash (cable pulled, device
+                     * crashed, or hidapi handle went bad). Without this
+                     * emit, FlashSession would sit in Flashing forever
+                     * because no terminal flashStatus signal ever fires
+                     * -- the dialog freezes, no recovery surface.
+                     * status=666 is the generic "flash hung" code used
+                     * by the outer 50s timeout below; consumers
+                     * (FlashSession::onFlashStatus, Flasher::flashStatus)
+                     * treat any non-FINISHED / non-IN_PROCESS value as
+                     * terminal failure. */
                     hid_close(flasher);
                     flasher=nullptr;
+                    emit flashStatus(666, bytes_sent, total_bytes);
                     return;
                 } else {
                     if (buffer[0] == REPORT_ID_FLASH) {

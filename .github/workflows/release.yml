@@ -45,13 +45,13 @@ jobs:
       - name: Package
         run: |
           mkdir -p dist
-          cp src/FreeJoyQt dist/
-          tar -czf FreeJoyQt-linux-${{ github.ref_name }}.tar.gz -C dist .
+          cp src/FreeJoyXConfiguratorQt dist/
+          tar -czf FreeJoyXConfiguratorQt-linux-${{ github.ref_name }}.tar.gz -C dist .
 
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: FreeJoyQt-linux-${{ github.ref_name }}.tar.gz
+          files: FreeJoyXConfiguratorQt-linux-${{ github.ref_name }}.tar.gz
           generate_release_notes: true
           fail_on_unmatched_files: true
           draft: false
@@ -86,17 +86,17 @@ jobs:
           New-Item -ItemType Directory -Path dist | Out-Null
           # qmake's subdirs template puts the exe under src\release\ when
           # built from the repo root.
-          $exePath = "src\release\FreeJoyQt.exe"
-          if (-not (Test-Path $exePath)) { $exePath = "src\FreeJoyQt.exe" }
+          $exePath = "src\release\FreeJoyXConfiguratorQt.exe"
+          if (-not (Test-Path $exePath)) { $exePath = "src\FreeJoyXConfiguratorQt.exe" }
           if (-not (Test-Path $exePath)) {
-            Write-Error "FreeJoyQt.exe not found at expected locations"
+            Write-Error "FreeJoyXConfiguratorQt.exe not found at expected locations"
             exit 1
           }
           Copy-Item $exePath dist\
           # windeployqt bundles Qt DLLs + plugins (imageformats, platforms,
           # styles) the exe needs. Include the MinGW runtime so the bundle
           # is self-contained -- end users don't need Qt or MinGW installed.
-          & "$env:Qt5_Dir\bin\windeployqt.exe" --release --no-translations dist\FreeJoyQt.exe
+          & "$env:Qt5_Dir\bin\windeployqt.exe" --release --no-translations dist\FreeJoyXConfiguratorQt.exe
           # MinGW runtime DLLs that windeployqt doesn't always pick up.
           $mingwBin = "$env:IQTA_TOOLS\mingw810_64\bin"
           foreach ($dll in 'libgcc_s_seh-1.dll', 'libstdc++-6.dll', 'libwinpthread-1.dll') {
@@ -104,12 +104,12 @@ jobs:
               Copy-Item "$mingwBin\$dll" dist\
             }
           }
-          Compress-Archive -Path dist\* -DestinationPath "FreeJoyQt-windows-${{ github.ref_name }}.zip"
+          Compress-Archive -Path dist\* -DestinationPath "FreeJoyXConfiguratorQt-windows-${{ github.ref_name }}.zip"
 
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: FreeJoyQt-windows-${{ github.ref_name }}.zip
+          files: FreeJoyXConfiguratorQt-windows-${{ github.ref_name }}.zip
           generate_release_notes: true
           fail_on_unmatched_files: true
           draft: false

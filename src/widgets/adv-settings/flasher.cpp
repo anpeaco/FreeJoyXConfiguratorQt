@@ -17,6 +17,7 @@
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QLocale>
+#include <QSettings>
 #include <QSignalBlocker>
 
 #include "common_defines.h"
@@ -41,6 +42,38 @@ const char *kKeyLocal  = "local";
 
 const char *kKindLocal  = "local";
 const char *kKindRemote = "remote";
+const char *kKindBrowsed = "browsed";
+
+/* QSettings keys for persisting browsed firmware paths. The list is
+ * MRU-ordered (most-recently-browsed first) and capped at kBrowsedCap
+ * entries; entries that no longer exist on disk are filtered out at
+ * dropdown-refresh time. */
+const char *kSettingsGroup        = "Flasher";
+const char *kSettingsBrowsedPaths = "BrowsedFirmwarePaths";
+constexpr int kBrowsedCap = 10;
+
+QStringList loadBrowsedPaths()
+{
+    if (!gEnv.pAppSettings) return {};
+    gEnv.pAppSettings->beginGroup(kSettingsGroup);
+    const QStringList raw = gEnv.pAppSettings->value(kSettingsBrowsedPaths).toStringList();
+    gEnv.pAppSettings->endGroup();
+    QStringList alive;
+    for (const QString &p : raw) {
+        if (!p.isEmpty() && QFile::exists(p)) {
+            alive.append(p);
+        }
+    }
+    return alive;
+}
+
+void saveBrowsedPaths(const QStringList &paths)
+{
+    if (!gEnv.pAppSettings) return;
+    gEnv.pAppSettings->beginGroup(kSettingsGroup);
+    gEnv.pAppSettings->setValue(kSettingsBrowsedPaths, paths);
+    gEnv.pAppSettings->endGroup();
+}
 
 } // namespace
 
@@ -51,8 +84,6 @@ Flasher::Flasher(QWidget *parent)
     , m_library(new FirmwareLibrary(this))
 {
     ui->setupUi(this);
-    m_enterToFlash_BtnText = ui->pushButton_FlasherMode->text();
-    m_flashButtonText = ui->pushButton_FlashFirmware->text();
 
     connect(m_library, &FirmwareLibrary::releasesUpdated,
             this, &Flasher::onReleasesUpdated);
@@ -69,23 +100,30 @@ Flasher::Flasher(QWidget *parent)
     refreshSourceList();
     m_library->fetchReleases();
 
-    /* Issue anpeaco/FreeJoyXConfiguratorQt#17: refresh the binary info
-     * card whenever the user changes the source dropdown. Uses an
-     * untyped overload because the connect-pointer-to-member form ends
-     * up ambiguous for currentIndexChanged in Qt 5.15. */
+    /* Refresh the binary info card whenever the user changes the source
+     * dropdown. Uses the untyped overload because the connect-PMF form
+     * is ambiguous for currentIndexChanged in Qt 5.15. */
     connect(ui->comboBox_FlashSource,
             QOverload<int>::of(&QComboBox::currentIndexChanged),
             this,
             [this](int) {
                 refreshFirmwareInfoCard(QString());
-                /* Enable the consolidated Flash button (#19) whenever
-                 * a real source is selected (data is non-empty). */
+                /* Enable the Flash button whenever a real source is
+                 * selected (data is non-empty). */
                 const QVariant d = ui->comboBox_FlashSource->currentData();
                 ui->pushButton_FlashConsolidated->setEnabled(d.isValid());
             });
 
-    /* Slice 4 (#17): the listWidget connects via the auto-named
-     * on_listWidget_Devices_* slots above; nothing to do here. */
+    /* The legacy two-button flow (Enter Flasher Mode + Flash Firmware +
+     * Abort Flasher Mode) is subsumed by the single Flash button. Hide
+     * the three legacy buttons in place rather than removing them from
+     * the .ui XML so the layout doesn't need a re-design. */
+    ui->pushButton_FlasherMode->setVisible(false);
+    ui->pushButton_FlashFirmware->setVisible(false);
+    ui->pushButton_AbortFlash->setVisible(false);
+    /* progressBar_Flash is also unused -- FlashProgressDialog renders
+     * progress now. Hide it to free vertical space. */
+    ui->progressBar_Flash->setVisible(false);
 }
 
 Flasher::~Flasher()
@@ -98,39 +136,20 @@ void Flasher::retranslateUi()
     ui->retranslateUi(this);
 }
 
-void Flasher::deviceConnected(bool isConnect)
-{
-    if (isConnect == true) {
-        ui->pushButton_FlasherMode->setEnabled(true);
-    } else {
-        ui->pushButton_FlasherMode->setEnabled(false);
-    }
-}
-
 void Flasher::flasherFound(bool isFound)
 {
-    /* Issue #18: track flasher-mode state so the confirmation dialog
-     * can classify a flash as Recovery vs normal. */
+    /* Track flasher-mode state so the confirmation dialog can classify
+     * a flash as Recovery vs normal, and so MainWindow's
+     * startConsolidatedFlash can dispatch the right session params. */
     m_inFlasherMode = isFound;
-    ui->pushButton_FlashFirmware->setEnabled(isFound);
-    ui->pushButton_FlasherMode->setEnabled(!isFound);
-    /* Abort is only relevant while the device is in flasher mode --
-     * mirrors the Flash button's enabled state but with opposite
-     * intent. */
-    ui->pushButton_AbortFlash->setEnabled(isFound);
-    /* Hide the device-info strip once flasher mode ends (success or
-     * abort). Re-shown by onFlasherDeviceInfo when DFU is detected. */
+    /* Hide the device-info strip once flasher mode ends. Re-shown by
+     * onFlasherDeviceInfo when DFU is detected. */
     if (!isFound) {
         ui->frame_FlasherDeviceInfo->setVisible(false);
         ui->label_FlasherDeviceInfo->clear();
     }
-    if (isFound == true) {
+    if (isFound) {
         qDebug() << "Flasher found";
-        freejoy_style::setRole(ui->pushButton_FlasherMode, "feedback", "success");
-        ui->pushButton_FlasherMode->setText(tr("Ready to flash"));
-    } else {
-        freejoy_style::clearRole(ui->pushButton_FlasherMode, "feedback");
-        ui->pushButton_FlasherMode->setText(m_enterToFlash_BtnText);
     }
 }
 
@@ -160,46 +179,6 @@ void Flasher::onFlasherDeviceInfo(const QString &manufacturer,
     const QString summary = tr("Connected flasher: ") + parts.join(QStringLiteral(" &middot; "));
     ui->label_FlasherDeviceInfo->setText(summary);
     ui->frame_FlasherDeviceInfo->setVisible(true);
-}
-
-void Flasher::on_pushButton_AbortFlash_clicked()
-{
-    /* The bootloader doesn't expose a "stop and jump to app" command
-     * over HID -- it only knows the flash protocol. To exit DFU
-     * without writing a new firmware, the user has to power-cycle
-     * the device. Fortunately the bootloader's magic word
-     * (BKP->DR4 = 0x424C on F103, RTC->BKP0R on F411) is cleared on
-     * read at boot, so any reset path puts the device back into the
-     * existing application:
-     *
-     *   1. Unplug + replug the USB cable (cleanest, always works)
-     *   2. Press the BluePill / BlackPill reset button (NRST)
-     *   3. Software reset via SWD / external tool (advanced)
-     *
-     * No automatic option from the configurator side is reliable --
-     * a USB-port-cycle isn't portable across OSes (Windows can't
-     * even reliably re-cycle without a hub) and the bootloader
-     * isn't going to listen to a "please exit" packet we make up.
-     * So: explain the situation and trust the user to do the
-     * physical action. */
-    QMessageBox::information(this, tr("Abort flasher mode"),
-        tr("<p>The bootloader doesn't have a software-abort command, "
-           "so getting the device out of flasher mode without "
-           "flashing requires a physical reset:</p>"
-           "<ul>"
-           "<li><b>Easiest:</b> unplug + replug the USB cable.</li>"
-           "<li>Or press the device's reset button (NRST on "
-           "BluePill / BlackPill) if it has one.</li>"
-           "</ul>"
-           "<p>The bootloader's flasher-mode magic word is "
-           "cleared on read, so any reset path will boot the "
-           "existing application normally -- nothing on the device "
-           "has been changed by entering flasher mode.</p>"));
-}
-
-void Flasher::on_pushButton_FlasherMode_clicked()
-{
-    emit flashModeClicked(false);
 }
 
 void Flasher::onReleasesUpdated()
@@ -254,6 +233,20 @@ void Flasher::refreshSourceList()
             data[kKeyLocal] = localPath;
             ui->comboBox_FlashSource->addItem(label, data);
         }
+    }
+
+    /* User-browsed files persisted across runs (QSettings). Listed
+     * before Build/Recovery so the most-recently-flashed file is one
+     * click away. Stale entries (file deleted, drive unmounted) get
+     * filtered out by loadBrowsedPaths(). */
+    const QStringList browsed = loadBrowsedPaths();
+    for (const QString &browsedPath : browsed) {
+        const QFileInfo fi(browsedPath);
+        QVariantMap data;
+        data[kKeyKind] = kKindBrowsed;
+        data[kKeyLocal] = browsedPath;
+        ui->comboBox_FlashSource->addItem(
+            tr("[Browsed] %1").arg(fi.fileName()), data);
     }
 
     /* Build-output folder (<exe>/firmware/): fresh dev builds the user
@@ -330,6 +323,12 @@ void Flasher::on_toolButton_OpenRecoveryDir_clicked()
     menu.addSeparator();
     QAction *refresh = menu.addAction(
         tr("Refresh from GitHub"));
+    /* "Clear browsed list" is offered only when there's something to
+     * clear -- saves the user from a confusing no-op. */
+    QAction *clearBrowsed = nullptr;
+    if (!loadBrowsedPaths().isEmpty()) {
+        clearBrowsed = menu.addAction(tr("Clear [Browsed] firmware history"));
+    }
 
     QAction *picked = menu.exec(QCursor::pos());
     if (!picked) return;
@@ -342,6 +341,11 @@ void Flasher::on_toolButton_OpenRecoveryDir_clicked()
         QDir d(m_library->recoveryDir());
         if (!d.exists()) d.mkpath(".");
         QDesktopServices::openUrl(QUrl::fromLocalFile(d.absolutePath()));
+    } else if (clearBrowsed != nullptr && picked == clearBrowsed) {
+        saveBrowsedPaths({});
+        refreshSourceList();
+        return;     /* fall-through to refreshSourceList below would also work,
+                     * but skip the redundant rebuild */
     } else if (picked == refresh) {
         m_library->fetchReleases();
     }
@@ -377,34 +381,34 @@ void Flasher::on_pushButton_BrowseFirmware_clicked()
         qDebug() << "User cancelled file picker";
         return;
     }
-    /* If we're in flasher mode, flash immediately. Otherwise (device
-     * not in DFU yet) just remember the path -- but with a separate
-     * Browse button + dropdown, "remembering" doesn't have a
-     * persistent home. For now we only allow Browse to take effect
-     * when flasher is ready; if the user clicks Browse without DFU
-     * active, we just open the picker to let them confirm the file
-     * exists, then nothing happens until they enter flasher mode and
-     * click Browse again. */
-    if (!ui->pushButton_FlashFirmware->isEnabled()) {
-        QMessageBox::information(this, tr("Device not in flasher mode"),
-            tr("Selected file:\n%1\n\n"
-               "The device isn't in flasher mode yet. Click "
-               "<b>Enter Flasher Mode</b> first, then click Browse "
-               "again to flash this file.").arg(filePath));
-        return;
+
+    /* Persist into the [Browsed] section of the Source dropdown so the
+     * user can flash this file again without re-browsing. MRU-ordered;
+     * deduped; capped at kBrowsedCap entries. */
+    QStringList browsed = loadBrowsedPaths();
+    browsed.removeAll(filePath);            // dedupe
+    browsed.prepend(filePath);              // newest first
+    while (browsed.size() > kBrowsedCap) {
+        browsed.removeLast();
     }
-    startFlashFromFile(filePath);
+    saveBrowsedPaths(browsed);
+    refreshSourceList();
+    /* Select the just-added [Browsed] entry in the dropdown so the user
+     * has visible confirmation of what they're about to flash. */
+    for (int i = 0; i < ui->comboBox_FlashSource->count(); ++i) {
+        const QVariantMap d = ui->comboBox_FlashSource->itemData(i).toMap();
+        if (d.value(kKeyKind).toString() == kKindBrowsed &&
+            d.value(kKeyLocal).toString() == filePath) {
+            ui->comboBox_FlashSource->setCurrentIndex(i);
+            break;
+        }
+    }
+
+    requestConsolidatedFlash(filePath);
 }
 
 void Flasher::on_pushButton_FlashConsolidated_clicked()
 {
-    /* Issue anpeaco/FreeJoyXConfiguratorQt#19: single-click flash flow.
-     * Resolve the picked source to a local path; if it's a remote
-     * release that hasn't been downloaded yet, the user should use the
-     * legacy two-button path (kicks the FirmwareLibrary download). The
-     * consolidated flow only operates on local files for now -- the
-     * progress dialog cannot meaningfully render a "downloading" stage
-     * yet, and we don't want to surprise the user with a download. */
     const QVariant currentData = ui->comboBox_FlashSource->currentData();
     if (!currentData.isValid()) {
         QMessageBox::information(this, tr("Pick a firmware source"),
@@ -412,28 +416,97 @@ void Flasher::on_pushButton_FlashConsolidated_clicked()
                "click <b>Browse...</b> to pick a .bin from disk."));
         return;
     }
-    QString path;
+
+    /* Resolve the dropdown entry to a local path. Three kinds:
+     *   - String:  legacy local-path entry.
+     *   - Map with kKindLocal: build / recovery folder entry.
+     *   - Map with kKindRemote: GitHub asset, may or may not be cached. */
+    QString localPath;
+    bool isRemote = false;
+    FirmwareLibrary::Release rel;
+    FirmwareLibrary::Asset asset;
     if (currentData.type() == QVariant::String) {
-        path = currentData.toString();
+        localPath = currentData.toString();
     } else if (currentData.type() == QVariant::Map) {
-        path = currentData.toMap().value(kKeyLocal).toString();
+        const QVariantMap data = currentData.toMap();
+        localPath = data.value(kKeyLocal).toString();
+        if (data.value(kKeyKind).toString() == kKindRemote) {
+            isRemote = true;
+            rel.repo = data.value(kKeyRepo).toString();
+            rel.tag  = data.value(kKeyTag).toString();
+            asset.name = data.value(kKeyName).toString();
+            asset.downloadUrl = data.value(kKeyUrl).toString();
+        }
     }
-    if (path.isEmpty() || !QFile::exists(path)) {
-        QMessageBox::information(this, tr("Firmware not available locally"),
-            tr("The selected firmware isn't downloaded yet. Use the legacy "
-               "<b>Enter Flasher Mode</b> / <b>Flash Firmware</b> buttons "
-               "below, which will fetch the binary on demand, or use the "
-               "Browse button to pick a local .bin."));
+
+    /* Already on disk -> straight to confirmation + flash. */
+    if (!localPath.isEmpty() && QFile::exists(localPath)) {
+        requestConsolidatedFlash(localPath);
         return;
     }
 
-    /* Pop the confirmation dialog first (#18). On accept, hand off to
-     * MainWindow's orchestrator via consolidatedFlashRequested -- this
-     * widget doesn't see HidDevice directly. */
+    /* Remote-not-cached -> ask, then download, then flash on the
+     * onAssetDownloaded callback. */
+    if (isRemote && !asset.downloadUrl.isEmpty()) {
+        const QMessageBox::StandardButton rc = QMessageBox::question(this,
+            tr("Download and flash this firmware?"),
+            tr("<p>The selected firmware isn't downloaded yet.</p>"
+               "<p>Source: <b>%1</b><br>"
+               "Tag: <b>%2</b><br>"
+               "Asset: <b>%3</b></p>"
+               "<p>Continue?</p>").arg(rel.repo, rel.tag, asset.name),
+            QMessageBox::Yes | QMessageBox::Cancel,
+            QMessageBox::Cancel);
+        if (rc != QMessageBox::Yes) {
+            qDebug() << "User cancelled remote-asset download";
+            return;
+        }
+        ui->pushButton_FlashConsolidated->setEnabled(false);
+        ui->pushButton_FlashConsolidated->setText(tr("Downloading..."));
+        m_pendingDownloadPath = m_library->downloadAsset(rel, asset);
+        return;
+    }
+
+    QMessageBox::warning(this, tr("Firmware unavailable"),
+        tr("The selected firmware source couldn't be resolved to a file. "
+           "Try refreshing the source list or pick a different entry."));
+}
+
+void Flasher::onAssetDownloaded(const QString &localPath, bool success)
+{
+    /* Stray downloads (user-initiated refresh on a different entry, or a
+     * download that overlapped a previous click) -- just refresh the
+     * dropdown so the cached state surfaces. */
+    if (m_pendingDownloadPath.isEmpty() || localPath != m_pendingDownloadPath) {
+        refreshSourceList();
+        return;
+    }
+    m_pendingDownloadPath.clear();
+    ui->pushButton_FlashConsolidated->setText(tr("Flash"));
+    ui->pushButton_FlashConsolidated->setEnabled(true);
+
+    if (!success) {
+        QMessageBox::warning(this, tr("Download failed"),
+            tr("Couldn't download the selected firmware from GitHub. "
+               "Check your internet connection and try again."));
+        return;
+    }
+    refreshSourceList();   /* dropdown now shows the entry as cached */
+    requestConsolidatedFlash(localPath);
+}
+
+void Flasher::requestConsolidatedFlash(const QString &filePath)
+{
+    /* Open the FlashConfirmationDialog so the user sees board + version
+     * + verdict before committing. The dialog classifies the flash as
+     * Recovery vs normal based on m_inFlasherMode, so its warnings match
+     * the device's actual state. */
     FirmwareImage image;
-    if (!image.loadFromFile(path)) {
+    if (!image.loadFromFile(filePath)) {
         QMessageBox::warning(this, tr("Couldn't open firmware"),
-            tr("Couldn't read the firmware file:\n%1").arg(path));
+            tr("Couldn't read the firmware file:\n%1\n\n"
+               "Check that the file exists and the configurator has "
+               "permission to read it.").arg(filePath));
         return;
     }
     FlashConfirmationDialog::Inputs in;
@@ -449,233 +522,10 @@ void Flasher::on_pushButton_FlashConsolidated_clicked()
     if (dlg.exec() != QDialog::Accepted) {
         return;
     }
-    emit consolidatedFlashRequested(path);
-}
-
-void Flasher::on_pushButton_FlashFirmware_clicked()
-{
-    const QVariant currentData = ui->comboBox_FlashSource->currentData();
-
-    /* No selection or empty dropdown -- nudge the user to either pick
-     * a source from the dropdown or use Browse. */
-    if (!currentData.isValid()) {
-        QMessageBox::information(this, tr("Pick a firmware source"),
-            tr("Select a firmware build from the Source dropdown, or "
-               "click <b>Browse...</b> to pick a .bin from disk."));
-        return;
-    }
-
-    const QVariantMap data = currentData.toMap();
-    const QString kind = data.value(kKeyKind).toString();
-
-    if (kind == kKindLocal) {
-        startFlashFromFile(data.value(kKeyLocal).toString());
-        return;
-    }
-
-    if (kind == kKindRemote) {
-        /* Confirm before flashing a remote firmware -- the dropdown
-         * entry might have been auto-selected as the user clicked
-         * around. Recovery flashes shouldn't be one-click. */
-        const QString name = data.value(kKeyName).toString();
-        const QString tag  = data.value(kKeyTag).toString();
-        const QString repo = data.value(kKeyRepo).toString();
-        const QString localPath = data.value(kKeyLocal).toString();
-        const bool cached = QFile::exists(localPath);
-
-        const QString action = cached ? tr("Flash this firmware?") : tr("Download and flash this firmware?");
-        const QMessageBox::StandardButton rc = QMessageBox::question(this,
-            action,
-            tr("<p>%1</p>"
-               "<p>Source: <b>%2</b><br>"
-               "Tag: <b>%3</b><br>"
-               "Asset: <b>%4</b></p>"
-               "<p>The device's current firmware will be erased and "
-               "replaced. Make sure you have a backup of your config "
-               "(auto-backup runs on Enter Flasher Mode -- check "
-               "&lt;configs&gt;/backups/).</p>"
-               "<p>Continue?</p>").arg(action, repo, tag, name),
-            QMessageBox::Yes | QMessageBox::Cancel,
-            QMessageBox::Cancel);
-        if (rc != QMessageBox::Yes) {
-            qDebug() << "User cancelled remote flash";
-            return;
-        }
-
-        if (cached) {
-            startFlashFromFile(localPath);
-            return;
-        }
-
-        /* Download then flash. Disable button + set pending flag so
-         * onAssetDownloaded knows to continue. */
-        ui->pushButton_FlashFirmware->setEnabled(false);
-        ui->pushButton_FlashFirmware->setText(tr("Downloading..."));
-        m_flashAfterDownload = true;
-
-        FirmwareLibrary::Release rel;
-        rel.repo = repo;
-        rel.tag = tag;
-        FirmwareLibrary::Asset a;
-        a.name = name;
-        a.downloadUrl = data.value(kKeyUrl).toString();
-        m_pendingDownloadPath = m_library->downloadAsset(rel, a);
-        return;
-    }
-
-    qWarning() << "Unknown source kind:" << kind;
-}
-
-void Flasher::onAssetDownloaded(const QString &localPath, bool success)
-{
-    if (!m_flashAfterDownload || localPath != m_pendingDownloadPath) {
-        /* Stray download (e.g. user kicked off another one in the
-         * background); just refresh the dropdown so the cached state
-         * surfaces. */
-        refreshSourceList();
-        return;
-    }
-
-    m_flashAfterDownload = false;
-    m_pendingDownloadPath.clear();
-
-    if (!success) {
-        ui->pushButton_FlashFirmware->setText(m_flashButtonText);
-        ui->pushButton_FlashFirmware->setEnabled(true);
-        QMessageBox::warning(this, tr("Download failed"),
-            tr("Couldn't download the selected firmware from GitHub. "
-               "Check your internet connection and try again."));
-        return;
-    }
-
-    ui->pushButton_FlashFirmware->setText(m_flashButtonText);
-    refreshSourceList();   /* dropdown now shows entry as cached */
-    startFlashFromFile(localPath);
-}
-
-void Flasher::startFlashFromFile(const QString &filePath)
-{
-    /* Issue anpeaco/FreeJoyXConfiguratorQt#18: gate every flash through
-     * the confirmation dialog. Parse the binary first so the dialog can
-     * show board + version + verdict; the parsed metadata also feeds
-     * the board-mismatch refusal -- the dialog returns reject() when
-     * Verdict::Incompatible, so we never reach the actual flash for a
-     * mismatched binary.
-     *
-     * Bypass (#19): when MainWindow's consolidated-flash orchestrator
-     * has already shown the confirmation, it arms a one-shot bypass so
-     * the auto-fire after DFU entry doesn't repeat the dialog. */
-    if (m_skipNextConfirmation) {
-        m_skipNextConfirmation = false;
-    } else {
-        FirmwareImage image;
-        if (!image.loadFromFile(filePath)) {
-            qWarning() << "Couldn't load firmware file for parsing:" << filePath;
-            QMessageBox::warning(this, tr("Couldn't open firmware"),
-                tr("Couldn't read the firmware file:\n%1\n\n"
-                   "Check that the file exists and the configurator has "
-                   "permission to read it.").arg(filePath));
-            return;
-        }
-
-        FlashConfirmationDialog::Inputs in;
-        /* Device identity: pulled from the live params report. The
-         * sidebar + main combobox display the same string, but we go
-         * to the source of truth (deviceconfig) so the dialog shows
-         * what the configurator actually thinks it's talking to. */
-        if (gEnv.pDeviceConfig) {
-            in.deviceFwVersion = gEnv.pDeviceConfig->paramsReport.firmware_version;
-            in.deviceBoardId = gEnv.pDeviceConfig->paramsReport.board_id;
-        }
-        in.deviceInRecoveryMode = m_inFlasherMode;
-        in.deviceName = m_lastDeviceName;
-        in.deviceSerial = m_lastDeviceSerial;
-        in.image = &image;
-
-        FlashConfirmationDialog dlg(in, this);
-        if (dlg.exec() != QDialog::Accepted) {
-            qDebug() << "Flash cancelled at confirmation dialog";
-            return;
-        }
-    }
-
-    /* Confirmed (or bypassed). Hand off to the existing flash path. */
-    QFile file(filePath);
-    if (file.open(QIODevice::ReadOnly)) {
-        ui->pushButton_FlashFirmware->setEnabled(false);
-        m_fileArray = file.readAll();
-        qDebug() << "file array size =" << m_fileArray.size()
-                 << "from" << filePath;
-        emit startFlash(true);
-    } else {
-        qWarning() << "Couldn't open firmware file:" << filePath;
-        QMessageBox::warning(this, tr("Couldn't open firmware"),
-            tr("Couldn't read the firmware file:\n%1\n\n"
-               "Check that the file exists and the configurator has "
-               "permission to read it.").arg(filePath));
-    }
-}
-
-const QByteArray *Flasher::fileArray() const
-{
-    return &m_fileArray;
-}
-
-void Flasher::flashStatus(int status, int bytes_sent, int bytes_total)
-{
-    /* Slice 3 (#16): derive percent locally now that the upstream signal
-     * carries byte counts -- the progress dialog (#19) consumes the raw
-     * counts and weights them across phases, but this legacy widget just
-     * needs the simple 0..100 mapping. */
-    const int percent = (bytes_total > 0)
-        ? int((qint64(bytes_sent) * 100) / bytes_total)
-        : 0;
-    ui->progressBar_Flash->setValue(percent);
-
-    if (percent == 1) {
-        ui->pushButton_FlasherMode->setText(tr("Firmware flashing.."));
-    }
-
-    if (status == FINISHED) {
-        ui->pushButton_FlashFirmware->setText(tr("Finished"));
-        freejoy_style::setRole(ui->pushButton_FlashFirmware, "feedback", "success");
-        flashDone();
-        emit flashTerminated(true);
-    } else if (status == SIZE_ERROR) {
-        ui->pushButton_FlashFirmware->setText(tr("SIZE ERROR"));
-        freejoy_style::setRole(ui->pushButton_FlashFirmware, "feedback", "error");
-        flashDone();
-        emit flashTerminated(false);
-    } else if (status == CRC_ERROR) {
-        ui->pushButton_FlashFirmware->setText(tr("CRC ERROR"));
-        freejoy_style::setRole(ui->pushButton_FlashFirmware, "feedback", "error");
-        flashDone();
-        emit flashTerminated(false);
-    } else if (status == ERASE_ERROR) {
-        ui->pushButton_FlashFirmware->setText(tr("ERASE ERROR"));
-        freejoy_style::setRole(ui->pushButton_FlashFirmware, "feedback", "warning");
-        flashDone();
-        emit flashTerminated(false);
-    } else if (status == 666) {
-        ui->pushButton_FlashFirmware->setText(tr("ERROR"));
-        freejoy_style::setRole(ui->pushButton_FlashFirmware, "feedback", "error");
-        flashDone();
-        emit flashTerminated(false);
-    }
-}
-
-void Flasher::flashDone()
-{
-    QTimer::singleShot(1000, [&] {
-        freejoy_style::clearRole(ui->pushButton_FlashFirmware, "feedback");
-        ui->pushButton_FlashFirmware->setEnabled(false);
-        ui->pushButton_FlashFirmware->setText(m_flashButtonText);
-        ui->pushButton_FlasherMode->setEnabled(true);
-        freejoy_style::clearRole(ui->pushButton_FlasherMode, "feedback");
-        ui->pushButton_FlasherMode->setText(m_enterToFlash_BtnText);
-        m_fileArray.clear();
-        m_fileArray.shrink_to_fit();
-    });
+    /* MainWindow's onConsolidatedFlashRequested detects the device's
+     * current mode (app vs BL) and dispatches FlashSession with the
+     * right (runBackup, triggerBootloader, autoRestore) parameters. */
+    emit consolidatedFlashRequested(filePath);
 }
 
 /* --- Device sidebar (issue anpeaco/FreeJoyXConfiguratorQt#17) --------- */

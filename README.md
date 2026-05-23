@@ -35,9 +35,9 @@ Check the upstream [FreeJoy wiki](https://github.com/FreeJoy-Team/FreeJoyWiki) f
 
 ## Downloads
 
-Configurator binaries (currently Linux only) are published to this repo's [Releases](https://github.com/anpeaco/FreeJoyXConfiguratorQt/releases) by the tag-triggered `release.yml` workflow. Firmware binaries for both boards (F103 BluePill + F411 BlackPill, app + bootloader) live on the paired firmware repo's [Releases](https://github.com/anpeaco/FreeJoyX/releases). Tagging the same `vX.Y.Z` on both repos in lockstep produces matched configurator + firmware artefacts.
+Configurator binaries for both Linux and Windows are published to this repo's [Releases](https://github.com/anpeaco/FreeJoyXConfiguratorQt/releases) by the tag-triggered `release.yml` workflow. The Windows zip is self-contained — Qt DLLs and the MinGW runtime are bundled via `windeployqt` so end users don't need Qt or MinGW installed. Firmware binaries for both boards (F103 BluePill + F411 BlackPill, app + bootloader) live on the paired firmware repo's [Releases](https://github.com/anpeaco/FreeJoyX/releases). Tagging the same `vX.Y.Z` on both repos in lockstep produces matched configurator + firmware artefacts.
 
-For Windows builds, you currently have to build from source (see the [Building](#building) section below). A Windows-side `release.yml` covering MinGW packaging via `windeployqt` is a planned follow-up.
+The release workflow also supports `workflow_dispatch` (with an optional `ref` input) for retro-running against an existing tag — useful for adding a missing platform asset to a published release without cutting a new version.
 
 ## Installation
 
@@ -72,10 +72,23 @@ For Windows builds, you currently have to build from source (see the [Building](
 
 ## Continuous integration
 
-Two workflows run on every push:
+Three GitHub Actions workflows cover this repo:
 
-- **`configurator.yml`** — installs Qt 5.15.2 on Ubuntu via [`jurplel/install-qt-action`](https://github.com/jurplel/install-qt-action), runs `qmake FreeJoyQt.pro && make`, uploads the `FreeJoyQt` binary as an artifact.
-- **`header-sync.yml`** — clones [`anpeaco/FreeJoyX`](https://github.com/anpeaco/FreeJoyX) as a sibling and diffs `src/common_types.h` + `src/common_defines.h` against the firmware copies after stripping comments, whitespace, and `/* SYNC_SKIP_BEGIN ... SYNC_SKIP_END */` blocks. Catches wire-format drift on the configurator side; the mirror workflow in `anpeaco/FreeJoyX` catches it on the firmware side.
+- **`configurator.yml`** (every push / PR) — installs Qt 5.15.2 on Ubuntu via [`jurplel/install-qt-action`](https://github.com/jurplel/install-qt-action), runs `qmake FreeJoyQt.pro && make`, uploads the `FreeJoyXConfiguratorQt` binary as an artifact.
+- **`header-sync.yml`** (every push / PR) — clones [`anpeaco/FreeJoyX`](https://github.com/anpeaco/FreeJoyX) as a sibling and diffs `src/common_types.h` + `src/common_defines.h` against the firmware copies after stripping comments, whitespace, and `/* SYNC_SKIP_BEGIN ... SYNC_SKIP_END */` blocks. Catches wire-format drift on the configurator side; the mirror workflow in `anpeaco/FreeJoyX` catches it on the firmware side.
+- **`release.yml`** (on `v*` tag push, plus `workflow_dispatch`) — builds release artefacts for both platforms in parallel:
+  - **Linux** (Ubuntu runner) → `FreeJoyXConfiguratorQt-linux-<tag>.tar.gz` containing the stripped binary.
+  - **Windows** (windows-latest runner, MinGW 8.1.0) → `FreeJoyXConfiguratorQt-windows-<tag>.zip` packaged via `windeployqt` with Qt DLLs and MinGW runtime DLLs bundled so the archive is self-contained.
+  - Both archives are uploaded as assets to the GitHub Release for the tag, with auto-generated release notes.
+  - The `workflow_dispatch` trigger accepts an optional `ref` input so a missing platform asset can be retro-added to an existing release without cutting a new version.
+
+To cut a release, tag the same `vX.Y.Z` here and on the firmware repo:
+
+```bash
+git tag v0.1.2 && git push origin v0.1.2
+```
+
+The release workflow builds and publishes both archives automatically.
 
 ## Contributing
 
