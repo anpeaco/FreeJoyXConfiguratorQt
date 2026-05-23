@@ -31,7 +31,12 @@ jobs:
         run: qmake CONFIG+=release FreeJoyQt.pro
 
       - name: make
-        run: make -j$(nproc)
+        # mkdir for the DESTDIR override in src.pro -- on Linux gcc
+        # actually creates parent dirs but pre-creating costs nothing
+        # and keeps parity with the Windows release job.
+        run: |
+          mkdir -p build/release
+          make -j$(nproc)
 
       - name: Upload configurator binary
         uses: actions/upload-artifact@v7

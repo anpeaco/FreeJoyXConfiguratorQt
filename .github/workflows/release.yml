@@ -81,6 +81,10 @@ jobs:
         run: |
           set PATH=%IQTA_TOOLS%\mingw810_64\bin;%PATH%
           qmake CONFIG+=release FreeJoyQt.pro
+          rem g++ on Windows won't create parent dirs for -o output, and
+          rem qmake's SUBDIRS template doesn't reliably mkdir cross-subdir
+          rem DESTDIRs before linking. Pre-create so the link succeeds.
+          mkdir build\release 2>nul
           mingw32-make -j%NUMBER_OF_PROCESSORS%
 
       - name: Package
