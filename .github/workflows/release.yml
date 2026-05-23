@@ -92,17 +92,26 @@ jobs:
             exit 1
           }
           Copy-Item $exePath dist\
-          # windeployqt bundles Qt DLLs + plugins. jurplel/install-qt-action
-          # sets QT_ROOT_DIR to the Qt install root; Qt5_DIR points at the
-          # cmake config subdir (lib/cmake) which is the wrong base for
-          # finding bin/windeployqt.exe.
-          #
-          # Put Qt's bin dir on PATH first so windeployqt can locate the
-          # platforms/ plugin dir via Qt5Core.dll's neighbour-lookup; without
-          # that the deployment fails with "Unable to find the platform
-          # plugin." even though qwindows.dll exists at $QT_ROOT_DIR\plugins\.
+
+          # Diagnose Qt install layout
+          Write-Host "=== QT_ROOT_DIR contents ==="
+          Get-ChildItem $env:QT_ROOT_DIR | Format-Table Name, Mode
+          Write-Host "=== plugins/ ==="
+          if (Test-Path "$env:QT_ROOT_DIR\plugins") {
+            Get-ChildItem "$env:QT_ROOT_DIR\plugins" | Format-Table Name, Mode
+          }
+          Write-Host "=== plugins/platforms/ ==="
+          if (Test-Path "$env:QT_ROOT_DIR\plugins\platforms") {
+            Get-ChildItem "$env:QT_ROOT_DIR\plugins\platforms"
+          }
+
+          # windeployqt: Qt's bin on PATH so Qt5Core.dll neighbour-lookup
+          # works, plus --qmake to pin Qt detection explicitly.
           $env:PATH = "$env:QT_ROOT_DIR\bin;" + $env:PATH
-          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --no-translations --dir dist dist\FreeJoyXConfiguratorQt.exe
+          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --no-translations `
+              --qmake "$env:QT_ROOT_DIR\bin\qmake.exe" `
+              --dir dist `
+              dist\FreeJoyXConfiguratorQt.exe
           # MinGW runtime DLLs that windeployqt doesn't always pick up.
           $mingwBin = "$env:IQTA_TOOLS\mingw810_64\bin"
           foreach ($dll in 'libgcc_s_seh-1.dll', 'libstdc++-6.dll', 'libwinpthread-1.dll') {
