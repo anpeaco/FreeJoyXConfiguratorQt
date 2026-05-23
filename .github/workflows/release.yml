@@ -79,19 +79,7 @@ jobs:
         run: |
           set PATH=%IQTA_TOOLS%\mingw810_64\bin;%PATH%
           qmake CONFIG+=release FreeJoyQt.pro
-          rem mingw32-make -j with parallel jobs has been racing on Windows
-          rem and exiting before the linker finishes. Build serially so the
-          rem link runs to completion.
-          mingw32-make
-
-      - name: Diagnose build output
-        if: always()
-        shell: pwsh
-        run: |
-          Write-Host "=== Contents of src/release/ ==="
-          if (Test-Path src/release) { Get-ChildItem src/release | Format-Table Name, Length, LastWriteTime } else { Write-Host "(does not exist)" }
-          Write-Host "=== Any FreeJoyXConfigurator* anywhere ==="
-          Get-ChildItem -Recurse -Filter "FreeJoyXConfigurator*" -ErrorAction SilentlyContinue | Select-Object FullName, Length, LastWriteTime | Format-Table -AutoSize
+          mingw32-make -j%NUMBER_OF_PROCESSORS%
 
       - name: Package
         shell: pwsh
@@ -104,10 +92,11 @@ jobs:
             exit 1
           }
           Copy-Item $exePath dist\
-          # windeployqt bundles Qt DLLs + plugins (imageformats, platforms,
-          # styles) the exe needs. Include the MinGW runtime so the bundle
-          # is self-contained -- end users don't need Qt or MinGW installed.
-          & "$env:Qt5_Dir\bin\windeployqt.exe" --release --no-translations dist\FreeJoyXConfiguratorQt.exe
+          # windeployqt bundles Qt DLLs + plugins. jurplel/install-qt-action
+          # sets QT_ROOT_DIR to the Qt install root; Qt5_DIR points at the
+          # cmake config subdir (lib/cmake) which is the wrong base for
+          # finding bin/windeployqt.exe.
+          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --no-translations dist\FreeJoyXConfiguratorQt.exe
           # MinGW runtime DLLs that windeployqt doesn't always pick up.
           $mingwBin = "$env:IQTA_TOOLS\mingw810_64\bin"
           foreach ($dll in 'libgcc_s_seh-1.dll', 'libstdc++-6.dll', 'libwinpthread-1.dll') {
