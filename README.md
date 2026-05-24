@@ -22,6 +22,9 @@ FreeJoyXConfiguratorQt is a fork of [FreeJoyConfiguratorQt](https://github.com/F
 * **Logic button configuration** — pick `Logic` in the Function dropdown to unlock Operator (`AND`, `OR`, `NAND`, `NOR`, `XOR`, `XNOR`), Source B, and per-slot Debounce cells. (`NOT` and `A AND NOT B` exist in the wire-format enum for back-compat with shipped configs but are no longer offered in the picker.)
 * **Tap / Double-tap button types** — appear in the Function dropdown with the per-physical coexistence filter that limits a single physical input to `{ NORMAL, TAP, DOUBLE_TAP }`
 * **Shifts & Timers tab** — the eight shift modifiers (bumped from 5 in v1.7.8) and the global timers (Timer 1/2/3, Debounce, Tap cutoff, Double tap cutoff) live in a dedicated tab, decluttering the Buttons tab. Tap cutoff and Double tap cutoff default to 200 ms.
+* **Listen-for-input ("target") buttons** — each Buttons-tab row and each Axes-tab source has a target button: click it, then press the physical button (or rotate the axis) you want to bind. The target input pulses while waiting and auto-disarms after 5 s. See `UI_PATTERNS.md` for the shared convention.
+* **Sequential Assign** — tick the Buttons-tab checkbox, then arm any row's target button; each captured press auto-arms the next row, so a flurry of presses maps a whole panel in order. Backspace undoes the last assignment.
+* **Pending-changes indicator** — the Write Config button shows a dot when the configurator's `dev_config_t` differs from what was last read/written, a reminder that the device's live preview reflects its flashed config, not unsaved edits.
 * **2 fast (hardware-quadrature) encoders** — Enc 1 on PA8/PA9, Enc 2 on PB6/PB7
 * Analog input configuration (calibration, smoothing, curve shapes, etc.)
 * Axes-to-buttons configuration

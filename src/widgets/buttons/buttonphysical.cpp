@@ -5,6 +5,8 @@
 #include "global.h"
 #include "widgets/debugwindow.h"
 
+#include <QMouseEvent>
+
 ButtonPhysical::ButtonPhysical(int buttonNumber, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::ButtonPhysical)
@@ -49,4 +51,12 @@ void ButtonPhysical::setButtonState(bool state)
         }
         m_debugState = state;
     }
+}
+
+void ButtonPhysical::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton) {
+        emit physCellClicked(m_buttonIndex);
+    }
+    QWidget::mousePressEvent(event);
 }

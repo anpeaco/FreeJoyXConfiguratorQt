@@ -84,15 +84,13 @@ Axes::Axes(int axisNumber, QWidget *parent)
      * Checkable QPushButton + iconset (target.svg) means the button's
      * "pressed in" checked state is the only visual armed indicator
      * needed -- no text swap (text would expand the fixed-size icon
-     * button into something taller than the row). Tooltip swap gives
-     * the user readable confirmation on hover. AxesConfig owns the
-     * baseline + watcher and calls setDetectArmed(false) to clear the
-     * visual on success/timeout. */
+     * button into something taller than the row). All visual
+     * side-effects (tooltip swap, source-dropdown pulse) live in
+     * setDetectArmed so they fire on both the user-click path and the
+     * cross-axis / timeout disarm paths AxesConfig drives. */
     connect(ui->pushButton_DetectSource, &QPushButton::toggled,
             this, [this](bool checked) {
-        ui->pushButton_DetectSource->setToolTip(checked
-            ? tr("Armed -- rotate any connected axis to assign its source. Click again to cancel.")
-            : tr("Click then rotate any connected axis to set its source pin as this axis's source. Click again to cancel. Only works for pins already bound to some axis -- the firmware reports raw values per-axis, not per-pin."));
+        setDetectArmed(checked);
         emit detectSourceRequested(m_axisNumber, checked);
     });
 
@@ -215,6 +213,36 @@ void Axes::setDetectArmed(bool armed)
     ui->pushButton_DetectSource->setToolTip(armed
         ? tr("Armed -- rotate any connected axis to assign its source. Click again to cancel.")
         : tr("Click then rotate any connected axis to set its source pin as this axis's source. Click again to cancel. Only works for pins already bound to some axis -- the firmware reports raw values per-axis, not per-pin."));
+
+    /* Listen-for-input pulse (UI_PATTERNS.md): pulse the source
+     * dropdown while waiting for the user's axis rotation, stop the
+     * pulse on disarm. ~500 ms cycle on a subtle blue tint matches
+     * the button-tab spinbox pulse. */
+    if (armed) {
+        if (!m_pulseTimer) {
+            m_pulseTimer = new QTimer(this);
+            m_pulseTimer->setInterval(500);
+            connect(m_pulseTimer, &QTimer::timeout, this, [this]() {
+                m_pulseOn = !m_pulseOn;
+                ui->comboBox_AxisSource1->setStyleSheet(
+                    m_pulseOn
+                    ? QStringLiteral("QComboBox { background-color: rgba(64, 128, 255, 110); }")
+                    : QString());
+            });
+        }
+        if (!m_pulseTimer->isActive()) {
+            m_pulseOn = true;
+            ui->comboBox_AxisSource1->setStyleSheet(
+                QStringLiteral("QComboBox { background-color: rgba(64, 128, 255, 110); }"));
+            m_pulseTimer->start();
+        }
+    } else {
+        if (m_pulseTimer && m_pulseTimer->isActive()) {
+            m_pulseTimer->stop();
+        }
+        m_pulseOn = false;
+        ui->comboBox_AxisSource1->setStyleSheet(QString());
+    }
 }
 
 void Axes::setEncoderSlotsAvailable(const QList<int> &encoderSlots)

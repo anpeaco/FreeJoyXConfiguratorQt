@@ -12,6 +12,8 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QMimeData>
+#include <QShortcut>
+#include <QScrollBar>
 
 #ifdef DYNAMIC_CREATION
     #include <QScrollArea>
@@ -47,11 +49,11 @@ ButtonConfig::ButtonConfig(QWidget *parent)
         // is covered via functionTypeChanged below).
         connect(m_logicButtonPtrList[i], &ButtonLogical::physicalNumChanged,
                 this, [this](int){ physicalConflictFilter(); });
+        // Listen-for-input target button (UI_PATTERNS.md). The arbiter
+        // logic lives in onListenRequested.
+        connect(m_logicButtonPtrList[i], &ButtonLogical::listenRequested,
+                this, &ButtonConfig::onListenRequested);
     }
-    gEnv.pAppSettings->beginGroup("OtherSettings");
-    ui->checkBox_AutoPhysBut->setChecked(gEnv.pAppSettings->value("AutoSetPhysButton", true).toBool());
-    gEnv.pAppSettings->endGroup();
-    on_checkBox_AutoPhysBut_toggled(ui->checkBox_AutoPhysBut->isChecked());
 #endif
     logicaButtonsCreator();
 
@@ -71,13 +73,32 @@ ButtonConfig::ButtonConfig(QWidget *parent)
 
     Q_ASSERT(ui->groupBox_LogicalButtons->objectName() == QStringLiteral("groupBox_LogicalButtons"));
     Q_ASSERT(ui->groupBox_PhysicalButtons->objectName() == QStringLiteral("groupBox_PhysicalButtons"));
+
+    // Listen-for-input arbiter timer (UI_PATTERNS.md): 5 s one-shot,
+    // disarms the currently armed row's target button.
+    m_listenTimeout = new QTimer(this);
+    m_listenTimeout->setSingleShot(true);
+    m_listenTimeout->setInterval(5000);
+    connect(m_listenTimeout, &QTimer::timeout,
+            this, &ButtonConfig::onListenTimeout);
+
+    // Sequential Assign (issue #39): purely toggles m_seqActive. The
+    // walk happens inside seqAssignTick / physCellClicked when a
+    // per-row listener captures a press; if m_seqActive is true at
+    // capture time the next row gets auto-armed.
+    connect(ui->checkBox_SeqAssign, &QCheckBox::toggled,
+            this, &ButtonConfig::on_checkBox_SeqAssign_toggled);
+
+    // Backspace -- undo the last sequence assignment.
+    auto *scUndo = new QShortcut(QKeySequence(Qt::Key_Backspace), this);
+    scUndo->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(scUndo, &QShortcut::activated, this, [this]() {
+        if (m_seqActive) seqAssignUndo();
+    });
 }
 
 ButtonConfig::~ButtonConfig()
 {
-    gEnv.pAppSettings->beginGroup("OtherSettings");
-    gEnv.pAppSettings->setValue("AutoSetPhysButton", ui->checkBox_AutoPhysBut->isChecked());
-    gEnv.pAppSettings->endGroup();
     delete ui;
 }
 
@@ -163,10 +184,6 @@ void ButtonConfig::logicaButtonsCreator()
             emit logicalButtonsCreated();
             return;
         }
-        gEnv.pAppSettings->beginGroup("OtherSettings");
-        ui->checkBox_AutoPhysBut->setChecked(gEnv.pAppSettings->value("AutoSetPhysButton", true).toBool());
-        gEnv.pAppSettings->endGroup();
-        on_checkBox_AutoPhysBut_toggled(ui->checkBox_AutoPhysBut->isChecked());
         #endif
 #else
         // MAX_BUTTONS_NUM(128)/8 = 16 MUST DIVIDE EVENLY
@@ -180,21 +197,16 @@ void ButtonConfig::logicaButtonsCreator()
     });
 }
 
-// Auto-fill the focused field (physical-button OR Source B) when the user
-// presses a physical button on the device. Whichever spinBox the user
-// most recently focused wins; if neither is focused, we do nothing.
-void ButtonConfig::setPhysicButton(int buttonIndex)
+// Hardware-press path from ButtonPhysical::setButtonState. All "auto
+// assign" outcomes (per-row target arm capture, Sequential Assign)
+// are driven by seqAssignTick, which already runs on every params
+// poll inside buttonStateChanged. This setter is left as a no-op for
+// the inherited ButtonPhysical::physButtonPressed signal so existing
+// connections compile and run -- the actual capture lives in the
+// tick. Click-based presses come in through the physCellClicked
+// handler.
+void ButtonConfig::setPhysicButton(int /*buttonIndex*/)
 {
-    if (!m_autoPhysButEnabled) return;
-    int physFocus = m_logicButtonPtrList[0]->currentFocus();
-    if (physFocus >= 0) {
-        m_logicButtonPtrList[physFocus]->setPhysicButton(buttonIndex);
-        return;
-    }
-    int srcBFocus = m_logicButtonPtrList[0]->currentFocusSrcB();
-    if (srcBFocus >= 0) {
-        m_logicButtonPtrList[srcBFocus]->setSourceBButton(buttonIndex);
-    }
 }
 
 void ButtonConfig::on_pushButton_ClearAllLogical_clicked()
@@ -231,12 +243,6 @@ void ButtonConfig::on_pushButton_ClearAllLogical_clicked()
     for (int i = 0; i < m_logicButtonPtrList.size(); ++i) {
         m_logicButtonPtrList[i]->readFromConfig();
     }
-}
-
-void ButtonConfig::on_checkBox_AutoPhysBut_toggled(bool checked)
-{
-    m_autoPhysButEnabled = checked;
-    m_logicButtonPtrList[0]->setAutoPhysBut(checked);
 }
 
 QList<ButtonConfig::ButtonGroup> ButtonConfig::computeButtonGroups()
@@ -342,6 +348,29 @@ void ButtonConfig::physButtonsCreator(int count)
             m_PhysButtonPtrList.append(w);
             connect(w, &ButtonPhysical::physButtonPressed,
                     this, &ButtonConfig::setPhysicButton);
+            // Issue #39: clicks on the on-screen physical-button cell.
+            // Treated identically to a hardware press: routed into the
+            // currently armed row (if any), then auto-arms the next row
+            // when Sequential Assign is on.
+            connect(w, &ButtonPhysical::physCellClicked, this,
+                [this](int buttonIndex){
+                    if (m_listenArmedSlot < 0
+                        || m_listenArmedSlot >= m_logicButtonPtrList.size()) {
+                        return;
+                    }
+                    const int target = m_listenArmedSlot;
+                    listenDisarm(target);
+                    button_t &slot = gEnv.pDeviceConfig->config.buttons[target];
+                    slot.physical_num = buttonIndex;
+                    m_seqAssignWriting = true;
+                    m_logicButtonPtrList[target]->readFromConfig();
+                    m_seqAssignWriting = false;
+                    physicalConflictFilter();
+                    m_seqLastAssignedSlot = target;
+                    if (m_seqActive && target + 1 < m_logicButtonPtrList.size()) {
+                        onListenRequested(target + 1, true);
+                    }
+                });
             slot++;
             col++;
             if (col >= kCols) { col = 0; row++; }
@@ -532,6 +561,11 @@ void ButtonConfig::physicalConflictFilter()
 
 void ButtonConfig::buttonStateChanged()
 {
+    // Sequential Assign edge detection -- runs on every params poll
+    // regardless of m_seqActive, so when the mode is enabled mid-press
+    // the initial baseline is fresh rather than stale.
+    seqAssignTick();
+
     int number = 0;
     params_report_t *paramsRep = &gEnv.pDeviceConfig->paramsReport;
 
@@ -929,3 +963,166 @@ void ButtonConfig::moveButton(int from, int to)
         m_logicButtonPtrList[i]->readFromConfig();
     }
 }
+
+// ------------------------------------------------------------------
+// Sequential Assign (issue #39)
+//
+// New model (post-AutoPhysBut removal): no auto-cursor. The user clicks
+// a row's per-row target button to arm that row. When the listener
+// captures a press, if m_seqActive is true, we auto-arm the next row's
+// target button -- so a flurry of presses walks forward through the
+// list. m_seqActive alone (without any row armed) does nothing.
+// ------------------------------------------------------------------
+
+void ButtonConfig::on_checkBox_SeqAssign_toggled(bool checked)
+{
+    m_seqActive = checked;
+    // Turning seq off mid-walk leaves the currently armed row alone --
+    // the user might still want to capture into it. Just stop auto-
+    // advancing afterwards.
+}
+
+void ButtonConfig::seqAssignTick()
+{
+    const params_report_t *paramsRep = &gEnv.pDeviceConfig->paramsReport;
+    const int kBytes = MAX_BUTTONS_NUM / 8;
+
+    if (!m_seqPrevPhyInit) {
+        memcpy(m_seqPrevPhy, paramsRep->phy_button_data, sizeof(m_seqPrevPhy));
+        m_seqPrevPhyInit = true;
+        return;
+    }
+
+    int risingCount = 0;
+    int risingPhys = -1;
+    for (int i = 0; i < kBytes; ++i) {
+        const uint8_t now  = paramsRep->phy_button_data[i];
+        const uint8_t prev = m_seqPrevPhy[i];
+        uint8_t newlyPressed = uint8_t(now & ~prev);
+        while (newlyPressed) {
+            const int bit = __builtin_ctz(newlyPressed);
+            newlyPressed = uint8_t(newlyPressed & (newlyPressed - 1));
+            risingCount++;
+            if (risingCount == 1) risingPhys = i * 8 + bit;
+        }
+    }
+    memcpy(m_seqPrevPhy, paramsRep->phy_button_data, sizeof(m_seqPrevPhy));
+
+    if (risingCount == 0 || risingCount > 1) return;
+
+    // 200 ms debounce -- same press shouldn't register twice.
+    if (m_seqDebounceTimer.isValid() && !m_seqDebounceTimer.hasExpired(200)) {
+        return;
+    }
+
+    // Hardware press only does anything if a per-row listener is armed.
+    if (m_listenArmedSlot < 0
+        || m_listenArmedSlot >= m_logicButtonPtrList.size()) {
+        return;
+    }
+    const int target = m_listenArmedSlot;
+    listenDisarm(target);
+    button_t &slot = gEnv.pDeviceConfig->config.buttons[target];
+    slot.physical_num = risingPhys;
+    m_seqAssignWriting = true;
+    m_logicButtonPtrList[target]->readFromConfig();
+    m_seqAssignWriting = false;
+    physicalConflictFilter();
+    m_seqLastAssignedSlot = target;
+    m_seqDebounceTimer.start();
+
+    // Sequential Assign: auto-arm the next row's listener so a
+    // continuous press flurry walks forward through the list.
+    if (m_seqActive && target + 1 < m_logicButtonPtrList.size()) {
+        onListenRequested(target + 1, true);
+    }
+}
+
+void ButtonConfig::seqAssignUndo()
+{
+    if (m_seqLastAssignedSlot < 0
+        || m_seqLastAssignedSlot >= m_logicButtonPtrList.size()) {
+        return;
+    }
+    button_t &slot = gEnv.pDeviceConfig->config.buttons[m_seqLastAssignedSlot];
+    slot.physical_num = -1;
+    m_seqAssignWriting = true;
+    m_logicButtonPtrList[m_seqLastAssignedSlot]->readFromConfig();
+    m_seqAssignWriting = false;
+    physicalConflictFilter();
+    m_seqLastAssignedSlot = -1;
+}
+
+void ButtonConfig::setPulseTarget(int slot)
+{
+    if (slot == m_pulseTargetSlot) return;
+    if (m_pulseTargetSlot >= 0
+        && m_pulseTargetSlot < m_logicButtonPtrList.size()
+        && m_logicButtonPtrList[m_pulseTargetSlot]) {
+        m_logicButtonPtrList[m_pulseTargetSlot]->setPhysSpinWaiting(false);
+    }
+    m_pulseTargetSlot = slot;
+    if (m_pulseTargetSlot >= 0
+        && m_pulseTargetSlot < m_logicButtonPtrList.size()
+        && m_logicButtonPtrList[m_pulseTargetSlot]) {
+        m_logicButtonPtrList[m_pulseTargetSlot]->setPhysSpinWaiting(true);
+    }
+}
+
+// ------------------------------------------------------------------
+// Listen-for-input arbiter (UI_PATTERNS.md)
+// ------------------------------------------------------------------
+
+void ButtonConfig::onListenRequested(int slot, bool armed)
+{
+    if (armed) {
+        // Disarm any previously armed row first -- single-armed invariant.
+        if (m_listenArmedSlot >= 0 && m_listenArmedSlot != slot) {
+            listenDisarm(m_listenArmedSlot);
+        }
+        m_listenArmedSlot = slot;
+        // Visual sync: a no-op when triggered by the user clicking the
+        // row's target button (already checked), but required for the
+        // programmatic auto-arm path Sequential Assign uses to advance.
+        if (slot >= 0 && slot < m_logicButtonPtrList.size()) {
+            m_logicButtonPtrList[slot]->setListenArmed(true);
+        }
+        // Snapshot the live phy bits so a button the user is *already*
+        // holding when they arm the listener doesn't immediately count
+        // as a fresh press. seqAssignTick treats anything that's already
+        // 1 in m_seqPrevPhy as held.
+        const params_report_t *paramsRep = &gEnv.pDeviceConfig->paramsReport;
+        memcpy(m_seqPrevPhy, paramsRep->phy_button_data, sizeof(m_seqPrevPhy));
+        m_seqPrevPhyInit = true;
+        setPulseTarget(slot);
+        m_listenTimeout->start();
+    } else {
+        // User toggled the same row's button off before the timer fired.
+        if (m_listenArmedSlot == slot) {
+            listenDisarm(slot);
+        }
+    }
+}
+
+void ButtonConfig::onListenTimeout()
+{
+    if (m_listenArmedSlot < 0) return;
+    listenDisarm(m_listenArmedSlot);
+}
+
+void ButtonConfig::listenDisarm(int slot)
+{
+    if (slot >= 0 && slot < m_logicButtonPtrList.size()
+        && m_logicButtonPtrList[slot]) {
+        m_logicButtonPtrList[slot]->setListenArmed(false);
+    }
+    if (m_listenArmedSlot == slot) {
+        m_listenArmedSlot = -1;
+        m_listenTimeout->stop();
+        // Always drop the pulse on disarm. If Sequential Assign is on
+        // and the caller is going to auto-arm the next row, that
+        // re-arm path will call setPulseTarget(next) itself.
+        setPulseTarget(-1);
+    }
+}
+

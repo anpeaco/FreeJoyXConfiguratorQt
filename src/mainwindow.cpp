@@ -74,6 +74,15 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&m_postWriteFallbackTimer, &QTimer::timeout,
             this, &MainWindow::onPostWriteFallback);
 
+    // "Pending changes" poller. 1 Hz is fast enough for the user not
+    // to notice a delay between editing and the badge appearing, and
+    // cheap (a memcmp on ~1 KB plus a UI-flush fanout).
+    m_dirtyCheckTimer = new QTimer(this);
+    m_dirtyCheckTimer->setInterval(1000);
+    connect(m_dirtyCheckTimer, &QTimer::timeout,
+            this, &MainWindow::updatePendingChangesBadge);
+    m_dirtyCheckTimer->start();
+
     // window title -- single user-facing version. FORK_NAME stays in
     // version.h as the USB manufacturer-string filter; it isn't versioned.
     setWindowTitle(tr("%1 Configurator %2")
@@ -1061,10 +1070,19 @@ void MainWindow::UiReadFromConfig()
     m_shiftsTimersConfig->readFromConfig();
 
     m_buttonConfig->endConfigLoad();
+
+    // Successful Read: dev_config_t now matches the device. Reset the
+    // dirty baseline so the "Pending changes" badge stays down until
+    // the user makes an actual edit.
+    snapshotDeviceConfig();
 }
 
-void MainWindow::UiWriteToConfig()
+void MainWindow::flushUiToConfig()
 {
+    // Pure flush: fan out writeToConfig() to every tab widget so each
+    // widget's live UI state lands in dev_config_t. No side effects;
+    // safe to call from the dirty-state poller.
+
     // write pin config
     m_pinConfig->writeToConfig();
     // write axes config
@@ -1090,6 +1108,11 @@ void MainWindow::UiWriteToConfig()
     // references through freejoy::toRef/toAbs. Configurator-only
     // metadata; firmware allocates the bytes but never reads them.
     m_buttonConfig->captureBreakdownToConfig();
+}
+
+void MainWindow::UiWriteToConfig()
+{
+    flushUiToConfig();
 
     // remove device name from registry. sometimes windows does not update
     // the name in gaming devices and has to be deleted from the joy.cpl
@@ -1106,6 +1129,61 @@ void MainWindow::UiWriteToConfig()
         QSettings(path.arg(vidHex, pidHex), QSettings::NativeFormat).remove("OEMName");
         QSettings(path2.arg(vidHex, pidHex), QSettings::NativeFormat).remove("OEMName");
 #endif
+
+    // The write also resets the dirty baseline -- after Write completes
+    // the flushed dev_config_t equals what's now on the device.
+    snapshotDeviceConfig();
+}
+
+void MainWindow::snapshotDeviceConfig()
+{
+    /* Baseline against which the dirty-state poller compares the live
+     * dev_config_t. Call sites: after a Read completes (device bytes
+     * are in dev_config_t and have just been splashed into the UI) and
+     * after a Write flushes its dev_config_t to the wire (the device
+     * now has the bytes we just shipped). */
+    if (!gEnv.pDeviceConfig) {
+        m_haveDeviceConfigSnapshot = false;
+        m_deviceConfigSnapshot.clear();
+        return;
+    }
+    const dev_config_t &cfg = gEnv.pDeviceConfig->config;
+    m_deviceConfigSnapshot = QByteArray(
+        reinterpret_cast<const char *>(&cfg), sizeof(cfg));
+    m_haveDeviceConfigSnapshot = true;
+    // Reset the Write Config icon immediately at sync points instead of
+    // waiting for the next 1 Hz tick.
+    if (ui && ui->pushButton_WriteConfig) {
+        ui->pushButton_WriteConfig->setIcon(QIcon());
+        ui->pushButton_WriteConfig->setToolTip(QString());
+    }
+}
+
+void MainWindow::updatePendingChangesBadge()
+{
+    if (!m_haveDeviceConfigSnapshot || !gEnv.pDeviceConfig) return;
+    if (!ui || !ui->pushButton_WriteConfig) return;
+
+    flushUiToConfig();
+    const dev_config_t &cfg = gEnv.pDeviceConfig->config;
+    const bool changed = (m_deviceConfigSnapshot.size() != int(sizeof(cfg)))
+        || memcmp(m_deviceConfigSnapshot.constData(), &cfg, sizeof(cfg)) != 0;
+    const bool currentlyMarked = !ui->pushButton_WriteConfig->icon().isNull();
+    if (changed == currentlyMarked) return;
+    if (changed) {
+        // Subtle filled-dot icon (Lucide-style) signals "unsaved
+        // changes" the same way IDE tabs mark modified files.
+        QIcon dot(QStringLiteral(":/Images/icons/lucide/circle-modified.svg"));
+        ui->pushButton_WriteConfig->setIcon(dot);
+        ui->pushButton_WriteConfig->setIconSize(QSize(12, 12));
+        ui->pushButton_WriteConfig->setToolTip(
+            tr("Pending changes. The device still runs its previously-flashed "
+               "config; the live press preview reflects that, not your edits. "
+               "Click to write."));
+    } else {
+        ui->pushButton_WriteConfig->setIcon(QIcon());
+        ui->pushButton_WriteConfig->setToolTip(QString());
+    }
 }
 
 

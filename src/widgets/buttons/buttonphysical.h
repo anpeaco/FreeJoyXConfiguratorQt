@@ -19,6 +19,17 @@ public:
 
 signals:
     void physButtonPressed(int number);
+    /* Issue #39: distinct from physButtonPressed so the hardware-press
+     * path (state edge in phy_button_data) and the click path don't
+     * fold into the same handler. Sequential Assign uses tick-based
+     * edge detection for hardware presses (with debounce); routing
+     * the hardware press through this signal too would assign the
+     * same press twice -- once via tick, once via setButtonState's
+     * physButtonPressed emit. Clicks emit ONLY physCellClicked. */
+    void physCellClicked(int number);
+
+protected:
+    void mousePressEvent(QMouseEvent *event) override;
 
 private:
     Ui::ButtonPhysical *ui;

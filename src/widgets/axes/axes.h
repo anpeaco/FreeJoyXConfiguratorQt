@@ -4,6 +4,7 @@
 #include <QHash>
 #include <QMap>
 #include <QStringList>
+#include <QTimer>
 #include <QWidget>
 #include "axesextended.h"
 #include "axestobuttonsslider.h"
@@ -175,6 +176,11 @@ private:
     const QString m_kStartCalStr = tr("Calibrate");
     const QString m_kStopCalStr = tr("Stop && Save");
     AxesExtended *m_axesExtend;
+
+    /* Listen-for-input pulse on the source dropdown (UI_PATTERNS.md).
+     * Lazily allocated the first time setDetectArmed(true) is called. */
+    QTimer *m_pulseTimer = nullptr;
+    bool    m_pulseOn = false;
 
     QVector<int> m_mainSource_enumIndex;
 

@@ -353,7 +353,7 @@
            auto-set Info icon, rendered as a square reset-glyph icon
            button to match the calibration column's Reset button. -->
       <item row="0" column="0" colspan="13">
-       <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="1,0,0,0,1">
+       <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="1,0,0,1">
         <property name="spacing">
          <number>6</number>
         </property>
@@ -377,22 +377,12 @@
          </spacer>
         </item>
         <item>
-         <widget class="QCheckBox" name="checkBox_AutoPhysBut">
+         <widget class="QCheckBox" name="checkBox_SeqAssign">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Press a physical button to assign it to a logical one.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sequential Assign mode. When on, capturing a press on a row's target button automatically arms the next row, so a flurry of presses fills the logical buttons in order. Click a row's target button to start.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
-           <string>Automatically set physical button when pressed</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="InfoLabel" name="info_AutoPhysBut">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Press a physical button to assign it to a logical one.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string/>
+           <string>Sequential assign</string>
           </property>
          </widget>
         </item>

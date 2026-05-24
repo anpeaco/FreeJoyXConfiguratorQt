@@ -34,6 +34,14 @@ ButtonLogical::ButtonLogical(int buttonIndex, QWidget *parent)
     // drag. (Tooltip is set in the .ui file.)
     ui->label_DragHandle->setCursor(Qt::OpenHandCursor);
     ui->label_DragHandle->installEventFilter(this);
+
+    // Listen-for-input button (UI_PATTERNS.md). Toggling the button
+    // emits listenRequested(slot, armed); ButtonConfig owns the
+    // arbiter state (single armed slot, 5 s timeout, capture).
+    connect(ui->pushButton_Listen, &QPushButton::toggled,
+            this, [this](bool armed) {
+        emit listenRequested(m_buttonIndex, armed);
+    });
 }
 
 ButtonLogical::~ButtonLogical()
@@ -238,11 +246,82 @@ void ButtonLogical::setButtonState(bool state)
 void ButtonLogical::setPhysicButton(int buttonIndex)
 {
     ui->spinBox_PhysicalButtonNumber->setValue(buttonIndex + 1); // +1 !!!!
+    // Issue #39: after AutoPhysBut applies a press to this row, the
+    // spinbox should let go of focus so the user knows the assignment
+    // landed and needs to click another row to continue. Sequential
+    // Assign overrides this by calling focusPhysSpin() on the new
+    // target right after, so focus moves to the next row.
+    ui->spinBox_PhysicalButtonNumber->clearFocus();
+}
+
+void ButtonLogical::setPhysSpinReadOnly(bool readOnly)
+{
+    ui->spinBox_PhysicalButtonNumber->setReadOnly(readOnly);
+}
+
+void ButtonLogical::setPhysSpinWaiting(bool waiting)
+{
+    if (waiting) {
+        if (!m_pulseTimer) {
+            m_pulseTimer = new QTimer(this);
+            m_pulseTimer->setInterval(500);
+            connect(m_pulseTimer, &QTimer::timeout, this, [this]() {
+                m_pulseOn = !m_pulseOn;
+                ui->spinBox_PhysicalButtonNumber->setStyleSheet(
+                    m_pulseOn
+                    ? QStringLiteral("QSpinBox { background-color: rgba(64, 128, 255, 110); }")
+                    : QString());
+            });
+        }
+        if (!m_pulseTimer->isActive()) {
+            m_pulseOn = true;
+            ui->spinBox_PhysicalButtonNumber->setStyleSheet(
+                QStringLiteral("QSpinBox { background-color: rgba(64, 128, 255, 110); }"));
+            m_pulseTimer->start();
+        }
+    } else {
+        if (m_pulseTimer && m_pulseTimer->isActive()) {
+            m_pulseTimer->stop();
+        }
+        m_pulseOn = false;
+        ui->spinBox_PhysicalButtonNumber->setStyleSheet(QString());
+    }
+}
+
+void ButtonLogical::mousePressEvent(QMouseEvent *event)
+{
+    /* Issue #39: clicks that bubble up here -- i.e. didn't land on a
+     * child input widget -- count as a row selection. ButtonConfig
+     * uses this to retarget Sequential Assign mid-mode. event->ignore()
+     * keeps the existing behaviour for clicks that aren't intercepted
+     * by anything else (Qt will let the widget below handle them if
+     * any). */
+    if (event->button() == Qt::LeftButton) {
+        emit rowClicked(m_buttonIndex);
+    }
+    QWidget::mousePressEvent(event);
 }
 
 void ButtonLogical::setSourceBButton(int buttonIndex)
 {
     ui->spinBox_SourceB->setValue(buttonIndex + 1); // +1: spinBox 0 = "unset"
+    ui->spinBox_SourceB->clearFocus();
+}
+
+void ButtonLogical::focusPhysSpin()
+{
+    ui->spinBox_PhysicalButtonNumber->setFocus(Qt::OtherFocusReason);
+}
+
+void ButtonLogical::setListenArmed(bool armed)
+{
+    // Block toggled() so the visual sync from the ButtonConfig arbiter
+    // (disarming a previously-armed row when the user arms a new one,
+    // restoring after capture / timeout) doesn't loop back through
+    // listenRequested. Same QSignalBlocker pattern Axes::setDetectArmed
+    // uses.
+    QSignalBlocker blocker(ui->pushButton_Listen);
+    ui->pushButton_Listen->setChecked(armed);
 }
 
 int ButtonLogical::currentFocus() const
@@ -361,9 +440,11 @@ bool ButtonLogical::eventFilter(QObject *obj, QEvent *event)
         if (event->type() == QEvent::FocusIn) {
             freejoy_style::setRole(ui->spinBox_PhysicalButtonNumber, "role", "autoassign-focus");
             m_currentFocus = m_buttonIndex;
+            emit physSpinFocusChanged(m_buttonIndex, true);
         } else if (event->type() == QEvent::FocusOut){
             freejoy_style::clearRole(ui->spinBox_PhysicalButtonNumber, "role");
             m_currentFocus = -1;
+            emit physSpinFocusChanged(m_buttonIndex, false);
         }
     }
 
@@ -376,6 +457,36 @@ bool ButtonLogical::eventFilter(QObject *obj, QEvent *event)
         } else if (event->type() == QEvent::FocusOut) {
             freejoy_style::clearRole(ui->spinBox_SourceB, "role");
             m_currentFocusSrcB = -1;
+        }
+    }
+
+    /* Outside an auto-detect mode (AutoPhysBut / Sequential Assign,
+     * both of which flip the spinbox readOnly), clicking either spinbox
+     * should selectAll so typing a digit overwrites the previous value
+     * instead of inserting at the click position. Deferred via
+     * QTimer::singleShot(0) so Qt's mouse-press handler has finished
+     * positioning the caret before we override it. */
+    if (event->type() == QEvent::FocusIn
+        && (obj == ui->spinBox_PhysicalButtonNumber || obj == ui->spinBox_SourceB)) {
+        QFocusEvent *fe = static_cast<QFocusEvent *>(event);
+        QAbstractSpinBox *sb = static_cast<QAbstractSpinBox *>(obj);
+        if (fe->reason() == Qt::MouseFocusReason && !sb->isReadOnly()) {
+            QTimer::singleShot(0, sb, [sb]() { sb->selectAll(); });
+        }
+    }
+
+    /* Issue #39: in auto-detect mode (spinbox readOnly), clicking a
+     * cell that already has focus deactivates the listener -- clear
+     * focus, which stops the pulse and (in AutoPhysBut) drops the
+     * auto-fill target until the user clicks another cell. Consume the
+     * event so Qt's default handler doesn't immediately re-focus the
+     * widget on the same press. */
+    if (event->type() == QEvent::MouseButtonPress
+        && (obj == ui->spinBox_PhysicalButtonNumber || obj == ui->spinBox_SourceB)) {
+        QAbstractSpinBox *sb = static_cast<QAbstractSpinBox *>(obj);
+        if (sb->isReadOnly() && sb->hasFocus()) {
+            sb->clearFocus();
+            return true;
         }
     }
     return false;

@@ -3,6 +3,7 @@
 
 #include "common_types.h"
 #include <QPoint>
+#include <QTimer>
 #include <QWidget>
 
 #include "deviceconfig.h"
@@ -37,10 +38,35 @@ public:
     void setMaxPhysButtons(int maxPhysButtons);
     void setSpinBoxOnOff(int maxPhysButtons);
 
+    /* Issue #39: in auto-assign modes (AutoPhysBut OR Sequential Assign)
+     * the physical-button spinbox should not accept text entry, since
+     * the value is meant to be supplied by a button press, not the
+     * keyboard. The arrow buttons are also disabled by setReadOnly --
+     * that's intentional. */
+    void setPhysSpinReadOnly(bool readOnly);
+    /* Issue #39: when this row's physical-button spinbox is the active
+     * "waiting for input" target (the seq-assign target row, or the
+     * focused row under AutoPhysBut), pulse it so the user knows where
+     * the next press lands. The pulse is a slow blue tint cycle driven
+     * by a per-row QTimer. */
+    void setPhysSpinWaiting(bool waiting);
+
     void setButtonState(bool setState);
 
     void setPhysicButton(int buttonIndex);
     void setSourceBButton(int buttonIndex);
+    /* Issue #39: Sequential Assign uses this to move keyboard/UI
+     * focus to the next target row's physical-button spinbox after
+     * each successful assignment. The spinbox is read-only in seq
+     * mode, but focusing it still drives the pulse + autoassign-focus
+     * role so the user has a clear "next slot is here" indicator. */
+    void focusPhysSpin();
+
+    /* Listen-for-input pattern (see UI_PATTERNS.md). External visual
+     * sync from the ButtonConfig arbiter -- toggles the per-row target
+     * button's checked state without re-emitting toggled(), used on
+     * cross-row disarm, successful capture, and timeout. */
+    void setListenArmed(bool armed);
     void setAutoPhysBut(bool enabled);
     int currentFocus() const;
     int currentFocusSrcB() const;
@@ -84,6 +110,21 @@ signals:
     // ButtonConfig listens to rerun the per-physical coexistence filter
     // (Step 4: gesture button types).
     void physicalNumChanged(int buttonIndex);
+    /* Issue #39 (Sequential Assign): emitted when the user clicks on
+     * empty / non-interactive parts of the row (slot number label,
+     * drag handle, spacers). Clicks that land on a child input widget
+     * (combos, spinboxes, checkboxes) don't reach here because the
+     * child consumes them. ButtonConfig uses this to retarget the
+     * sequential-assign cursor mid-mode. */
+    void rowClicked(int buttonIndex);
+    /* Issue #39: emitted whenever the physical-button spinbox gains or
+     * loses focus. ButtonConfig uses it to move the pulse indicator
+     * to the focused row when AutoPhysBut is on. */
+    void physSpinFocusChanged(int buttonIndex, bool focused);
+    /* Listen-for-input (UI_PATTERNS.md): user clicked the per-row
+     * target button. ButtonConfig is the arbiter -- it decides
+     * whether to arm or cancel based on the current armed state. */
+    void listenRequested(int buttonIndex, bool armed);
 
 private slots:
     void editingOnOff(int value);
@@ -96,6 +137,7 @@ private:
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
 
 private:
     Ui::ButtonLogical *ui;
@@ -111,6 +153,9 @@ private:
 
     QVector<int> m_logicFunc_enumIndex;
     QVector<int> m_logicOp_enumIndex;
+
+    QTimer *m_pulseTimer = nullptr;   // owned QTimer, lazily allocated
+    bool    m_pulseOn = false;
 
     const deviceEnum_guiName_t m_timerList[TIMER_COUNT] = // order must be as in common_types.h!!!!!!!!!!!          // static ?
     {

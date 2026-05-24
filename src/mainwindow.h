@@ -183,6 +183,18 @@ private:
     bool m_debugIsEnable;
 
     bool m_deviceChanged;
+
+    /* "Pending changes" badge state. m_deviceConfigSnapshot is the
+     * byte image of dev_config_t at the moment of the last device sync
+     * (successful Read, or post-Write flush). m_haveDeviceConfigSnapshot
+     * gates the comparison so we don't flag the zero-initialised
+     * dev_config_t at startup as dirty against an empty snapshot.
+     * m_dirtyCheckTimer drives a 1 Hz poll that flushes the UI into
+     * dev_config_t and compares against the snapshot. */
+    QByteArray m_deviceConfigSnapshot;
+    bool       m_haveDeviceConfigSnapshot = false;
+    QTimer    *m_dirtyCheckTimer = nullptr;
+
     /* True between clicking Write Config and the next deviceConnected.
      * Lets hideConnectDeviceInfo show "Restarting..." instead of
      * "Disconnected" while the chip is re-enumerating after the write,
@@ -290,6 +302,26 @@ private:
 
     void UiReadFromConfig();
     void UiWriteToConfig();
+    /* Side-effect-free portion of UiWriteToConfig: fans out
+     * writeToConfig() to every tab widget and captures the breakdown
+     * snapshot into dev_config_t. Used by the dirty-state poller to
+     * compare the current edit state against the last device-sync'd
+     * snapshot without also clearing the Windows joystick OEMName
+     * registry cache, which UiWriteToConfig does as part of an actual
+     * write. */
+    void flushUiToConfig();
+
+    /* Persist a byte-copy of dev_config_t as the "last device-sync'd"
+     * baseline. Called after a successful Read (device -> dev_config_t)
+     * and after Write Config flushes its own dev_config_t to the wire.
+     * The dirty-state poller compares the live dev_config_t against
+     * this snapshot. */
+    void snapshotDeviceConfig();
+    /* Periodic check (1 Hz via m_dirtyCheckTimer). Flushes the UI
+     * into dev_config_t, memcmps against m_deviceConfigSnapshot, and
+     * shows/hides label_PendingChanges accordingly. No-op until a
+     * snapshot has been taken. */
+    void updatePendingChangesBadge();
 
     /* Returns true if every logical button slot using Function = Logic
      * has its operator and (for binary operators) Source B set to real

@@ -1,6 +1,7 @@
 #ifndef BUTTONCONFIG_H
 #define BUTTONCONFIG_H
 
+#include <QElapsedTimer>
 #include <QFrame>
 #include <QWidget>
 
@@ -137,8 +138,6 @@ private:
     QFrame *m_dropIndicator;
 
 private slots:
-    void on_checkBox_AutoPhysBut_toggled(bool checked);
-
     /* Toolbar "Clear All" button: confirms with the user, then resets
      * every dev_config_t.buttons[] slot to defaults (physical_num = -1,
      * type = NORMAL, src_b = -1, all flags / timers / shift / op zero)
@@ -146,6 +145,13 @@ private slots:
      * axes, shift register and timer config are deliberately left
      * untouched. */
     void on_pushButton_ClearAllLogical_clicked();
+
+    /* Sequential Assign mode (issue #39).
+     * Slot wired from checkBox_SeqAssign. When checked, capturing a
+     * press on a row's per-row target button automatically arms the
+     * next row, walking forward through the logical-button list. The
+     * default button type for each assignment is BUTTON_NORMAL. */
+    void on_checkBox_SeqAssign_toggled(bool checked);
 
 private:
     Ui::ButtonConfig *ui;
@@ -205,7 +211,6 @@ private:
     PhysBreakdown breakdownFromConfig() const;
 
     int m_logicButtonInFocus;
-    bool m_autoPhysButEnabled;
 
     void logicaButtonsCreator();
 
@@ -228,6 +233,42 @@ private:
     // physicalConflictFilter so both rules can be applied in a single pass.
     int  m_typeLimitCount[m_typeLimCount]{};
     bool m_typeAtCap[m_typeLimCount]{};
+
+    /* Listen-for-input arbiter (UI_PATTERNS.md). Per-row target button
+     * on each ButtonLogical hands off to here; we keep a single armed
+     * slot, 5 s one-shot timer, and on a phy-button rising edge while
+     * armed we assign the press to that slot and disarm. Tick-based
+     * edge detection in seqAssignTick consumes both this and the seq
+     * pipeline, gating on which mode is active. */
+    int     m_listenArmedSlot = -1;
+    QTimer *m_listenTimeout   = nullptr;
+    void onListenRequested(int slot, bool armed);
+    void onListenTimeout();
+    void listenDisarm(int slot);             // visual + state reset for one slot
+
+    /* Sequential Assign (issue #39) — state machine internals.
+     *
+     * buttonStateChanged() (fired once per paramsPacketReceived) runs
+     * seqAssignTick() which edge-detects newly-pressed bits in
+     * paramsRep->phy_button_data[] against m_seqPrevPhy[] and routes
+     * a single rising edge to the currently armed listener (when one
+     * is armed). Sequential Assign sits on top: m_seqActive simply
+     * means "auto-arm the next row after every successful capture". */
+    bool                m_seqActive            = false;
+    int                 m_seqLastAssignedSlot  = -1;  // for Backspace undo
+    uint8_t             m_seqPrevPhy[MAX_BUTTONS_NUM / 8]{};
+    bool                m_seqPrevPhyInit       = false;
+    QElapsedTimer       m_seqDebounceTimer;
+    bool                m_seqAssignWriting     = false; // suppresses self-triggered auto-exit
+
+    void seqAssignTick();                          // edge-detect + dispatch
+    void seqAssignUndo();                          // Backspace -- undo last
+
+    /* Issue #39: which row's spinbox is currently pulsing (-1 if none).
+     * Set by onListenRequested / listenDisarm so the pulse follows the
+     * armed row. */
+    int  m_pulseTargetSlot = -1;
+    void setPulseTarget(int slot);
 };
 
 #endif // BUTTONCONFIG_H
