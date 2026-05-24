@@ -588,7 +588,7 @@ QProgressBar::chunk:disabled {
         <property name="icon">
          <iconset resource="../../resources.qrc">
           <normaloff>:/Images/icons/lucide/target.svg</normaloff>
-          <normalon>:/Images/icons/lucide/crosshair.svg</normalon>
+          <normalon>:/Images/icons/lucide/radio.svg</normalon>
          </iconset>
         </property>
         <property name="iconSize">

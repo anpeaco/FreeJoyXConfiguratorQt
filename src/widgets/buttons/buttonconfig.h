@@ -240,11 +240,12 @@ private:
      * armed we assign the press to that slot and disarm. Tick-based
      * edge detection in seqAssignTick consumes both this and the seq
      * pipeline, gating on which mode is active. */
-    int     m_listenArmedSlot = -1;
-    QTimer *m_listenTimeout   = nullptr;
-    void onListenRequested(int slot, bool armed);
+    int     m_listenArmedSlot  = -1;
+    int     m_listenArmedField = 0;          // ButtonLogical::ListenField
+    QTimer *m_listenTimeout    = nullptr;
+    void onListenRequested(int slot, int field, bool armed);
     void onListenTimeout();
-    void listenDisarm(int slot);             // visual + state reset for one slot
+    void listenDisarm(int slot, int field);  // visual + state reset for one slot/field
 
     /* Sequential Assign (issue #39) — state machine internals.
      *
@@ -264,11 +265,12 @@ private:
     void seqAssignTick();                          // edge-detect + dispatch
     void seqAssignUndo();                          // Backspace -- undo last
 
-    /* Issue #39: which row's spinbox is currently pulsing (-1 if none).
-     * Set by onListenRequested / listenDisarm so the pulse follows the
-     * armed row. */
-    int  m_pulseTargetSlot = -1;
-    void setPulseTarget(int slot);
+    /* Issue #39: which row/field spinbox is currently pulsing
+     * (slot -1 == none). Set by onListenRequested / listenDisarm so the
+     * pulse follows the armed input. */
+    int  m_pulseTargetSlot  = -1;
+    int  m_pulseTargetField = 0;
+    void setPulseTarget(int slot, int field);
 };
 
 #endif // BUTTONCONFIG_H

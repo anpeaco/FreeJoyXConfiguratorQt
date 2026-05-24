@@ -12,6 +12,7 @@
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QPixmap>
+#include <QPushButton>
 
 int ButtonLogical::m_currentFocus = -1;
 int ButtonLogical::m_currentFocusSrcB = -1;
@@ -35,12 +36,18 @@ ButtonLogical::ButtonLogical(int buttonIndex, QWidget *parent)
     ui->label_DragHandle->setCursor(Qt::OpenHandCursor);
     ui->label_DragHandle->installEventFilter(this);
 
-    // Listen-for-input button (UI_PATTERNS.md). Toggling the button
-    // emits listenRequested(slot, armed); ButtonConfig owns the
-    // arbiter state (single armed slot, 5 s timeout, capture).
+    // Listen-for-input buttons (UI_PATTERNS.md). Toggling a button emits
+    // listenRequested(slot, field, armed); ButtonConfig owns the arbiter
+    // state (single armed slot/field, 5 s timeout, capture). The Source B
+    // button is only relevant on LOGIC rows -- updateLogicWidgetsEnabled
+    // enables/disables it alongside the Source B spinbox.
     connect(ui->pushButton_Listen, &QPushButton::toggled,
             this, [this](bool armed) {
-        emit listenRequested(m_buttonIndex, armed);
+        emit listenRequested(m_buttonIndex, ListenPhysical, armed);
+    });
+    connect(ui->pushButton_ListenB, &QPushButton::toggled,
+            this, [this](bool armed) {
+        emit listenRequested(m_buttonIndex, ListenSourceB, armed);
     });
 }
 
@@ -184,7 +191,28 @@ void ButtonLogical::updateLogicWidgetsEnabled()
     const bool isUnary  = (curOp == LOGIC_OP_NOT);
 
     ui->comboBox_LogicOp->setEnabled(physSet && isLogic);
-    ui->spinBox_SourceB->setEnabled(physSet && isLogic && !isUnary);
+    const bool srcBEnabled = physSet && isLogic && !isUnary;
+    ui->spinBox_SourceB->setEnabled(srcBEnabled);
+    // The Source B listen button follows the spinbox: only usable when
+    // Source B itself is. Disabling while armed would orphan the arbiter,
+    // so cancel any in-flight listen by unchecking (its toggled handler
+    // emits listenRequested(..., false), which ButtonConfig disarms).
+    if (!srcBEnabled && ui->pushButton_ListenB->isChecked()) {
+        ui->pushButton_ListenB->setChecked(false);
+    }
+    ui->pushButton_ListenB->setEnabled(srcBEnabled);
+    // Qt's default disabled styling barely dims an icon-only button.
+    // Fade it hard with an opacity effect so "Source B isn't bindable
+    // here" reads at a glance. Only (re)create the effect when the state
+    // actually flips to avoid churn on every updateLogicWidgetsEnabled.
+    const bool hasEffect = ui->pushButton_ListenB->graphicsEffect() != nullptr;
+    if (!srcBEnabled && !hasEffect) {
+        auto *eff = new QGraphicsOpacityEffect(ui->pushButton_ListenB);
+        eff->setOpacity(0.20);
+        ui->pushButton_ListenB->setGraphicsEffect(eff);
+    } else if (srcBEnabled && hasEffect) {
+        ui->pushButton_ListenB->setGraphicsEffect(nullptr);
+    }
 }
 
 void ButtonLogical::editingOnOff(int value)
@@ -254,37 +282,40 @@ void ButtonLogical::setPhysicButton(int buttonIndex)
     ui->spinBox_PhysicalButtonNumber->clearFocus();
 }
 
-void ButtonLogical::setPhysSpinReadOnly(bool readOnly)
+void ButtonLogical::setSpinWaiting(int field, bool waiting)
 {
-    ui->spinBox_PhysicalButtonNumber->setReadOnly(readOnly);
-}
+    QWidget *box = (field == ListenSourceB)
+        ? static_cast<QWidget *>(ui->spinBox_SourceB)
+        : static_cast<QWidget *>(ui->spinBox_PhysicalButtonNumber);
+    const QString pulseQss =
+        QStringLiteral("QSpinBox { background-color: rgba(64, 128, 255, 110); }");
 
-void ButtonLogical::setPhysSpinWaiting(bool waiting)
-{
     if (waiting) {
+        // Clear any previous pulse target first (e.g. switching fields).
+        if (m_pulseBox && m_pulseBox != box) {
+            m_pulseBox->setStyleSheet(QString());
+        }
+        m_pulseBox = box;
         if (!m_pulseTimer) {
             m_pulseTimer = new QTimer(this);
             m_pulseTimer->setInterval(500);
-            connect(m_pulseTimer, &QTimer::timeout, this, [this]() {
+            connect(m_pulseTimer, &QTimer::timeout, this, [this, pulseQss]() {
                 m_pulseOn = !m_pulseOn;
-                ui->spinBox_PhysicalButtonNumber->setStyleSheet(
-                    m_pulseOn
-                    ? QStringLiteral("QSpinBox { background-color: rgba(64, 128, 255, 110); }")
-                    : QString());
+                if (m_pulseBox) {
+                    m_pulseBox->setStyleSheet(m_pulseOn ? pulseQss : QString());
+                }
             });
         }
-        if (!m_pulseTimer->isActive()) {
-            m_pulseOn = true;
-            ui->spinBox_PhysicalButtonNumber->setStyleSheet(
-                QStringLiteral("QSpinBox { background-color: rgba(64, 128, 255, 110); }"));
-            m_pulseTimer->start();
-        }
+        m_pulseOn = true;
+        box->setStyleSheet(pulseQss);
+        if (!m_pulseTimer->isActive()) m_pulseTimer->start();
     } else {
         if (m_pulseTimer && m_pulseTimer->isActive()) {
             m_pulseTimer->stop();
         }
         m_pulseOn = false;
-        ui->spinBox_PhysicalButtonNumber->setStyleSheet(QString());
+        box->setStyleSheet(QString());
+        if (m_pulseBox == box) m_pulseBox = nullptr;
     }
 }
 
@@ -313,15 +344,18 @@ void ButtonLogical::focusPhysSpin()
     ui->spinBox_PhysicalButtonNumber->setFocus(Qt::OtherFocusReason);
 }
 
-void ButtonLogical::setListenArmed(bool armed)
+void ButtonLogical::setListenArmed(int field, bool armed)
 {
     // Block toggled() so the visual sync from the ButtonConfig arbiter
     // (disarming a previously-armed row when the user arms a new one,
     // restoring after capture / timeout) doesn't loop back through
     // listenRequested. Same QSignalBlocker pattern Axes::setDetectArmed
     // uses.
-    QSignalBlocker blocker(ui->pushButton_Listen);
-    ui->pushButton_Listen->setChecked(armed);
+    QPushButton *btn = (field == ListenSourceB)
+        ? ui->pushButton_ListenB
+        : ui->pushButton_Listen;
+    QSignalBlocker blocker(btn);
+    btn->setChecked(armed);
 }
 
 int ButtonLogical::currentFocus() const

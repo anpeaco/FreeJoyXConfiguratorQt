@@ -38,18 +38,17 @@ public:
     void setMaxPhysButtons(int maxPhysButtons);
     void setSpinBoxOnOff(int maxPhysButtons);
 
-    /* Issue #39: in auto-assign modes (AutoPhysBut OR Sequential Assign)
-     * the physical-button spinbox should not accept text entry, since
-     * the value is meant to be supplied by a button press, not the
-     * keyboard. The arrow buttons are also disabled by setReadOnly --
-     * that's intentional. */
-    void setPhysSpinReadOnly(bool readOnly);
-    /* Issue #39: when this row's physical-button spinbox is the active
-     * "waiting for input" target (the seq-assign target row, or the
-     * focused row under AutoPhysBut), pulse it so the user knows where
-     * the next press lands. The pulse is a slow blue tint cycle driven
-     * by a per-row QTimer. */
-    void setPhysSpinWaiting(bool waiting);
+    /* Listen-for-input field discriminator (UI_PATTERNS.md). A logical
+     * row has two bindable physical inputs: its own physical button
+     * (Source A / physical_num) and, for LOGIC rows, Source B (src_b).
+     * Each has its own target button. */
+    enum ListenField { ListenPhysical = 0, ListenSourceB = 1 };
+
+    /* Issue #39: when one of this row's input spinboxes is the active
+     * "waiting for input" target, pulse it so the user knows where the
+     * next press lands. Slow blue tint cycle driven by a per-row QTimer.
+     * `field` picks the physical-button or Source B spinbox. */
+    void setSpinWaiting(int field, bool waiting);
 
     void setButtonState(bool setState);
 
@@ -63,10 +62,10 @@ public:
     void focusPhysSpin();
 
     /* Listen-for-input pattern (see UI_PATTERNS.md). External visual
-     * sync from the ButtonConfig arbiter -- toggles the per-row target
-     * button's checked state without re-emitting toggled(), used on
-     * cross-row disarm, successful capture, and timeout. */
-    void setListenArmed(bool armed);
+     * sync from the ButtonConfig arbiter -- toggles the given field's
+     * target button checked state without re-emitting toggled(), used
+     * on cross-row disarm, successful capture, and timeout. */
+    void setListenArmed(int field, bool armed);
     void setAutoPhysBut(bool enabled);
     int currentFocus() const;
     int currentFocusSrcB() const;
@@ -123,8 +122,9 @@ signals:
     void physSpinFocusChanged(int buttonIndex, bool focused);
     /* Listen-for-input (UI_PATTERNS.md): user clicked the per-row
      * target button. ButtonConfig is the arbiter -- it decides
-     * whether to arm or cancel based on the current armed state. */
-    void listenRequested(int buttonIndex, bool armed);
+     * whether to arm or cancel based on the current armed state.
+     * `field` is ListenPhysical or ListenSourceB. */
+    void listenRequested(int buttonIndex, int field, bool armed);
 
 private slots:
     void editingOnOff(int value);
@@ -154,8 +154,9 @@ private:
     QVector<int> m_logicFunc_enumIndex;
     QVector<int> m_logicOp_enumIndex;
 
-    QTimer *m_pulseTimer = nullptr;   // owned QTimer, lazily allocated
-    bool    m_pulseOn = false;
+    QTimer  *m_pulseTimer = nullptr;   // owned QTimer, lazily allocated
+    bool     m_pulseOn = false;
+    QWidget *m_pulseBox = nullptr;     // spinbox currently pulsing (phys or srcB)
 
     const deviceEnum_guiName_t m_timerList[TIMER_COUNT] = // order must be as in common_types.h!!!!!!!!!!!          // static ?
     {

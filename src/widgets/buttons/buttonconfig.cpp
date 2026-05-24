@@ -49,8 +49,9 @@ ButtonConfig::ButtonConfig(QWidget *parent)
         // is covered via functionTypeChanged below).
         connect(m_logicButtonPtrList[i], &ButtonLogical::physicalNumChanged,
                 this, [this](int){ physicalConflictFilter(); });
-        // Listen-for-input target button (UI_PATTERNS.md). The arbiter
-        // logic lives in onListenRequested.
+        // Listen-for-input target buttons (UI_PATTERNS.md), both the
+        // physical-button and Source B fields. The arbiter logic lives
+        // in onListenRequested.
         connect(m_logicButtonPtrList[i], &ButtonLogical::listenRequested,
                 this, &ButtonConfig::onListenRequested);
     }
@@ -359,16 +360,23 @@ void ButtonConfig::physButtonsCreator(int count)
                         return;
                     }
                     const int target = m_listenArmedSlot;
-                    listenDisarm(target);
+                    const int field  = m_listenArmedField;
+                    listenDisarm(target, field);
                     button_t &slot = gEnv.pDeviceConfig->config.buttons[target];
-                    slot.physical_num = buttonIndex;
+                    if (field == ButtonLogical::ListenSourceB) {
+                        slot.src_b = buttonIndex;
+                    } else {
+                        slot.physical_num = buttonIndex;
+                    }
                     m_seqAssignWriting = true;
                     m_logicButtonPtrList[target]->readFromConfig();
                     m_seqAssignWriting = false;
                     physicalConflictFilter();
-                    m_seqLastAssignedSlot = target;
-                    if (m_seqActive && target + 1 < m_logicButtonPtrList.size()) {
-                        onListenRequested(target + 1, true);
+                    if (field == ButtonLogical::ListenPhysical) {
+                        m_seqLastAssignedSlot = target;
+                        if (m_seqActive && target + 1 < m_logicButtonPtrList.size()) {
+                            onListenRequested(target + 1, ButtonLogical::ListenPhysical, true);
+                        }
                     }
                 });
             slot++;
@@ -1021,20 +1029,27 @@ void ButtonConfig::seqAssignTick()
         return;
     }
     const int target = m_listenArmedSlot;
-    listenDisarm(target);
+    const int field  = m_listenArmedField;
+    listenDisarm(target, field);
     button_t &slot = gEnv.pDeviceConfig->config.buttons[target];
-    slot.physical_num = risingPhys;
+    if (field == ButtonLogical::ListenSourceB) {
+        slot.src_b = risingPhys;
+    } else {
+        slot.physical_num = risingPhys;
+    }
     m_seqAssignWriting = true;
     m_logicButtonPtrList[target]->readFromConfig();
     m_seqAssignWriting = false;
     physicalConflictFilter();
-    m_seqLastAssignedSlot = target;
     m_seqDebounceTimer.start();
 
-    // Sequential Assign: auto-arm the next row's listener so a
-    // continuous press flurry walks forward through the list.
-    if (m_seqActive && target + 1 < m_logicButtonPtrList.size()) {
-        onListenRequested(target + 1, true);
+    // Sequential Assign walks the *physical-button* field forward only;
+    // Source B captures are always single-shot.
+    if (field == ButtonLogical::ListenPhysical) {
+        m_seqLastAssignedSlot = target;
+        if (m_seqActive && target + 1 < m_logicButtonPtrList.size()) {
+            onListenRequested(target + 1, ButtonLogical::ListenPhysical, true);
+        }
     }
 }
 
@@ -1053,19 +1068,20 @@ void ButtonConfig::seqAssignUndo()
     m_seqLastAssignedSlot = -1;
 }
 
-void ButtonConfig::setPulseTarget(int slot)
+void ButtonConfig::setPulseTarget(int slot, int field)
 {
-    if (slot == m_pulseTargetSlot) return;
+    if (slot == m_pulseTargetSlot && field == m_pulseTargetField) return;
     if (m_pulseTargetSlot >= 0
         && m_pulseTargetSlot < m_logicButtonPtrList.size()
         && m_logicButtonPtrList[m_pulseTargetSlot]) {
-        m_logicButtonPtrList[m_pulseTargetSlot]->setPhysSpinWaiting(false);
+        m_logicButtonPtrList[m_pulseTargetSlot]->setSpinWaiting(m_pulseTargetField, false);
     }
     m_pulseTargetSlot = slot;
+    m_pulseTargetField = field;
     if (m_pulseTargetSlot >= 0
         && m_pulseTargetSlot < m_logicButtonPtrList.size()
         && m_logicButtonPtrList[m_pulseTargetSlot]) {
-        m_logicButtonPtrList[m_pulseTargetSlot]->setPhysSpinWaiting(true);
+        m_logicButtonPtrList[m_pulseTargetSlot]->setSpinWaiting(m_pulseTargetField, true);
     }
 }
 
@@ -1073,19 +1089,22 @@ void ButtonConfig::setPulseTarget(int slot)
 // Listen-for-input arbiter (UI_PATTERNS.md)
 // ------------------------------------------------------------------
 
-void ButtonConfig::onListenRequested(int slot, bool armed)
+void ButtonConfig::onListenRequested(int slot, int field, bool armed)
 {
     if (armed) {
-        // Disarm any previously armed row first -- single-armed invariant.
-        if (m_listenArmedSlot >= 0 && m_listenArmedSlot != slot) {
-            listenDisarm(m_listenArmedSlot);
+        // Disarm any previously armed row/field first -- single-armed
+        // invariant across the whole tab.
+        if (m_listenArmedSlot >= 0
+            && (m_listenArmedSlot != slot || m_listenArmedField != field)) {
+            listenDisarm(m_listenArmedSlot, m_listenArmedField);
         }
         m_listenArmedSlot = slot;
+        m_listenArmedField = field;
         // Visual sync: a no-op when triggered by the user clicking the
         // row's target button (already checked), but required for the
         // programmatic auto-arm path Sequential Assign uses to advance.
         if (slot >= 0 && slot < m_logicButtonPtrList.size()) {
-            m_logicButtonPtrList[slot]->setListenArmed(true);
+            m_logicButtonPtrList[slot]->setListenArmed(field, true);
         }
         // Snapshot the live phy bits so a button the user is *already*
         // holding when they arm the listener doesn't immediately count
@@ -1094,12 +1113,12 @@ void ButtonConfig::onListenRequested(int slot, bool armed)
         const params_report_t *paramsRep = &gEnv.pDeviceConfig->paramsReport;
         memcpy(m_seqPrevPhy, paramsRep->phy_button_data, sizeof(m_seqPrevPhy));
         m_seqPrevPhyInit = true;
-        setPulseTarget(slot);
+        setPulseTarget(slot, field);
         m_listenTimeout->start();
     } else {
-        // User toggled the same row's button off before the timer fired.
-        if (m_listenArmedSlot == slot) {
-            listenDisarm(slot);
+        // User toggled the same row/field's button off before the timer fired.
+        if (m_listenArmedSlot == slot && m_listenArmedField == field) {
+            listenDisarm(slot, field);
         }
     }
 }
@@ -1107,22 +1126,22 @@ void ButtonConfig::onListenRequested(int slot, bool armed)
 void ButtonConfig::onListenTimeout()
 {
     if (m_listenArmedSlot < 0) return;
-    listenDisarm(m_listenArmedSlot);
+    listenDisarm(m_listenArmedSlot, m_listenArmedField);
 }
 
-void ButtonConfig::listenDisarm(int slot)
+void ButtonConfig::listenDisarm(int slot, int field)
 {
     if (slot >= 0 && slot < m_logicButtonPtrList.size()
         && m_logicButtonPtrList[slot]) {
-        m_logicButtonPtrList[slot]->setListenArmed(false);
+        m_logicButtonPtrList[slot]->setListenArmed(field, false);
     }
-    if (m_listenArmedSlot == slot) {
+    if (m_listenArmedSlot == slot && m_listenArmedField == field) {
         m_listenArmedSlot = -1;
         m_listenTimeout->stop();
         // Always drop the pulse on disarm. If Sequential Assign is on
         // and the caller is going to auto-arm the next row, that
         // re-arm path will call setPulseTarget(next) itself.
-        setPulseTarget(-1);
+        setPulseTarget(-1, ButtonLogical::ListenPhysical);
     }
 }
 
