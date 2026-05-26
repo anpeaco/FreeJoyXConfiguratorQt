@@ -113,6 +113,7 @@ HEADERS += \
     configtofile.h \
     converter.h \
     deviceconfig.h \
+    devicesync.h \
     dialogs/flashconfirmationdialog.h \
     dialogs/flashprogressdialog.h \
     flash/devicetransitionwatcher.h \

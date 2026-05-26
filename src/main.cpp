@@ -15,6 +15,7 @@
 #include "global.h"
 GlobalEnvironment gEnv;
 #include "deviceconfig.h"
+#include "devicesync.h"
 
 // Get the default Qt message handler.
 static const QtMessageHandler QT_DEFAULT_MESSAGE_HANDLER = qInstallMessageHandler(nullptr);
@@ -70,11 +71,13 @@ int main(int argc, char *argv[])
     QSettings appSettings(docLoc + "FreeJoySettings.conf", QSettings::IniFormat);
 
     DeviceConfig deviceConfig;
+    DeviceSync deviceSync;
     QTranslator translator;
 
     // global
     gEnv.pAppSettings = &appSettings;
     gEnv.pDeviceConfig = &deviceConfig;
+    gEnv.pDeviceSync = &deviceSync;
     gEnv.pTranslator = &translator;
 
     qInstallMessageHandler(CustomMessageHandler);

@@ -22,6 +22,7 @@
 #include "common_defines.h"
 #include "global.h"
 #include "deviceconfig.h"
+#include "devicesync.h"
 #include "firmwareimage.h"
 #include "version.h"
 #include "dialogs/flashconfirmationdialog.h"
@@ -55,6 +56,14 @@ MainWindow::MainWindow(QWidget *parent)
     timer.start();
 
     ui->setupUi(this);
+
+    /* Hidden for now: the one-click "Upgrade firmware" affordance is parked
+     * while we settle the flash flow. The Advanced Settings -> Firmware
+     * flasher remains the way to flash. The supporting machinery
+     * (refreshUpgradeButtonState / on_pushButton_UpgradeFirmware_clicked /
+     * findUpgradeFirmwarePath) is left intact, so restoring it is just
+     * deleting this line. */
+    ui->pushButton_UpgradeFirmware->hide();
 
     /* Cache the buttons' default text BEFORE any code path mutates
      * them. configSent / configReceived restore the button to this
@@ -419,6 +428,12 @@ void MainWindow::hideConnectDeviceInfo()
     } else {
         ui->label_DeviceStatus->setText(tr("Disconnected"));
         freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-disconnected");
+        // Genuine disconnect (not a post-write re-enumeration): the next
+        // device plugged in may be a different board, so invalidate any
+        // device-derived caches until the user re-reads. Skipped while
+        // m_postWriteRestarting -- that's the same board coming back with
+        // the config we just wrote, whose map configSent already captured.
+        if (gEnv.pDeviceSync) gEnv.pDeviceSync->notifyDesynced(DeviceSync::Reason::Disconnected);
     }
     blockWRConfigToDevice(true);
     ui->pushButton_UpgradeFirmware->setDisabled(true);
@@ -1358,6 +1373,10 @@ void MainWindow::configReceived(bool success)
     if (success == true)
     {
         UiReadFromConfig();
+        // Working config now matches the device's flashed config -- tell the
+        // app-wide hub so device-derived caches (e.g. AxesConfig's auto-detect
+        // source map) refresh from one place.
+        if (gEnv.pDeviceSync) gEnv.pDeviceSync->notifySynced(DeviceSync::Reason::ReadConfig);
         // curves pointer activated
         m_axesCurvesConfig->deviceStatus(true);
 
@@ -1404,6 +1423,10 @@ void MainWindow::configSent(bool success)
 
     if (success == true)
     {
+        // The device now runs the config we just wrote, so the working
+        // config matches the device again -- refresh device-derived caches.
+        if (gEnv.pDeviceSync) gEnv.pDeviceSync->notifySynced(DeviceSync::Reason::WriteConfig);
+
         ui->pushButton_WriteConfig->setText(tr("Sent"));
         freejoy_style::setRole(ui->pushButton_WriteConfig, "feedback", "success");
 

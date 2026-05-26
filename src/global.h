@@ -5,6 +5,7 @@
 #include <QString>
 
 class DeviceConfig;
+class DeviceSync;
 class QSettings;
 class DebugWindow;
 class QTranslator;
@@ -16,6 +17,7 @@ struct GlobalEnvironment
 {
     QElapsedTimer *pApp_start_time = nullptr;
     DeviceConfig *pDeviceConfig = nullptr;
+    DeviceSync *pDeviceSync = nullptr;   // app-wide device-sync signal hub
     QSettings *pAppSettings = nullptr;  // why is this here?
     DebugWindow *pDebugWindow = nullptr;
     QTranslator *pTranslator = nullptr;
