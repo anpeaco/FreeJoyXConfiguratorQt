@@ -60,9 +60,17 @@ void ShiftRegisters::onButtonCountChanged(int count)
         m_syncing = false;
     }
 
+    /* Update m_buttonsCount BEFORE emitting, for the same reason as
+     * Axes::a2bSpinBoxChanged: buttonCountChanged is a direct connection to
+     * ShiftRegistersConfig::shiftRegButtonsCalc, which rebuilds the per-register
+     * breakdown by reading each register's buttonCount() (== m_buttonsCount).
+     * Updating after the emit made this register report its stale count, so its
+     * "Shift register N" range came out short by the latest increment and the
+     * trailing button leaked into the next category. */
     if (ui->spinBox_ButtonCount->isEnabled() == true) {
-        emit buttonCountChanged(count, m_buttonsCount);
+        const int previous = m_buttonsCount;
         m_buttonsCount = count;
+        emit buttonCountChanged(count, previous);
     }
 }
 
