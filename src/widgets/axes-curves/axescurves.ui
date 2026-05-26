@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string notr="true">Form</string>
   </property>
   <layout class="QGridLayout" name="layoutG_AxisCurve" rowstretch="0,1,0,1,0,1,0,1" columnstretch="1,4,1">
    <property name="leftMargin">
