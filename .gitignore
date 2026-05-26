@@ -26,4 +26,10 @@ tests/.qmake.stash
 build_log.txt
 build_*.log
 screenshot_*.png
-/.claude/settings.local.json
+# local tooling / agent config (not part of the project)
+/.claude/
+/.agents/
+/skills-lock.json
+# local firmware binaries + test scratch output
+/Firmware/
+tests/*.txt
