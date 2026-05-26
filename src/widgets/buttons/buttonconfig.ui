@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string notr="true">Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout" columnstretch="5,10">
    <property name="leftMargin">
@@ -59,7 +59,45 @@
       <property name="verticalSpacing">
        <number>0</number>
       </property>
+      <item row="1" column="2">
+       <widget class="QLabel" name="label_ListenHeader">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size><width>26</width><height>0</height></size>
+        </property>
+        <property name="maximumSize">
+         <size><width>26</width><height>16777215</height></size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
       <item row="1" column="9">
+       <widget class="QLabel" name="label_ListenBHeader">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size><width>26</width><height>0</height></size>
+        </property>
+        <property name="maximumSize">
+         <size><width>26</width><height>16777215</height></size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="11">
        <widget class="QLabel" name="label_4">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -81,7 +119,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="10">
+      <item row="1" column="12">
        <widget class="QLabel" name="label_3">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -103,7 +141,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="11">
+      <item row="1" column="13">
        <widget class="QLabel" name="label_2">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -125,7 +163,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
+      <item row="1" column="3">
        <widget class="QLabel" name="label_8">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -147,7 +185,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="12">
+      <item row="1" column="14">
        <widget class="QLabel" name="label_9">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -160,7 +198,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="6">
+      <item row="1" column="7">
        <widget class="QLabel" name="label_5">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -182,7 +220,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="7">
+      <item row="1" column="8">
        <widget class="QLabel" name="label_LogicOp">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -204,7 +242,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="8">
+      <item row="1" column="10">
        <widget class="QLabel" name="label_SourceB">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -226,7 +264,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="5">
+      <item row="1" column="6">
        <widget class="QLabel" name="label_6">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -257,7 +295,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="4">
+      <item row="1" column="5">
        <widget class="QLabel" name="label_10">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -317,7 +355,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="3">
+      <item row="1" column="4">
        <widget class="QLabel" name="label_7">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -352,8 +390,8 @@
            "Clear All" text; relocated to sit immediately after the
            auto-set Info icon, rendered as a square reset-glyph icon
            button to match the calibration column's Reset button. -->
-      <item row="0" column="0" colspan="13">
-       <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="1,0,0,1">
+      <item row="0" column="0" colspan="15">
+       <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="1,0,1">
         <property name="spacing">
          <number>6</number>
         </property>
@@ -375,16 +413,6 @@
            </size>
           </property>
          </spacer>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="checkBox_SeqAssign">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sequential Assign mode. When on, capturing a press on a row's target button automatically arms the next row, so a flurry of presses fills the logical buttons in order. Click a row's target button to start.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Sequential assign</string>
-          </property>
-         </widget>
         </item>
         <item>
          <widget class="QPushButton" name="pushButton_ClearAllLogical">
@@ -426,7 +454,7 @@
         </item>
        </layout>
       </item>
-      <item row="2" column="0" colspan="13">
+      <item row="2" column="0" colspan="15">
        <widget class="QScrollArea" name="scrollArea_LogButtons">
         <property name="frameShape">
          <enum>QFrame::NoFrame</enum>

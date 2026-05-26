@@ -1,6 +1,9 @@
 #include "buttonconfig.h"
 #include "ui_buttonconfig.h"
 #include "style_helpers.h"
+#include <QApplication>
+#include <QHideEvent>
+#include <QMouseEvent>
 #include <QTimer>
 #include <QSettings>
 #include <QDebug>
@@ -50,10 +53,23 @@ ButtonConfig::ButtonConfig(QWidget *parent)
         connect(m_logicButtonPtrList[i], &ButtonLogical::physicalNumChanged,
                 this, [this](int){ physicalConflictFilter(); });
         // Listen-for-input target buttons (UI_PATTERNS.md), both the
-        // physical-button and Source B fields. The arbiter logic lives
-        // in onListenRequested.
-        connect(m_logicButtonPtrList[i], &ButtonLogical::listenRequested,
-                this, &ButtonConfig::onListenRequested);
+        // physical-button and Source B fields. Single click toggles a
+        // one-shot arm (onListenClicked); double click on the physical
+        // field starts an auto-sequence walk (onListenSequence). The
+        // arm/disarm arbiter itself lives in onListenRequested.
+        connect(m_logicButtonPtrList[i], &ButtonLogical::listenClicked,
+                this, &ButtonConfig::onListenClicked);
+        connect(m_logicButtonPtrList[i], &ButtonLogical::listenSequenceRequested,
+                this, &ButtonConfig::onListenSequence);
+        // Field became unavailable (e.g. Source B leaving LOGIC) while
+        // armed: drop the arm so the arbiter isn't left pointing at a
+        // disabled input.
+        connect(m_logicButtonPtrList[i], &ButtonLogical::listenForceDisarm,
+                this, [this](int slot, int field) {
+            if (m_listenArmedSlot == slot && m_listenArmedField == field) {
+                listenDisarm(slot, field);
+            }
+        });
     }
 #endif
     logicaButtonsCreator();
@@ -83,12 +99,15 @@ ButtonConfig::ButtonConfig(QWidget *parent)
     connect(m_listenTimeout, &QTimer::timeout,
             this, &ButtonConfig::onListenTimeout);
 
-    // Sequential Assign (issue #39): purely toggles m_seqActive. The
-    // walk happens inside seqAssignTick / physCellClicked when a
-    // per-row listener captures a press; if m_seqActive is true at
-    // capture time the next row gets auto-armed.
-    connect(ui->checkBox_SeqAssign, &QCheckBox::toggled,
-            this, &ButtonConfig::on_checkBox_SeqAssign_toggled);
+    // Auto-sequence (issue #39, reworked): entered by double-clicking a
+    // row's target button (onListenSequence), not a checkbox. While
+    // m_seqActive, every successful capture in seqAssignTick auto-arms
+    // the next row, walking forward through the logical-button list.
+
+    // Escape -- cancel any active arm / auto-sequence walk.
+    auto *scEsc = new QShortcut(QKeySequence(Qt::Key_Escape), this);
+    scEsc->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(scEsc, &QShortcut::activated, this, &ButtonConfig::seqCancel);
 
     // Backspace -- undo the last sequence assignment.
     auto *scUndo = new QShortcut(QKeySequence(Qt::Key_Backspace), this);
@@ -657,6 +676,22 @@ void ButtonConfig::writeToConfig()
 
 bool ButtonConfig::eventFilter(QObject *obj, QEvent *event)
 {
+    // Click-away watch (installed on qApp only while armed / mid-walk):
+    // a press on anything other than a row's target button cancels the
+    // arm / auto-sequence. Purely observational -- never consume, so it
+    // can't break normal clicking. The hardware capture is a HID poll,
+    // not a mouse event, so it's unaffected.
+    if (event->type() == QEvent::MouseButtonPress
+        && (m_listenArmedSlot >= 0 || m_seqActive)) {
+        if (QWidget *w = qobject_cast<QWidget *>(obj)) {
+            const QString n = w->objectName();
+            if (n != QLatin1String("pushButton_Listen")
+                && n != QLatin1String("pushButton_ListenB")) {
+                seqCancel();
+            }
+        }
+    }
+
     if (obj != ui->scrollAreaWidgetContents) {
         return QWidget::eventFilter(obj, event);
     }
@@ -982,12 +1017,49 @@ void ButtonConfig::moveButton(int from, int to)
 // list. m_seqActive alone (without any row armed) does nothing.
 // ------------------------------------------------------------------
 
-void ButtonConfig::on_checkBox_SeqAssign_toggled(bool checked)
+void ButtonConfig::onListenClicked(int slot, int field)
 {
-    m_seqActive = checked;
-    // Turning seq off mid-walk leaves the currently armed row alone --
-    // the user might still want to capture into it. Just stop auto-
-    // advancing afterwards.
+    // A single click ends any auto-sequence walk (the explicit "click
+    // again to turn it off" gesture), then toggles a one-shot arm on the
+    // clicked row/field: clicking the already-armed button cancels it;
+    // clicking any other arm button arms that row (disarming the
+    // previous one inside onListenRequested).
+    m_seqActive = false;
+    if (m_listenArmedSlot == slot && m_listenArmedField == field) {
+        listenDisarm(slot, field);
+    } else {
+        onListenRequested(slot, field, true);
+    }
+}
+
+void ButtonConfig::onListenSequence(int slot, int field)
+{
+    // The walk only makes sense for the physical-button field --
+    // seqAssignTick advances physical_num only. A double click on
+    // Source B falls back to a plain one-shot arm.
+    if (field != ButtonLogical::ListenPhysical) {
+        onListenClicked(slot, field);
+        return;
+    }
+    m_seqActive = true;
+    onListenRequested(slot, ButtonLogical::ListenPhysical, true);
+}
+
+void ButtonConfig::seqCancel()
+{
+    m_seqActive = false;
+    if (m_listenArmedSlot >= 0) {
+        listenDisarm(m_listenArmedSlot, m_listenArmedField);
+    }
+    qApp->removeEventFilter(this);
+}
+
+void ButtonConfig::hideEvent(QHideEvent *event)
+{
+    // Tab switch / window hide aborts an in-progress arm or walk so the
+    // watcher doesn't soak a stray press after the user has moved on.
+    seqCancel();
+    QWidget::hideEvent(event);
 }
 
 void ButtonConfig::seqAssignTick()
@@ -1100,11 +1172,20 @@ void ButtonConfig::onListenRequested(int slot, int field, bool armed)
         }
         m_listenArmedSlot = slot;
         m_listenArmedField = field;
+        // Watch for a click on any other control (or tab switch) while
+        // armed -- it cancels the arm / walk. Installed on qApp so the
+        // press is seen wherever it lands; removed again on full disarm.
+        // Re-installing is idempotent (Qt just moves the filter to front).
+        qApp->installEventFilter(this);
         // Visual sync: a no-op when triggered by the user clicking the
         // row's target button (already checked), but required for the
         // programmatic auto-arm path Sequential Assign uses to advance.
         if (slot >= 0 && slot < m_logicButtonPtrList.size()) {
-            m_logicButtonPtrList[slot]->setListenArmed(field, true);
+            m_logicButtonPtrList[slot]->setListenArmed(field, true, m_seqActive);
+            // Keep the armed row in view: during an auto-sequence walk the
+            // next row is auto-armed and may be off-screen. ensureWidgetVisible
+            // is a no-op when the row is already visible (e.g. a manual arm).
+            ui->scrollArea_LogButtons->ensureWidgetVisible(m_logicButtonPtrList[slot], 0, 10);
         }
         // Snapshot the live phy bits so a button the user is *already*
         // holding when they arm the listener doesn't immediately count
@@ -1126,7 +1207,10 @@ void ButtonConfig::onListenRequested(int slot, int field, bool armed)
 void ButtonConfig::onListenTimeout()
 {
     if (m_listenArmedSlot < 0) return;
-    listenDisarm(m_listenArmedSlot, m_listenArmedField);
+    // 5 s with no press ends the whole interaction, including any
+    // auto-sequence walk -- seqCancel disarms, clears m_seqActive and
+    // drops the click-away watch.
+    seqCancel();
 }
 
 void ButtonConfig::listenDisarm(int slot, int field)
@@ -1142,6 +1226,12 @@ void ButtonConfig::listenDisarm(int slot, int field)
         // and the caller is going to auto-arm the next row, that
         // re-arm path will call setPulseTarget(next) itself.
         setPulseTarget(-1, ButtonLogical::ListenPhysical);
+        // Once fully idle (nothing armed, no walk pending), stop watching
+        // for click-away. During an auto-sequence advance m_seqActive is
+        // still true, so the filter stays installed across the re-arm.
+        if (!m_seqActive) {
+            qApp->removeEventFilter(this);
+        }
     }
 }
 

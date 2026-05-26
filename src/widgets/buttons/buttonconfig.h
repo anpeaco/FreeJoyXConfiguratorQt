@@ -116,8 +116,16 @@ protected:
 protected:
     /* Receives drag/drop events on scrollAreaWidgetContents (which we
      * setAcceptDrops on in the ctor). Source MIME identifies the row
-     * being dragged; the cursor Y position picks the target slot. */
+     * being dragged; the cursor Y position picks the target slot.
+     * Also acts as an application-wide press watch while a listen arm
+     * is active: a click on any widget that isn't a row's target button
+     * cancels the arm / auto-sequence walk (installed on qApp only while
+     * armed; the press is observed, never consumed). */
     bool eventFilter(QObject *obj, QEvent *event) override;
+
+    /* Switching away from the Button Config tab (or hiding the window)
+     * cancels any in-progress listen arm / auto-sequence walk. */
+    void hideEvent(QHideEvent *event) override;
 
 private:
     /* Cursor Y -> target slot index. Drop above row N's vertical
@@ -146,12 +154,22 @@ private slots:
      * untouched. */
     void on_pushButton_ClearAllLogical_clicked();
 
-    /* Sequential Assign mode (issue #39).
-     * Slot wired from checkBox_SeqAssign. When checked, capturing a
-     * press on a row's per-row target button automatically arms the
-     * next row, walking forward through the logical-button list. The
-     * default button type for each assignment is BUTTON_NORMAL. */
-    void on_checkBox_SeqAssign_toggled(bool checked);
+    /* Listen-for-input click handlers (issue #39, reworked).
+     * onListenClicked: a single click on a row's target button toggles a
+     * one-shot arm on that row/field, and ends any active auto-sequence
+     * walk. onListenSequence: a double click on the physical-input
+     * button starts auto-sequence mode (m_seqActive) -- each capture
+     * then auto-arms the next row. A double click on Source B falls back
+     * to a single arm (the walk only makes sense for the physical
+     * field). Wired from ButtonLogical::listenClicked /
+     * listenSequenceRequested. */
+    void onListenClicked(int slot, int field);
+    void onListenSequence(int slot, int field);
+
+    /* Tears down any active arm + auto-sequence walk and stops watching
+     * for click-away. Driven by the Escape shortcut, the tab-change
+     * hideEvent, and the click-another-control watch in eventFilter. */
+    void seqCancel();
 
 private:
     Ui::ButtonConfig *ui;

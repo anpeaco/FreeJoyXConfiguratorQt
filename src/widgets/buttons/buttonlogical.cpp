@@ -9,6 +9,7 @@
 #include <QApplication>
 #include <QDrag>
 #include <QGraphicsOpacityEffect>
+#include <QIcon>
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QPixmap>
@@ -36,18 +37,20 @@ ButtonLogical::ButtonLogical(int buttonIndex, QWidget *parent)
     ui->label_DragHandle->setCursor(Qt::OpenHandCursor);
     ui->label_DragHandle->installEventFilter(this);
 
-    // Listen-for-input buttons (UI_PATTERNS.md). Toggling a button emits
-    // listenRequested(slot, field, armed); ButtonConfig owns the arbiter
-    // state (single armed slot/field, 5 s timeout, capture). The Source B
-    // button is only relevant on LOGIC rows -- updateLogicWidgetsEnabled
-    // enables/disables it alongside the Source B spinbox.
-    connect(ui->pushButton_Listen, &QPushButton::toggled,
-            this, [this](bool armed) {
-        emit listenRequested(m_buttonIndex, ListenPhysical, armed);
-    });
-    connect(ui->pushButton_ListenB, &QPushButton::toggled,
-            this, [this](bool armed) {
-        emit listenRequested(m_buttonIndex, ListenSourceB, armed);
+    // Listen-for-input buttons (UI_PATTERNS.md). The buttons no longer
+    // auto-toggle on click: handleListenButtonEvent (via the event
+    // filter) disambiguates single vs double click and emits
+    // listenClicked / listenSequenceRequested. ButtonConfig owns the
+    // arbiter state (single armed slot/field, 5 s timeout, capture). The
+    // Source B button is only relevant on LOGIC rows --
+    // updateLogicWidgetsEnabled enables/disables it alongside the Source B
+    // spinbox.
+    ui->pushButton_Listen->installEventFilter(this);
+    ui->pushButton_ListenB->installEventFilter(this);
+    m_listenClickTimer = new QTimer(this);
+    m_listenClickTimer->setSingleShot(true);
+    connect(m_listenClickTimer, &QTimer::timeout, this, [this]() {
+        emit listenClicked(m_buttonIndex, m_listenPendingField);
     });
 }
 
@@ -194,11 +197,13 @@ void ButtonLogical::updateLogicWidgetsEnabled()
     const bool srcBEnabled = physSet && isLogic && !isUnary;
     ui->spinBox_SourceB->setEnabled(srcBEnabled);
     // The Source B listen button follows the spinbox: only usable when
-    // Source B itself is. Disabling while armed would orphan the arbiter,
-    // so cancel any in-flight listen by unchecking (its toggled handler
-    // emits listenRequested(..., false), which ButtonConfig disarms).
+    // Source B itself is. Disabling while armed would orphan the arbiter
+    // (the buttons no longer auto-toggle, so unchecking the visual alone
+    // wouldn't tell ButtonConfig). Emit an explicit force-disarm so the
+    // arbiter drops the arm; ButtonConfig::setListenArmed clears the
+    // checked visual in turn.
     if (!srcBEnabled && ui->pushButton_ListenB->isChecked()) {
-        ui->pushButton_ListenB->setChecked(false);
+        emit listenForceDisarm(m_buttonIndex, ListenSourceB);
     }
     ui->pushButton_ListenB->setEnabled(srcBEnabled);
     // Qt's default disabled styling barely dims an icon-only button.
@@ -287,8 +292,7 @@ void ButtonLogical::setSpinWaiting(int field, bool waiting)
     QWidget *box = (field == ListenSourceB)
         ? static_cast<QWidget *>(ui->spinBox_SourceB)
         : static_cast<QWidget *>(ui->spinBox_PhysicalButtonNumber);
-    const QString pulseQss =
-        QStringLiteral("QSpinBox { background-color: rgba(64, 128, 255, 110); }");
+    const QString pulseQss = freejoy_style::pulseFillQss(QStringLiteral("QSpinBox"));
 
     if (waiting) {
         // Clear any previous pulse target first (e.g. switching fields).
@@ -344,18 +348,25 @@ void ButtonLogical::focusPhysSpin()
     ui->spinBox_PhysicalButtonNumber->setFocus(Qt::OtherFocusReason);
 }
 
-void ButtonLogical::setListenArmed(int field, bool armed)
+void ButtonLogical::setListenArmed(int field, bool armed, bool sequence)
 {
     // Block toggled() so the visual sync from the ButtonConfig arbiter
-    // (disarming a previously-armed row when the user arms a new one,
-    // restoring after capture / timeout) doesn't loop back through
-    // listenRequested. Same QSignalBlocker pattern Axes::setDetectArmed
-    // uses.
+    // (arming, disarming a previously-armed row when the user arms a new
+    // one, restoring after capture / timeout) doesn't loop back. Same
+    // QSignalBlocker pattern Axes::setDetectArmed uses.
     QPushButton *btn = (field == ListenSourceB)
         ? ui->pushButton_ListenB
         : ui->pushButton_Listen;
     QSignalBlocker blocker(btn);
     btn->setChecked(armed);
+
+    // Three-state icon (the .ui iconset only covers off/on, so the
+    // sequence state is applied explicitly): idle -> one-shot armed ->
+    // armed mid auto-sequence walk.
+    static const QIcon kIdle(QStringLiteral(":/Images/icons/lucide/target.svg"));
+    static const QIcon kArmed(QStringLiteral(":/Images/icons/lucide/radio.svg"));
+    static const QIcon kSequence(QStringLiteral(":/Images/icons/lucide/crosshair.svg"));
+    btn->setIcon(!armed ? kIdle : (sequence ? kSequence : kArmed));
 }
 
 int ButtonLogical::currentFocus() const
@@ -447,8 +458,78 @@ bool ButtonLogical::isLogicConfigComplete() const
 }
 
 
+void ButtonLogical::handleListenButtonEvent(int field, QEvent *event)
+{
+    // Suppress the QPushButton's own click/toggle entirely (the caller
+    // consumes the event) and run our single-vs-double disambiguation.
+    // A release starts a one-shot timer that fires listenClicked; a
+    // second release within the double-click window cancels it and fires
+    // listenSequenceRequested. The armed visual is driven by the parent
+    // via setListenArmed(), so we never touch the button's checked state
+    // here.
+    switch (event->type()) {
+    case QEvent::MouseButtonPress: {
+        QMouseEvent *me = static_cast<QMouseEvent *>(event);
+        if (me->button() == Qt::LeftButton) m_listenPressInside = true;
+        break;
+    }
+    case QEvent::MouseButtonDblClick: {
+        QMouseEvent *me = static_cast<QMouseEvent *>(event);
+        if (me->button() == Qt::LeftButton) {
+            m_listenClickTimer->stop();
+            m_listenLastRelease.invalidate();
+            emit listenSequenceRequested(m_buttonIndex, field);
+        }
+        break;
+    }
+    case QEvent::MouseButtonRelease: {
+        QMouseEvent *me = static_cast<QMouseEvent *>(event);
+        if (me->button() != Qt::LeftButton || !m_listenPressInside) break;
+        m_listenPressInside = false;
+        QPushButton *btn = (field == ListenSourceB)
+            ? ui->pushButton_ListenB : ui->pushButton_Listen;
+        if (!btn->rect().contains(me->pos())) break;   // released off-button: ignore
+        // Cap the wait at 250 ms so single-click arming stays responsive
+        // even when the OS double-click interval is long (~500 ms).
+        const int win = qMin(QApplication::doubleClickInterval(), 250);
+        if (m_listenLastRelease.isValid()
+            && !m_listenLastRelease.hasExpired(win)) {
+            // Belt-and-suspenders double-click detection by timing, in
+            // case the platform doesn't deliver a DblClick event after
+            // the consumed press.
+            m_listenClickTimer->stop();
+            m_listenLastRelease.invalidate();
+            emit listenSequenceRequested(m_buttonIndex, field);
+        } else {
+            m_listenPendingField = field;
+            m_listenLastRelease.start();
+            m_listenClickTimer->start(win);
+        }
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 bool ButtonLogical::eventFilter(QObject *obj, QEvent *event)
 {
+    // Listen buttons: own the click so the checkable QPushButton doesn't
+    // auto-toggle, and disambiguate single (arm) vs double (sequence).
+    if (obj == ui->pushButton_Listen || obj == ui->pushButton_ListenB) {
+        const int field = (obj == ui->pushButton_ListenB)
+            ? ListenSourceB : ListenPhysical;
+        switch (event->type()) {
+        case QEvent::MouseButtonPress:
+        case QEvent::MouseButtonRelease:
+        case QEvent::MouseButtonDblClick:
+            handleListenButtonEvent(field, event);
+            return true;   // consume: no default toggle / clicked()
+        default:
+            return false;
+        }
+    }
+
     // Drag-handle on the grip-icon label: press records start position;
     // move past the system drag threshold starts a QDrag with this row's
     // slot index in MIME data. ButtonConfig handles the drop.

@@ -2,6 +2,7 @@
 #define BUTTONLOGICAL_H
 
 #include "common_types.h"
+#include <QElapsedTimer>
 #include <QPoint>
 #include <QTimer>
 #include <QWidget>
@@ -62,10 +63,12 @@ public:
     void focusPhysSpin();
 
     /* Listen-for-input pattern (see UI_PATTERNS.md). External visual
-     * sync from the ButtonConfig arbiter -- toggles the given field's
-     * target button checked state without re-emitting toggled(), used
-     * on cross-row disarm, successful capture, and timeout. */
-    void setListenArmed(int field, bool armed);
+     * sync from the ButtonConfig arbiter -- sets the given field's target
+     * button checked state (signal-blocked) and its three-state icon:
+     * idle (target.svg) -> one-shot armed (radio.svg) -> armed mid
+     * auto-sequence walk (crosshair.svg, when `sequence` is true). Used
+     * on arm, cross-row disarm, successful capture, and timeout. */
+    void setListenArmed(int field, bool armed, bool sequence = false);
     void setAutoPhysBut(bool enabled);
     int currentFocus() const;
     int currentFocusSrcB() const;
@@ -120,11 +123,22 @@ signals:
      * loses focus. ButtonConfig uses it to move the pulse indicator
      * to the focused row when AutoPhysBut is on. */
     void physSpinFocusChanged(int buttonIndex, bool focused);
-    /* Listen-for-input (UI_PATTERNS.md): user clicked the per-row
-     * target button. ButtonConfig is the arbiter -- it decides
-     * whether to arm or cancel based on the current armed state.
-     * `field` is ListenPhysical or ListenSourceB. */
-    void listenRequested(int buttonIndex, int field, bool armed);
+    /* Listen-for-input (UI_PATTERNS.md): the per-row target button was
+     * single-clicked (listenClicked) or double-clicked
+     * (listenSequenceRequested). ButtonConfig is the arbiter: a single
+     * click toggles a one-shot arm on this row/field; a double click on
+     * the physical-input button starts auto-sequence mode (each capture
+     * auto-arms the next row, walking down the list). `field` is
+     * ListenPhysical or ListenSourceB. The buttons no longer auto-toggle
+     * -- handleListenButtonEvent disambiguates the two gestures and the
+     * armed visual is driven solely by setListenArmed(). */
+    void listenClicked(int buttonIndex, int field);
+    void listenSequenceRequested(int buttonIndex, int field);
+    /* Emitted when a field's listen button must be force-disarmed
+     * because the field itself became unavailable (e.g. Source B
+     * disabled when the row leaves LOGIC). ButtonConfig disarms that
+     * slot/field if it is the one currently armed. */
+    void listenForceDisarm(int buttonIndex, int field);
 
 private slots:
     void editingOnOff(int value);
@@ -157,6 +171,18 @@ private:
     QTimer  *m_pulseTimer = nullptr;   // owned QTimer, lazily allocated
     bool     m_pulseOn = false;
     QWidget *m_pulseBox = nullptr;     // spinbox currently pulsing (phys or srcB)
+
+    /* Single-vs-double click disambiguation for the two listen buttons.
+     * Their own checkable-toggle is suppressed in eventFilter; a release
+     * starts m_listenClickTimer (fires listenClicked on timeout), and a
+     * second release inside the double-click window cancels the timer and
+     * fires listenSequenceRequested instead. The armed pressed-in visual
+     * is driven only by setListenArmed(), never by the click itself. */
+    QTimer       *m_listenClickTimer = nullptr;
+    QElapsedTimer m_listenLastRelease;
+    int           m_listenPendingField = ListenPhysical;
+    bool          m_listenPressInside  = false;
+    void          handleListenButtonEvent(int field, QEvent *event);
 
     const deviceEnum_guiName_t m_timerList[TIMER_COUNT] = // order must be as in common_types.h!!!!!!!!!!!          // static ?
     {
