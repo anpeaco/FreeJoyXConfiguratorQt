@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string notr="true">Form</string>
   </property>
   <layout class="QVBoxLayout" name="layoutV_Axes">
    <property name="spacing">
@@ -65,40 +65,81 @@
      <property name="title">
       <string>GroupBox</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_2" rowstretch="1,0,0,0" columnstretch="0,0,0,0,7,2" columnminimumwidth="0,0,0,0,0,185">
+     <layout class="QGridLayout" name="gridLayout_2" rowstretch="0,0,0,0" columnstretch="0,0,0,0,7,0" columnminimumwidth="0,0,0,0,0,150">
       <property name="bottomMargin">
        <number>3</number>
       </property>
-      <property name="spacing">
+      <property name="horizontalSpacing">
        <number>6</number>
       </property>
-      <item row="3" column="4">
-       <widget class="QCheckBox" name="checkBox_ShowExtend">
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>17</height>
-         </size>
-        </property>
-        <property name="layoutDirection">
-         <enum>Qt::RightToLeft</enum>
-        </property>
-        <property name="toolTip">
-         <string>Toggle prescaler, resolution, and axes-to-buttons sliders for this axis</string>
-        </property>
-        <property name="text">
-         <string>Show extended settings</string>
-        </property>
-       </widget>
+      <property name="verticalSpacing">
+       <number>1</number>
+      </property>
+      <item row="3" column="4" alignment="Qt::AlignVCenter">
+       <layout class="QHBoxLayout" name="layoutH_ShowExtend">
+        <property name="spacing"><number>4</number></property>
+        <!-- Source-conflict warning lives in the stretchy column 4 (with the
+             bars / show-extended). Separate icon + text labels (not inline
+             HTML) so the icon is reliably vertically centered, and an Ignored
+             width policy so a long message can NEVER grow a column and shift
+             the Out/Raw bars (which share columns 3-4). -->
+        <item>
+         <widget class="QLabel" name="label_sourceWarningIcon">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text"><string notr="true"/></property>
+          <property name="alignment"><set>Qt::AlignVCenter</set></property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_sourceWarning">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
+            <horstretch>1</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string notr="true"/>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="checkBox_ShowExtend">
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
+          </property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>17</height>
+           </size>
+          </property>
+          <property name="layoutDirection">
+           <enum>Qt::RightToLeft</enum>
+          </property>
+          <property name="toolTip">
+           <string>Toggle prescaler, resolution, and axes-to-buttons sliders for this axis</string>
+          </property>
+          <property name="text">
+           <string>Show extended settings</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <!-- Calibration column. Each row is placed DIRECTLY in the outer
            gridLayout_2 at column 5 in the matching row, so row heights
@@ -124,6 +165,8 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="minimumSize"><size><width>0</width><height>30</height></size></property>
+          <property name="maximumSize"><size><width>16777215</width><height>30</height></size></property>
           <property name="text"><string>Calibrate</string></property>
           <property name="autoDefault"><bool>false</bool></property>
           <property name="default"><bool>false</bool></property>
@@ -134,13 +177,13 @@
         <item>
          <widget class="QPushButton" name="pushButton_ResetCalib">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
-          <property name="minimumSize"><size><width>22</width><height>22</height></size></property>
-          <property name="maximumSize"><size><width>22</width><height>22</height></size></property>
+          <property name="minimumSize"><size><width>30</width><height>30</height></size></property>
+          <property name="maximumSize"><size><width>30</width><height>30</height></size></property>
           <property name="toolTip"><string>Reset calibration (Min / Center / Max back to factory defaults)</string></property>
           <property name="text"><string notr="true"/></property>
           <property name="icon">
@@ -180,8 +223,8 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
-          <property name="minimumSize"><size><width>95</width><height>0</height></size></property>
-          <property name="maximumSize"><size><width>95</width><height>22</height></size></property>
+          <property name="minimumSize"><size><width>72</width><height>30</height></size></property>
+          <property name="maximumSize"><size><width>72</width><height>30</height></size></property>
           <property name="alignment"><set>Qt::AlignCenter</set></property>
           <property name="minimum"><number>-32767</number></property>
           <property name="maximum"><number>32767</number></property>
@@ -217,13 +260,13 @@
         <item>
          <widget class="QPushButton" name="pushButton_SetCenter">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
-          <property name="minimumSize"><size><width>22</width><height>22</height></size></property>
-          <property name="maximumSize"><size><width>22</width><height>22</height></size></property>
+          <property name="minimumSize"><size><width>30</width><height>30</height></size></property>
+          <property name="maximumSize"><size><width>30</width><height>30</height></size></property>
           <property name="toolTip"><string>Capture the current axis value as the new Center</string></property>
           <property name="text"><string notr="true"/></property>
           <property name="icon">
@@ -244,8 +287,8 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
-          <property name="minimumSize"><size><width>95</width><height>0</height></size></property>
-          <property name="maximumSize"><size><width>95</width><height>22</height></size></property>
+          <property name="minimumSize"><size><width>72</width><height>30</height></size></property>
+          <property name="maximumSize"><size><width>72</width><height>30</height></size></property>
           <property name="alignment"><set>Qt::AlignCenter</set></property>
           <property name="minimum"><number>-32767</number></property>
           <property name="maximum"><number>32767</number></property>
@@ -279,8 +322,8 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
-          <property name="minimumSize"><size><width>95</width><height>0</height></size></property>
-          <property name="maximumSize"><size><width>95</width><height>22</height></size></property>
+          <property name="minimumSize"><size><width>72</width><height>30</height></size></property>
+          <property name="maximumSize"><size><width>72</width><height>30</height></size></property>
           <property name="alignment"><set>Qt::AlignCenter</set></property>
           <property name="minimum"><number>-32767</number></property>
           <property name="maximum"><number>32767</number></property>
@@ -297,12 +340,18 @@
         <property name="minimumSize">
          <size>
           <width>0</width>
-          <height>40</height>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>30</height>
          </size>
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
+      <item row="1" column="2" alignment="Qt::AlignVCenter">
        <widget class="QLabel" name="label_2">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -324,7 +373,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
+      <item row="0" column="2" alignment="Qt::AlignVCenter">
        <widget class="QLabel" name="label">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -357,8 +406,14 @@
         <property name="leftMargin">
          <number>9</number>
         </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
         <property name="rightMargin">
          <number>9</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
         </property>
         <item>
          <widget class="QProgressBar" name="progressBar_Out">
@@ -374,21 +429,21 @@
           <property name="minimumSize">
            <size>
             <width>0</width>
-            <height>23</height>
+            <height>30</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
             <width>16777215</width>
-            <height>16777215</height>
+            <height>30</height>
            </size>
           </property>
           <property name="styleSheet">
            <string notr="true">QProgressBar::chunk {
-     background-color: rgb(139, 0, 0);
+     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgb(164, 0, 0), stop:1 rgb(139, 0, 0));
  }
 QProgressBar::chunk:disabled {
-     background-color: rgba(139, 0, 0, 80);
+     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(164, 0, 0, 80), stop:1 rgba(139, 0, 0, 80));
  }</string>
           </property>
           <property name="minimum">
@@ -428,21 +483,21 @@ QProgressBar::chunk:disabled {
           <property name="minimumSize">
            <size>
             <width>0</width>
-            <height>23</height>
+            <height>30</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
             <width>16777215</width>
-            <height>16777215</height>
+            <height>30</height>
            </size>
           </property>
           <property name="styleSheet">
            <string notr="true">QProgressBar::chunk {
-     background-color:rgb(85, 107, 47);
+     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgb(100, 126, 55), stop:1 rgb(85, 107, 47));
  }
 QProgressBar::chunk:disabled {
-     background-color: rgba(85, 107, 47, 80);
+     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(100, 126, 55, 80), stop:1 rgba(85, 107, 47, 80));
  }</string>
           </property>
           <property name="minimum">
@@ -470,48 +525,52 @@ QProgressBar::chunk:disabled {
         </item>
        </layout>
       </item>
-      <item row="1" column="0" colspan="2">
-       <widget class="QCheckBox" name="checkBox_Inverted">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>21</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>Inverted</string>
-        </property>
-       </widget>
+      <item row="1" column="0" colspan="2" alignment="Qt::AlignVCenter">
+       <layout class="QHBoxLayout" name="layoutH_Inverted">
+        <property name="spacing"><number>4</number></property>
+        <item>
+         <widget class="QLabel" name="label_InvertedText">
+          <property name="text"><string>Inverted</string></property>
+          <property name="alignment"><set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set></property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="spacerH_Inverted">
+          <property name="orientation"><enum>Qt::Horizontal</enum></property>
+          <property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="checkBox_Inverted">
+          <property name="text"><string notr="true"/></property>
+         </widget>
+        </item>
+       </layout>
       </item>
-      <item row="0" column="0" colspan="2">
-       <widget class="QCheckBox" name="checkBox_Output">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>21</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>Output</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
+      <item row="0" column="0" colspan="2" alignment="Qt::AlignVCenter">
+       <layout class="QHBoxLayout" name="layoutH_Output">
+        <property name="spacing"><number>4</number></property>
+        <item>
+         <widget class="QLabel" name="label_OutputText">
+          <property name="text"><string>Output</string></property>
+          <property name="alignment"><set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set></property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="spacerH_Output">
+          <property name="orientation"><enum>Qt::Horizontal</enum></property>
+          <property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="checkBox_Output">
+          <property name="text"><string notr="true"/></property>
+          <property name="checked"><bool>true</bool></property>
+         </widget>
+        </item>
+       </layout>
       </item>
-      <item row="2" column="0">
+      <item row="2" column="0" alignment="Qt::AlignVCenter">
        <widget class="QLabel" name="label_3">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
@@ -520,106 +579,131 @@ QProgressBar::chunk:disabled {
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Buttons from axes</string>
+         <string>Axes &gt; Buttons</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="1" colspan="2">
-       <widget class="QSpinBox" name="spinBox_A2bCount">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>45</width>
-          <height>20</height>
-         </size>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-        <property name="maximum">
-         <number>12</number>
-        </property>
-       </widget>
+      <item row="2" column="1" colspan="2" alignment="Qt::AlignVCenter">
+       <layout class="QHBoxLayout" name="layoutH_A2bCount">
+        <property name="spacing"><number>4</number></property>
+        <item>
+         <spacer name="spacerH_A2bCount">
+          <property name="orientation"><enum>Qt::Horizontal</enum></property>
+          <property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="spinBox_A2bCount">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>45</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>45</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="maximum">
+           <number>12</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_ClearA2b">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize"><size><width>30</width><height>30</height></size></property>
+          <property name="maximumSize"><size><width>30</width><height>30</height></size></property>
+          <property name="toolTip"><string>Clear all buttons-from-axes for this axis</string></property>
+          <property name="text"><string notr="true"/></property>
+          <property name="icon">
+           <iconset resource="../../resources.qrc">
+            <normaloff>:/Images/icons/lucide/rotate-ccw.svg</normaloff>:/Images/icons/lucide/rotate-ccw.svg</iconset>
+          </property>
+          <property name="iconSize"><size><width>14</width><height>14</height></size></property>
+          <property name="autoDefault"><bool>false</bool></property>
+         </widget>
+        </item>
+       </layout>
       </item>
-      <item row="3" column="0">
-       <widget class="CenteredCBox" name="comboBox_AxisSource1">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>140</width>
-          <height>20</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1" alignment="Qt::AlignVCenter">
-       <widget class="QPushButton" name="pushButton_DetectSource">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>26</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>26</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="icon">
-         <iconset resource="../../resources.qrc">
-          <normaloff>:/Images/icons/lucide/target.svg</normaloff>
-          <normalon>:/Images/icons/lucide/radio.svg</normalon>
-         </iconset>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>16</width>
-          <height>16</height>
-         </size>
-        </property>
-        <property name="toolTip">
-         <string>Click then rotate any connected axis to set its source pin as this axis's source. Click again to cancel. Only works for pins already bound to some axis -- the firmware reports raw values per-axis, not per-pin.</string>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2" colspan="2">
+      <item row="3" column="0" alignment="Qt::AlignVCenter">
        <widget class="QLabel" name="text_axisSource">
         <property name="minimumSize">
          <size>
           <width>0</width>
-          <height>20</height>
+          <height>30</height>
          </size>
         </property>
         <property name="text">
-         <string>Axis source</string>
+         <string>Source</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
         </property>
        </widget>
+      </item>
+      <item row="3" column="1" colspan="2" alignment="Qt::AlignVCenter">
+       <layout class="QHBoxLayout" name="layoutH_Source">
+        <property name="spacing"><number>4</number></property>
+        <item>
+         <widget class="CenteredCBox" name="comboBox_AxisSource1">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize"><size><width>120</width><height>30</height></size></property>
+          <property name="maximumSize"><size><width>120</width><height>30</height></size></property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="spacerH_Source">
+          <property name="orientation"><enum>Qt::Horizontal</enum></property>
+          <property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_DetectSource">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize"><size><width>30</width><height>30</height></size></property>
+          <property name="maximumSize"><size><width>30</width><height>30</height></size></property>
+          <property name="text"><string/></property>
+          <property name="icon">
+           <iconset resource="../../resources.qrc">
+            <normaloff>:/Images/icons/lucide/target.svg</normaloff>
+            <normalon>:/Images/icons/lucide/radio.svg</normalon>
+           </iconset>
+          </property>
+          <property name="iconSize"><size><width>16</width><height>16</height></size></property>
+          <property name="toolTip">
+           <string>Click then rotate any connected axis to set its source pin as this axis's source. Click again to cancel. Only works for pins already bound to some axis -- the firmware reports raw values per-axis, not per-pin.</string>
+          </property>
+          <property name="checkable"><bool>true</bool></property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>

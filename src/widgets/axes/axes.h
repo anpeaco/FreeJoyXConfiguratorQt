@@ -1,6 +1,7 @@
 #ifndef AXES_H
 #define AXES_H
 
+#include <QElapsedTimer>
 #include <QHash>
 #include <QMap>
 #include <QStringList>
@@ -106,16 +107,22 @@ public:
      * and (b) clear a previously-armed axis when the user clicks
      * Detect on a different axis (only one axis can be armed at a
      * time). Suppresses the toggled() signal during the change so
-     * AxesConfig doesn't re-enter onDetectToggled. */
-    void setDetectArmed(bool armed);
+     * AxesConfig doesn't re-enter onDetectToggled. The three-state icon
+     * tracks idle (target.svg) -> one-shot armed (radio.svg) -> armed
+     * mid auto-sequence walk (crosshair.svg, when `sequence` is true). */
+    void setDetectArmed(bool armed, bool sequence = false);
 
 signals:
     void a2bCountChanged(int count, int previousCount);
 
-    /* Emitted on every Detect button toggle. AxesConfig listens to
-     * arm/disarm the rotation watcher for this axis. The bool tracks
-     * the new checked state of the button (true = armed, false = idle). */
-    void detectSourceRequested(int axisNumber, bool armed);
+    /* Detect button gestures. The button no longer auto-toggles:
+     * handleDetectButtonEvent disambiguates a single click
+     * (detectClicked -> one-shot arm) from a double click
+     * (detectSequenceRequested -> auto-sequence walk down the axes).
+     * AxesConfig is the arbiter and drives the armed visual via
+     * setDetectArmed(). */
+    void detectClicked(int axisNumber);
+    void detectSequenceRequested(int axisNumber);
 
     /* Fired whenever the main-source combobox selection changes (user
      * edit or readFromConfig-driven). AxesConfig listens to recompute
@@ -165,6 +172,12 @@ private slots:
 
     void on_checkBox_ShowExtend_stateChanged(int state);
 
+protected:
+    /* Owns the Detect button's mouse events so the checkable
+     * QPushButton doesn't auto-toggle; routes to
+     * handleDetectButtonEvent for single/double disambiguation. */
+    bool eventFilter(QObject *obj, QEvent *event) override;
+
 private:
     Ui::Axes *ui;
     const int m_kMinA2bButtons = 1;//2
@@ -181,6 +194,17 @@ private:
      * Lazily allocated the first time setDetectArmed(true) is called. */
     QTimer *m_pulseTimer = nullptr;
     bool    m_pulseOn = false;
+
+    /* Single-vs-double click disambiguation for the Detect button. The
+     * button's own toggle is suppressed in eventFilter; a release starts
+     * m_detectClickTimer (fires detectClicked), and a second release
+     * within the double-click window cancels it and fires
+     * detectSequenceRequested instead. The armed visual is driven only by
+     * setDetectArmed(). */
+    QTimer       *m_detectClickTimer = nullptr;
+    QElapsedTimer m_detectLastRelease;
+    bool          m_detectPressInside = false;
+    void          handleDetectButtonEvent(QEvent *event);
 
     QVector<int> m_mainSource_enumIndex;
 

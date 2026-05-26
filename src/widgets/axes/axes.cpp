@@ -1,9 +1,14 @@
 #include "axes.h"
 #include "ui_axes.h"
+#include <QApplication>
+#include <QIcon>
+#include <QMouseEvent>
+#include <QPushButton>
 #include <QSignalBlocker>
 #include <QTimer>
 #include <QTranslator>
 #include "converter.h"
+#include "style_helpers.h"
 #include "widgets/pins/pinboardnames.h"
 
 const QVector <deviceEnum_guiName_t> &axesList()    // order MUST match common_types.h!
@@ -28,6 +33,20 @@ Axes::Axes(int axisNumber, QWidget *parent)
     , ui(new Ui::Axes)
 {
     ui->setupUi(this);
+
+    // Compact style for the dense-row buttons so they sit at the 30px row
+    // height instead of the ~32px the global QPushButton min-height/padding
+    // would otherwise force.
+    freejoy_style::setRole(ui->pushButton_StartCalib, "role", "compact");
+    freejoy_style::setRole(ui->pushButton_ResetCalib, "role", "compact");
+    freejoy_style::setRole(ui->pushButton_SetCenter,  "role", "compact");
+    freejoy_style::setRole(ui->pushButton_DetectSource, "role", "compact");
+    freejoy_style::setRole(ui->pushButton_ClearA2b,   "role", "compact");
+
+    // Clear buttons-from-axes for this axis: set the count to 0.
+    connect(ui->pushButton_ClearA2b, &QPushButton::clicked, this, [this]() {
+        ui->spinBox_A2bCount->setValue(0);
+    });
 
     m_a2bButtonsCount = 0;
     m_lastA2bCount = 1;
@@ -88,10 +107,11 @@ Axes::Axes(int axisNumber, QWidget *parent)
      * side-effects (tooltip swap, source-dropdown pulse) live in
      * setDetectArmed so they fire on both the user-click path and the
      * cross-axis / timeout disarm paths AxesConfig drives. */
-    connect(ui->pushButton_DetectSource, &QPushButton::toggled,
-            this, [this](bool checked) {
-        setDetectArmed(checked);
-        emit detectSourceRequested(m_axisNumber, checked);
+    ui->pushButton_DetectSource->installEventFilter(this);
+    m_detectClickTimer = new QTimer(this);
+    m_detectClickTimer->setSingleShot(true);
+    connect(m_detectClickTimer, &QTimer::timeout, this, [this]() {
+        emit detectClicked(m_axisNumber);
     });
 
     // Default state at construction: combobox at "None" -> Output
@@ -202,17 +222,91 @@ void Axes::setSourceByEnum(int sourceEnum)
     }
 }
 
-void Axes::setDetectArmed(bool armed)
+void Axes::handleDetectButtonEvent(QEvent *event)
 {
-    /* Block toggled() so the visual sync from AxesConfig (disarming
-     * a previously-armed axis when the user clicks Detect on a
+    // Suppress the QPushButton's own click/toggle (caller consumes the
+    // event) and disambiguate single vs double click. A release starts a
+    // one-shot timer that fires detectClicked; a second release within
+    // the double-click window cancels it and fires
+    // detectSequenceRequested. The armed visual is driven by AxesConfig
+    // via setDetectArmed(), so the button's checked state is never
+    // touched here.
+    switch (event->type()) {
+    case QEvent::MouseButtonPress: {
+        QMouseEvent *me = static_cast<QMouseEvent *>(event);
+        if (me->button() == Qt::LeftButton) m_detectPressInside = true;
+        break;
+    }
+    case QEvent::MouseButtonDblClick: {
+        QMouseEvent *me = static_cast<QMouseEvent *>(event);
+        if (me->button() == Qt::LeftButton) {
+            m_detectClickTimer->stop();
+            m_detectLastRelease.invalidate();
+            emit detectSequenceRequested(m_axisNumber);
+        }
+        break;
+    }
+    case QEvent::MouseButtonRelease: {
+        QMouseEvent *me = static_cast<QMouseEvent *>(event);
+        if (me->button() != Qt::LeftButton || !m_detectPressInside) break;
+        m_detectPressInside = false;
+        if (!ui->pushButton_DetectSource->rect().contains(me->pos())) break;
+        const int win = qMin(QApplication::doubleClickInterval(), 250);
+        if (m_detectLastRelease.isValid()
+            && !m_detectLastRelease.hasExpired(win)) {
+            m_detectClickTimer->stop();
+            m_detectLastRelease.invalidate();
+            emit detectSequenceRequested(m_axisNumber);
+        } else {
+            m_detectLastRelease.start();
+            m_detectClickTimer->start(win);
+        }
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+bool Axes::eventFilter(QObject *obj, QEvent *event)
+{
+    if (obj == ui->pushButton_DetectSource) {
+        switch (event->type()) {
+        case QEvent::MouseButtonPress:
+        case QEvent::MouseButtonRelease:
+        case QEvent::MouseButtonDblClick:
+            handleDetectButtonEvent(event);
+            return true;   // consume: no default toggle / clicked()
+        default:
+            return false;
+        }
+    }
+    return QWidget::eventFilter(obj, event);
+}
+
+void Axes::setDetectArmed(bool armed, bool sequence)
+{
+    /* Block toggled() so the visual sync from AxesConfig (arming,
+     * disarming a previously-armed axis when the user clicks Detect on a
      * different one, or restoring after a successful detection or
      * timeout) doesn't loop back into onDetectToggled. */
     QSignalBlocker blocker(ui->pushButton_DetectSource);
     ui->pushButton_DetectSource->setChecked(armed);
+
+    // Three-state icon (the .ui iconset only covers off/on, so the
+    // sequence state is applied explicitly): idle -> one-shot armed ->
+    // armed mid auto-sequence walk.
+    static const QIcon kIdle(QStringLiteral(":/Images/icons/lucide/target.svg"));
+    static const QIcon kArmed(QStringLiteral(":/Images/icons/lucide/radio.svg"));
+    static const QIcon kSequence(QStringLiteral(":/Images/icons/lucide/crosshair.svg"));
+    ui->pushButton_DetectSource->setIcon(
+        !armed ? kIdle : (sequence ? kSequence : kArmed));
+
     ui->pushButton_DetectSource->setToolTip(armed
-        ? tr("Armed -- rotate any connected axis to assign its source. Click again to cancel.")
-        : tr("Click then rotate any connected axis to set its source pin as this axis's source. Click again to cancel. Only works for pins already bound to some axis -- the firmware reports raw values per-axis, not per-pin."));
+        ? (sequence
+            ? tr("Auto-sequence -- rotate any axis to assign its source, then the next axis arms automatically. Single-click, Esc, or click elsewhere to stop.")
+            : tr("Armed -- rotate any connected axis to assign its source. Click again to cancel."))
+        : tr("Click then rotate any connected axis to set its source pin as this axis's source. Double-click to auto-sequence down the axes. Only works for pins already bound to some axis -- the firmware reports raw values per-axis, not per-pin."));
 
     /* Listen-for-input pulse (UI_PATTERNS.md): pulse the source
      * dropdown while waiting for the user's axis rotation, stop the
@@ -226,14 +320,14 @@ void Axes::setDetectArmed(bool armed)
                 m_pulseOn = !m_pulseOn;
                 ui->comboBox_AxisSource1->setStyleSheet(
                     m_pulseOn
-                    ? QStringLiteral("QComboBox { background-color: rgba(64, 128, 255, 110); }")
+                    ? freejoy_style::pulseFillQss(QStringLiteral("QComboBox"))
                     : QString());
             });
         }
         if (!m_pulseTimer->isActive()) {
             m_pulseOn = true;
             ui->comboBox_AxisSource1->setStyleSheet(
-                QStringLiteral("QComboBox { background-color: rgba(64, 128, 255, 110); }"));
+                freejoy_style::pulseFillQss(QStringLiteral("QComboBox")));
             m_pulseTimer->start();
         }
     } else {
@@ -355,29 +449,37 @@ bool Axes::isSharedSource(int sourceEnum)
 
 void Axes::markSourcesInUse(const QMap<int, QStringList> &usedByOthers)
 {
-    for (int i = 0; i < m_mainSource_enumIndex.size(); ++i) {
-        const int e = m_mainSource_enumIndex[i];
-        // "None" and "Encoder" are conceptually shared -- never mark.
-        if (e == None || e == Encoder) continue;
-
-        const QString base = m_baseDisplayTextByEnum.value(
-            e, ui->comboBox_AxisSource1->itemText(i));
-
-        if (usedByOthers.contains(e)) {
-            const QStringList by = usedByOthers.value(e);
-            ui->comboBox_AxisSource1->setItemText(
-                i, base + tr(" — used by %1").arg(by.join(QStringLiteral(", "))));
-            ui->comboBox_AxisSource1->setItemData(
-                i, QBrush(QColor(140, 140, 140)), Qt::ForegroundRole);
-            ui->comboBox_AxisSource1->setItemData(
-                i,
-                tr("Already selected as the main source of: %1").arg(by.join(QStringLiteral(", "))),
-                Qt::ToolTipRole);
-        } else {
-            ui->comboBox_AxisSource1->setItemText(i, base);
-            ui->comboBox_AxisSource1->setItemData(i, QVariant(), Qt::ForegroundRole);
-            ui->comboBox_AxisSource1->setItemData(i, QVariant(), Qt::ToolTipRole);
-        }
+    /* The dropdown stays clean -- each item shows only its source name (the
+     * fixed-width combobox). Conflicts are surfaced in the per-axis warning
+     * label to the right of "Axis source": if THIS axis's selected source
+     * is also a main source of other axes, name them there. (usedByOthers
+     * is the global usage map with this axis's own usage stripped, so a hit
+     * on our current source means a genuine duplicate.) */
+    const int cur = currentSource();
+    const QStringList by = (cur != None && cur != Encoder)
+                           ? usedByOthers.value(cur)
+                           : QStringList();
+    if (!by.isEmpty()) {
+        const QString names = by.join(QStringLiteral(", "));
+        // Shared Lucide warning icon (separate label so it centers cleanly)
+        // + amber text with the source name(s) bolded.
+        ui->label_sourceWarningIcon->setPixmap(freejoy_style::warningPixmap(14));
+        ui->label_sourceWarningIcon->show();
+        ui->label_sourceWarning->setText(
+            QStringLiteral("<span style=\"color:%1;\">").arg(freejoy_style::warningColor().name())
+            + tr("Also bound to %1").arg(QStringLiteral("<b>%1</b>").arg(names.toHtmlEscaped()))
+            + QStringLiteral("</span>"));
+        const QString tip =
+            tr("This source is also bound to: %1.\n"
+               "Two axes reading the same input will move together.").arg(names);
+        ui->label_sourceWarning->setToolTip(tip);
+        ui->label_sourceWarningIcon->setToolTip(tip);
+    } else {
+        ui->label_sourceWarningIcon->clear();
+        ui->label_sourceWarningIcon->hide();
+        ui->label_sourceWarning->clear();
+        ui->label_sourceWarning->setToolTip(QString());
+        ui->label_sourceWarningIcon->setToolTip(QString());
     }
 }
 
@@ -501,12 +603,22 @@ void Axes::a2bSpinBoxChanged(int count)
         ui->widget_A2bSlider->setPointsCount(count + 1);
     }
 
+    /* Update m_a2bButtonsCount BEFORE emitting. a2bCountChanged is a direct
+     * (synchronous) connection to AxesConfig::a2bCountCalc, which rebuilds the
+     * per-axis breakdown by reading every axis's a2bButtonCount() (==
+     * m_a2bButtonsCount). If we updated after the emit, this axis would report
+     * its stale pre-change count, so its "Axis N to buttons" range came out
+     * short by the latest increment and the trailing button leaked into the
+     * Direct group. The total in a2bCountCalc uses count-previousCount, so it
+     * stays correct either way. */
     if (ui->widget_A2bSlider->isEnabled() == true) {
-        emit a2bCountChanged(count, m_a2bButtonsCount);
+        const int previous = m_a2bButtonsCount;
         m_a2bButtonsCount = count;
+        emit a2bCountChanged(count, previous);
     } else { // optional?
-        emit a2bCountChanged(0, m_a2bButtonsCount);
+        const int previous = m_a2bButtonsCount;
         m_a2bButtonsCount = 0;
+        emit a2bCountChanged(0, previous);
     }
 }
 
