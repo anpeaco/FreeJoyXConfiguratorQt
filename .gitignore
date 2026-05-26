@@ -5,4 +5,25 @@
 FreeJoyQt.pro.user
 .vscode
 /build
+# In-source build output (only ever shadow-build; these guard against an
+# accidental qmake/make run from inside the repo root, src/, or tests/).
+/release
+/debug
+src/release
+src/debug
+tests/release
+tests/debug
+# qmake/make generated artifacts from in-source builds
+/Makefile
+src/Makefile*
+src/object_script.*
+tests/Makefile*
+.qmake.stash
+src/.qmake.stash
+tests/.qmake.stash
+.qtc_clangd/
+# build/debug scratch + screenshots
+build_log.txt
+build_*.log
+screenshot_*.png
 /.claude/settings.local.json
