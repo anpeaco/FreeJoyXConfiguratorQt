@@ -1,4 +1,5 @@
 #include "axescurvesbutton.h"
+#include "style_helpers.h"
 #include <QPainter>
 #include <QMouseEvent>
 #include <QLabel>
@@ -109,10 +110,12 @@ void AxesCurvesButton::installStyleSheet()
     // width matches the hover/lastChecked rules so the button doesn't
     // jump pixel-wise between states.
     //
-    // Palette refs let this widget retheme automatically when the
-    // global palette changes; the drop-target green stays a literal
-    // because it signals semantic state ("about to receive drop"),
-    // not theme accent.
+    // Palette refs let this widget retheme automatically when the global
+    // palette changes; the drop-target green signals semantic state ("about
+    // to receive drop") and is pulled from the shared accentGreen() so it
+    // matches the active-state green used everywhere else (this per-widget
+    // stylesheet bypasses the app-level %accent-green% token substitution,
+    // so the value is injected here instead).
     setStyleSheet(QStringLiteral(R"(
         AxesCurvesButton[checked="true"], AxesCurvesButton[pressed="true"] {
             border: 2px solid palette(highlight);
@@ -124,8 +127,8 @@ void AxesCurvesButton::installStyleSheet()
             border: 0px solid;
         }
         AxesCurvesButton[drop="true"] {
-            border: 1px solid #22c55e;
-            background-color: rgba(34, 197, 94, 25);
+            border: 1px solid %1;
+            background-color: %2;
         }
         AxesCurvesButton[lastChecked="true"] {
             border: 1px solid palette(highlight);
@@ -133,7 +136,8 @@ void AxesCurvesButton::installStyleSheet()
         AxesCurvesButton[lastChecked="false"][hover="false"][drop="false"] {
             border: 0px solid;
         }
-    )"));
+    )").arg(freejoy_style::hexStr(freejoy_style::accentGreen()),
+            freejoy_style::rgbaStr(freejoy_style::accentGreen(), 25)));
 }
 
 

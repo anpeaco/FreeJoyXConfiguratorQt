@@ -20,6 +20,7 @@
 #include "version.h"
 #include "deviceconfig.h"
 #include "global.h"
+#include "style_helpers.h"
 
 #include <QDebug>
 
@@ -81,7 +82,7 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
             p.setCompositionMode(QPainter::CompositionMode_Source);
             p.drawPixmap(0, 0, pix);
             p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-            p.fillRect(colored.rect(), QColor(0xCC, 0x33, 0x33));
+            p.fillRect(colored.rect(), freejoy_style::conflictColor());
             p.end();
             m_pidConflictIcon->setPixmap(colored);
         }
@@ -89,8 +90,8 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
 
     m_pidConflictLabel = new QLabel(m_pidConflictRow);
     m_pidConflictLabel->setText(QString());
-    m_pidConflictLabel->setStyleSheet(QStringLiteral(
-        "color: #cc3333; font-weight: bold;"));
+    m_pidConflictLabel->setStyleSheet(
+        QStringLiteral("color: %1; font-weight: bold;").arg(freejoy_style::conflictColor().name()));
     m_pidConflictLabel->setWordWrap(true);
     m_pidConflictLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
@@ -305,8 +306,8 @@ void AdvancedSettings::refreshPidConflictPill()
             "Pick a unique PID to avoid Windows OEMName cache collisions and "
             "DirectInput confusion.").arg(joined));
         if (m_pidConflictRow) m_pidConflictRow->setVisible(true);
-        ui->lineEdit_PID->setStyleSheet(QStringLiteral(
-            "border: 1px solid #cc3333;"));
+        ui->lineEdit_PID->setStyleSheet(
+            QStringLiteral("border: 1px solid %1;").arg(freejoy_style::conflictColor().name()));
     } else {
         m_pidConflictLabel->setText(QString());
         if (m_pidConflictRow) m_pidConflictRow->setVisible(false);

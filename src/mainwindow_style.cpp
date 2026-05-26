@@ -6,6 +6,7 @@
 #include "common_types.h"
 #include "global.h"
 #include "deviceconfig.h"
+#include "style_helpers.h"
 
 #include <QDebug>
 #include <QFile>
@@ -126,7 +127,9 @@ void MainWindow::themeChanged(bool dark)
         QStringLiteral("\n") +
         loadQss(dark ? QStringLiteral(":/styles/dark.qss")
                      : QStringLiteral(":/styles/light.qss"));
-    qApp->setStyleSheet(qss);
+    // Resolve the semantic accent tokens (%accent-...%, gradients) to their
+    // theme values before applying — single source of truth in style_helpers.h.
+    qApp->setStyleSheet(freejoy_style::applyAccentTokens(qss, dark));
 
     ui->pushButton_Wiki->setIcon(QIcon(":/Images/icons/lucide/book-open.svg"));
 

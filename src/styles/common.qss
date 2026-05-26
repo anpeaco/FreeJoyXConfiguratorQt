@@ -61,6 +61,20 @@ QPushButton {
     min-height: 22px;
 }
 
+/* Compact buttons for dense rows (e.g. the Axes calibration column +
+ * Detect). The default min-height (22) + padding (4) + border (1) gives a
+ * ~32px minimum, which overrides any maximumSize cap. Dropping min-height
+ * and trimming vertical padding lets these sit at the row height (~23px,
+ * matching the Out/Raw bars) instead of forcing the row taller. */
+QPushButton[role="compact"] {
+    /* 30px widget = 20 content + 4+4 padding + 1+1 border. QSS min/max-height
+     * here override the widget's minimumSize/maximumSize, so the height must
+     * be set in the stylesheet, not the .ui. */
+    min-height: 20px;
+    max-height: 20px;
+    padding: 4px 8px;
+}
+
 QPushButton:hover {
     border-color: palette(highlight);
 }
@@ -72,7 +86,10 @@ QPushButton:pressed {
 QPushButton:disabled {
     color: palette(disabled, button-text);
     background-color: palette(disabled, button);
-    border-color: palette(disabled, mid);
+    /* Keep the normal border tone (not the much lighter disabled-mid) so a
+     * disabled button stays clearly outlined; the faded text + fill carry the
+     * "disabled" signal instead of the button dissolving into the panel. */
+    border-color: palette(mid);
 }
 
 QPushButton:default {
@@ -95,26 +112,26 @@ QPushButton[role="primary"]:hover {
 QPushButton[role="primary"]:disabled {
     background-color: palette(disabled, button);
     color: palette(disabled, button-text);
-    border-color: palette(disabled, mid);
+    border-color: palette(mid);
 }
 
 /* Transient success/error feedback set by mainwindow.cpp after read/write. */
 QPushButton[feedback="success"] {
-    background-color: #22c55e;
+    background: %green-fill%;
     color: #ffffff;
-    border-color: #16a34a;
+    border-color: %accent-green-border%;
 }
 
 QPushButton[feedback="error"] {
-    background-color: #ef4444;
+    background: %red-fill%;
     color: #ffffff;
-    border-color: #dc2626;
+    border-color: %accent-red-border%;
 }
 
 QPushButton[feedback="warning"] {
-    background-color: #f59e0b;
+    background: %amber-fill%;
     color: #ffffff;
-    border-color: #d97706;
+    border-color: %accent-amber-border%;
 }
 
 /* Wiki / book icon-only round button in the Device sidebar. */
@@ -447,8 +464,11 @@ QProgressBar {
     color: palette(text);
 }
 
+/* Subtle top-lighter vertical gradient (tracks palette(highlight) hue per
+ * theme via %bar-fill%). One rule covers the Axes Raw/Out bars and the
+ * firmware-flash progress bar, so they read consistently as "filling" bars. */
 QProgressBar::chunk {
-    background: palette(highlight);
+    background: %bar-fill%;
     border-radius: 3px;
     margin: 1px;
 }
@@ -501,28 +521,28 @@ QMenuBar::item:selected {
  * Driven from MainWindow status callbacks. */
 
 QLabel[role="status-connected"] {
-    background-color: #22c55e;
+    background: %green-fill%;
     color: #ffffff;
     border-radius: 4px;
     padding: 2px 8px;
 }
 
 QLabel[role="status-disconnected"] {
-    background-color: #ef4444;
+    background: %red-fill%;
     color: #ffffff;
     border-radius: 4px;
     padding: 2px 8px;
 }
 
 QLabel[role="status-warning"] {
-    background-color: #f59e0b;
+    background: %amber-fill%;
     color: #ffffff;
     border-radius: 4px;
     padding: 2px 8px;
 }
 
 QLabel[role="status-error"] {
-    background-color: #ef4444;
+    background: %red-fill%;
     color: #ffffff;
     border-radius: 4px;
     padding: 2px 8px;
@@ -545,8 +565,8 @@ QLabel[buttonState="off"], QLabel[buttonState="on"] {
 }
 
 QLabel[buttonState="on"] {
-    background-color: #22c55e;
-    border-color: #22c55e;
+    background: %green-fill%;
+    border-color: %accent-green-border%;
     color: #ffffff;
 }
 
@@ -556,31 +576,27 @@ QLabel[buttonState="on"] {
  * is held on the device. Set via setProperty("shiftActive", true). */
 
 QLabel[shiftActive="true"] {
-    background-color: #22c55e;
+    background: %green-fill%;
     color: #ffffff;
     border-radius: 4px;
     padding: 1px 4px;
 }
 
-/* ----- Curve-editor button accent border --------------------------- */
-
-QPushButton[curveButtonState="selected"] {
-    border-color: palette(highlight);
-}
-
-QPushButton[curveButtonState="active"] {
-    border-color: #22c55e;
-}
+/* The curve-editor button (AxesCurvesButton) styles its own selected /
+ * hover / drop states via a per-widget stylesheet in axescurvesbutton.cpp
+ * (it keys off custom checked/hover/drop/lastChecked properties, not the
+ * generic curveButtonState used here historically), so no rule lives in
+ * this file for it. */
 
 /* ----- Drop indicator (drag-reorder of logical button rows) -------- */
 
 /* Row-height ghost shown at the insertion gap during a row reorder
  * drag. Translucent fill + dashed border read as "phantom slot, this
- * is where the row will land". rgba is hardcoded because palette()
- * refs don't carry an alpha channel; the Material-blue tone matches
- * palette(highlight) closely enough on both light and dark themes. */
+ * is where the row will land". %accent-blue-fill% is the theme's
+ * highlight blue at ~24% alpha (palette() refs can't carry alpha), so
+ * the ghost now matches palette(highlight) exactly per theme. */
 QFrame[role="drop-indicator"] {
-    background-color: rgba(48, 138, 233, 60);
+    background-color: %accent-blue-fill%;
     border: 1px dashed palette(highlight);
     border-radius: 4px;
 }
