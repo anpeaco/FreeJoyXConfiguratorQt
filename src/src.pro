@@ -47,6 +47,7 @@ SOURCES += \
     configtofile.cpp \
     converter.cpp \
     deviceconfig.cpp \
+    dialogs/busremapconfirmationdialog.cpp \
     dialogs/flashconfirmationdialog.cpp \
     dialogs/flashprogressdialog.cpp \
     flash/devicetransitionwatcher.cpp \
@@ -114,6 +115,7 @@ HEADERS += \
     converter.h \
     deviceconfig.h \
     devicesync.h \
+    dialogs/busremapconfirmationdialog.h \
     dialogs/flashconfirmationdialog.h \
     dialogs/flashprogressdialog.h \
     flash/devicetransitionwatcher.h \
@@ -173,6 +175,7 @@ HEADERS += \
     firmwarelibrary.h
 
 FORMS += \
+    dialogs/busremapconfirmationdialog.ui \
     dialogs/flashconfirmationdialog.ui \
     dialogs/flashprogressdialog.ui \
     mainwindow.ui \

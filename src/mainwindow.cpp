@@ -212,6 +212,9 @@ MainWindow::MainWindow(QWidget *parent)
     // (they hold the live UI state; CurrentConfig only sees totals).
     connect(m_pinConfig, &PinConfig::physicalButtonBreakdownChanged,
             m_buttonConfig, &ButtonConfig::onPhysicalButtonBreakdownChanged);
+    // The bus-remap confirmation asks the Button tab which logical buttons a
+    // pending pin displacement would clear, so it can list them in one dialog.
+    m_pinConfig->setButtonConfig(m_buttonConfig);
     connect(m_shiftRegConfig, &ShiftRegistersConfig::shiftRegBreakdownChanged,
             m_buttonConfig, &ButtonConfig::onShiftRegBreakdownChanged);
     connect(m_axesConfig, &AxesConfig::a2bBreakdownChanged,
@@ -2222,49 +2225,25 @@ void MainWindow::onFastEncoderEnableToggleRequested(int slotIndex, bool desiredE
     }
 
     if (desiredEnabled) {
-        /* Conflict check on the ON path -- if either pin is in use for
-         * something other than NOT_USED or already-FAST_ENCODER, ask the
-         * user before overwriting. We list the actual roles in the
-         * dialog so the cost of the change is visible. */
-        const int roleA = m_pinConfig->pinRole(pinA);
-        const int roleB = m_pinConfig->pinRole(pinB);
-        const bool conflictA = (roleA != NOT_USED && roleA != FAST_ENCODER);
-        const bool conflictB = (roleB != NOT_USED && roleB != FAST_ENCODER);
-        if (conflictA || conflictB) {
-            /* Per-slot pin labels -- slot 0 is on PA8/PA9 (TIM1), slot 1
-             * is on PB6/PB7 (TIM4). Hard-coding by slot avoids a generic
-             * "pin enum -> short name" lookup just for this dialog. */
-            const QString pinALabel = (slotIndex == 0) ? QStringLiteral("A8") : QStringLiteral("B6");
-            const QString pinBLabel = (slotIndex == 0) ? QStringLiteral("A9") : QStringLiteral("B7");
-            QStringList lines;
-            if (conflictA) {
-                lines << tr("Pin %1 currently: <b>%2</b>")
-                             .arg(pinALabel, m_pinConfig->pinRoleText(pinA));
-            }
-            if (conflictB) {
-                lines << tr("Pin %1 currently: <b>%2</b>")
-                             .arg(pinBLabel, m_pinConfig->pinRoleText(pinB));
-            }
-            const QMessageBox::StandardButton rc = QMessageBox::question(
-                this,
-                tr("Reassign pins to Fast Encoder %1?").arg(slotIndex + 1),
-                tr("<p>Enabling Fast Encoder %1 needs both encoder pins free. "
-                   "The following pin%2 currently held other role%2:</p>"
-                   "<p>%3</p>"
-                   "<p>Replace with FAST_ENCODER?</p>")
-                    .arg(slotIndex + 1)
-                    .arg(lines.size() == 1 ? "" : "s")
-                    .arg(lines.join(QStringLiteral("<br>"))),
-                QMessageBox::Yes | QMessageBox::Cancel,
-                QMessageBox::Cancel);
-            if (rc != QMessageBox::Yes) {
-                m_encoderConfig->refreshFastEncoderUi(slotIndex);
-                return;
-            }
+        /* Route through the shared reassignPins helper so the conflict prompt,
+         * the dry-run prediction of cleared logical buttons, the yellow dialog,
+         * and the post-apply remap-warning suppression all match the bus
+         * toggles. The helper applies pin roles on confirm and returns false on
+         * cancel (the dry-run has already restored everything). */
+        const QVector<QPair<int, int>> targets = {
+            { pinA, FAST_ENCODER },
+            { pinB, FAST_ENCODER },
+        };
+        const QString actionName = tr("Fast Encoder %1").arg(slotIndex + 1);
+        if (!m_pinConfig->reassignPins(actionName, targets, this)) {
+            m_encoderConfig->refreshFastEncoderUi(slotIndex);
+            return;
         }
-        const bool okA = m_pinConfig->setPinRole(pinA, FAST_ENCODER);
-        const bool okB = m_pinConfig->setPinRole(pinB, FAST_ENCODER);
-        if (!okA || !okB) {
+        /* The helper applied the roles, but the pin role may still be illegal
+         * for this board (e.g. FAST_ENCODER unsupported on the chosen pair) --
+         * verify and warn separately. */
+        if (m_pinConfig->pinRole(pinA) != FAST_ENCODER
+            || m_pinConfig->pinRole(pinB) != FAST_ENCODER) {
             QMessageBox::warning(
                 this,
                 tr("Fast Encoder %1 unavailable").arg(slotIndex + 1),
@@ -2276,13 +2255,17 @@ void MainWindow::onFastEncoderEnableToggleRequested(int slotIndex, bool desiredE
     } else {
         /* Disable path: set both pins to NOT_USED. No prompt -- the
          * intent is unambiguous and the action is fully reversible by
-         * toggling the checkbox back on. */
+         * toggling the checkbox back on. Wrap in the remap-warning
+         * suppression so clearing two pins doesn't fire two popups
+         * (matches the enable path's single-dialog UX). */
+        m_buttonConfig->setRemapWarningSuppressed(true);
         if (m_pinConfig->pinRole(pinA) == FAST_ENCODER) {
             m_pinConfig->setPinRole(pinA, NOT_USED);
         }
         if (m_pinConfig->pinRole(pinB) == FAST_ENCODER) {
             m_pinConfig->setPinRole(pinB, NOT_USED);
         }
+        m_buttonConfig->setRemapWarningSuppressed(false);
         m_encoderConfig->refreshFastEncoderUi(slotIndex);
     }
 }

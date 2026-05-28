@@ -27,6 +27,60 @@
     <number>0</number>
    </property>
    <item>
+    <widget class="QGroupBox" name="groupBox_busSetup">
+     <property name="title">
+      <string>Bus quick-setup</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_busSetup">
+      <property name="leftMargin">
+       <number>6</number>
+      </property>
+      <property name="topMargin">
+       <number>6</number>
+      </property>
+      <property name="rightMargin">
+       <number>6</number>
+      </property>
+      <property name="bottomMargin">
+       <number>6</number>
+      </property>
+      <item>
+       <widget class="QCheckBox" name="checkBox_i2cBus">
+        <property name="toolTip">
+         <string>Assign the I2C bus pins (SCL + SDA) in one click for AS5600 / ADS1115 sensors. Uncheck to release them.</string>
+        </property>
+        <property name="text">
+         <string>I2C bus (AS5600 / ADS1115)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkBox_spiBus">
+        <property name="toolTip">
+         <string>Assign the SPI bus pins (SCK + MISO + MOSI). Normally claimed automatically when you pick an SPI sensor's chip-select.</string>
+        </property>
+        <property name="text">
+         <string>SPI bus (SCK / MISO / MOSI)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_busHint">
+        <property name="styleSheet">
+         <string notr="true">color: palette(mid); font-style: italic;</string>
+        </property>
+        <property name="text">
+         <string>On the Black Pill (F411) SPI and I2C share a pin, so only one can be enabled.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Hover any row below for wiring details. &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;Be sure&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; to read the &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;Wiki&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; for details&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;!!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>

@@ -60,6 +60,37 @@ public:
     // PhysBreakdown / PhysRef / toRef / toAbs live in physref.h now.
     using PhysBreakdown = freejoy::PhysBreakdown;
 
+    /* Pure helper: the 0-based button slots whose physical_num / src_b reference
+     * would break going from oldB to newB. Same break-check remapBreakdown uses
+     * but with no mutation, no UI refresh, no popup. PinConfig pairs this with
+     * setDryRun() to predict the exact cleared set across all breakdown
+     * categories -- including SR / a2b shifts that a matrix+direct-only preview
+     * couldn't see -- before the user confirms the bus toggle. */
+    QList<int> computeBrokenSlots(const PhysBreakdown &oldB,
+                                  const PhysBreakdown &newB) const;
+
+    /* The live breakdown derived from the latest pin / SR / a2b counts. Public
+     * so the bus-remap dry-run can snapshot oldB before its predict-then-revert
+     * burst and newB after it. */
+    PhysBreakdown liveBreakdown() const { return currentBreakdown(); }
+
+    /* Dry-run mode: while true, setUiOnOff is a no-op -- it neither flushes
+     * logical-button rows to config, runs the auto-remap, nor rebuilds the
+     * physical-button grid. The breakdown signals from the SR / Axes tabs still
+     * flow through onShiftRegBreakdownChanged / onA2bBreakdownChanged so
+     * currentBreakdown() reflects the post-change state, but dev_config.buttons[]
+     * is never mutated. PinConfig wraps a predict-then-revert pin-edit burst in
+     * setDryRun(true/false) to capture the exact prospective breakdown without
+     * any side effects, then shows the bus-remap dialog with the real list. */
+    void setDryRun(bool dryRun);
+
+    /* Silence remapBreakdown's "Logical Buttons Cleared" popup while set. The
+     * bus-remap confirmation already lists the slots that will clear, so
+     * PinConfig wraps the *real* apply burst -- which fires a remap per
+     * displaced pin -- in setRemapWarningSuppressed(true/false) so it doesn't
+     * pop a second (or doubled) popup. The clearing itself still happens. */
+    void setRemapWarningSuppressed(bool suppressed);
+
     void retranslateUi();
 
     /* Move the button at slot `from` into slot `to`, shifting the rows
@@ -203,6 +234,16 @@ private:
     PhysBreakdown m_lastBreakdown;
     bool m_breakdownInitialized = false;
     bool m_loadInProgress = false;
+
+    /* When true, remapBreakdown clears references as usual but skips its
+     * warning popup -- the bus-remap confirmation already showed the slots. */
+    bool m_remapWarningSuppressed = false;
+
+    /* When true, setUiOnOff returns immediately -- no UI flush, no auto-remap,
+     * no grid rebuild -- so a predict-then-revert pin edit leaves
+     * dev_config.buttons[] untouched. The breakdown handler slots still update
+     * m_groupMatrix etc. so currentBreakdown() reflects the prospective state. */
+    bool m_dryRun = false;
 
     PhysBreakdown currentBreakdown() const;
 

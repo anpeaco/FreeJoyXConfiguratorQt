@@ -2,6 +2,8 @@
 #include "ui_pintypehelper.h"
 #include <QHoverEvent>
 #include <QDebug>
+#include <QCheckBox>
+#include <QSignalBlocker>
 
 PinTypeHelper::PinTypeHelper(QWidget *parent) :
     QWidget(parent),
@@ -29,11 +31,28 @@ PinTypeHelper::PinTypeHelper(QWidget *parent) :
     ui->label_monoLed->setProperty("pinType", LED_SINGLE);
     ui->label_fastEncoder->setProperty("pinType", FAST_ENCODER);
     ui->label_uart->setProperty("pinType", UART_TX);
+
+    connect(ui->checkBox_i2cBus, &QCheckBox::toggled, this, [this](bool on) {
+        emit busToggleRequested(BUS_I2C, on);
+    });
+    connect(ui->checkBox_spiBus, &QCheckBox::toggled, this, [this](bool on) {
+        emit busToggleRequested(BUS_SPI, on);
+    });
 }
 
 PinTypeHelper::~PinTypeHelper()
 {
     delete ui;
+}
+
+void PinTypeHelper::setBusState(int bus, bool checked, bool enabled)
+{
+    QCheckBox *cb = (bus == BUS_I2C) ? ui->checkBox_i2cBus : ui->checkBox_spiBus;
+    // block the toggled() signal so syncing UI to pin state doesn't loop back
+    // into PinConfig as if the user had clicked.
+    const QSignalBlocker blocker(cb);
+    cb->setChecked(checked);
+    cb->setEnabled(enabled);
 }
 
 

@@ -3,6 +3,8 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QSettings>
+#include <QTimer>
+#include <QPointer>
 #include "pinscontrlite.h"
 #include "pinsbluepill.h"
 #include "pinsblackpill.h"
@@ -10,6 +12,9 @@
 #include "pintypehelper.h"
 #include "global.h"
 #include "style_helpers.h"
+#include "dialogs/busremapconfirmationdialog.h"
+#include "buttons/buttonconfig.h"
+#include <QSet>
 
 // todo: change "int pinNumber" to enum Pin
 
@@ -83,6 +88,10 @@ PinConfig::PinConfig(QWidget *parent) :         // pin handling was the first th
             this, &PinConfig::limitReached);
     connect(ui->widget_PinTypeHelper, &PinTypeHelper::helpHovered,
             this, &PinConfig::highlightPins);
+    connect(ui->widget_PinTypeHelper, &PinTypeHelper::busToggleRequested,
+            this, &PinConfig::onBusToggleRequested);
+
+    refreshBusToggles();
 }
 
 PinConfig::~PinConfig()
@@ -114,6 +123,15 @@ QString PinConfig::pinRoleText(int pin) const
     const int idx = pin - 1;
     if (idx < 0 || idx >= m_pinCBoxPtrList.size()) return QString();
     return m_pinCBoxPtrList[idx]->currentRoleText();
+}
+
+QString PinConfig::pinGuiName(int pin) const
+{
+    const int idx = pin - 1;
+    if (idx < 0 || idx >= m_pinCBoxPtrList.size()) return QString();
+    // The static pin table is shared across boards; the active widget's copy
+    // gives the board-correct label (e.g. PB11 vs PB2 on slot 22).
+    return m_pinCBoxPtrList[idx]->pinList()[idx].guiName;
 }
 
 void PinConfig::retranslateUi()
@@ -163,6 +181,9 @@ void PinConfig::boardChanged(int index)
         m_blackPill->show();
     }
     m_lastBoard = index;
+
+    // F411 mutex depends on the active board, so re-evaluate the toggles
+    refreshBusToggles();
 }
 
 void PinConfig::setConnectedBoard(int boardId)
@@ -189,6 +210,9 @@ void PinConfig::pinInteraction(int index, int senderIndex, int pin)
                     if(m_pinCBoxPtrList[i]->interactCount() == 0){
                         m_pinCBoxPtrList[i]->setInteractCount(m_pinCBoxPtrList[i]->interactCount() + pin);
                         m_pinCBoxPtrList[i]->setIndex_iteraction(j, senderIndex);
+                        // this combobox just got auto-claimed -- flash it so the
+                        // user sees which shared pins the sensor grabbed
+                        flashAutoAssignedPin(i);
                     }
                     else if (m_pinCBoxPtrList[i]->isInteracts() == true){
                         m_pinCBoxPtrList[i]->setInteractCount(m_pinCBoxPtrList[i]->interactCount() + pin);
@@ -238,6 +262,9 @@ void PinConfig::pinIndexChanged(int currentDeviceEnum, int previousDeviceEnum, i
     // exclusive -- both want TIM4. Disable whichever role conflicts with the
     // current selection.
     blockEncoder2TLE5011(currentDeviceEnum, previousDeviceEnum, pinNumber);
+
+    // keep the I2C / SPI quick-setup toggles in sync with the live pin roles
+    refreshBusToggles();
 }
 
 
@@ -572,6 +599,198 @@ void PinConfig::highlightPins(pin_t pinType, bool enable)
     }
 }
 
+void PinConfig::flashAutoAssignedPin(int idx)
+{
+    if (idx < 0 || idx >= m_pinCBoxPtrList.size()) {
+        return;
+    }
+    // Drive the same pinHighlight QSS role highlightPins() uses, then clear it
+    // after a short beat. Guard the combobox with QPointer in case the board
+    // widget is swapped out before the timer fires.
+    QPointer<PinComboBox> box = m_pinCBoxPtrList[idx];
+    for (auto *cb : box->findChildren<QComboBox*>()) {
+        freejoy_style::setRole(cb, "pinHighlight", true);
+    }
+    QTimer::singleShot(1400, this, [box]() {
+        if (!box) {
+            return;
+        }
+        for (auto *cb : box->findChildren<QComboBox*>()) {
+            freejoy_style::clearRole(cb, "pinHighlight");
+        }
+    });
+}
+
+bool PinConfig::spiSensorConfigured() const
+{
+    static const int kSpiCs[] = {
+        TLE5011_CS, TLE5012_CS, MCP3201_CS, MCP3202_CS, MCP3204_CS,
+        MCP3208_CS, MLX90393_CS, MLX90363_CS, AS5048A_CS
+    };
+    for (int i = 0; i < m_pinCBoxPtrList.size(); ++i) {
+        const int role = m_pinCBoxPtrList[i]->currentDevEnum();
+        for (int cs : kSpiCs) {
+            if (role == cs) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool PinConfig::reassignPins(const QString &actionName,
+                             const QVector<QPair<int, int>> &targets,
+                             QWidget *parent)
+{
+    // A "conflict" is a target pin already on a different (non-empty) role; a
+    // pin already on its target role or unused isn't one. No conflicts = apply
+    // silently; otherwise we predict the cleared logical buttons via a dry-run
+    // and present everything in one dialog.
+    QVector<BusRemapConfirmationDialog::Conflict> conflicts;
+    for (const auto &t : targets) {
+        const int cur = pinRole(t.first);
+        if (cur != NOT_USED && cur != t.second) {
+            conflicts.append({ pinGuiName(t.first), pinRoleText(t.first) });
+        }
+    }
+
+    if (!conflicts.isEmpty()) {
+        // Real dry-run: route the pin changes through the breakdown machinery
+        // so the SR / Axes tabs recompute their own breakdowns, capture the
+        // resulting newB, then revert the pin roles -- all with ButtonConfig in
+        // dry-run mode so dev_config.buttons[] stays untouched. The captured
+        // newB gives the exact cleared set across every breakdown category, not
+        // just matrix + direct.
+        QVector<int> brokenForDisplay; // 1-based slot numbers for the dialog
+        if (m_buttonConfig) {
+            QVector<int> originalRoles;
+            originalRoles.reserve(targets.size());
+            for (const auto &t : targets) {
+                originalRoles.append(pinRole(t.first));
+            }
+
+            const auto oldB = m_buttonConfig->liveBreakdown();
+            m_buttonConfig->setDryRun(true);
+            for (const auto &t : targets) {
+                setPinRole(t.first, t.second);
+            }
+            const auto newB = m_buttonConfig->liveBreakdown();
+            const QList<int> brokenSlots = m_buttonConfig->computeBrokenSlots(oldB, newB);
+            // Roll back to the original roles before showing the dialog so a
+            // Cancel leaves the configurator exactly as it was found.
+            for (int i = 0; i < targets.size(); ++i) {
+                setPinRole(targets[i].first, originalRoles[i]);
+            }
+            m_buttonConfig->setDryRun(false);
+
+            for (int s : brokenSlots) brokenForDisplay.append(s + 1);
+        }
+
+        BusRemapConfirmationDialog dlg(actionName, conflicts, brokenForDisplay,
+                                       parent != nullptr ? parent : this);
+        if (dlg.exec() != QDialog::Accepted) {
+            return false; // cancelled, caller's UI may need its own revert
+        }
+    }
+
+    // Applying the roles removes the displaced pins from any prior buttons,
+    // which fires ButtonConfig's per-pin remap warning -- once per pin. The
+    // dialog already listed every slot that will clear, so silence the popup
+    // for the duration of the burst.
+    if (m_buttonConfig) m_buttonConfig->setRemapWarningSuppressed(true);
+    for (const auto &t : targets) {
+        // Setting an I2C/SPI/encoder lead auto-claims its sibling pins via the
+        // interaction system; explicit set is symmetric and order-independent.
+        setPinRole(t.first, t.second);
+    }
+    if (m_buttonConfig) m_buttonConfig->setRemapWarningSuppressed(false);
+    return true;
+}
+
+void PinConfig::onBusToggleRequested(int bus, bool enable)
+{
+    /* Pin enum values are 1-based and contiguous (PA_0 = 1 ...), so pin-1 is the
+     * combobox index AND the firmware's pin slot. I2C lands on slots 21/22,
+     * SPI on slots 14/15/16 -- exactly what periphery.c / analog.c read on both
+     * F103 and F411 (F411's physical I2C2_SDA->PB3 routing is handled inside the
+     * firmware's board_i2c.c, not here). */
+    QVector<QPair<int, int>> targets;
+    if (bus == PinTypeHelper::BUS_I2C) {
+        targets = { {PB_10, I2C_SCL}, {PB_11, I2C_SDA} };
+    } else { // BUS_SPI
+        targets = { {PB_3, SPI_SCK}, {PB_4, SPI_MISO}, {PB_5, SPI_MOSI} };
+    }
+
+    if (enable) {
+        const QString actionName = (bus == PinTypeHelper::BUS_I2C)
+            ? tr("I2C bus") : tr("SPI bus");
+        if (!reassignPins(actionName, targets, this)) {
+            // Cancelled: snap the toggle back to its real (off) state from the
+            // live pin roles (the dialog's revert already restored everything).
+            refreshBusToggles();
+            return;
+        }
+    } else {
+        // Disable path: clear the bus pins straight through. No conflict prompt
+        // -- the intent is unambiguous and the action is fully reversible by
+        // re-toggling. Still suppress the per-pin remap warning to match the
+        // single-dialog UX of the enable path.
+        if (m_buttonConfig) m_buttonConfig->setRemapWarningSuppressed(true);
+        for (const auto &t : targets) {
+            setPinRole(t.first, NOT_USED);
+        }
+        if (m_buttonConfig) m_buttonConfig->setRemapWarningSuppressed(false);
+    }
+    // setPinRole -> pinIndexChanged -> refreshBusToggles already runs, but call
+    // again so the toggle settles even if a role was rejected (setPinRole false).
+    refreshBusToggles();
+}
+
+void PinConfig::refreshBusToggles()
+{
+    const bool isF411 = (m_lastBoard == 2);   // 0 BluePill, 1 ContrLite, 2 BlackPill
+    const bool i2cOn = (pinRole(PB_10) == I2C_SCL);
+    const bool spiSensor = spiSensorConfigured();
+    // an SPI sensor's chip-select auto-claims SCK, so PB3==SPI_SCK covers both
+    // the bare-bus toggle and the sensor-owned case.
+    const bool spiOn = spiSensor || (pinRole(PB_3) == SPI_SCK);
+
+    bool i2cEnabled = true;
+    bool spiEnabled = !spiSensor;   // sensor owns the bus -> not a bare toggle
+
+    if (isF411) {                   // PB3 carries both SPI1_SCK and I2C2_SDA
+        if (spiOn) i2cEnabled = false;
+        if (i2cOn) spiEnabled = false;
+    }
+
+    ui->widget_PinTypeHelper->setBusState(PinTypeHelper::BUS_I2C, i2cOn, i2cEnabled);
+    ui->widget_PinTypeHelper->setBusState(PinTypeHelper::BUS_SPI, spiOn, spiEnabled);
+
+    // Lock a bus's pins while it's on so they can't be removed via the dropdown
+    // -- the toggle is the single release control. The follower pin (I2C SDA,
+    // or the SPI lines under a sensor) is already disabled by the interaction
+    // system; setPinLocked skips those so we don't double-manage them.
+    setPinLocked(PB_10, i2cOn);
+    setPinLocked(PB_11, i2cOn);
+    setPinLocked(PB_3, spiOn);
+    setPinLocked(PB_4, spiOn);
+    setPinLocked(PB_5, spiOn);
+}
+
+void PinConfig::setPinLocked(int pin, bool locked)
+{
+    const int idx = pin - 1;
+    if (idx < 0 || idx >= m_pinCBoxPtrList.size()) {
+        return;
+    }
+    // leave interaction-managed (follower) pins to the interaction system,
+    // which owns their enabled state
+    if (m_pinCBoxPtrList[idx]->isInteracts()) {
+        return;
+    }
+    m_pinCBoxPtrList[idx]->setLocked(locked);
+}
+
 void PinConfig::resetAllPins()
 {
     for (int i = 0; i < m_pinCBoxPtrList.size(); ++i) {
@@ -584,6 +803,7 @@ void PinConfig::readFromConfig(){
     for (int i = 0; i < m_pinCBoxPtrList.size(); ++i) {
         m_pinCBoxPtrList[i]->readFromConfig(i);
     }
+    refreshBusToggles();
 }
 
 void PinConfig::writeToConfig(){

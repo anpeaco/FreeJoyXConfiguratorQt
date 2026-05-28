@@ -176,6 +176,21 @@ inline QString warningIconHtml(int px = 14)
     return cached;
 }
 
+// Shared "warning note" banner stylesheet: a light-yellow fill with a yellow
+// (amber) border and amber ink, for confirmation/warning surfaces that need to
+// catch the eye without the heavy solid-amber treatment. Translucent fill so it
+// reads as pale yellow on the light theme and a soft amber tint on dark. Apply
+// to a QLabel and prefix its text with warningIconHtml() for the leading icon,
+// so every warning banner across the app looks identical.
+inline QString warningBannerQss()
+{
+    return QStringLiteral("padding:8px; border-radius:4px; "
+                          "background-color:%1; border:1px solid %2; color:%3;")
+        .arg(rgbaStr(accentAmber(), 40),
+             hexStr(accentAmber()),
+             hexStr(warningColor()));
+}
+
 // Set a dynamic property on a widget and force a style refresh so the
 // new value picks up matching QSS attribute-selector rules. Required
 // because Qt only resolves [property="value"] selectors during a
