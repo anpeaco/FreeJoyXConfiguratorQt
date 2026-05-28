@@ -125,14 +125,30 @@ void ShiftRegisters::setDataPin(int dataPin, QString pinGuiName)
 
 void ShiftRegisters::setUiOnOff()
 {
-    if (m_latchPin > 0 && m_clkPin > 0 && m_dataPin > 0) {
-        for (auto &&child : this->findChildren<QWidget *>()) {
-            child->setEnabled(true);
-        }
-    } else {
-        ui->spinBox_ButtonCount->setValue(0);
-        for (auto &&child : this->findChildren<QWidget *>()) {
-            child->setEnabled(false);
+    /* Enable / disable the widget without touching the spinbox VALUE, so the
+     * user's configured chain length survives any temporary pin removal
+     * (e.g. the bus-remap dry-run, or briefly unmapping a shared latch / clk
+     * pin and reassigning it). Externally-visible button count drops to 0
+     * while the widget is disabled (buttonCount() reads isEnabled()), and
+     * comes back unchanged when the pins return. The transition emits below
+     * replace the old setValue(0) trick the destructive version relied on
+     * to fire buttonCountChanged via the spinbox's valueChanged side effect. */
+    const bool nowEnabled = (m_latchPin > 0 && m_clkPin > 0 && m_dataPin > 0);
+    const bool wasEnabled = ui->spinBox_ButtonCount->isEnabled();
+
+    for (auto &&child : this->findChildren<QWidget *>()) {
+        child->setEnabled(nowEnabled);
+    }
+
+    if (wasEnabled && !nowEnabled) {
+        const int previous = m_buttonsCount;
+        m_buttonsCount = 0;
+        emit buttonCountChanged(0, previous);
+    } else if (!wasEnabled && nowEnabled) {
+        const int previous = m_buttonsCount;
+        m_buttonsCount = ui->spinBox_ButtonCount->value();
+        if (m_buttonsCount != previous) {
+            emit buttonCountChanged(m_buttonsCount, previous);
         }
     }
 }
