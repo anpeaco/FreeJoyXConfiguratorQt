@@ -71,6 +71,11 @@ PinConfig::PinConfig(QWidget *parent) :         // pin handling was the first th
     connect(ui->comboBox_board, qOverload<int>(&CenteredCBox::currentIndexChanged),
             this, &PinConfig::boardChanged);
 
+    // Per-board dropdown filter: strip role entries this board's firmware
+    // can't honour (e.g. I2C SDA on F411 slot 22 / PB2). Re-applied on every
+    // board change below.
+    applyBoardSpecificRoleFilters();
+
     for (int i = 0; i < m_pinCBoxPtrList.size(); ++i) {
             connect(m_pinCBoxPtrList[i], &PinComboBox::valueChangedForInteraction,       // valgrind reports a leak here -- why?
                         this, &PinConfig::pinInteraction);
@@ -134,6 +139,29 @@ QString PinConfig::pinGuiName(int pin) const
     return m_pinCBoxPtrList[idx]->pinList()[idx].guiName;
 }
 
+void PinConfig::applyBoardSpecificRoleFilters()
+{
+    /* I2C SDA pin support is asymmetric across the boards in the firmware:
+     *   - F103: slot 22 (PB11) is the only I2C_SDA-capable pin.
+     *   - F411: slot 20 (PB9, AF9) is the default; slot 14 (PB3, AF9, mutex
+     *           with SPI1_SCK) is the alt. Slot 22 on F411 is PB2 with no
+     *           I2C cap.
+     * The configurator's pin model is universal (F103-shaped) and after the
+     * I2C SDA dropdown was extended to also accept PB9's I2C1_SDA tag (so F411
+     * could use it), the entry leaked the other way -- PB9 became selectable
+     * as I2C SDA on F103 too, and slot 22 (B2 on F411) stayed selectable on
+     * F411. Both pickable, neither functional. Strip the bad entries here so
+     * the dropdown only offers picks the firmware will actually wire. */
+    if (m_pinCBoxPtrList.size() <= 22) return;          // defensive: pre-init
+    const bool isF411 = (m_lastBoard == 2);             // 0 BluePill, 1 ContrLite, 2 BlackPill
+    // Slot 20 (PB9): only F411 has the I2C SDA cap. On other boards strip it.
+    m_pinCBoxPtrList[20]->setExcludedRoles(
+        isF411 ? QSet<int>() : QSet<int>{I2C_SDA});
+    // Slot 22 (PB11 on F103, PB2 on F411): I2C SDA cap only on F103. Strip on F411.
+    m_pinCBoxPtrList[22]->setExcludedRoles(
+        isF411 ? QSet<int>{I2C_SDA} : QSet<int>());
+}
+
 void PinConfig::retranslateUi()
 {
     ui->retranslateUi(this);
@@ -181,6 +209,10 @@ void PinConfig::boardChanged(int index)
         m_blackPill->show();
     }
     m_lastBoard = index;
+
+    // Re-strip per-board role entries so the dropdown reflects the new board
+    // (e.g. F411 strips I2C_SDA from slot 22, F103 strips it from slot 20).
+    applyBoardSpecificRoleFilters();
 
     // F411 mutex depends on the active board, so re-evaluate the toggles
     refreshBusToggles();
@@ -812,22 +844,21 @@ void PinConfig::resetAllPins()
 
 
 void PinConfig::readFromConfig(){
-    /* Silent legacy migration: F411 configs written before the per-board pin
-     * model had I2C_SDA at slot 22 (PB11 on F103 / PB2 on F411 -- which has
-     * no I2C cap on F411). The firmware now defaults SDA to slot 20 (PB9,
-     * AF9, coexists with SPI). Move the role across so the configurator UI
-     * lines up with what the firmware actually wires, and so the I2C bus
-     * quick-setup toggle reads as "on" against the right pin.
+    /* Silent cleanup of legacy F411 configs that placed I2C_SDA on slot 22
+     * (PB2 on F411, no I2C cap). The role can't do anything there; the
+     * firmware's PR #52 dropped the silent back-compat bridge to PB3 (see
+     * board_i2c.c) so a config with this orphan SDA now fails to bring up
+     * I2C until the user re-toggles the bus on the Pins tab (which writes
+     * SDA to PB9, the new default). Clearing the role here makes the UI
+     * honest about what's actually wired and prevents the post-#47
+     * two-SDA-pins state from persisting silently.
      *
-     * Pre-modernisation builds shipped through the firmware-side back-compat
-     * bridge in board_i2c.c -- that bridge stays in place for any device the
-     * user hasn't yet re-written from this configurator. */
+     * No auto-promotion to slot 20 -- a silent rewrite of pins[20] would
+     * clobber any other role the user had assigned to PB9 (e.g. a button).
+     * The bus quick-setup toggle is the canonical, user-driven way to land
+     * SDA on PB9 with the displaced-pin confirmation dialog in front. */
     pin_t *pins = gEnv.pDeviceConfig->config.pins;
-    if (m_lastBoard == 2
-        && pins[21] == I2C_SCL
-        && pins[22] == I2C_SDA
-        && pins[20] != I2C_SDA) {
-        pins[20] = I2C_SDA;
+    if (m_lastBoard == 2 && pins[22] == I2C_SDA) {
         pins[22] = NOT_USED;
     }
 
