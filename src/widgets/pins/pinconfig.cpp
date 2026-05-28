@@ -710,13 +710,19 @@ bool PinConfig::reassignPins(const QString &actionName,
 void PinConfig::onBusToggleRequested(int bus, bool enable)
 {
     /* Pin enum values are 1-based and contiguous (PA_0 = 1 ...), so pin-1 is the
-     * combobox index AND the firmware's pin slot. I2C lands on slots 21/22,
-     * SPI on slots 14/15/16 -- exactly what periphery.c / analog.c read on both
-     * F103 and F411 (F411's physical I2C2_SDA->PB3 routing is handled inside the
-     * firmware's board_i2c.c, not here). */
+     * combobox index AND the firmware's pin slot.
+     *
+     * I2C lands on slots 21 (SCL = PB10, both boards) + the per-board SDA slot:
+     *   - F103: slot 22 = PB11 (I2C2 on AF4, no SPI conflict)
+     *   - F411: slot 20 = PB9  (I2C2 on AF9, coexists with SPI1)
+     *
+     * SPI lands on slots 14/15/16 (PB3/4/5) on both boards. (FreeJoyX#51
+     * dropped the F411 PB3 mutex by routing I2C2_SDA to PB9; alternative
+     * F411 routings live behind a future combo selector tracked in #40.) */
+    const int boardI2CSdaPin = (m_lastBoard == 2) ? PB_9 : PB_11;
     QVector<QPair<int, int>> targets;
     if (bus == PinTypeHelper::BUS_I2C) {
-        targets = { {PB_10, I2C_SCL}, {PB_11, I2C_SDA} };
+        targets = { {PB_10, I2C_SCL}, {boardI2CSdaPin, I2C_SDA} };
     } else { // BUS_SPI
         targets = { {PB_3, SPI_SCK}, {PB_4, SPI_MISO}, {PB_5, SPI_MOSI} };
     }
@@ -758,10 +764,16 @@ void PinConfig::refreshBusToggles()
     bool i2cEnabled = true;
     bool spiEnabled = !spiSensor;   // sensor owns the bus -> not a bare toggle
 
-    if (isF411) {                   // PB3 carries both SPI1_SCK and I2C2_SDA
-        if (spiOn) i2cEnabled = false;
-        if (i2cOn) spiEnabled = false;
-    }
+    /* On F411, the default I2C routing (combo A: SCL = PB10, SDA = PB9, AF9)
+     * is fully disjoint from SPI1 (PB3/4/5, AF5) so both buses coexist -- no
+     * mutex needed (FreeJoyX#51). When the F411 routing combo selector lands
+     * (anpeaco/FreeJoyXConfiguratorQt#40), combo B (SDA on PB3) re-introduces
+     * the SPI mutex and combo D (I2C1 on PB6/PB7) re-introduces an Encoder 2
+     * mutex; those branches plug back in here, conditional on the active
+     * combo. F103 has always been mutex-free. */
+
+    // The per-board I2C SDA slot tracks onBusToggleRequested.
+    const int i2cSdaPin = isF411 ? PB_9 : PB_11;
 
     ui->widget_PinTypeHelper->setBusState(PinTypeHelper::BUS_I2C, i2cOn, i2cEnabled);
     ui->widget_PinTypeHelper->setBusState(PinTypeHelper::BUS_SPI, spiOn, spiEnabled);
@@ -771,7 +783,7 @@ void PinConfig::refreshBusToggles()
     // or the SPI lines under a sensor) is already disabled by the interaction
     // system; setPinLocked skips those so we don't double-manage them.
     setPinLocked(PB_10, i2cOn);
-    setPinLocked(PB_11, i2cOn);
+    setPinLocked(i2cSdaPin, i2cOn);
     setPinLocked(PB_3, spiOn);
     setPinLocked(PB_4, spiOn);
     setPinLocked(PB_5, spiOn);
@@ -800,6 +812,25 @@ void PinConfig::resetAllPins()
 
 
 void PinConfig::readFromConfig(){
+    /* Silent legacy migration: F411 configs written before the per-board pin
+     * model had I2C_SDA at slot 22 (PB11 on F103 / PB2 on F411 -- which has
+     * no I2C cap on F411). The firmware now defaults SDA to slot 20 (PB9,
+     * AF9, coexists with SPI). Move the role across so the configurator UI
+     * lines up with what the firmware actually wires, and so the I2C bus
+     * quick-setup toggle reads as "on" against the right pin.
+     *
+     * Pre-modernisation builds shipped through the firmware-side back-compat
+     * bridge in board_i2c.c -- that bridge stays in place for any device the
+     * user hasn't yet re-written from this configurator. */
+    pin_t *pins = gEnv.pDeviceConfig->config.pins;
+    if (m_lastBoard == 2
+        && pins[21] == I2C_SCL
+        && pins[22] == I2C_SDA
+        && pins[20] != I2C_SDA) {
+        pins[20] = I2C_SDA;
+        pins[22] = NOT_USED;
+    }
+
     for (int i = 0; i < m_pinCBoxPtrList.size(); ++i) {
         m_pinCBoxPtrList[i]->readFromConfig(i);
     }

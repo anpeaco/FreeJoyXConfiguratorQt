@@ -399,7 +399,12 @@ private:
         {I2C_SDA,        tr("I2C SDA"),
         tr("I2C data line for an AS5600 (1x) or ADS1115 (up to 4x) sensor. Pair with I2C SCL. Outputs map to axes; 8-axis total limit."),
         GRP_I2C,
-        {I2C2_SDA},
+        /* I2C2_SDA tag covers slot 22 / PB11 (F103). I2C1_SDA tag covers slot
+         * 20 / PB9 -- on F411 the firmware's f411_af_map routes PB9 to I2C2 via
+         * AF9 (the tag is named for F103 where PB9 belongs to I2C1), so picking
+         * "I2C SDA" on PB9 wires up I2C2 on F411 (the default coexists-with-SPI
+         * routing) and is the right pick everywhere SDA needs to land. */
+        {I2C2_SDA, I2C1_SDA},
         {},
         {I2C_SCL}, {QColor(90, 155, 140)}},
 
