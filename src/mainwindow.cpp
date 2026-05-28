@@ -2329,7 +2329,12 @@ void MainWindow::on_pushButton_LoadFromFile_clicked()
 {
     qDebug()<<"Load from file started";
     QString fileName = QFileDialog::getOpenFileName(this,
-        tr("Open Config"), m_cfgDirPath + "/", tr("Config Files (*.cfg)"));
+        tr("Open Config"), lastUsedSaveDir() + "/", tr("Config Files (*.cfg)"));
+
+    // Remember where the user actually picked from, so the next Load/Save
+    // opens there rather than snapping back to m_cfgDirPath. Cancel leaves
+    // fileName empty -> no update.
+    setLastUsedSaveDir(fileName);
 
     gEnv.pDeviceConfig->resetConfig();
     ConfigToFile::loadDeviceConfigFromFile(this, fileName, gEnv.pDeviceConfig->config);
@@ -2348,8 +2353,15 @@ void MainWindow::on_pushButton_SaveToFile_clicked()
         tmpStr = gEnv.pDeviceConfig->config.device_name;
     }
 
-    QFileInfo file(QFileDialog::getSaveFileName(this, tr("Save Config"),
-                                                m_cfgDirPath + "/" + tmpStr, tr("Config Files (*.cfg)")));
+    /* Start in the user's last-used directory (separate from m_cfgDirPath
+     * "home"); still pre-fill the suggested filename. Cancel returns empty
+     * -> no update to LastUsedPath, file ops still tolerate empty path
+     * (saveDeviceConfigToFile no-ops). */
+    const QString savedPath = QFileDialog::getSaveFileName(this, tr("Save Config"),
+                                                lastUsedSaveDir() + "/" + tmpStr,
+                                                tr("Config Files (*.cfg)"));
+    setLastUsedSaveDir(savedPath);
+    QFileInfo file(savedPath);
     UiWriteToConfig();
     ConfigToFile::saveDeviceConfigToFile(file.absoluteFilePath(), gEnv.pDeviceConfig->config);
 
@@ -2374,6 +2386,29 @@ void MainWindow::applySaveDirectoryChange(const QString &path)
     ui->comboBox_Configs->clear();
     bl.unblock();
     ui->comboBox_Configs->addItems(cfgFilesList(m_cfgDirPath));
+}
+
+QString MainWindow::lastUsedSaveDir() const
+{
+    /* Honour the last directory the user actually picked, falling back to
+     * m_cfgDirPath when the saved path is unset or has been deleted between
+     * sessions. Keeping m_cfgDirPath as the fallback means a fresh install
+     * still opens at the user's "home" -- the new key never replaces it,
+     * only steers the dialog from where they last navigated. */
+    const QString last = gEnv.pAppSettings->value(
+        QStringLiteral("Configs/LastUsedPath")).toString();
+    if (!last.isEmpty() && QDir(last).exists()) {
+        return last;
+    }
+    return m_cfgDirPath;
+}
+
+void MainWindow::setLastUsedSaveDir(const QString &filePath)
+{
+    if (filePath.isEmpty()) return;
+    const QString dir = QFileInfo(filePath).absolutePath();
+    if (dir.isEmpty()) return;
+    gEnv.pAppSettings->setValue(QStringLiteral("Configs/LastUsedPath"), dir);
 }
 
 // Show debug widget
