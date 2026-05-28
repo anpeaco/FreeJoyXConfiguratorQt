@@ -251,6 +251,15 @@ private:
 
     QString m_cfgDirPath;
 
+    /* Last directory the user actually picked in a Load/Save Config file
+     * dialog -- separate from m_cfgDirPath (the "home" the Advanced tab
+     * owns) so the home stays the user's intentional setting while the
+     * dialogs track where they last navigated. Persisted in QSettings as
+     * [Configs]/LastUsedPath. lastUsedSaveDir() returns it if set and the
+     * directory still exists, otherwise falls back to m_cfgDirPath. */
+    QString lastUsedSaveDir() const;
+    void setLastUsedSaveDir(const QString &filePath);
+
     /* Save a snapshot of the device's current config to
      * <m_cfgDirPath>/backups/. Called from configReceived's
      * m_flashSessionBackupPending branch as the BackingUp step of a
