@@ -389,12 +389,20 @@ private:
         {},
         {}, {QColor(53, 153, 120)}},
 
+        /* SCL <-> SDA used to auto-pair each other via the interaction[] field,
+         * which on F103 conveniently claimed slot 22 / PB11 when the user picked
+         * I2C SCL on slot 21 / PB10. After F411 gained a second valid SDA pin
+         * (PB9, slot 20), that auto-pair has no per-board awareness to pick the
+         * right one and ended up force-claiming both -- bug. Auto-pair removed;
+         * the Bus quick-setup toggle in the Pin Info pane (the canonical UX for
+         * standing up a bus in one click) writes both pins explicitly and the
+         * pin-locking in refreshBusToggles still locks SDA while I2C is on. */
         {I2C_SCL,        tr("I2C SCL"),
         tr("I2C clock line for an AS5600 (1x) or ADS1115 (up to 4x) sensor. Pair with I2C SDA. Outputs map to axes; 8-axis total limit."),
         GRP_I2C,
         {I2C2_SCL},
         {},
-        {I2C_SDA}, {QColor(90, 155, 140)}},
+        {}, {QColor(90, 155, 140)}},
 
         {I2C_SDA,        tr("I2C SDA"),
         tr("I2C data line for an AS5600 (1x) or ADS1115 (up to 4x) sensor. Pair with I2C SCL. Outputs map to axes; 8-axis total limit."),
@@ -406,7 +414,7 @@ private:
          * routing) and is the right pick everywhere SDA needs to land. */
         {I2C2_SDA, I2C1_SDA},
         {},
-        {I2C_SCL}, {QColor(90, 155, 140)}},
+        {}, {QColor(90, 155, 140)}},
 
         {UART_TX,        tr("UART TX"),
         tr("Serial joystick output (PA9, 115200 baud, every 10 ms) -- e.g. to an ESP32 for a Bluetooth joystick."),
