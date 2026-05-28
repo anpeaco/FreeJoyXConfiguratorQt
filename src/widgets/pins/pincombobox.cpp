@@ -125,6 +125,11 @@ void PinComboBox::setIndexStatus(int index, bool status)
     ui->comboBox_PinsType->setItemData(index, font, Qt::FontRole);
 }
 
+void PinComboBox::setLocked(bool locked)
+{
+    ui->comboBox_PinsType->setEnabled(!locked);
+}
+
 void PinComboBox::resetPin()
 {
     ui->comboBox_PinsType->setCurrentIndex(0);
@@ -172,6 +177,52 @@ void PinComboBox::initializationPins(uint pin)      // pin_number_ - 1 -- not gr
     int pinListTypeSize = sizeof(m_pinList->pinType) / sizeof(m_pinList->pinType[0]);
     bool tmp = false;
 
+    // Human-readable section title for a PinGroup. Empty -> no header row.
+    auto sectionTitle = [this](int group) -> QString {
+        switch (group) {
+        case GRP_BUTTON:     return tr("Buttons");
+        case GRP_SHIFTREG:   return tr("Shift Registers");
+        case GRP_SPI_SENSOR: return tr("SPI Devices");
+        case GRP_LED:        return tr("LEDs");
+        case GRP_AXIS:       return tr("Analog Axis");
+        case GRP_ENCODER:    return tr("Encoder");
+        case GRP_I2C:        return tr("I2C Devices");
+        case GRP_UART:       return tr("Serial Output");
+        case GRP_SPI_BUS:    return tr("SPI Bus (auto-assigned)");
+        default:             return QString();
+        }
+    };
+
+    /* Adds one role item, keeping the QComboBox row indices aligned 1:1 with
+     * m_pinTypesIndex / m_enumIndex (every consumer relies on that alignment).
+     * Whenever the role group changes from the previously-added item, inserts a
+     * non-selectable, bold section header (e.g. "SPI Devices") and pushes a -1
+     * sentinel into both parallel vectors for that header row so the alignment
+     * survives the insert. */
+    int lastGroup = -1;
+    auto addType = [&](int i) {
+        const int group = m_pinTypes[i].group;
+        const QString title = sectionTitle(group);
+        if (lastGroup != -1 && group != lastGroup && !title.isEmpty()) {
+            const int hdr = ui->comboBox_PinsType->count();
+            ui->comboBox_PinsType->addItem(title);
+            ui->comboBox_PinsType->setItemData(hdr, 0, Qt::UserRole - 1);   // non-selectable
+            QFont hf = ui->comboBox_PinsType->font();
+            hf.setBold(true);
+            ui->comboBox_PinsType->setItemData(hdr, hf, Qt::FontRole);
+            ui->comboBox_PinsType->setItemData(hdr, QBrush(QColor(150, 150, 150)), Qt::ForegroundRole);
+            m_pinTypesIndex.push_back(-1);   // sentinel: header row, no backing type
+            m_enumIndex.push_back(-1);
+        }
+        ui->comboBox_PinsType->addItem(m_pinTypes[i].guiName);
+        // dropdown tooltip explaining the device + how its pins bind
+        ui->comboBox_PinsType->setItemData(ui->comboBox_PinsType->count() - 1,
+                                           m_pinTypes[i].description, Qt::ToolTipRole);
+        m_pinTypesIndex.push_back(i);
+        m_enumIndex.push_back(m_pinTypes[i].deviceEnumIndex);
+        lastGroup = group;
+    };
+
     for (int i = 0; i < PIN_TYPE_COUNT; ++i) {
         // except
         tmp = false;
@@ -200,22 +251,15 @@ void PinComboBox::initializationPins(uint pin)      // pin_number_ - 1 -- not gr
             continue;
         }
 
-        // add
-        for (int j = 0; j < typeSize; ++j) {
+        // decide whether this role is legal for this pin -- added at most once
+        bool shouldAdd = false;
+        for (int j = 0; j < typeSize && !shouldAdd; ++j) {
             if (m_pinTypes[i].pinType[j] == 0) {
                 break;
             }
-            if (m_pinTypes[i].pinType[j] == ALL){
-                ui->comboBox_PinsType->addItem(m_pinTypes[i].guiName);
-                m_pinTypesIndex.push_back(i);
-                m_enumIndex.push_back(m_pinTypes[i].deviceEnumIndex);
-                continue;
-            }
-            if (m_pinTypes[i].pinType[j] == m_pinNumber){
-                ui->comboBox_PinsType->addItem(m_pinTypes[i].guiName);
-                m_pinTypesIndex.push_back(i);
-                m_enumIndex.push_back(m_pinTypes[i].deviceEnumIndex);
-                continue;
+            if (m_pinTypes[i].pinType[j] == ALL || m_pinTypes[i].pinType[j] == int(m_pinNumber)){
+                shouldAdd = true;
+                break;
             }
             for (int k = 0; k < pinListTypeSize; ++k)
             {
@@ -223,21 +267,31 @@ void PinComboBox::initializationPins(uint pin)      // pin_number_ - 1 -- not gr
                     break;
                 }
                 if (m_pinTypes[i].pinType[j] == m_pinList[m_pinNumber-1].pinType[k]){
-                    ui->comboBox_PinsType->addItem(m_pinTypes[i].guiName);
-                    m_pinTypesIndex.push_back(i);
-                    m_enumIndex.push_back(m_pinTypes[i].deviceEnumIndex);
+                    shouldAdd = true;
+                    break;
                 }
             }
+        }
+        if (shouldAdd) {
+            addType(i);
         }
     }
     // change items text color // i = 1 -skip "NOT_USED"
     for (int i = 1; i < m_pinTypesIndex.size(); ++i) {
+        if (m_pinTypesIndex[i] < 0) {   // skip separator sentinel rows
+            continue;
+        }
         ui->comboBox_PinsType->setItemData(i, QBrush(m_pinTypes[m_pinTypesIndex[i]].color), Qt::ForegroundRole);
     }
 }
 
 void PinComboBox::indexChanged(int index)
 {
+    // separators carry a -1 sentinel and have no backing type; they aren't
+    // selectable, but guard anyway so we never deref m_pinTypes[-1].
+    if (index < 0 || index >= m_pinTypesIndex.size() || m_pinTypesIndex[index] < 0) {
+        return;
+    }
     if(m_pinTypesIndex.empty() == false && m_isInteracts == false)
     {
         // change text color
