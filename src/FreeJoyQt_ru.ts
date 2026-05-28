@@ -639,6 +639,49 @@ Two axes reading the same input will move together.</source>
     </message>
 </context>
 <context>
+    <name>BusRemapConfirmationDialog</name>
+    <message>
+        <location filename="dialogs/busremapconfirmationdialog.ui" line="14"/>
+        <source>Confirm pin remap</source>
+        <translation>Подтвердите переназначение выводов</translation>
+    </message>
+    <message>
+        <location filename="dialogs/busremapconfirmationdialog.ui" line="44"/>
+        <source>These pins will be reassigned:</source>
+        <translation>Эти выводы будут переназначены:</translation>
+    </message>
+    <message>
+        <location filename="dialogs/busremapconfirmationdialog.cpp" line="25"/>
+        <source>Enable %1?</source>
+        <oldsource>Enable %1 bus?</oldsource>
+        <translation>Включить «%1»?</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="dialogs/busremapconfirmationdialog.cpp" line="28"/>
+        <source>Enabling %1 will reassign %n pin(s) that are already mapped. Their current functions will be cleared.</source>
+        <oldsource>Enabling the %1 bus will reassign %n pin(s) that are already mapped. Their current functions will be cleared.</oldsource>
+        <translation>
+            <numerusform>При включении «%1» будет переназначен %n уже назначенный вывод. Его текущая функция будет очищена.</numerusform>
+            <numerusform>При включении «%1» будет переназначено %n уже назначенных вывода. Их текущие функции будут очищены.</numerusform>
+            <numerusform>При включении «%1» будет переназначено %n уже назначенных выводов. Их текущие функции будут очищены.</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="dialogs/busremapconfirmationdialog.cpp" line="59"/>
+        <source>This will also clear logical button(s) %1, which reference these inputs. Reassign them before saving.</source>
+        <translation>
+            <numerusform>Также будет очищена логическая кнопка %1, ссылающаяся на эти входы. Переназначьте её перед сохранением.</numerusform>
+            <numerusform>Также будут очищены логические кнопки %1, ссылающиеся на эти входы. Переназначьте их перед сохранением.</numerusform>
+            <numerusform>Также будут очищены логические кнопки %1, ссылающиеся на эти входы. Переназначьте их перед сохранением.</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="dialogs/busremapconfirmationdialog.cpp" line="67"/>
+        <source>Remap &amp;&amp; enable</source>
+        <translation>Переназначить и включить</translation>
+    </message>
+</context>
+<context>
     <name>ButtonConfig</name>
     <message>
         <location filename="widgets/buttons/buttonconfig.ui" line="41"/>
@@ -646,57 +689,57 @@ Two axes reading the same input will move together.</source>
         <translation>Логические кнопки</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.ui" line="99"/>
+        <location filename="widgets/buttons/buttonconfig.ui" line="137"/>
         <source>Delay timer</source>
         <translation>Таймер задержки</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.ui" line="178"/>
+        <location filename="widgets/buttons/buttonconfig.ui" line="216"/>
         <source>Function</source>
         <translation>Функция</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.ui" line="121"/>
+        <location filename="widgets/buttons/buttonconfig.ui" line="159"/>
         <source>Press timer</source>
         <translation>Время нажатия</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.ui" line="77"/>
+        <location filename="widgets/buttons/buttonconfig.ui" line="115"/>
         <source>Shift</source>
         <translation>Шифт</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.ui" line="143"/>
+        <location filename="widgets/buttons/buttonconfig.ui" line="181"/>
         <source>Physical</source>
         <translation>Физич</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.ui" line="200"/>
+        <location filename="widgets/buttons/buttonconfig.ui" line="238"/>
         <source>Operator</source>
         <translation>Оператор</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.ui" line="222"/>
+        <location filename="widgets/buttons/buttonconfig.ui" line="260"/>
         <source>Source B</source>
         <translation>Источник B</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.ui" line="244"/>
+        <location filename="widgets/buttons/buttonconfig.ui" line="282"/>
         <source>Invert this button&apos;s input (HIGH becomes pressed, LOW becomes released)</source>
         <translation>Инвертировать вход этой кнопки (HIGH становится нажатием, LOW — отпусканием)</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.ui" line="335"/>
+        <location filename="widgets/buttons/buttonconfig.ui" line="373"/>
         <source>Disable this button slot</source>
         <translation>Отключить этот слот кнопки</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.ui" line="486"/>
+        <location filename="widgets/buttons/buttonconfig.ui" line="524"/>
         <source>Physical buttons</source>
         <translation>Физические кнопки</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.ui" line="390"/>
+        <location filename="widgets/buttons/buttonconfig.ui" line="428"/>
         <source>Clear every logical button slot back to defaults. Pin, axis, shift register and timer settings are not affected.</source>
         <oldsource>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Press a physical button for assigning it to a logical one.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</oldsource>
         <translation>Сбрасывает каждый слот логической кнопки к значениям по умолчанию. Настройки выводов, осей, сдвиговых регистров и таймеров не затрагиваются.</translation>
@@ -755,12 +798,12 @@ This cannot be undone except by reading the config back from the device.</source
         <translation>Другое</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.cpp" line="906"/>
+        <location filename="widgets/buttons/buttonconfig.cpp" line="918"/>
         <source>Logical Buttons Cleared</source>
         <translation>Логические кнопки очищены</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.cpp" line="907"/>
+        <location filename="widgets/buttons/buttonconfig.cpp" line="919"/>
         <source>The connection change removed the input(s) referenced by logical button(s) %1. Their physical button / Source B have been cleared. Please reassign before saving.</source>
         <translation>Изменение подключения удалило вход(ы), на которые ссылались логические кнопки %1. Их физическая кнопка / Источник B были очищены. Переназначьте перед сохранением.</translation>
     </message>
@@ -1407,92 +1450,92 @@ This cannot be undone except by reading the config back from the device.</source
         <translation>Примерно 30 секунд. Не отключайте устройство во время этого процесса.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="47"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="48"/>
         <source>Flash</source>
         <translation>Прошить</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="150"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="151"/>
         <source>(in bootloader -- version unknown)</source>
         <translation>(в загрузчике — версия неизвестна)</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="159"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="160"/>
         <source>Legacy binary (no metadata)</source>
         <translation>Устаревший двоичный файл (без метаданных)</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="171"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="172"/>
         <source>Same generation -- your configuration will be preserved.</source>
         <translation>То же поколение — ваша конфигурация будет сохранена.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="175"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="176"/>
         <source>Upgrade -- your configuration will be migrated to the new wire format.</source>
         <translation>Обновление — ваша конфигурация будет перенесена в новый формат передачи.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="179"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="180"/>
         <source>Upgrade -- no migrator available for your current firmware. Your configuration will be saved to disk but the device will factory-reset.</source>
         <translation>Обновление — для вашей текущей прошивки нет средства миграции. Ваша конфигурация будет сохранена на диск, но устройство будет сброшено к заводским настройкам.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="185"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="186"/>
         <source>Downgrade -- the target firmware is older than the current. Your configuration will be saved to disk but cannot be auto-restored; the device will factory-reset.</source>
         <translation>Понижение версии — целевая прошивка старше текущей. Ваша конфигурация будет сохранена на диск, но не может быть восстановлена автоматически; устройство будет сброшено к заводским настройкам.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="191"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="192"/>
         <source>Recovery flash -- the device is in bootloader mode. No backup is possible; the device will factory-reset.</source>
         <translation>Восстановительная прошивка — устройство в режиме загрузчика. Резервное копирование невозможно; устройство будет сброшено к заводским настройкам.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="196"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="197"/>
         <source>Incompatible -- the selected firmware does not match this device&apos;s board type. Flash refused.</source>
         <translation>Несовместимо — выбранная прошивка не соответствует типу платы этого устройства. Прошивка отклонена.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="212"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="213"/>
         <source>%1. Save a backup of the current configuration to disk.</source>
         <translation>%1. Сохранить резервную копию текущей конфигурации на диск.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="215"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="216"/>
         <source>%1. Reboot the device into bootloader mode.</source>
         <translation>%1. Перезагрузить устройство в режим загрузчика.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="216"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="217"/>
         <source>%1. Transfer the new firmware (~%2 bytes).</source>
         <translation>%1. Передать новую прошивку (~%2 байт).</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="218"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="219"/>
         <source>%1. Wait for the device to restart and re-enumerate.</source>
         <translation>%1. Дождаться перезапуска устройства и его повторного подключения.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="221"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="222"/>
         <source>%1. Write the (migrated) configuration back to the device.</source>
         <translation>%1. Записать (мигрированную) конфигурацию обратно на устройство.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="223"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="224"/>
         <source>%1. Leave the device factory-reset -- restore the backup manually from the saved file if needed.</source>
         <translation>%1. Оставить устройство со сбросом к заводским настройкам — при необходимости восстановите резервную копию вручную из сохранённого файла.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="227"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="228"/>
         <source>Pick a firmware binary that matches the device&apos;s board, then try again.</source>
         <translation>Выберите двоичный файл прошивки, соответствующий плате устройства, и повторите попытку.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="240"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="248"/>
         <source>(unknown)</source>
         <translation>(неизвестно)</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="256"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="264"/>
         <source>Unknown</source>
         <translation>Неизвестно</translation>
     </message>
@@ -2169,14 +2212,14 @@ Check that the file exists and the configurator has permission to read it.</sour
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="mainwindow.cpp" line="447"/>
-        <location filename="mainwindow.cpp" line="695"/>
-        <location filename="mainwindow.cpp" line="1379"/>
+        <location filename="mainwindow.cpp" line="458"/>
+        <location filename="mainwindow.cpp" line="706"/>
+        <location filename="mainwindow.cpp" line="1390"/>
         <source>Connected</source>
         <translation>Подключён</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="421"/>
+        <location filename="mainwindow.cpp" line="432"/>
         <source>Disconnected</source>
         <translation>Отключён</translation>
     </message>
@@ -2312,271 +2355,260 @@ Check that the file exists and the configurator has permission to read it.</sour
         <translation>Сохранить конфиг в файл</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="89"/>
+        <location filename="mainwindow.cpp" line="97"/>
         <source>%1 Configurator %2</source>
         <translation>%1 Configurator %2</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="180"/>
+        <location filename="mainwindow.cpp" line="188"/>
         <source>— select device —</source>
         <translation>— выберите устройство —</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="418"/>
+        <location filename="mainwindow.cpp" line="429"/>
         <source>Restarting...</source>
         <translation>Перезапуск...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="600"/>
+        <location filename="mainwindow.cpp" line="611"/>
         <source>Unknown (%1)</source>
         <translation>Неизвестно (%1)</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="638"/>
+        <location filename="mainwindow.cpp" line="649"/>
         <source>LEDs are not yet supported on Black Pill (F411). Coming in a future update.</source>
         <translation>Светодиоды пока не поддерживаются на Black Pill (F411). Появятся в будущем обновлении.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="682"/>
+        <location filename="mainwindow.cpp" line="693"/>
         <source>Legacy</source>
         <translation>Устаревш.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="775"/>
+        <location filename="mainwindow.cpp" line="786"/>
         <source>No device detected</source>
         <translation>Устройство не обнаружено</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="776"/>
+        <location filename="mainwindow.cpp" line="787"/>
         <source>Connect a FreeJoy device before using the Flash button. If the device is stuck in DFU mode without enumerating, recover via STM32 Cube Programmer + ST-Link.</source>
         <translation>Подключите устройство FreeJoy перед использованием кнопки прошивки. Если устройство застряло в режиме DFU и не определяется, восстановите его через STM32 Cube Programmer + ST-Link.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="967"/>
+        <location filename="mainwindow.cpp" line="978"/>
         <source>WARNING: device reports firmware v0x%1 but the flashed binary&apos;s footer says v0x%2. Re-flash recommended.</source>
         <translation>ВНИМАНИЕ: устройство сообщает о прошивке v0x%1, но в нижнем колонтитуле прошитого двоичного файла указано v0x%2. Рекомендуется перепрошивка.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="982"/>
+        <location filename="mainwindow.cpp" line="993"/>
         <source>Backup saved to %1</source>
         <translation>Резервная копия сохранена в %1</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1187"/>
+        <location filename="mainwindow.cpp" line="1198"/>
         <source>Pending changes. The device still runs its previously-flashed config; the live press preview reflects that, not your edits. Click to write.</source>
         <translation>Несохранённые изменения. Устройство всё ещё работает с ранее прошитой конфигурацией; предпросмотр нажатий в реальном времени отражает её, а не ваши правки. Нажмите для записи.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1258"/>
+        <location filename="mainwindow.cpp" line="1269"/>
         <source>&lt;p&gt;This device is running upstream FreeJoy firmware (%1).&lt;/p&gt;&lt;p&gt;The configurator has read its config and translated it into the current shape. Your existing pin assignments, axes, buttons, shift registers, encoders and LED settings are preserved. New-since-then features (logical buttons, gestures, RGB) carry default values.&lt;/p&gt;&lt;p&gt;To finish upgrading the device:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Review the imported config in the tabs above. &lt;b&gt;Save it to a file&lt;/b&gt; as a backup.&lt;/li&gt;&lt;li&gt;Flash %2 firmware via &lt;i&gt;Advanced Settings &amp;rarr; Firmware flasher&lt;/i&gt;.&lt;/li&gt;&lt;li&gt;After the device reconnects, click &lt;b&gt;Write config to device&lt;/b&gt; to push the migrated config.&lt;/li&gt;&lt;/ol&gt;</source>
         <translation>&lt;p&gt;Это устройство работает с оригинальной прошивкой FreeJoy (%1).&lt;/p&gt;&lt;p&gt;Конфигуратор прочитал её конфигурацию и преобразовал в текущий вид. Ваши существующие назначения выводов, оси, кнопки, сдвиговые регистры, энкодеры и настройки светодиодов сохранены. Появившиеся с тех пор функции (логические кнопки, жесты, RGB) получают значения по умолчанию.&lt;/p&gt;&lt;p&gt;Чтобы завершить обновление устройства:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Просмотрите импортированную конфигурацию во вкладках выше. &lt;b&gt;Сохраните её в файл&lt;/b&gt; как резервную копию.&lt;/li&gt;&lt;li&gt;Прошейте прошивку %2 через &lt;i&gt;Расширенные настройки &amp;rarr; Прошивальщик&lt;/i&gt;.&lt;/li&gt;&lt;li&gt;После повторного подключения устройства нажмите &lt;b&gt;Записать конфигурацию на устройство&lt;/b&gt;, чтобы отправить мигрированную конфигурацию.&lt;/li&gt;&lt;/ol&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1275"/>
+        <location filename="mainwindow.cpp" line="1286"/>
         <source>Legacy config imported</source>
         <translation>Устаревшая конфигурация импортирована</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1308"/>
+        <location filename="mainwindow.cpp" line="1319"/>
         <source>Backup failed</source>
         <translation>Резервное копирование не удалось</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1309"/>
+        <location filename="mainwindow.cpp" line="1320"/>
         <source>&lt;p&gt;Could not read the device&apos;s current config. Proceeding without a backup means a failed flash could leave the device with default settings (you&apos;d lose your current mappings).&lt;/p&gt;&lt;p&gt;Continue with flash anyway?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Не удалось прочитать текущую конфигурацию устройства. Продолжение без резервной копии означает, что неудачная прошивка может оставить устройство с настройками по умолчанию (вы потеряете текущие назначения).&lt;/p&gt;&lt;p&gt;Всё равно продолжить прошивку?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1334"/>
+        <location filename="mainwindow.cpp" line="1345"/>
         <source>Backup OK, writing...</source>
         <translation>Резервная копия готова, запись...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1337"/>
+        <location filename="mainwindow.cpp" line="1348"/>
         <source>Pre-write backup failed</source>
         <translation>Резервное копирование перед записью не удалось</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1338"/>
+        <location filename="mainwindow.cpp" line="1349"/>
         <source>&lt;p&gt;Could not read the device&apos;s current config to back it up before writing.&lt;/p&gt;&lt;p&gt;Continue with the write anyway? If the new config has issues, you&apos;ll have no automatic rollback path -- only configs you previously saved manually.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Не удалось прочитать текущую конфигурацию устройства для резервного копирования перед записью.&lt;/p&gt;&lt;p&gt;Всё равно продолжить запись? Если в новой конфигурации будут проблемы, автоматического отката не будет — только конфигурации, сохранённые вами вручную ранее.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1381"/>
+        <location filename="mainwindow.cpp" line="1392"/>
         <source>Received</source>
         <translation>Полученно</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1391"/>
-        <location filename="mainwindow.cpp" line="1433"/>
+        <location filename="mainwindow.cpp" line="1402"/>
+        <location filename="mainwindow.cpp" line="1444"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1422"/>
+        <location filename="mainwindow.cpp" line="1433"/>
         <source>Sent</source>
         <translation>Отправлено</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1513"/>
+        <location filename="mainwindow.cpp" line="1524"/>
         <source>Disabled because the connected device runs an unsupported firmware version. Flash a known-good build via Advanced Settings → Firmware flasher to regain access.</source>
         <translation>Отключено, потому что подключённое устройство работает с неподдерживаемой версией прошивки. Прошейте заведомо рабочую сборку через Расширенные настройки → Прошивальщик, чтобы восстановить доступ.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1681"/>
+        <location filename="mainwindow.cpp" line="1692"/>
         <source>Reset all settings to defaults?</source>
         <translation>Сбросить все настройки к значениям по умолчанию?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1682"/>
+        <location filename="mainwindow.cpp" line="1693"/>
         <source>&lt;p&gt;This resets every setting in the configurator -- pins, axes, buttons, encoders, sensors, USB identity, gestures, logic, LEDs, shifts &amp;amp; timers -- to factory defaults.&lt;/p&gt;&lt;p&gt;The change is &lt;b&gt;in-memory only&lt;/b&gt;. The connected device keeps its current settings until you click &lt;b&gt;Write Config&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Это сбрасывает все настройки в конфигураторе — выводы, оси, кнопки, энкодеры, датчики, USB-идентификацию, жесты, логику, светодиоды, шифты &amp;amp; таймеры — к заводским значениям.&lt;/p&gt;&lt;p&gt;Изменение происходит &lt;b&gt;только в памяти&lt;/b&gt;. Подключённое устройство сохраняет свои текущие настройки, пока вы не нажмёте &lt;b&gt;Записать конфигурацию&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Продолжить?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1724"/>
+        <location filename="mainwindow.cpp" line="1735"/>
         <source>Incomplete Logic Configuration</source>
         <translation>Неполная конфигурация логики</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1725"/>
+        <location filename="mainwindow.cpp" line="1736"/>
         <source>Logical button %1 has Function = Logic but is missing an operator or Source B. Pick an operator (and Source B for binary operators) before saving.</source>
         <translation>Логическая кнопка %1 имеет Функцию = Логика, но не задан оператор или Источник B. Выберите оператор (и Источник B для бинарных операторов) перед сохранением.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1766"/>
+        <location filename="mainwindow.cpp" line="1777"/>
         <source>Backing up...</source>
         <translation>Резервное копирование...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1879"/>
+        <location filename="mainwindow.cpp" line="1890"/>
         <source>No device connected</source>
         <translation>Устройство не подключено</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1880"/>
+        <location filename="mainwindow.cpp" line="1891"/>
         <source>Connect a device before starting an upgrade.</source>
         <translation>Подключите устройство перед началом обновления.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1898"/>
+        <location filename="mainwindow.cpp" line="1909"/>
         <source>No firmware available</source>
         <translation>Прошивка недоступна</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1899"/>
+        <location filename="mainwindow.cpp" line="1910"/>
         <source>Couldn&apos;t find a matching firmware binary in the configurator&apos;s firmware/ folder. Use Advanced Settings -&gt; Firmware flasher to flash manually.</source>
         <translation>Не удалось найти подходящий двоичный файл прошивки в папке firmware/ конфигуратора. Используйте Расширенные настройки -&gt; Прошивальщик для ручной прошивки.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1929"/>
+        <location filename="mainwindow.cpp" line="1940"/>
         <source>Upgrade firmware?</source>
         <translation>Обновить прошивку?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1930"/>
+        <location filename="mainwindow.cpp" line="1941"/>
         <source>&lt;p&gt;This will:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Read your current config and save a backup file&lt;/li&gt;&lt;li&gt;Flash &lt;b&gt;%1&lt;/b&gt; to the device&lt;/li&gt;&lt;li&gt;Write your migrated config back after the device reconnects&lt;/li&gt;&lt;/ol&gt;&lt;p&gt;Current firmware: &lt;b&gt;%2&lt;/b&gt;&lt;br&gt;Target firmware: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;%4&lt;p&gt;If anything fails mid-flight the device may be left in DFU mode -- recover via STM32 Cube Programmer + ST-Link.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Это:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Прочитает вашу текущую конфигурацию и сохранит файл резервной копии&lt;/li&gt;&lt;li&gt;Прошьёт &lt;b&gt;%1&lt;/b&gt; на устройство&lt;/li&gt;&lt;li&gt;Запишет вашу мигрированную конфигурацию обратно после повторного подключения устройства&lt;/li&gt;&lt;/ol&gt;&lt;p&gt;Текущая прошивка: &lt;b&gt;%2&lt;/b&gt;&lt;br&gt;Целевая прошивка: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;%4&lt;p&gt;Если что-то прервётся в процессе, устройство может остаться в режиме DFU — восстановите через STM32 Cube Programmer + ST-Link.&lt;/p&gt;&lt;p&gt;Продолжить?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1975"/>
-        <location filename="mainwindow.cpp" line="2127"/>
+        <location filename="mainwindow.cpp" line="1986"/>
+        <location filename="mainwindow.cpp" line="2138"/>
         <source>(unnamed)</source>
         <translation>(без имени)</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1986"/>
+        <location filename="mainwindow.cpp" line="1997"/>
         <source>VID:PID already in use</source>
         <translation>VID:PID уже используется</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1987"/>
+        <location filename="mainwindow.cpp" line="1998"/>
         <source>&lt;p&gt;VID &lt;b&gt;%1&lt;/b&gt;:PID &lt;b&gt;%2&lt;/b&gt; is currently used by: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Writing this config will give two devices the same USB identity. Windows&apos; OEMName cache is keyed by VID+PID -- both devices will share one OEM name -- and games using DirectInput may pick a random one or conflate them.&lt;/p&gt;&lt;p&gt;Continue with the write anyway?&lt;/p&gt;</source>
         <translation>&lt;p&gt;VID &lt;b&gt;%1&lt;/b&gt;:PID &lt;b&gt;%2&lt;/b&gt; сейчас используется: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Запись этой конфигурации присвоит двум устройствам одинаковую USB-идентификацию. Кэш OEMName в Windows индексируется по VID+PID — оба устройства будут иметь одно OEM-имя — а игры, использующие DirectInput, могут выбрать случайное или путать их.&lt;/p&gt;&lt;p&gt;Всё равно продолжить запись?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2024"/>
+        <location filename="mainwindow.cpp" line="2035"/>
         <source>Cannot write to this firmware version</source>
         <translation>Невозможно записать в эту версию прошивки</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2025"/>
+        <location filename="mainwindow.cpp" line="2036"/>
         <source>&lt;p&gt;The connected device runs &lt;b&gt;%1&lt;/b&gt;, which this configurator doesn&apos;t have a reverse migrator for.&lt;/p&gt;&lt;p&gt;To write a config, flash a current FreeJoyX firmware first (Advanced Settings -&gt; Firmware flasher).&lt;/p&gt;</source>
         <translation>&lt;p&gt;Подключённое устройство работает с &lt;b&gt;%1&lt;/b&gt;, для которого у этого конфигуратора нет обратного мигратора.&lt;/p&gt;&lt;p&gt;Чтобы записать конфигурацию, сначала прошейте актуальную прошивку FreeJoyX (Расширенные настройки -&gt; Прошивальщик).&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2038"/>
+        <location filename="mainwindow.cpp" line="2049"/>
         <source>Reverse migration failed</source>
         <translation>Обратная миграция не удалась</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2039"/>
+        <location filename="mainwindow.cpp" line="2050"/>
         <source>&lt;p&gt;Couldn&apos;t pack the current config into the %1 wire format. The device wasn&apos;t written to.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Не удалось упаковать текущую конфигурацию в формат передачи %1. На устройство ничего не записано.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2052"/>
+        <location filename="mainwindow.cpp" line="2063"/>
         <source>Write to %1 firmware?</source>
         <translation>Записать в прошивку %1?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2053"/>
+        <location filename="mainwindow.cpp" line="2064"/>
         <source>&lt;p&gt;Writing to %1 firmware will lose the following:&lt;/p&gt;%2&lt;p&gt;The configurator will keep its in-memory copy unchanged -- only the device will see the reduced config. Continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Запись на прошивку %1 приведёт к потере следующего:&lt;/p&gt;%2&lt;p&gt;Конфигуратор сохранит свою копию в памяти без изменений — только устройство увидит урезанную конфигурацию. Продолжить?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2118"/>
+        <location filename="mainwindow.cpp" line="2129"/>
         <source>No FreeJoy devices detected.</source>
         <translation>Устройства FreeJoy не обнаружены.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2133"/>
+        <location filename="mainwindow.cpp" line="2144"/>
         <source>&amp;#9658; marks the device currently selected in the dropdown.</source>
         <translation>&amp;#9658; отмечает устройство, выбранное в выпадающем списке.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2137"/>
+        <location filename="mainwindow.cpp" line="2148"/>
         <source>Connected FreeJoy devices</source>
         <translation>Подключённые устройства FreeJoy</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2233"/>
         <location filename="mainwindow.cpp" line="2237"/>
-        <source>Pin %1 currently: &lt;b&gt;%2&lt;/b&gt;</source>
-        <translation>Вывод %1 сейчас: &lt;b&gt;%2&lt;/b&gt;</translation>
+        <source>Fast Encoder %1</source>
+        <translation>Быстрый энкодер %1</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2242"/>
-        <source>Reassign pins to Fast Encoder %1?</source>
-        <translation>Переназначить выводы быстрому энкодеру %1?</translation>
-    </message>
-    <message>
-        <location filename="mainwindow.cpp" line="2243"/>
-        <source>&lt;p&gt;Enabling Fast Encoder %1 needs both encoder pins free. The following pin%2 currently held other role%2:&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;&lt;p&gt;Replace with FAST_ENCODER?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Для включения быстрого энкодера %1 нужны оба свободных вывода энкодера. Следующие вывод%2 сейчас заняты другой ролью%2:&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;&lt;p&gt;Заменить на FAST_ENCODER?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="mainwindow.cpp" line="2262"/>
+        <location filename="mainwindow.cpp" line="2249"/>
         <source>Fast Encoder %1 unavailable</source>
         <translation>Быстрый энкодер %1 недоступен</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2263"/>
+        <location filename="mainwindow.cpp" line="2250"/>
         <source>This board doesn&apos;t expose FAST_ENCODER as a legal role on at least one of the required pins. The encoder wasn&apos;t enabled.</source>
         <translation>Эта плата не предоставляет FAST_ENCODER как допустимую роль хотя бы на одном из требуемых выводов. Энкодер не был включён.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2331"/>
+        <location filename="mainwindow.cpp" line="2322"/>
         <source>Open Config</source>
         <translation>Открыть конфиг</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2331"/>
-        <location filename="mainwindow.cpp" line="2351"/>
+        <location filename="mainwindow.cpp" line="2322"/>
+        <location filename="mainwindow.cpp" line="2342"/>
         <source>Config Files (*.cfg)</source>
         <translation>Файл конфига (*.cfg)</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2350"/>
+        <location filename="mainwindow.cpp" line="2341"/>
         <source>Save Config</source>
         <translation>Сохранить конфиг</translation>
     </message>
@@ -2587,13 +2619,13 @@ Check that the file exists and the configurator has permission to read it.</sour
     </message>
     <message>
         <location filename="mainwindow.ui" line="427"/>
-        <location filename="mainwindow.cpp" line="2408"/>
+        <location filename="mainwindow.cpp" line="2399"/>
         <source>Show debug</source>
         <translation>Показать отладку</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1576"/>
-        <location filename="mainwindow.cpp" line="2400"/>
+        <location filename="mainwindow.cpp" line="1587"/>
+        <location filename="mainwindow.cpp" line="2391"/>
         <source>Hide debug</source>
         <translation>Скрыть отладку</translation>
     </message>
@@ -2608,7 +2640,7 @@ Check that the file exists and the configurator has permission to read it.</sour
         <translation></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="687"/>
+        <location filename="mainwindow.cpp" line="698"/>
         <source>Incompatible Firmware</source>
         <translation>Несовмест. прошивка</translation>
     </message>
@@ -2616,314 +2648,519 @@ Check that the file exists and the configurator has permission to read it.</sour
 <context>
     <name>PinComboBox</name>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="131"/>
+        <location filename="widgets/pins/pincombobox.h" line="155"/>
         <source>Pin A0</source>
         <translation>Пин A0</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="132"/>
+        <location filename="widgets/pins/pincombobox.h" line="156"/>
         <source>Pin A1</source>
         <translation>Пин A1</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="133"/>
+        <location filename="widgets/pins/pincombobox.h" line="157"/>
         <source>Pin A2</source>
         <translation>Пин A2</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="134"/>
+        <location filename="widgets/pins/pincombobox.h" line="158"/>
         <source>Pin A3</source>
         <translation>Пин A3</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="135"/>
+        <location filename="widgets/pins/pincombobox.h" line="159"/>
         <source>Pin A4</source>
         <translation>Пин A4</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="136"/>
+        <location filename="widgets/pins/pincombobox.h" line="160"/>
         <source>Pin A5</source>
         <translation>Пин A5</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="137"/>
+        <location filename="widgets/pins/pincombobox.h" line="161"/>
         <source>Pin A6</source>
         <translation>Пин A6</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="138"/>
+        <location filename="widgets/pins/pincombobox.h" line="162"/>
         <source>Pin A7</source>
         <translation>Пин A7</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="139"/>
+        <location filename="widgets/pins/pincombobox.h" line="163"/>
         <source>Pin A8</source>
         <translation>Пин A8</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="140"/>
+        <location filename="widgets/pins/pincombobox.h" line="164"/>
         <source>Pin A9</source>
         <translation>Пин A9</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="141"/>
+        <location filename="widgets/pins/pincombobox.h" line="165"/>
         <source>Pin A10</source>
         <translation>Пин A10</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="142"/>
+        <location filename="widgets/pins/pincombobox.h" line="166"/>
         <source>Pin A15</source>
         <translation>Пин A15</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="143"/>
+        <location filename="widgets/pins/pincombobox.h" line="167"/>
         <source>Pin B0</source>
         <translation>Пин B0</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="144"/>
+        <location filename="widgets/pins/pincombobox.h" line="168"/>
         <source>Pin B1</source>
         <translation>Пин B1</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="145"/>
+        <location filename="widgets/pins/pincombobox.h" line="169"/>
         <source>Pin B3</source>
         <translation>Пин B3</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="146"/>
+        <location filename="widgets/pins/pincombobox.h" line="170"/>
         <source>Pin B4</source>
         <translation>Пин B4</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="147"/>
+        <location filename="widgets/pins/pincombobox.h" line="171"/>
         <source>Pin B5</source>
         <translation>Пин B5</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="148"/>
+        <location filename="widgets/pins/pincombobox.h" line="172"/>
         <source>Pin B6</source>
         <translation>Пин B6</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="149"/>
+        <location filename="widgets/pins/pincombobox.h" line="173"/>
         <source>Pin B7</source>
         <translation>Пин B7</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="150"/>
+        <location filename="widgets/pins/pincombobox.h" line="174"/>
         <source>Pin B8</source>
         <translation>Пин B8</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="151"/>
+        <location filename="widgets/pins/pincombobox.h" line="175"/>
         <source>Pin B9</source>
         <translation>Пин B9</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="152"/>
+        <location filename="widgets/pins/pincombobox.h" line="176"/>
         <source>Pin B10</source>
         <translation>Пин B10</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="153"/>
+        <location filename="widgets/pins/pincombobox.h" line="177"/>
         <source>Pin B11</source>
         <translation>Пин B11</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="154"/>
+        <location filename="widgets/pins/pincombobox.h" line="178"/>
         <source>Pin B12</source>
         <translation>Пин B12</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="155"/>
+        <location filename="widgets/pins/pincombobox.h" line="179"/>
         <source>Pin B13</source>
         <translation>Пин B13</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="156"/>
+        <location filename="widgets/pins/pincombobox.h" line="180"/>
         <source>Pin B14</source>
         <translation>Пин B14</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="157"/>
+        <location filename="widgets/pins/pincombobox.h" line="181"/>
         <source>Pin B15</source>
         <translation>Пин B15</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="158"/>
+        <location filename="widgets/pins/pincombobox.h" line="182"/>
         <source>Pin C13</source>
         <translation>Пин C13</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="159"/>
+        <location filename="widgets/pins/pincombobox.h" line="183"/>
         <source>Pin C14</source>
         <translation>Пин C14</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="160"/>
+        <location filename="widgets/pins/pincombobox.h" line="184"/>
         <source>Pin C15</source>
         <translation>Пин C15</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="165"/>
+        <location filename="widgets/pins/pincombobox.h" line="189"/>
         <source>Not Used</source>
         <translation>Не используется</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="180"/>
+        <location filename="widgets/pins/pincombobox.h" line="190"/>
+        <source>Pin is unused.</source>
+        <translation>Вывод не используется.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="197"/>
+        <source>Momentary button or switch wired between this pin and GND. Maps to a button slot in the Buttons tab.</source>
+        <translation>Кнопка или переключатель без фиксации между этим выводом и GND. Сопоставляется слоту кнопки на вкладке «Кнопки».</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="204"/>
+        <source>Momentary button or switch wired between this pin and 3.3V. Maps to a button slot in the Buttons tab.</source>
+        <translation>Кнопка или переключатель без фиксации между этим выводом и 3,3 В. Сопоставляется слоту кнопки на вкладке «Кнопки».</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="210"/>
         <source>Button Row</source>
         <translation>Строка кнопок</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="185"/>
+        <location filename="widgets/pins/pincombobox.h" line="211"/>
+        <source>Row line of a scanned button matrix. Combine with Button Column pins; set the matrix size in the Buttons tab.</source>
+        <translation>Линия строки сканируемой матрицы кнопок. Сочетайте с выводами столбцов кнопок; размер матрицы задаётся на вкладке «Кнопки».</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="217"/>
         <source>Button Column</source>
         <translation>Колонна кнопок</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="190"/>
+        <location filename="widgets/pins/pincombobox.h" line="218"/>
+        <source>Column line of a scanned button matrix. Combine with Button Row pins; set the matrix size in the Buttons tab.</source>
+        <translation>Линия столбца сканируемой матрицы кнопок. Сочетайте с выводами строк кнопок; размер матрицы задаётся на вкладке «Кнопки».</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="224"/>
         <source>ShiftReg LATCH</source>
         <translation>Регистр LATCH</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="195"/>
+        <location filename="widgets/pins/pincombobox.h" line="225"/>
+        <source>74HC165 / CD4021 shift-register LATCH (SH/LD). Can be shared across all chains. Set chain length in the Shift Registers tab.</source>
+        <translation>Защёлка (SH/LD) сдвигового регистра 74HC165 / CD4021. Может быть общей для всех цепочек. Длина цепочки задаётся на вкладке «Сдвиговые регистры».</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="231"/>
         <source>ShiftReg DATA</source>
         <translation>Регистр DATA</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="205"/>
-        <source>TLE5011 CS</source>
-        <translation></translation>
+        <location filename="widgets/pins/pincombobox.h" line="407"/>
+        <source>Serial joystick output (PA9, 115200 baud, every 10 ms) -- e.g. to an ESP32 for a Bluetooth joystick.</source>
+        <translation>Последовательный вывод джойстика (PA9, 115200 бод, каждые 10 мс) — например, на ESP32 для Bluetooth-джойстика.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="215"/>
-        <source>MCP3201 CS</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="widgets/pins/pincombobox.h" line="220"/>
-        <source>MCP3202 CS</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="widgets/pins/pincombobox.h" line="225"/>
-        <source>MCP3204 CS</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="widgets/pins/pincombobox.h" line="230"/>
-        <source>MCP3208 CS</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="widgets/pins/pincombobox.h" line="235"/>
-        <source>MLX90393 CS</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="widgets/pins/pincombobox.h" line="250"/>
+        <location filename="widgets/pins/pincombobox.h" line="308"/>
         <source>LED Single</source>
         <translation>Светодиод одиночный</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="255"/>
+        <location filename="widgets/pins/pincombobox.h" line="315"/>
         <source>LED Row</source>
         <translation>Светодиодная строка</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="260"/>
+        <location filename="widgets/pins/pincombobox.h" line="322"/>
         <source>LED Column</source>
         <translation>Светодиодная колонна</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="265"/>
+        <location filename="widgets/pins/pincombobox.h" line="329"/>
         <source>LED PWM</source>
         <translation>Светодиод ШИМ</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="280"/>
+        <location filename="widgets/pins/pincombobox.h" line="350"/>
         <source>Axis Analog</source>
         <translation>Аналоговая ось</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="285"/>
+        <location filename="widgets/pins/pincombobox.h" line="357"/>
         <source>Fast Encoder</source>
         <translation>Быстрый энкодер</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="290"/>
+        <location filename="widgets/pins/pincombobox.h" line="364"/>
         <source>SPI SCK</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="295"/>
+        <location filename="widgets/pins/pincombobox.h" line="371"/>
         <source>SPI MOSI</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="300"/>
+        <location filename="widgets/pins/pincombobox.h" line="378"/>
         <source>SPI MISO</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="305"/>
+        <location filename="widgets/pins/pincombobox.h" line="385"/>
         <source>TLE5011 GEN</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="310"/>
+        <location filename="widgets/pins/pincombobox.h" line="392"/>
         <source>I2C SCL</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="315"/>
+        <location filename="widgets/pins/pincombobox.h" line="399"/>
         <source>I2C SDA</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="210"/>
-        <source>TLE5012B CS</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="widgets/pins/pincombobox.h" line="245"/>
-        <source>AS5048A CS</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="widgets/pins/pincombobox.h" line="200"/>
+        <location filename="widgets/pins/pincombobox.h" line="238"/>
         <source>ShiftReg CLK</source>
         <translation>Регистр CLK</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="240"/>
-        <source>MLX90363 CS</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="widgets/pins/pincombobox.h" line="170"/>
+        <location filename="widgets/pins/pincombobox.h" line="196"/>
         <source>Button to Gnd</source>
         <translation>Кнопка к минусу</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="175"/>
+        <location filename="widgets/pins/pincombobox.h" line="203"/>
         <source>Button to Vcc</source>
         <translation>Кнопка к плюсу</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="270"/>
+        <location filename="widgets/pins/pincombobox.h" line="232"/>
+        <source>74HC165 / CD4021 shift-register DATA out (Qh / Q8). One per chain. Set chain length in the Shift Registers tab.</source>
+        <translation>Выход данных (Qh / Q8) сдвигового регистра 74HC165 / CD4021. По одному на цепочку. Длина цепочки задаётся на вкладке «Сдвиговые регистры».</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="239"/>
+        <source>74HC165 / CD4021 shift-register CLOCK. Can be shared across all chains. Set chain length in the Shift Registers tab.</source>
+        <translation>Тактовый сигнал сдвигового регистра 74HC165 / CD4021. Может быть общим для всех цепочек. Длина цепочки задаётся на вкладке «Сдвиговые регистры».</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="245"/>
+        <source>TLE5011 Hall</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="246"/>
+        <source>Chip-select for an Infineon TLE5011 magnetic angle (Hall) sensor on SPI. Selecting this auto-assigns the shared SPI SCK/MOSI lines and a TLE clock pin; the angle reads out as an axis.</source>
+        <translation>Выбор кристалла для магнитного датчика угла (Холла) Infineon TLE5011 по SPI. При выборе автоматически назначаются общие линии SPI SCK/MOSI и вывод тактирования TLE; угол считывается как ось.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="252"/>
+        <source>TLE5012B Hall</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="253"/>
+        <source>Chip-select for an Infineon TLE5012B magnetic angle (Hall) sensor on SPI. Auto-assigns the shared SPI SCK/MOSI lines and a TLE clock pin; the angle reads out as an axis.</source>
+        <translation>Выбор кристалла для магнитного датчика угла (Холла) Infineon TLE5012B по SPI. Автоматически назначает общие линии SPI SCK/MOSI и вывод тактирования TLE; угол считывается как ось.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="259"/>
+        <source>MCP3201 ADC (1ch)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="260"/>
+        <source>Chip-select for an MCP3201 single-channel 12-bit SPI ADC. Auto-assigns the shared SPI SCK/MISO/MOSI lines; the channel maps to an axis in the Axes tab.</source>
+        <translation>Выбор кристалла для одноканального 12-битного АЦП MCP3201 по SPI. Автоматически назначает общие линии SPI SCK/MISO/MOSI; канал сопоставляется оси на вкладке «Оси».</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="266"/>
+        <source>MCP3202 ADC (2ch)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="267"/>
+        <source>Chip-select for an MCP3202 2-channel 12-bit SPI ADC. Auto-assigns the shared SPI SCK/MISO/MOSI lines; each channel maps to an axis in the Axes tab.</source>
+        <translation>Выбор кристалла для 2-канального 12-битного АЦП MCP3202 по SPI. Автоматически назначает общие линии SPI SCK/MISO/MOSI; каждый канал сопоставляется оси на вкладке «Оси».</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="273"/>
+        <source>MCP3204 ADC (4ch)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="274"/>
+        <source>Chip-select for an MCP3204 4-channel 12-bit SPI ADC. Auto-assigns the shared SPI SCK/MISO/MOSI lines; each channel maps to an axis in the Axes tab.</source>
+        <translation>Выбор кристалла для 4-канального 12-битного АЦП MCP3204 по SPI. Автоматически назначает общие линии SPI SCK/MISO/MOSI; каждый канал сопоставляется оси на вкладке «Оси».</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="280"/>
+        <source>MCP3208 ADC (8ch)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="281"/>
+        <source>Chip-select for an MCP3208 8-channel 12-bit SPI ADC. Auto-assigns the shared SPI SCK/MISO/MOSI lines; each channel maps to an axis in the Axes tab.</source>
+        <translation>Выбор кристалла для 8-канального 12-битного АЦП MCP3208 по SPI. Автоматически назначает общие линии SPI SCK/MISO/MOSI; каждый канал сопоставляется оси на вкладке «Оси».</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="287"/>
+        <source>MLX90393 Hall</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="288"/>
+        <source>Chip-select for an MLX90393 3-axis magnetometer (Hall) on SPI. Auto-assigns the shared SPI SCK/MISO/MOSI lines; output maps to axes in the Axes tab.</source>
+        <translation>Выбор кристалла для 3-осевого магнитометра (Холла) MLX90393 по SPI. Автоматически назначает общие линии SPI SCK/MISO/MOSI; выход сопоставляется осям на вкладке «Оси».</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="294"/>
+        <source>MLX90363 Hall</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="295"/>
+        <source>Chip-select for an MLX90363 magnetic angle sensor on SPI. Auto-assigns the shared SPI SCK/MISO/MOSI lines; the angle reads out as an axis.</source>
+        <translation>Выбор кристалла для магнитного датчика угла MLX90363 по SPI. Автоматически назначает общие линии SPI SCK/MISO/MOSI; угол считывается как ось.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="301"/>
+        <source>AS5048A encoder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="302"/>
+        <source>Chip-select for an AMS AS5048A 14-bit magnetic rotary encoder on SPI. Auto-assigns the shared SPI SCK/MISO/MOSI lines; the angle reads out as an axis.</source>
+        <translation>Выбор кристалла для 14-битного магнитного энкодера AMS AS5048A по SPI. Автоматически назначает общие линии SPI SCK/MISO/MOSI; угол считывается как ось.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="309"/>
+        <source>Single LED driven by a button state (max ~20mA). Configure in the LED/PWM tab.</source>
+        <translation>Одиночный светодиод, управляемый состоянием кнопки (макс. ~20 мА). Настраивается на вкладке LED/PWM.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="316"/>
+        <source>Row line of an LED matrix. Combine with LED Column pins; configure in the LED/PWM tab.</source>
+        <translation>Линия строки светодиодной матрицы. Сочетайте с выводами столбцов светодиодов; настраивается на вкладке LED/PWM.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="323"/>
+        <source>Column line of an LED matrix. Combine with LED Row pins; configure in the LED/PWM tab.</source>
+        <translation>Линия столбца светодиодной матрицы. Сочетайте с выводами строк светодиодов; настраивается на вкладке LED/PWM.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="330"/>
+        <source>Single LED with hardware brightness control (PWM, max ~20mA). Only PA8 / PB0 / PB1 / PB4. Configure in the LED/PWM tab.</source>
+        <translation>Одиночный светодиод с аппаратной регулировкой яркости (ШИМ, макс. ~20 мА). Только PA8 / PB0 / PB1 / PB4. Настраивается на вкладке LED/PWM.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="336"/>
         <source>LED WS2812b</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="275"/>
+        <location filename="widgets/pins/pincombobox.h" line="337"/>
+        <source>Addressable WS2812B LED data line (DIN). PA10 only. Configure colors / effects in the LED/PWM tab.</source>
+        <translation>Линия данных (DIN) адресуемого светодиода WS2812B. Только PA10. Цвета / эффекты настраиваются на вкладке LED/PWM.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="343"/>
         <source>LED PL9823</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="320"/>
+        <location filename="widgets/pins/pincombobox.h" line="344"/>
+        <source>Addressable PL9823 LED data line (DIN). PA10 only. Configure colors / effects in the LED/PWM tab.</source>
+        <translation>Линия данных (DIN) адресуемого светодиода PL9823. Только PA10. Цвета / эффекты настраиваются на вкладке LED/PWM.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="351"/>
+        <source>Direct analog input (potentiometer or Hall sensor) read by the ADC. Configure range / curve in the Axes tab.</source>
+        <translation>Прямой аналоговый вход (потенциометр или датчик Холла), считываемый АЦП. Диапазон / кривая настраиваются на вкладке «Оси».</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="358"/>
+        <source>One channel (A or B) of a hardware-quadrature incremental encoder. Pin pairs: PA8+PA9 (Encoder 1), PB6+PB7 (Encoder 2). Used as an axis source.</source>
+        <translation>Один канал (A или B) аппаратного квадратурного инкрементального энкодера. Пары выводов: PA8+PA9 (Энкодер 1), PB6+PB7 (Энкодер 2). Используется как источник оси.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="365"/>
+        <source>Shared SPI clock line. Auto-assigned when you pick an SPI sensor&apos;s chip-select -- you don&apos;t normally set this directly.</source>
+        <translation>Общая линия тактирования SPI. Назначается автоматически при выборе линии выбора кристалла SPI-датчика — обычно не задаётся вручную.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="372"/>
+        <source>Shared SPI data-out line. Auto-assigned when you pick an SPI sensor&apos;s chip-select -- you don&apos;t normally set this directly.</source>
+        <translation>Общая линия выходных данных SPI. Назначается автоматически при выборе линии выбора кристалла SPI-датчика — обычно не задаётся вручную.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="379"/>
+        <source>Shared SPI data-in line. Auto-assigned when you pick an SPI sensor&apos;s chip-select -- you don&apos;t normally set this directly.</source>
+        <translation>Общая линия входных данных SPI. Назначается автоматически при выборе линии выбора кристалла SPI-датчика — обычно не задаётся вручную.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="386"/>
+        <source>TLE5011/5012B clock-generator output (PB6, TIM4). Auto-assigned with a TLE sensor. Conflicts with Encoder 2 (also TIM4).</source>
+        <translation>Выход тактового генератора TLE5011/5012B (PB6, TIM4). Назначается автоматически с датчиком TLE. Конфликтует с Энкодером 2 (тоже TIM4).</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="393"/>
+        <source>I2C clock line for an AS5600 (1x) or ADS1115 (up to 4x) sensor. Pair with I2C SDA. Outputs map to axes; 8-axis total limit.</source>
+        <translation>Линия тактирования I2C для датчика AS5600 (1x) или ADS1115 (до 4x). В паре с I2C SDA. Выходы сопоставляются осям; всего не более 8 осей.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="400"/>
+        <source>I2C data line for an AS5600 (1x) or ADS1115 (up to 4x) sensor. Pair with I2C SCL. Outputs map to axes; 8-axis total limit.</source>
+        <translation>Линия данных I2C для датчика AS5600 (1x) или ADS1115 (до 4x). В паре с I2C SCL. Выходы сопоставляются осям; всего не более 8 осей.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.h" line="406"/>
         <source>UART TX</source>
         <translation></translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.cpp" line="183"/>
+        <source>Buttons</source>
+        <translation>Кнопки</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.cpp" line="184"/>
+        <source>Shift Registers</source>
+        <translation>Сдвиговые регистры</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.cpp" line="185"/>
+        <source>SPI Devices</source>
+        <translation>Устройства SPI</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.cpp" line="186"/>
+        <source>LEDs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.cpp" line="187"/>
+        <source>Analog Axis</source>
+        <translation>Аналоговая ось</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.cpp" line="188"/>
+        <source>Encoder</source>
+        <translation type="unfinished">Энкодер</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.cpp" line="189"/>
+        <source>I2C Devices</source>
+        <translation>Устройства I2C</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.cpp" line="190"/>
+        <source>Serial Output</source>
+        <translation>Последовательный вывод</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pincombobox.cpp" line="191"/>
+        <source>SPI Bus (auto-assigned)</source>
+        <translation>Шина SPI (назначается автоматически)</translation>
     </message>
 </context>
 <context>
@@ -2933,128 +3170,168 @@ Check that the file exists and the configurator has permission to read it.</sour
         <source>Select board</source>
         <translation>Выбор платы</translation>
     </message>
+    <message>
+        <location filename="widgets/pins/pinconfig.cpp" line="726"/>
+        <source>I2C bus</source>
+        <translation>шина I2C</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pinconfig.cpp" line="726"/>
+        <source>SPI bus</source>
+        <translation>шина SPI</translation>
+    </message>
 </context>
 <context>
     <name>PinTypeHelper</name>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="32"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="86"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Hover any row below for wiring details. &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;Be sure&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; to read the &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;Wiki&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; for details&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;!!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <oldsource>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Brief information. &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;Be sure&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; to read the &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;Wiki&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; for details&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;!!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</oldsource>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Наведите на любую строку ниже для деталей подключения. &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;Обязательно&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; прочитайте &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;вики&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; для подробностей&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;!!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="35"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="89"/>
         <source>Pin Info</source>
         <translation>О контактах</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="56"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="110"/>
         <source>Hover any row for wiring details</source>
         <translation>Наведите на любую строку для деталей подключения</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="66"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="120"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;You can connect buttons, toggle switches, encoders, both directly &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#1982f0;&quot;&gt;Button to GND&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;/&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#aaaa00;&quot;&gt;Vcc&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot;, and combining them into a matrix &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#7882fa;&quot;&gt;Button Row/Column&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot;. When connected to &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#1982f0;&quot;&gt;Button to GND&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot; the second contact of the button is connected to &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#010101;&quot;&gt;GND&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;, with &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#aaaa00;&quot;&gt;Button Vcc&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot; to 3.3v.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/buttonEncToggle.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Можно подключать кнопки, тумблеры, энкодеры, как напрямую &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#1982f0;&quot;&gt;Кнопка к минусу&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;/&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#aaaa00;&quot;&gt;плюсу&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot;, так и объединяя их в матрицы &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#7882fa;&quot;&gt;Строка/колонка кнопок&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot;. При подключении к &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#1982f0;&quot;&gt;Кнопка к минусу&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot; второй контакт кнопки подключается к &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#010101;&quot;&gt;GND&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;, при &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#aaaa00;&quot;&gt;Кнопка плюсу&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot; к 3.3v.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/buttonEncToggle.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="79"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="133"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Shift registers &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;74HC165&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;CD4021&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; are supported. To connect, use the table below on the selected pins, and then set the number of buttons in the &amp;quot;Registers&amp;quot; tab.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#69b437;&quot;&gt;ShiftReg_CLK&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#69b437;&quot;&gt;ShiftReg_LATCH&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; - can be common to each shift register chain, or common to all shift register chains.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#69b437;&quot;&gt;ShiftReg_DATA&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; - individually for each chain of shift registers.&lt;br/&gt;&lt;/span&gt;&lt;/p&gt;&lt;table border=&quot;0&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; border-collapse:collapse;&quot; cellspacing=&quot;2&quot; cellpadding=&quot;0&quot; bgcolor=&quot;#22272e&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; font-weight:700;&quot;&gt;Name in configurator&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; font-weight:700;&quot;&gt;74HC165 pin&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; font-weight:700;&quot;&gt;CD4021 pin&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; font-weight:700;&quot;&gt;Alternative pin names&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; color:#69b437;&quot;&gt;ShiftReg_CLK&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;CLK&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;CLOCK&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;SCK&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; color:#69b437;&quot;&gt;ShiftReg_DATA&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;Qh&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;Q8&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;DATA/SERIAL_OUT/OUT&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; color:#69b437;&quot;&gt;ShiftReg_LATCH&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;SH/LD&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;PAR/SER CONTROL&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;LATCH&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; color:#ff7f27;&quot;&gt;3.3V&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;VCC&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;VDD&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;5V/V+&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; color:#000000;&quot;&gt;GND&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;GND&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;VSS&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;V-&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Поддерживаются регистры сдвига &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;74HC165&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; и &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;CD4021&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;. Для подключения используйте таблицу снизу на выделенных пинах, а после настройте количество кнопок во вкладке &amp;quot;Регистры&amp;quot;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#69b437;&quot;&gt;Регистр CLK&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; и &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#69b437;&quot;&gt;Регистр LATCH&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; - могут быть общими для каждой цепочки сдвиговых регистров, либо общими для всех цепочек сдвиговых регистров.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#69b437;&quot;&gt;Регистр DATA&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; – индивидуально для каждой цепочки сдвиговых регистров.&lt;br/&gt;&lt;/span&gt;&lt;/p&gt;&lt;table border=&quot;0&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; border-collapse:collapse;&quot; cellspacing=&quot;2&quot; cellpadding=&quot;0&quot; bgcolor=&quot;#22272e&quot;&gt;&lt;thead&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; font-weight:700;&quot;&gt;Имя в конфигураторе&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; font-weight:700;&quot;&gt;74HC165 пин&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; font-weight:700;&quot;&gt;CD4021 пин&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; font-weight:700;&quot;&gt;Альт. имя пинов&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; color:#69b437;&quot;&gt;Регистр CLK&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;CLK&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;CLOCK&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;SCK&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; color:#69b437;&quot;&gt;Регистр DATA&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;Qh&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;Q8&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;DATA/SERIAL_OUT/OUT&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; color:#69b437;&quot;&gt;Регистр LATCH&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;SH/LD&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;PAR/SER CONTROL&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;LATCH&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; color:#ff7f27;&quot;&gt;3.3V&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;VCC&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;VDD&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;5V/V+&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; color:#000000;&quot;&gt;GND&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;GND&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;VSS&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;V-&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="72"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="126"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Buttons, encoders, etc &lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <oldsource>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Shift registers&lt;img src=&quot;:/Images/info_icon.png&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</oldsource>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Кнопки, энкодеры и т. д. &lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="92"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="146"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;Potentiometer&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;Hall sensor&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; can be connected directly to the &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#00a000;&quot;&gt;Axis Analog&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot; pin.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/potentiometer.png&quot; width=&quot;240&quot;/&gt;&lt;img src=&quot;:/Images/hall2.png&quot; width=&quot;240&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;Потенциометр&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; и &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;датчик Холла&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; возможно подключить напрямую к пину &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#00a000;&quot;&gt;Аналоговая ось&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/potentiometer.png&quot; width=&quot;240&quot;/&gt;&lt;img src=&quot;:/Images/hall2.png&quot; width=&quot;240&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="85"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="139"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Shift registers&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <oldsource>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Analog Axis&lt;img src=&quot;:/Images/info_icon.png&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</oldsource>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Сдвиговые регистры&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="98"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="32"/>
+        <source>Bus quick-setup</source>
+        <translation>Быстрая настройка шины</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pintypehelper.ui" line="50"/>
+        <source>Assign the I2C bus pins (SCL + SDA) in one click for AS5600 / ADS1115 sensors. Uncheck to release them.</source>
+        <translation>Назначить выводы шины I2C (SCL + SDA) одним щелчком для датчиков AS5600 / ADS1115. Снимите флажок, чтобы освободить их.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pintypehelper.ui" line="53"/>
+        <source>I2C bus (AS5600 / ADS1115)</source>
+        <translation>Шина I2C (AS5600 / ADS1115)</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pintypehelper.ui" line="60"/>
+        <source>Assign the SPI bus pins (SCK + MISO + MOSI). Normally claimed automatically when you pick an SPI sensor&apos;s chip-select.</source>
+        <translation>Назначить выводы шины SPI (SCK + MISO + MOSI). Обычно занимаются автоматически при выборе линии выбора кристалла SPI-датчика.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pintypehelper.ui" line="63"/>
+        <source>SPI bus (SCK / MISO / MOSI)</source>
+        <translation>Шина SPI (SCK / MISO / MOSI)</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pintypehelper.ui" line="73"/>
+        <source>On the Black Pill (F411) SPI and I2C share a pin, so only one can be enabled.</source>
+        <translation>На Black Pill (F411) SPI и I2C используют общий вывод, поэтому можно включить только один.</translation>
+    </message>
+    <message>
+        <location filename="widgets/pins/pintypehelper.ui" line="152"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Analog Axis&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <oldsource>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;SPI&lt;img src=&quot;:/Images/info_icon.png&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</oldsource>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Аналоговая ось&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="111"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="165"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;SPI&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <oldsource>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;I2C&lt;img src=&quot;:/Images/info_icon.png&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</oldsource>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;SPI&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="118"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="172"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;It is possible to connect to &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#5a9b8c;&quot;&gt;I2C SDA/SCL &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;AS5600 Hall sensor&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;, no more than &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;1&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; pcs., or &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;ADS1115 analog-to-digital converter&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;, up to &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;4&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; pcs., but the total number of axes cannot be more than &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;8&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/ADS1115.png&quot;/&gt;&lt;img src=&quot;:/Images/AS5600.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <oldsource>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;WS2812b&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; addressable LEDs are supported. It is possible to customize the color of each LED, use some effects, or control the LEDs via &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;SimHub&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;. Connect the &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;DIN&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; pin of the LED to the selected &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#ff55ff;&quot;&gt;WS2812b LED&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; pin on the controller board. Settings in the &amp;quot;LED/PWM&amp;quot; tab.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/rgb.png&quot; width=&quot;500&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</oldsource>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;К &lt;span style=&quot; font-size:11pt; font-weight:700; color:#5a9b8c;&quot;&gt;I2C SDA/SCL&lt;/span&gt; можно подключить &lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;датчик Холла AS5600&lt;/span&gt;, не более &lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;1&lt;/span&gt; шт., или &lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;аналого-цифровой преобразователь ADS1115&lt;/span&gt;, до &lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;4&lt;/span&gt; шт., но общее число осей не может превышать &lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;8&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/ADS1115.png&quot;/&gt;&lt;img src=&quot;:/Images/AS5600.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="124"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="178"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;I2C&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <oldsource>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;RGB LEDs&lt;img src=&quot;:/Images/info_icon.png&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</oldsource>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;I2C&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="140"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="194"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;UART&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;UART&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="153"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="207"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;ARGB LEDs&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; style=&quot;float: right;&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;ARGB-светодиоды&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; style=&quot;float: right;&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="160"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="214"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Single-color LEDs with brightness control in the &amp;quot;LED/PWM&amp;quot; tab, no more than 20mA. Connect the &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#d37a0d;&quot;&gt;+&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; of the LED to the &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#c85a46;&quot;&gt;PWM LED&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot; pin. The value of the current-limiting resistance is recommended to be calculated individually for the LEDs used.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/pwmLed.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Одноцветные светодиоды с регулировкой яркости во вкладке &amp;quot;Светодиоды/ШИМ&amp;quot; , не больше 20мА. Подключите &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#d37a0d;&quot;&gt;+&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; светодиода к пину &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#c85a46;&quot;&gt;Светодиод ШИМ&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot;. Величину токоограничивающего сопротивления рекомендуется расчитывать индивидуально для используемых светодиодов.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/pwmLed.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="166"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="220"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;PWM LEDs&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;ШИМ-светодиоды&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="179"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="233"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Mono LEDs&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Моно-светодиоды&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="192"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="246"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Fast Encoder&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Быстрый энкодер&lt;img src=&quot;:/Images/icons/lucide/info.svg&quot; width=&quot;10&quot; align=&quot;right&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="173"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="227"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Single-color LEDs, not more than 20mA, linked to the pressed buttons in the &amp;quot;LED/PWM&amp;quot; tab. Both direct &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#c89646;&quot;&gt;LED Single&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot; and LED matrix &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#c88246;&quot;&gt;LED Row/Column&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot; connection are supported. The value of the current-limiting resistance is recommended to be calculated individually for the LEDs used.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/monoLed.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Одноцветные светодиоды, не больше 20мА, привязанные к нажатым кнопкам во вкладке &amp;quot;Светодиоды/ШИМ&amp;quot; . Поддерживается как прямое &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#c89646;&quot;&gt;Светодиод одиночный&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot;, так и подключение матрицы светодиодов &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#c88246;&quot;&gt;Светодиодная строка/колонка&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot;. Величину токоограничивающего сопротивления рекомендуется расчитывать индивидуально для используемых светодиодов.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/monoLed.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="186"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="240"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;It is possible to connect one incremental encoder with a high frequency, it can only be used as an axis source. Pins &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#379619;&quot;&gt;Fast encoder&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/fastEncoder.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Возможно подключить один инкрементальный энкодер с высокой частотой, может быть использован только как источник оси. Контакты &amp;quot;&lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#379619;&quot;&gt;Быстрый энкодер&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;&amp;quot;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/fastEncoder.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="105"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="159"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;It is possible to connect &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;Hall sensors &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#329978;&quot;&gt;TLE5011&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;, &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#329978;&quot;&gt;TLE5010&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;, &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#329978;&quot;&gt;TLE5012B&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;, &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#329978;&quot;&gt;MLX90393&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;, &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#329978;&quot;&gt;MLX90363&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;, &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#329978;&quot;&gt;AS5048A&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;analog-to-digital converters &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#329978;&quot;&gt;MCP32XX&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; to &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#329978;&quot;&gt;SPI&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;. See the &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;Wiki&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; for details.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/MLX90393.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Возможно подключить &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;датчики Холла &lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;/&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#329978;&quot;&gt;TLE5011&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;, &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#329978;&quot;&gt;TLE5010&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;, &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#329978;&quot;&gt;TLE5012B&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;, &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#329978;&quot;&gt;MLX90393&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;, &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#329978;&quot;&gt;MLX90363&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;, &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#329978;&quot;&gt;AS5048A&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; и &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;аналогово-цифровые преобразователи &lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;/&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#329978;&quot;&gt;MCP32XX&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; к &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#329978;&quot;&gt;SPI&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;. Смотрите &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;Wiki&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; для подробной информации.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/MLX90393.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="134"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="188"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;FJ sends joystick data via &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#5a9b8c;&quot;&gt;UART TX &lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;every 10 ms, baud rate 115200. You can connect, for example, the ESP32 C3 to UART, which can be used as a Bluetooth joystick.&lt;/span&gt;&lt;/p&gt;&lt;table border=&quot;0&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; border-collapse:collapse;&quot; cellspacing=&quot;2&quot; cellpadding=&quot;0&quot; &gt;&lt;thead&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; font-weight:700;&quot;&gt;Name&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; font-weight:700;&quot;&gt;Length bytes&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; font-weight:700;&quot;&gt;Desc&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;Header&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;1&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;ASCII &apos;H&apos;&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;Separator&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;1&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;ASCII &apos;-&apos;&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;Message code&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;1&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;message num 0-255&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;Axis data&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;16&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;2 bytes for axis&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;Buttons data&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;16&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;one bit = one button&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;CRC16&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;2&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;crc16 polynomial 0x8005&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;FJ отправляет данные джойстика через &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#5a9b8c;&quot;&gt;UART TX &lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;каждые 10 мс, baud rate 115200. Вы можете подключить, например, the ESP32 C3 к UART, которая может быть использована как Bluetooth джойстик.&lt;/span&gt;&lt;/p&gt;&lt;table border=&quot;0&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; border-collapse:collapse;&quot; cellspacing=&quot;2&quot; cellpadding=&quot;0&quot; &gt;&lt;thead&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; font-weight:700;&quot;&gt;Name&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; font-weight:700;&quot;&gt;Length bytes&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt; font-weight:700;&quot;&gt;Desc&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;Header&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;1&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;ASCII &apos;H&apos;&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;Separator&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;1&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;ASCII &apos;-&apos;&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;Message code&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;1&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;message num 0-255&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;Axis data&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;16&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;2 bytes for axis&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;Buttons data&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;16&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;one bit = one button&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;CRC16&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;2&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td style=&quot; padding-left:7; padding-right:7; padding-top:3; padding-bottom:3; border-top:1px; border-right:1px; border-bottom:1px; border-left:1px; border-top-color:#555555; border-right-color:#555555; border-bottom-color:#555555; border-left-color:#555555; border-top-style:solid; border-right-style:solid; border-bottom-style:solid; border-left-style:solid;&quot;&gt;&lt;p&gt;&lt;span style=&quot; font-family:&apos;-apple-system&apos;,&apos;BlinkMacSystemFont&apos;,&apos;Segoe UI&apos;,&apos;Noto Sans&apos;,&apos;Helvetica&apos;,&apos;Arial&apos;,&apos;sans-serif&apos;,&apos;Apple Color Emoji&apos;,&apos;Segoe UI Emoji&apos;; font-size:11pt;&quot;&gt;crc16 polynomial 0x8005&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pintypehelper.ui" line="147"/>
+        <location filename="widgets/pins/pintypehelper.ui" line="201"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;WS2812b&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;PL9823&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; addressable LEDs are supported. It is possible to customize the color of each LED, use some effects, or control the LEDs via &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;SimHub&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;. Connect the &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;DIN&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; pin of the LED to the selected &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#ff55ff;&quot;&gt;WS2812b/PL9823 LED&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; pin on the controller board. Settings in the &amp;quot;LED/PWM&amp;quot; tab.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/rgb.png&quot; width=&quot;500&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;WS2812b&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; и &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;PL9823&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; поддерживаются. Возможно настроить цвет каждого светодиода, использовать некоторые эффекты, или контролировать их через &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;SimHub&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;. Подключите &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;DIN&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; пин светодиодов к выбранному &lt;/span&gt;&lt;span style=&quot; font-size:11pt; font-weight:700; color:#ff55ff;&quot;&gt;WS2812b/PL9823 LED&lt;/span&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt; пигу на плате контроллера. Настройки на вкладке &amp;quot;LED/PWM&amp;quot;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/rgb.png&quot; width=&quot;500&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
