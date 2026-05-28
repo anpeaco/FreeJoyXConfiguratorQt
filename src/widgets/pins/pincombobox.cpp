@@ -2,6 +2,7 @@
 #include "ui_pincombobox.h"
 
 #include <QFont>
+#include <QSignalBlocker>
 
 //! pinNumber cannot be less 1 and more than PINS_COUNT
 PinComboBox::PinComboBox(uint pinNumber, QWidget *parent) : // pin handling was the first thing I coded in the configurator, and in hindsight
@@ -172,6 +173,18 @@ void PinComboBox::initializationPins(uint pin)      // pin_number_ - 1 -- not gr
 {                                                   // this is because the empty values of const cBox pin_types_[PIN_TYPE_COUNT]
     m_pinNumber = pin;                              // initialise to 0, making the code hard to follow. May rewrite.
 
+    /* Clear combobox + parallel index arrays so re-init from setExcludedRoles
+     * doesn't accumulate items / duplicate sentinel rows on top of the
+     * existing universal set. The original (single-call) shape relied on the
+     * arrays being empty by virtue of being freshly constructed; now we
+     * re-populate from scratch each time. */
+    {
+        QSignalBlocker bl(ui->comboBox_PinsType);
+        ui->comboBox_PinsType->clear();
+    }
+    m_pinTypesIndex.clear();
+    m_enumIndex.clear();
+
     int typeExceptSize = sizeof(m_pinTypes->pinExcept) / sizeof(m_pinTypes->pinExcept[0]);
     int typeSize = sizeof(m_pinTypes->pinType) / sizeof(m_pinTypes->pinType[0]);
     int pinListTypeSize = sizeof(m_pinList->pinType) / sizeof(m_pinList->pinType[0]);
@@ -272,6 +285,12 @@ void PinComboBox::initializationPins(uint pin)      // pin_number_ - 1 -- not gr
                 }
             }
         }
+        /* Per-board veto: skip roles the active board's firmware can't honour
+         * on this pin (set by PinConfig::applyBoardSpecificRoleFilters via
+         * setExcludedRoles -- e.g. F411 strips I2C_SDA from slot 22 / PB2). */
+        if (shouldAdd && m_excludedRoles.contains(m_pinTypes[i].deviceEnumIndex)) {
+            shouldAdd = false;
+        }
         if (shouldAdd) {
             addType(i);
         }
@@ -283,6 +302,15 @@ void PinComboBox::initializationPins(uint pin)      // pin_number_ - 1 -- not gr
         }
         ui->comboBox_PinsType->setItemData(i, QBrush(m_pinTypes[m_pinTypesIndex[i]].color), Qt::ForegroundRole);
     }
+}
+
+void PinComboBox::setExcludedRoles(const QSet<int> &excludedDeviceEnums)
+{
+    /* No-op if the set hasn't changed -- avoids an unnecessary combobox rebuild
+     * (which also resets the current selection) on a redundant filter apply. */
+    if (m_excludedRoles == excludedDeviceEnums) return;
+    m_excludedRoles = excludedDeviceEnums;
+    initializationPins(m_pinNumber);
 }
 
 void PinComboBox::indexChanged(int index)

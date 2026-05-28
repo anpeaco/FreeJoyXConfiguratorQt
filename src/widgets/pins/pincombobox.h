@@ -1,6 +1,7 @@
 #ifndef PINCOMBOBOX_H
 #define PINCOMBOBOX_H
 
+#include <QSet>
 #include <QWidget>
 
 #include "deviceconfig.h"
@@ -125,6 +126,16 @@ public:
     void readFromConfig(uint pin);
     void writeToConfig(uint pin);
 
+    /* Per-board role exclusion. Stores the set of deviceEnum values to omit
+     * from THIS pin's dropdown and re-runs initializationPins so the combobox
+     * reflects the new constraint. PinConfig drives this per-board to enforce
+     * "I2C SDA only on slots the firmware actually wires" -- F411 strips it
+     * from slot 22 (PB2, no I2C cap on the package), F103 strips it from slot
+     * 20 (PB9, no I2C cap on F103). Without the filter, the universal
+     * F103-shaped pin model lets users pick a role the firmware silently
+     * ignores. Empty set = no exclusion. */
+    void setExcludedRoles(const QSet<int> &excludedDeviceEnums);
+
     void retranslateUi();
 
 signals:
@@ -143,6 +154,9 @@ private:
     //! return qvector of device enums in combobox
     QVector<int> m_enumIndex;
     int m_previousIndex;
+    /* Role deviceEnum values to skip when (re-)populating the dropdown. Set by
+     * setExcludedRoles(); read inside initializationPins. Empty for most pins. */
+    QSet<int> m_excludedRoles;
 
     bool m_isCall_Interaction;
     bool m_isInteracts;

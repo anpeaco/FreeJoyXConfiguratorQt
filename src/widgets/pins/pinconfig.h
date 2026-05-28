@@ -158,6 +158,16 @@ private:
     bool spiSensorConfigured() const;
     //! Board-correct display label for a pin (e.g. "PB10"), for the remap dialog.
     QString pinGuiName(int pin) const;
+
+    /* Strip dropdown entries the active board's firmware can't honour for a
+     * given pin. Today this enforces "I2C SDA only on slots with the I2C_SDA
+     * cap on the active board":
+     *   - F411: drop I2C SDA from slot 22 (PB2 -- no I2C cap on F411).
+     *   - F103: drop I2C SDA from slot 20 (PB9 -- no I2C cap on F103).
+     * Run from the constructor and on every board change so the dropdown
+     * reflects the active board. (Lightweight precursor to the per-board
+     * capability model in #40.) */
+    void applyBoardSpecificRoleFilters();
     /* Lock/unlock a pin's dropdown (by Pin enum value). Skips pins the
      * interaction system is already managing so the two don't fight over the
      * enabled state. Used to lock a bus's pins while its toggle is on. */
