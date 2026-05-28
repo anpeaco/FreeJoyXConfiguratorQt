@@ -17,10 +17,16 @@
 #include <QTimer>
 #include <QProcess>
 
+#include <QDesktopServices>
+#include <QDir>
+#include <QStandardPaths>
+#include <QUrl>
+
 #include "version.h"
 #include "deviceconfig.h"
 #include "global.h"
 #include "style_helpers.h"
+#include "selectfolder.h"
 
 #include <QDebug>
 
@@ -313,4 +319,66 @@ void AdvancedSettings::refreshPidConflictPill()
         if (m_pidConflictRow) m_pidConflictRow->setVisible(false);
         ui->lineEdit_PID->setStyleSheet(QString());
     }
+}
+
+// ---------------------------------------------------------------------------
+// Default save directory
+// ---------------------------------------------------------------------------
+//
+// Surface for the existing m_cfgDirPath mechanism in MainWindow: the line
+// edit mirrors what MainWindow is currently using; Browse / Open folder /
+// Reset all touch the line edit and emit saveDirectoryChanged() for
+// MainWindow to update its own state. Configs land in <path>/, pre-flash
+// device backups land in <path>/backups/.
+
+namespace {
+
+/* Default save directory: matches main.cpp's <Documents>/FreeJoy/configs.
+ * Kept as a free helper so both the constructor (placeholder) and the Reset
+ * button compute the same value without depending on AppSettings being
+ * initialised in a particular order. */
+QString defaultSaveDirectory()
+{
+    QString docLoc = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    if (!docLoc.isEmpty()) docLoc += QStringLiteral("/FreeJoy/");
+    return QDir::toNativeSeparators(docLoc + QStringLiteral("configs"));
+}
+
+} // namespace
+
+void AdvancedSettings::setSaveDirectory(const QString &path)
+{
+    /* setText doesn't change the underlying value if the strings match, but
+     * we run it through toNativeSeparators anyway so the displayed path
+     * matches the platform convention regardless of how the caller phrased it. */
+    ui->lineEdit_SaveDir->setText(QDir::toNativeSeparators(path));
+}
+
+void AdvancedSettings::on_pushButton_SaveDirBrowse_clicked()
+{
+    SelectFolder dlg(ui->lineEdit_SaveDir->text(), this);
+    if (dlg.exec() != QDialog::Accepted) return;
+    const QString picked = QDir::toNativeSeparators(dlg.folderPath());
+    if (picked.isEmpty() || picked == ui->lineEdit_SaveDir->text()) return;
+    ui->lineEdit_SaveDir->setText(picked);
+    emit saveDirectoryChanged(dlg.folderPath());
+}
+
+void AdvancedSettings::on_pushButton_SaveDirOpen_clicked()
+{
+    const QString path = ui->lineEdit_SaveDir->text();
+    if (path.isEmpty()) return;
+    /* QDesktopServices::openUrl uses the user's default file manager. If the
+     * directory doesn't exist yet, openUrl just fails silently -- create it
+     * first so a freshly-reset path is browsable immediately. */
+    QDir().mkpath(path);
+    QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+}
+
+void AdvancedSettings::on_pushButton_SaveDirReset_clicked()
+{
+    const QString def = defaultSaveDirectory();
+    if (def == ui->lineEdit_SaveDir->text()) return;
+    ui->lineEdit_SaveDir->setText(def);
+    emit saveDirectoryChanged(def);
 }

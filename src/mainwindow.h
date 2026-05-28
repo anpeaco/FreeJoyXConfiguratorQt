@@ -97,7 +97,10 @@ private slots:
 
     void themeChanged(bool dark);
 
-    void on_toolButton_ConfigsDir_clicked();
+    /* Slot for AdvancedSettings::saveDirectoryChanged. Updates m_cfgDirPath
+     * and refreshes the configs combo. The Advanced tab's "Default save
+     * directory" surface is the only place this gets changed at runtime now. */
+    void applySaveDirectoryChange(const QString &path);
 
     /* Bridge between the Encoders tab "Enable" checkbox and the Pin
      * Config tab. Triggered by EncodersConfig::fastEncoderEnableToggleRequested
@@ -177,7 +180,7 @@ private:
     ShiftRegistersConfig *m_shiftRegConfig;
     AxesConfig *m_axesConfig;
     AxesCurvesConfig *m_axesCurvesConfig;
-    AdvancedSettings *m_advSettings;
+    AdvancedSettings *m_advSettings = nullptr;
 
     DebugWindow *m_debugWindow = nullptr;
     bool m_debugIsEnable;

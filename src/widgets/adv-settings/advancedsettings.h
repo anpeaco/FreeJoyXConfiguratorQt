@@ -52,6 +52,12 @@ public:
      * flag itself as a collision. */
     void setOtherConnectedDevices(const QList<OtherDevice> &devices);
 
+    /* Push the currently-active save directory (the one MainWindow owns in
+     * m_cfgDirPath) into the Default save directory line edit. Kept in sync
+     * by MainWindow so the tab reflects out-of-band changes (e.g. the legacy
+     * configs-dir icon button on the main window) without a restart. */
+    void setSaveDirectory(const QString &path);
+
 signals:
     void languageChanged(const QString &language);
     void themeChanged(bool dark);
@@ -62,6 +68,12 @@ signals:
      * it -- it has the full device list (including the selected
      * device, which AdvancedSettings's "other" snapshot excludes). */
     void showAllConnectedDevicesRequested();
+
+    /* User picked a new default save directory (Browse or Reset on the
+     * Advanced tab). MainWindow updates m_cfgDirPath + the configs combo;
+     * the line edit on this widget is already updated by the time the signal
+     * is emitted, so MainWindow doesn't need to call setSaveDirectory back. */
+    void saveDirectoryChanged(const QString &path);
 
 private slots:
     void on_pushButton_LangEnglish_clicked();
@@ -76,6 +88,14 @@ private slots:
     void on_pushButton_RestartApp_clicked();
 
     void on_pushButton_LangDeutsch_clicked();
+
+    /* Default-save-directory area: open the existing SelectFolder dialog
+     * (pre-populated with the current path), reveal the path in the OS file
+     * manager, or restore <Documents>/FreeJoy/configs. All three update the
+     * line edit and emit saveDirectoryChanged() for MainWindow to act on. */
+    void on_pushButton_SaveDirBrowse_clicked();
+    void on_pushButton_SaveDirOpen_clicked();
+    void on_pushButton_SaveDirReset_clicked();
 
 private slots:
     void onPidTextChanged(const QString &);

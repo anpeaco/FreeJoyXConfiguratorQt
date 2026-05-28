@@ -159,6 +159,10 @@ MainWindow::MainWindow(QWidget *parent)
     // add advanced settings widget
     m_advSettings = new AdvancedSettings(this);
     ui->layoutV_tabAdvSettings->addWidget(m_advSettings);
+    // m_cfgDirPath was loaded earlier in loadAppConfig; now that the Advanced
+    // tab exists, push it into the Default save directory line edit so the
+    // tab shows the live path from launch.
+    m_advSettings->setSaveDirectory(m_cfgDirPath);
     qDebug()<<"advanced settings load time ="<< timer.restart() << "ms";
 
 
@@ -260,6 +264,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_advSettings, &AdvancedSettings::themeChanged, this, &MainWindow::themeChanged);
     // font changed
     connect(m_advSettings, &AdvancedSettings::fontChanged, this, &MainWindow::setFont);
+    // default save directory changed (Advanced tab)
+    connect(m_advSettings, &AdvancedSettings::saveDirectoryChanged,
+            this, &MainWindow::applySaveDirectoryChange);
 
 
     /* Pipe flasher-side USB identity from HidDevice straight into the
@@ -1626,6 +1633,9 @@ void MainWindow::loadAppConfig()
     appS->beginGroup("Configs");
     m_cfgDirPath = appS->value("Path", gEnv.pAppSettings->fileName().remove("FreeJoySettings.conf") + "configs").toString();
     appS->endGroup();
+    /* Note: the Advanced tab's "Default save directory" surface is updated
+     * from the constructor after m_advSettings is created -- loadAppConfig
+     * runs first, so the widget doesn't exist yet at this point. */
 
     //debug tab, only for debug build
     #ifdef QT_DEBUG
@@ -2356,17 +2366,14 @@ void MainWindow::on_pushButton_SaveToFile_clicked()
     qDebug()<<"done";
 }
 
-// select configs dir path
-void MainWindow::on_toolButton_ConfigsDir_clicked()
+void MainWindow::applySaveDirectoryChange(const QString &path)
 {
-    SelectFolder dialog(m_cfgDirPath, this);
-    if (dialog.exec() == QDialog::Accepted) {
-        m_cfgDirPath = dialog.folderPath();
-        QSignalBlocker bl(ui->comboBox_Configs);
-        ui->comboBox_Configs->clear();
-        bl.unblock();
-        ui->comboBox_Configs->addItems(cfgFilesList(m_cfgDirPath));
-    }
+    if (path.isEmpty() || path == m_cfgDirPath) return;
+    m_cfgDirPath = path;
+    QSignalBlocker bl(ui->comboBox_Configs);
+    ui->comboBox_Configs->clear();
+    bl.unblock();
+    ui->comboBox_Configs->addItems(cfgFilesList(m_cfgDirPath));
 }
 
 // Show debug widget
@@ -2440,8 +2447,9 @@ QIcon MainWindow::pixmapToIcon(QPixmap pixmap, const QColor &color)
 
 void MainWindow::updateColor()
 {
-    QColor col = QApplication::palette().color(QPalette::Text);
-    ui->toolButton_ConfigsDir->setIcon(pixmapToIcon(QPixmap(":/Images/icons/lucide/settings.svg"), col));
+    /* Reserved for re-tinting theme-sensitive icons in this widget.
+     * Empty after the legacy configs-dir cog was retired in favour of the
+     * Advanced tab's "Default save directory" surface. */
 }
 
 

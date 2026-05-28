@@ -582,6 +582,57 @@
      </layout>
     </widget>
    </item>
+   <item row="1" column="0">
+    <widget class="QGroupBox" name="groupBox_SaveDir">
+     <property name="title">
+      <string>Default save directory</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <layout class="QVBoxLayout" name="layoutV_SaveDir">
+      <property name="leftMargin"><number>6</number></property>
+      <property name="topMargin"><number>6</number></property>
+      <property name="rightMargin"><number>6</number></property>
+      <property name="bottomMargin"><number>6</number></property>
+      <property name="spacing"><number>6</number></property>
+      <item>
+       <widget class="QLabel" name="label_SaveDirHint">
+        <property name="text">
+         <string>Configs save here. Pre-flash device backups go to &lt;path&gt;/backups/.</string>
+        </property>
+        <property name="wordWrap"><bool>true</bool></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="lineEdit_SaveDir">
+        <property name="readOnly"><bool>true</bool></property>
+        <property name="placeholderText"><string notr="true">-</string></property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="layoutH_SaveDirButtons">
+        <property name="spacing"><number>6</number></property>
+        <item>
+         <widget class="QPushButton" name="pushButton_SaveDirBrowse">
+          <property name="text"><string>Browse…</string></property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_SaveDirOpen">
+          <property name="text"><string>Open folder</string></property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_SaveDirReset">
+          <property name="text"><string>Reset to default</string></property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
