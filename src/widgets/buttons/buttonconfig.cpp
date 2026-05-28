@@ -452,6 +452,14 @@ void ButtonConfig::typeLimit(button_type_t current, button_type_t previous)
 
 void ButtonConfig::setUiOnOff(int value)
 {
+    // Dry-run path (bus-remap predict): skip every mutating step so
+    // dev_config.buttons[] stays untouched. The breakdown signal handlers
+    // already updated m_groupMatrix / m_shiftRegBreakdown / etc., so
+    // currentBreakdown() still reflects the prospective state for the caller.
+    if (m_dryRun) {
+        return;
+    }
+
     // setUiOnOff fires *after* all three breakdown signals (mainwindow
     // wires totalButtonsValueChanged last). It is the single rendezvous
     // point where the breakdown is consistent, so the auto-remap runs
@@ -898,7 +906,11 @@ void ButtonConfig::remapBreakdown(const PhysBreakdown &oldB,
         m_logicButtonPtrList[i]->readFromConfig();
     }
 
-    if (!brokenSlots.isEmpty()) {
+    // A confirmed bus toggle already listed the slots it will clear in its own
+    // dialog, and applies as a burst of pin edits that each re-enter here -- so
+    // stay quiet to avoid a second (or doubled) popup. The references above are
+    // still cleared either way.
+    if (!brokenSlots.isEmpty() && !m_remapWarningSuppressed) {
         QStringList slotStrs;
         for (int s : brokenSlots) slotStrs << QString::number(s + 1);
         QMessageBox::warning(
@@ -909,6 +921,40 @@ void ButtonConfig::remapBreakdown(const PhysBreakdown &oldB,
                "have been cleared. Please reassign before saving.")
                 .arg(slotStrs.join(QStringLiteral(", "))));
     }
+}
+
+QList<int> ButtonConfig::computeBrokenSlots(const PhysBreakdown &oldB,
+                                            const PhysBreakdown &newB) const
+{
+    // Same break-check remapBreakdown uses, but pure -- no mutation, no UI.
+    // Caller hands in oldB and newB; for the bus-remap predict, newB is
+    // captured under setDryRun(true), so it reflects every breakdown category
+    // (matrix, perSR, perA2b, direct) the pin change actually moves.
+    const button_t *cfg = gEnv.pDeviceConfig->config.buttons;
+    QList<int> broken;
+    for (int i = 0; i < MAX_BUTTONS_NUM; ++i) {
+        bool brk = false;
+        if (cfg[i].physical_num >= 0
+            && freejoy::toAbs(freejoy::toRef(cfg[i].physical_num, oldB), newB) < 0) {
+            brk = true;
+        }
+        if (cfg[i].type == LOGIC && cfg[i].src_b >= 0
+            && freejoy::toAbs(freejoy::toRef(cfg[i].src_b, oldB), newB) < 0) {
+            brk = true;
+        }
+        if (brk) broken.append(i);
+    }
+    return broken;
+}
+
+void ButtonConfig::setDryRun(bool dryRun)
+{
+    m_dryRun = dryRun;
+}
+
+void ButtonConfig::setRemapWarningSuppressed(bool suppressed)
+{
+    m_remapWarningSuppressed = suppressed;
 }
 
 void ButtonConfig::beginConfigLoad()

@@ -13,6 +13,7 @@
 
 #include "common_defines.h"
 #include "legacy/legacy_migrator.h"
+#include "style_helpers.h"
 
 namespace {
 
@@ -232,6 +233,13 @@ void FlashConfirmationDialog::renderForVerdict(const Inputs &inputs)
 
     if (m_verdict == Verdict::Incompatible) {
         ui->label_Warning->clear();
+    } else {
+        // Shared light-yellow warning note (yellow border + triangle-alert
+        // icon), matching the bus-remap confirmation banner. Keep the .ui text
+        // (already translated) and just prepend the icon + apply the banner QSS.
+        ui->label_Warning->setStyleSheet(freejoy_style::warningBannerQss());
+        ui->label_Warning->setText(freejoy_style::warningIconHtml()
+            + QStringLiteral("&nbsp;") + ui->label_Warning->text());
     }
 }
 
