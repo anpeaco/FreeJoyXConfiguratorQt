@@ -4,6 +4,7 @@
 #include <QFileDialog>
 #include <QDesktopServices>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QSpinBox>
 #include <QCheckBox>
 #include <QKeyEvent>
@@ -264,6 +265,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_advSettings, &AdvancedSettings::themeChanged, this, &MainWindow::themeChanged);
     // font changed
     connect(m_advSettings, &AdvancedSettings::fontChanged, this, &MainWindow::setFont);
+    // auto-read-on-connect toggle (Advanced tab) -> update the cached flag
+    connect(m_advSettings, &AdvancedSettings::autoReadOnConnectChanged,
+            this, [this](bool on) { m_autoReadOnConnect = on; });
     // default save directory changed (Advanced tab)
     connect(m_advSettings, &AdvancedSettings::saveDirectoryChanged,
             this, &MainWindow::applySaveDirectoryChange);
@@ -578,6 +582,10 @@ void MainWindow::onPostWriteFallback()
 void MainWindow::getParamsPacket(bool firmwareCompatible)
 {
     if (m_deviceChanged) {
+        // Capture before the post-write flag is cleared just below -- the
+        // auto-read-on-connect path must NOT fire on the device's own
+        // re-enumeration after a Write Config.
+        const bool wasPostWriteRestart = m_postWriteRestarting;
         // Device is back; clear the post-write-restart flag so any
         // future genuine cable-pull disconnect shows "Disconnected"
         // again rather than re-using the "Restarting..." label. Also
@@ -724,6 +732,12 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
          * board_id, firmware_version, and matching-binary availability may
          * all have changed. Cheap call, fine to do unconditionally. */
         refreshUpgradeButtonState();
+
+        /* Auto-read the device's stored config on connect (opt-out,
+         * dirty-aware). Runs after m_deviceChanged was cleared above, so a
+         * modal prompt that pumps the event loop can't re-enter this block
+         * and double-fire. */
+        maybeAutoReadOnConnect(firmwareCompatible, devVer, wasPostWriteRestart);
     }
 
     // update button state without delay. fix gamepad_report.raw_button_data[0]
@@ -927,6 +941,12 @@ void MainWindow::onFlashSessionFinished(bool success, const QString &finalDetail
         setFlashChainUiLocked(false);
     }
     m_flashSessionBackupPending = false;
+    /* The flash flow already restored the config (or deliberately didn't);
+     * auto-read must not prompt over the device while it settles through its
+     * post-flash re-enumeration(s). Suppress for a short grace window -- longer
+     * than the post-write fallback (5s) to absorb the F411's multi re-enum. */
+    m_suppressAutoReadAfterFlash = true;
+    QTimer::singleShot(10000, this, [this]() { m_suppressAutoReadAfterFlash = false; });
     /* Re-evaluate the toolbar Upgrade button now that the session has
      * ended -- getParamsPacket's call site is gated on isActive(), so
      * it doesn't fire during the session. Without this explicit refresh
@@ -1172,6 +1192,17 @@ void MainWindow::snapshotDeviceConfig()
         m_deviceConfigSnapshot.clear();
         return;
     }
+    /* Snapshot the UI's FLUSHED representation, not the raw bytes that were
+     * just read. uiHasUnsavedDeviceEdits() (and the pending-changes badge)
+     * also flush UI->config before comparing, so the baseline must go through
+     * the same flush -- otherwise the config -> UI -> config round-trip isn't
+     * byte-identical (configurator-computed saved_breakdown, pins whose stored
+     * value isn't a selectable role, etc.) and a freshly-read config compares
+     * "dirty" with zero user edits. That false positive is what made switching
+     * devices wrongly prompt "load changes?". Flushing here makes the baseline
+     * and the comparison use the identical transform, so only real edits show.
+     * (flushUiToConfig is a pure, side-effect-free fan-out -- safe here.) */
+    flushUiToConfig();
     const dev_config_t &cfg = gEnv.pDeviceConfig->config;
     m_deviceConfigSnapshot = QByteArray(
         reinterpret_cast<const char *>(&cfg), sizeof(cfg));
@@ -1184,15 +1215,23 @@ void MainWindow::snapshotDeviceConfig()
     }
 }
 
+bool MainWindow::uiHasUnsavedDeviceEdits()
+{
+    // No snapshot yet (no Read/Write this session) -> nothing the user could
+    // lose, so the UI isn't "dirty" relative to any device.
+    if (!m_haveDeviceConfigSnapshot || !gEnv.pDeviceConfig) return false;
+    flushUiToConfig();
+    const dev_config_t &cfg = gEnv.pDeviceConfig->config;
+    return (m_deviceConfigSnapshot.size() != int(sizeof(cfg)))
+        || memcmp(m_deviceConfigSnapshot.constData(), &cfg, sizeof(cfg)) != 0;
+}
+
 void MainWindow::updatePendingChangesBadge()
 {
     if (!m_haveDeviceConfigSnapshot || !gEnv.pDeviceConfig) return;
     if (!ui || !ui->pushButton_WriteConfig) return;
 
-    flushUiToConfig();
-    const dev_config_t &cfg = gEnv.pDeviceConfig->config;
-    const bool changed = (m_deviceConfigSnapshot.size() != int(sizeof(cfg)))
-        || memcmp(m_deviceConfigSnapshot.constData(), &cfg, sizeof(cfg)) != 0;
+    const bool changed = uiHasUnsavedDeviceEdits();
     const bool currentlyMarked = !ui->pushButton_WriteConfig->icon().isNull();
     if (changed == currentlyMarked) return;
     if (changed) {
@@ -1209,6 +1248,50 @@ void MainWindow::updatePendingChangesBadge()
         ui->pushButton_WriteConfig->setIcon(QIcon());
         ui->pushButton_WriteConfig->setToolTip(QString());
     }
+}
+
+void MainWindow::maybeAutoReadOnConnect(bool firmwareCompatible,
+                                        uint16_t deviceVersion,
+                                        bool postWriteRestart)
+{
+    if (!m_autoReadOnConnect) return;            // user opted out (Advanced tab)
+    if (postWriteRestart) return;                // device re-enumerating after our Write
+    if (m_flashSession && m_flashSession->isActive())
+        return;                                  // a flash session owns the read/restore flow
+    if (m_suppressAutoReadAfterFlash)
+        return;                                  // device still settling after a flash (multi re-enum)
+
+    /* Only auto-read when Read is actually permitted for this firmware:
+     * current-gen (firmwareCompatible) or a legacy version we have a migrator
+     * for. Too-old / unknown firmware has Read blocked in getParamsPacket
+     * anyway, so don't fire a Read that would just fail. */
+    const bool readable = firmwareCompatible || legacy::canMigrate(deviceVersion);
+    if (!readable) return;
+
+    /* Dirty gate: auto-reading overwrites the UI buffer. If the user has
+     * unsaved edits relative to the last device sync, ask before discarding
+     * them. A clean UI -- or a fresh session with no prior sync -- reads
+     * silently (the frictionless common case). */
+    if (uiHasUnsavedDeviceEdits()) {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Question);
+        box.setWindowTitle(tr("Load device config?"));
+        box.setText(tr("This device has its own saved configuration."));
+        box.setInformativeText(tr(
+            "You have unsaved changes in the configurator. Load the device's "
+            "configuration (discarding your changes), or keep your current edits?"));
+        QPushButton *loadBtn =
+            box.addButton(tr("Load device config"), QMessageBox::AcceptRole);
+        box.addButton(tr("Keep my edits"), QMessageBox::RejectRole);
+        box.setDefaultButton(loadBtn);
+        box.exec();
+        if (box.clickedButton() != loadBtn) return;   // user kept their edits
+    }
+
+    /* Same path the Read Config button uses: the worker reads asynchronously
+     * and configReceived() splashes the result into the UI and resnapshots
+     * the dirty baseline. */
+    on_pushButton_ReadConfig_clicked();
 }
 
 
@@ -1628,6 +1711,8 @@ void MainWindow::loadAppConfig()
             resize(width(), height() - 120 - ui->layoutG_MainLayout->verticalSpacing());
         }
     }
+    // auto-read config from device on connect (default on)
+    m_autoReadOnConnect = appS->value("AutoReadOnConnect", true).toBool();
     appS->endGroup();
     // load configs dir path
     appS->beginGroup("Configs");
@@ -1665,6 +1750,7 @@ void MainWindow::saveAppConfig()
     // save debug
     appS->beginGroup("OtherSettings");
     appS->setValue("DebugEnable", m_debugIsEnable);
+    appS->setValue("AutoReadOnConnect", m_autoReadOnConnect);
     appS->endGroup();
     // save configs dir path
     appS->beginGroup("Configs");

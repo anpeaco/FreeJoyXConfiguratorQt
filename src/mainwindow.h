@@ -198,6 +198,23 @@ private:
     bool       m_haveDeviceConfigSnapshot = false;
     QTimer    *m_dirtyCheckTimer = nullptr;
 
+    /* Auto-read-on-connect: when true (default), a compatible device
+     * connecting triggers an automatic Read of its stored config into the
+     * UI. Gated by the dirty check (prompt before discarding unsaved edits),
+     * suppressed during post-write re-enumeration and active flash sessions.
+     * Persisted under OtherSettings/AutoReadOnConnect; toggled from the
+     * Advanced Settings tab via AdvancedSettings::autoReadOnConnectChanged. */
+    bool m_autoReadOnConnect = true;
+
+    /* Suppress auto-read-on-connect briefly after a flash session ends. A
+     * freshly-flashed device (especially F411) can re-enumerate several times
+     * as it settles; by the 2nd/3rd reconnect the session is already Done
+     * (isActive() false) and the post-write-restart flag has been cleared, so
+     * without this the auto-read prompt would wrongly fire over a device the
+     * flash flow already restored. Set in onFlashSessionFinished, cleared by a
+     * short single-shot timer. */
+    bool m_suppressAutoReadAfterFlash = false;
+
     /* True between clicking Write Config and the next deviceConnected.
      * Lets hideConnectDeviceInfo show "Restarting..." instead of
      * "Disconnected" while the chip is re-enumerating after the write,
@@ -334,6 +351,23 @@ private:
      * shows/hides label_PendingChanges accordingly. No-op until a
      * snapshot has been taken. */
     void updatePendingChangesBadge();
+
+    /* True when the live UI config differs from the last device-sync
+     * snapshot (m_deviceConfigSnapshot) -- i.e. the user has unsaved edits
+     * that overwriting the UI would discard. False when no snapshot has been
+     * taken yet this session (a fresh session has nothing to lose). Flushes
+     * the UI into dev_config_t. Shared by updatePendingChangesBadge() and the
+     * auto-read-on-connect dirty gate. */
+    bool uiHasUnsavedDeviceEdits();
+
+    /* Auto-read-on-connect entry point. Called once per new device from
+     * getParamsPacket() after firmware compatibility is determined. Honours
+     * m_autoReadOnConnect, skips during post-write restart / active flash
+     * sessions / unreadable firmware, and prompts before discarding unsaved
+     * edits. On go-ahead, triggers the same Read path as the Read Config
+     * button (worker reads async; configReceived splashes + resnapshots). */
+    void maybeAutoReadOnConnect(bool firmwareCompatible, uint16_t deviceVersion,
+                                bool postWriteRestart);
 
     /* Returns true if every logical button slot using Function = Logic
      * has its operator and (for binary operators) Source B set to real
