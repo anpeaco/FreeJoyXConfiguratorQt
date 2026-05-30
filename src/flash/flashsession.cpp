@@ -11,6 +11,7 @@
 
 #include <QDebug>
 #include <QFile>
+#include <QTimer>
 
 namespace {
 /* Mirrors the anonymous enum in src/global.h that HidDevice::flashStatus
@@ -41,6 +42,12 @@ constexpr int kFlashStatusConnectionLost = 666;
  * (Slice 2) -- Slice 3 will route through RecoveryPrompt instead. */
 constexpr int kBootloaderEnumTimeoutMs = 10000;
 constexpr int kAppEnumTimeoutMs        = 15000;
+
+/* Watchdog for the Restoring state (post-flash config write-back). A normal
+ * restore is a pre-write backup read (~5 s worst case) plus the write
+ * (~5 s worst case), so ~10 s working; 15 s leaves margin without trapping the
+ * user when a completion signal is lost entirely. */
+constexpr int kRestoreTimeoutMs        = 15000;
 }
 
 FlashSession::FlashSession(HidDevice *hid, QObject *parent)
@@ -49,6 +56,11 @@ FlashSession::FlashSession(HidDevice *hid, QObject *parent)
     m_watcher = new DeviceTransitionWatcher(hid, this);
     connect(m_watcher, &DeviceTransitionWatcher::timedOut,
             this, &FlashSession::onWatcherTimedOut);
+
+    m_restoreTimer = new QTimer(this);
+    m_restoreTimer->setSingleShot(true);
+    connect(m_restoreTimer, &QTimer::timeout,
+            this, &FlashSession::onRestoreTimedOut);
 }
 
 bool FlashSession::start(const Params &p)
@@ -358,13 +370,48 @@ void FlashSession::advanceFromAppEnum()
     }
 
     setState(State::Restoring, tr("Device back online. Writing saved configuration..."));
+    /* Arm the restore watchdog: if the write-back never reports a configSent
+     * (lost completion signal -- e.g. duplicate VID:PID confusing post-write
+     * re-selection), this guarantees we don't sit in Restoring forever. */
+    if (m_restoreTimer) m_restoreTimer->start(kRestoreTimeoutMs);
     emit needsConfigWrite();
 }
 
 void FlashSession::onConfigSent(bool success)
 {
     if (m_state != State::Restoring) return;
+    if (m_restoreTimer) m_restoreTimer->stop();
     advanceFromRestore(success);
+}
+
+void FlashSession::onRestoreTimedOut()
+{
+    /* Single-shot; only meaningful if we're still waiting on the restore. */
+    if (m_state != State::Restoring) return;
+    QString detail = tr("The device did not confirm the restored configuration "
+                        "in time. The firmware flashed successfully, but the "
+                        "config write-back could not be verified.");
+    if (!m_backupPath.isEmpty()) {
+        detail += QStringLiteral("\n") + tr("Your backup is at: %1").arg(m_backupPath);
+    }
+    fail(detail);
+}
+
+void FlashSession::cancelDuringRestore()
+{
+    if (m_state != State::Restoring) return;
+    if (m_restoreTimer) m_restoreTimer->stop();
+    /* The flash itself succeeded; the user just chose not to wait for the
+     * config write-back. Treat as success-with-restore-skipped (a late
+     * configSent is harmlessly ignored by onConfigSent's state guard). */
+    QString detail = tr("Restore cancelled. The firmware was flashed "
+                        "successfully; your previous configuration was not "
+                        "written back.");
+    if (!m_backupPath.isEmpty()) {
+        detail += QStringLiteral("\n") + tr("Your backup is at: %1").arg(m_backupPath);
+    }
+    setState(State::Done, detail);
+    emit finished(true, detail);
 }
 
 void FlashSession::advanceFromRestore(bool success)
@@ -396,6 +443,7 @@ void FlashSession::setState(State s, const QString &detail)
 void FlashSession::fail(const QString &detail)
 {
     if (m_watcher) m_watcher->stop();
+    if (m_restoreTimer) m_restoreTimer->stop();
     m_lastErrorDetail = detail;
     setState(State::Failed, detail);
     emit finished(false, detail);

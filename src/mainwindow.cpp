@@ -887,6 +887,11 @@ void MainWindow::onFlashProgressCancelRequested()
         m_flashSession->abortFromRecovery();
         return;
     }
+    if (s == FlashSession::State::Restoring) {
+        qDebug() << "Cancel during restore -- delegating to FlashSession";
+        m_flashSession->cancelDuringRestore();
+        return;
+    }
     /* Stale click after we left the cancel-safe stage -- ignore. */
 }
 

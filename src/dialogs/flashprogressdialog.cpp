@@ -124,13 +124,18 @@ void FlashProgressDialog::refreshProgressBar()
 
 bool FlashProgressDialog::cancelEnabledForStage() const
 {
-    /* Backup is the only cancel-safe stage in normal-flow. Once we've
-     * sent the bootloader-run report we're committed -- the device's
-     * application is gone and only a full flash can restore it.
-     * RecoveryPrompt re-enables Cancel so the user can give up cleanly
-     * after a timeout (the cancel emits cancelRequested; MainWindow
-     * routes that to FlashSession::abortFromRecovery). */
-    return m_stage == Stage::Backup || m_stage == Stage::RecoveryPrompt;
+    /* Backup is cancel-safe (nothing's been touched yet). Once we've sent the
+     * bootloader-run report we're committed through Flash/Reset -- the device's
+     * application is gone and only a full flash can restore it. Restore is
+     * cancel-safe again: the firmware is already flashed and running, so
+     * abandoning the config write-back just leaves factory defaults + the
+     * on-disk backup (this is also the manual escape if the restore hangs).
+     * RecoveryPrompt re-enables Cancel so the user can give up cleanly after a
+     * timeout. Each emits cancelRequested; MainWindow routes by stage to
+     * cancelDuringBackup / cancelDuringRestore / abortFromRecovery. */
+    return m_stage == Stage::Backup
+        || m_stage == Stage::Restore
+        || m_stage == Stage::RecoveryPrompt;
 }
 
 QString FlashProgressDialog::stageLabel(Stage s)
