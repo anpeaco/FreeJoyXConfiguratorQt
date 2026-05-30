@@ -986,6 +986,28 @@ void MainWindow::onFlashSessionNeedsConfigWrite()
     /* Session asks for the post-flash auto-restore Write. The existing
      * Write pipeline lives in on_pushButton_WriteConfig_clicked. */
     qDebug() << "FlashSession: triggering auto-restore Write";
+
+    /* Align the restored config's board_id to the board the device just
+     * reported in its post-flash params, BEFORE the write snapshots the config.
+     * The backup carries whatever board_id was stored on the device, which can
+     * be stale/wrong (e.g. 0, or left over from a prior state) -- the firmware
+     * then rejects the write with 0xFD (board mismatch) and the restore fails.
+     * Worse, because every restore is rejected the device never stores a
+     * correct board_id, so it stays stuck. The device just told us its real
+     * board, and it's the same physical board the config came from (so the pins
+     * already match) -- this only corrects the metadata byte the firmware
+     * checks. Guarded on a known (non-zero) board so a legacy device that
+     * doesn't report board_id isn't clobbered to 0. */
+    if (gEnv.pDeviceConfig) {
+        const uint8_t devBoard = gEnv.pDeviceConfig->paramsReport.board_id;
+        if (devBoard != 0 && gEnv.pDeviceConfig->config.board_id != devBoard) {
+            qInfo() << "Auto-restore: aligning config board_id"
+                    << gEnv.pDeviceConfig->config.board_id << "-> device board"
+                    << devBoard << "so the post-flash write isn't rejected (0xFD).";
+            gEnv.pDeviceConfig->config.board_id = devBoard;
+        }
+    }
+
     QTimer::singleShot(300, this, [this]() {
         on_pushButton_WriteConfig_clicked();
     });
