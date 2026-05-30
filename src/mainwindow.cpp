@@ -579,6 +579,35 @@ void MainWindow::onPostWriteFallback()
 }
 
 // received device report
+/* Paint the device Version row from the current paramsReport. Called on every
+ * params packet (not just on connect) because the FreeJoyX semver lands in the
+ * SECOND half of the params report -- a packet after getParamsPacket's
+ * connect-time block runs -- so a once-only paint showed a stale "0.0.0".
+ * Three cases: current FreeJoyX (freejoyx_version_* fields), legacy-migratable
+ * (nibble-parsed wire token), unknown (raw hex). */
+void MainWindow::updateVersionLabel(bool firmwareCompatible)
+{
+    if (!gEnv.pDeviceConfig) return;
+    const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
+    if (firmwareCompatible) {
+        const auto &pr = gEnv.pDeviceConfig->paramsReport;
+        /* reserved_layout is the per-build counter (FIRMWARE_BUILD_ID); "(bN)"
+         * lets the user confirm which bin is actually flashed. */
+        ui->label_VersionVal->setText(QStringLiteral("FreeJoyX %1.%2.%3 (b%4)")
+            .arg(pr.freejoyx_version_major)
+            .arg(pr.freejoyx_version_minor)
+            .arg(pr.freejoyx_version_patch)
+            .arg(pr.reserved_layout));
+    } else if (legacy::canMigrate(devVer)) {
+        ui->label_VersionVal->setText(QStringLiteral("FreeJoy %1")
+            .arg(QString::fromLatin1(legacy::describeVersion(devVer))));
+    } else {
+        const QString hex = QStringLiteral("0x") +
+            QString::number(devVer, 16).toUpper().rightJustified(4, QChar('0'));
+        ui->label_VersionVal->setText(tr("Unknown (%1)").arg(hex));
+    }
+}
+
 void MainWindow::getParamsPacket(bool firmwareCompatible)
 {
     if (m_deviceChanged) {
@@ -596,35 +625,12 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
         m_postWriteFallbackTimer.stop();
         const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
 
-        /* Single Version row covers three cases:
-         *   1. Current FreeJoyX firmware -> use freejoyx_version_* fields
-         *      from params_report_t (only trustworthy when
-         *      firmwareCompatible, since older shapes don't have those
-         *      fields at the same offset).
-         *   2. Upstream FreeJoy / pre-reset FreeJoyX (anything with a
-         *      legacy migrator) -> nibble-parse the wire-format token,
-         *      which historically encoded the semver directly.
-         *   3. Unknown firmware -> raw hex of the wire-format token, so
-         *      the user has *something* to report when triaging. */
-        if (firmwareCompatible) {
-            const auto &pr = gEnv.pDeviceConfig->paramsReport;
-            /* reserved_layout has been repurposed as a per-build counter
-             * (FIRMWARE_BUILD_ID, auto-incremented by armgcc/Makefile).
-             * Append " (b<N>)" so the user can verify the bin actually
-             * flashed onto the device matches the one they just built. */
-            ui->label_VersionVal->setText(QStringLiteral("FreeJoyX %1.%2.%3 (b%4)")
-                .arg(pr.freejoyx_version_major)
-                .arg(pr.freejoyx_version_minor)
-                .arg(pr.freejoyx_version_patch)
-                .arg(pr.reserved_layout));
-        } else if (legacy::canMigrate(devVer)) {
-            ui->label_VersionVal->setText(QStringLiteral("FreeJoy %1")
-                .arg(QString::fromLatin1(legacy::describeVersion(devVer))));
-        } else {
-            const QString hex = QStringLiteral("0x") +
-                QString::number(devVer, 16).toUpper().rightJustified(4, QChar('0'));
-            ui->label_VersionVal->setText(tr("Unknown (%1)").arg(hex));
-        }
+        /* The Version row is painted by updateVersionLabel(), called on EVERY
+         * params packet just below this block -- NOT only here. The FreeJoyX
+         * semver lives in the SECOND half of the params report, which lands a
+         * packet after this connect-time block runs; painting it once here left
+         * it stuck at "0.0.0" (the build id "(bN)" is in the first half, so it
+         * looked right while the semver didn't). */
 
         // Phase 7: surface the device's self-reported board_id on the
         // info card and route it into the per-board pin-table selector.
@@ -739,6 +745,11 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
          * and double-fire. */
         maybeAutoReadOnConnect(firmwareCompatible, devVer, wasPostWriteRestart);
     }
+
+    /* Repaint the Version row every params packet. The FreeJoyX semver is in
+     * the second params half, which arrives a packet after the connect-time
+     * block above, so a once-only paint stuck at 0.0.0 until a reconnect. */
+    updateVersionLabel(firmwareCompatible);
 
     // update button state without delay. fix gamepad_report.raw_button_data[0]
     // because of the delay, changes to the first physical 64 buttons or the rest may be missed.
@@ -1030,21 +1041,51 @@ void MainWindow::onFlashSessionBackupSaved(const QString &path)
  * progress dialog directly via stateChanged + flashBytesProgress signals.
  * See ctor connect block. */
 
-QString MainWindow::writeAutoBackup()
+QString MainWindow::makeBackupPath(const QString &prefix)
 {
-    // Backups land in <m_cfgDirPath>/backups/ with a timestamped filename
-    // that also embeds the device's reported firmware_version, so the
-    // user can tell at a glance which board/version a backup belongs to.
+    /* Build a backups/ path of the form
+     *   <prefix>-<deviceName>-<serial>-<YYYYMMDD-HHMMSS>.cfg
+     * so a backup is identifiable at a glance by which board it came from and
+     * when it was taken -- not a bare timestamp. Name + serial are sanitised to
+     * a filesystem-safe charset; an absent serial becomes "nosn", an empty name
+     * "device". (The firmware version is no longer in the name -- it's stored
+     * inside the .cfg and shown in the configurator -- so the name stays
+     * human-readable.) Shared by the pre-flash and pre-write backups. */
     QDir backupsDir(m_cfgDirPath + "/backups");
     if (!backupsDir.exists()) {
         backupsDir.mkpath(".");
     }
 
-    const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
+    auto sanitise = [](const QString &raw) {
+        QString out = raw;
+        for (int i = 0; i < out.size(); ++i) {
+            const QChar c = out[i];
+            if (!c.isLetterOrNumber() && c != '.' && c != '-' && c != '_') {
+                out[i] = '_';
+            }
+        }
+        return out;
+    };
+
+    QString deviceName = sanitise(
+        QString::fromLatin1(gEnv.pDeviceConfig->config.device_name).trimmed());
+    if (deviceName.isEmpty()) deviceName = QStringLiteral("device");
+    const QString serial = sanitise(m_currentDeviceSerial.isEmpty()
+                                        ? QStringLiteral("nosn")
+                                        : m_currentDeviceSerial);
     const QString stamp = QDateTime::currentDateTime().toString("yyyyMMdd-hhmmss");
-    const QString fwHex = QString::number(devVer, 16).rightJustified(4, QChar('0'));
-    const QString fileName = QString("backup-%1-fw%2.cfg").arg(stamp, fwHex);
-    const QString fullPath = backupsDir.absoluteFilePath(fileName);
+
+    const QString fileName = QStringLiteral("%1-%2-%3-%4.cfg")
+                                 .arg(prefix, deviceName, serial, stamp);
+    return backupsDir.absoluteFilePath(fileName);
+}
+
+QString MainWindow::writeAutoBackup()
+{
+    // Pre-flash backup. Filename now carries the device name + serial + datetime
+    // (via makeBackupPath) so the user can tell which board it belongs to and
+    // when, instead of a bare timestamp + wire-format hex.
+    const QString fullPath = makeBackupPath(QStringLiteral("backup"));
 
     UiWriteToConfig();
     ConfigToFile::saveDeviceConfigToFile(fullPath, gEnv.pDeviceConfig->config);
@@ -2373,43 +2414,11 @@ void MainWindow::onFastEncoderEnableToggleRequested(int slotIndex, bool desiredE
 
 QString MainWindow::writePreWriteDeviceBackup()
 {
-    /* Pre-write backup of the device's current config. The just-read
-     * config is in gEnv.pDeviceConfig->config. Filename embeds the
-     * device's USB identity so multiple boards' backups don't collide
-     * and the user can find the right file later by name.
-     *
-     * Format: prewrite-<deviceName>-<serial>-<vid>_<pid>-<timestamp>.cfg
-     * Sanitised: characters not in [A-Za-z0-9._-] are replaced with _
-     * to keep the path filesystem-safe. */
-    QDir backupsDir(m_cfgDirPath + "/backups");
-    if (!backupsDir.exists()) {
-        backupsDir.mkpath(".");
-    }
-
-    auto sanitise = [](const QString &raw) {
-        QString out = raw;
-        for (int i = 0; i < out.size(); ++i) {
-            const QChar c = out[i];
-            if (!c.isLetterOrNumber() && c != '.' && c != '-' && c != '_') {
-                out[i] = '_';
-            }
-        }
-        return out;
-    };
-
-    const QString deviceName = sanitise(QString::fromLatin1(
-        gEnv.pDeviceConfig->config.device_name));
-    const QString serial = sanitise(m_currentDeviceSerial.isEmpty()
-                                        ? QStringLiteral("nosn")
-                                        : m_currentDeviceSerial);
-    const QString vidpid = QStringLiteral("%1_%2")
-                               .arg(m_currentDeviceVid.isEmpty() ? QStringLiteral("0000") : m_currentDeviceVid,
-                                    m_currentDevicePid.isEmpty() ? QStringLiteral("0000") : m_currentDevicePid);
-    const QString stamp = QDateTime::currentDateTime().toString("yyyyMMdd-hhmmss");
-
-    const QString fileName = QString("prewrite-%1-%2-%3-%4.cfg")
-                                 .arg(deviceName, serial, vidpid, stamp);
-    const QString fullPath = backupsDir.absoluteFilePath(fileName);
+    /* Pre-write backup of the device's current config. The just-read config is
+     * in gEnv.pDeviceConfig->config. Same naming as the pre-flash backup
+     * (<prefix>-<deviceName>-<serial>-<datetime>.cfg) via makeBackupPath, so the
+     * user can find the right file by board + time. */
+    const QString fullPath = makeBackupPath(QStringLiteral("prewrite"));
 
     ConfigToFile::saveDeviceConfigToFile(fullPath, gEnv.pDeviceConfig->config);
     return fullPath;

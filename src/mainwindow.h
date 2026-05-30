@@ -49,6 +49,10 @@ private slots:
     void flasherConnected();
     //void getParamsPacket(uint8_t *buffer);
     void getParamsPacket(bool firmwareCompatible);
+    /* Paint the device Version row from the current paramsReport. Called on
+     * every params packet so the FreeJoyX semver (which lands in the second
+     * params half, a packet after connect) is shown instead of a stale 0.0.0. */
+    void updateVersionLabel(bool firmwareCompatible);
 
     void configReceived(bool success);
     void configSent(bool success);
@@ -282,6 +286,12 @@ private:
      * m_flashSessionBackupPending branch as the BackingUp step of a
      * FlashSession. */
     QString writeAutoBackup();
+
+    /* Build a backups/ path of the form
+     * <prefix>-<deviceName>-<serial>-<YYYYMMDD-HHMMSS>.cfg. Shared by the
+     * pre-flash (writeAutoBackup) and pre-write (writePreWriteDeviceBackup)
+     * backups so every backup is identifiable by board + time. */
+    QString makeBackupPath(const QString &prefix);
 
     /* Worker-thread shims. doEnterFlashMode sends the "bootloader run"
      * report; doFlashFirmwareBytes streams the .bin to the bootloader's
