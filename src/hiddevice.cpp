@@ -458,14 +458,6 @@ void HidDevice::setIsFinish(bool isFinish)
 // read config
 void HidDevice::readConfigFromDevice(uint8_t *buffer)
 {
-    QElapsedTimer timer;
-    timer.start();
-    int res = 0;
-    qint64 start_time = 0;
-    qint64 resendTime = 0;
-    uint8_t report_count = 0;
-    uint8_t config_request_buffer[2] = {REPORT_ID_CONFIG_IN, 1};
-
     // 62 = BUFFERSIZE(64)-2 bytes (first - ID, second - cfg part)
     //
     // Cross-version-compatible config read: ask for as many fragments as
@@ -487,63 +479,172 @@ void HidDevice::readConfigFromDevice(uint8_t *buffer)
         cfg_count++;
     }
 
-    start_time = timer.elapsed();
-    resendTime = start_time;
-    hid_write(m_paramsRead, config_request_buffer, 2);
+    // One full fragment-read pass into gEnv.pDeviceConfig->config. Returns the
+    // number of fragments received (== cfg_count on a complete read). Factored
+    // out so the read-verify loop below can run it more than once.
+    auto doOneReadPass = [&]() -> uint8_t {
+        QElapsedTimer timer;
+        timer.start();
+        int res = 0;
+        uint8_t report_count = 0;
+        uint8_t config_request_buffer[2] = {REPORT_ID_CONFIG_IN, 1};
+        qint64 start_time = timer.elapsed();
+        qint64 resendTime = start_time;
 
-    while (timer.elapsed() < start_time + 5000)
-    {
-        if (m_paramsRead)    // safety check
+        /* Drain anything already buffered on this handle before we start: a
+         * stale response from a prior pass (the loop fires one request past the
+         * last fragment, whose reply lingers) plus the device's continuous
+         * joystick/params stream. Without this, back-to-back reads contaminate
+         * each other and never agree. timeout 0 = non-blocking; cap the count so
+         * a fast report stream can't spin us. */
         {
-            res=hid_read_timeout(m_paramsRead, buffer, BUFFERSIZE,100);
-            if (res < 0) {
-                hid_close(m_paramsRead);
-                m_paramsRead=nullptr;
+            uint8_t drainBuf[BUFFERSIZE];
+            for (int d = 0; d < 64 && m_paramsRead; ++d) {
+                if (hid_read_timeout(m_paramsRead, drainBuf, BUFFERSIZE, 0) <= 0) break;
             }
-            else
+        }
+
+        hid_write(m_paramsRead, config_request_buffer, 2);
+
+        while (timer.elapsed() < start_time + 5000)
+        {
+            if (m_paramsRead)    // safety check
             {
-                if (buffer[0] == REPORT_ID_CONFIG_IN)
+                res=hid_read_timeout(m_paramsRead, buffer, BUFFERSIZE,100);
+                if (res < 0) {
+                    hid_close(m_paramsRead);
+                    m_paramsRead=nullptr;
+                }
+                else
                 {
-                    if (buffer[1] == config_request_buffer[1])
+                    if (buffer[0] == REPORT_ID_CONFIG_IN)
                     {
-                        ReportConverter::getConfigFromDevice(buffer);
-                        config_request_buffer[1] += 1;
-                        hid_write(m_paramsRead, config_request_buffer, 2);
-                        report_count++;
-                        resendTime = timer.elapsed();
-                        qDebug()<<"Config"<<report_count<<"received";
-                        if (config_request_buffer[1] > cfg_count)
+                        if (buffer[1] == config_request_buffer[1])
                         {
-                            break;
+                            ReportConverter::getConfigFromDevice(buffer);
+                            config_request_buffer[1] += 1;
+                            hid_write(m_paramsRead, config_request_buffer, 2);
+                            report_count++;
+                            resendTime = timer.elapsed();
+                            qDebug()<<"Config"<<report_count<<"received";
+                            if (config_request_buffer[1] > cfg_count)
+                            {
+                                break;
+                            }
                         }
                     }
+                    else if ((resendTime + 250 - timer.elapsed()) <= 0)
+                    {
+                        qDebug() << "Resend activated";
+                        config_request_buffer[1] = report_count +1;
+                        qDebug() << config_request_buffer[1];
+                        resendTime = timer.elapsed();
+                        hid_write(m_paramsRead, config_request_buffer, 2);
+                    }
                 }
-                else if ((resendTime + 250 - timer.elapsed()) <= 0)
-                {
-                    qDebug() << "Resend activated";
-                    config_request_buffer[1] = report_count +1;
-                    qDebug() << config_request_buffer[1];
-                    resendTime = timer.elapsed();
-                    hid_write(m_paramsRead, config_request_buffer, 2);
-                }
+            } else {
+                break;   // link lost mid-read; outer loop reports failure
             }
-        } else {
-            {
-                std::lock_guard<std::mutex> lock(m_mutex);
-                m_currentWork = REPORT_ID_PARAM;
+        }
+        return report_count;
+    };
+
+    /* 16-bit byte-sum of the config just read -- matches the firmware's
+     * snapshot_checksum (a plain sum over sizeof(dev_config_t) bytes). */
+    auto localChecksum = [&]() -> uint16_t {
+        uint16_t s = 0;
+        const uint8_t *p = reinterpret_cast<const uint8_t *>(&gEnv.pDeviceConfig->config);
+        for (size_t i = 0; i < device_cfg_size; ++i) s += p[i];
+        return s;
+    };
+
+    /* Ask the device for its config checksum: request fragment cfg_count+1; the
+     * firmware (>= the checksum build) replies with REPORT_ID_CONFIG_IN, byte[1]
+     * == cfg_count+1, and the 16-bit sum in bytes[2..3]. Returns false (caller
+     * falls back to read-twice-and-compare) on older firmware, which never
+     * answers. Short bounded wait so the fallback isn't slow; stray joystick /
+     * late config reports are skipped. */
+    auto fetchDeviceChecksum = [&](uint16_t &outSum) -> bool {
+        if (!m_paramsRead) return false;
+        uint8_t req[2] = { REPORT_ID_CONFIG_IN, uint8_t(cfg_count + 1) };
+        hid_write(m_paramsRead, req, 2);
+        QElapsedTimer t;
+        t.start();
+        while (t.elapsed() < 250) {   // new firmware answers in ~ms; this just bounds the old-firmware fallback
+            if (!m_paramsRead) return false;
+            int r = hid_read_timeout(m_paramsRead, buffer, BUFFERSIZE, 80);
+            if (r < 0) { hid_close(m_paramsRead); m_paramsRead = nullptr; return false; }
+            if (r > 0 && buffer[0] == REPORT_ID_CONFIG_IN
+                      && buffer[1] == uint8_t(cfg_count + 1)) {
+                outSum = uint16_t(buffer[2] | (buffer[3] << 8));
+                return true;
             }
-            emit configReceived(false);
+        }
+        return false;   // timed out -> firmware doesn't support the checksum
+    };
+
+    /* Read-verify. A device can hand back a PARTIAL config on the very first
+     * read right after we attach / switch to it (its config-send buffer isn't
+     * populated yet), then the COMPLETE config on the next read -- and the
+     * fragment protocol reports the full count both times, so the count alone
+     * can't tell them apart.
+     *
+     * Primary check: the device's own checksum (one read validates definitively).
+     * Fallback (older firmware that doesn't serve a checksum): read twice and
+     * require two consecutive byte-identical reads. Either way we only apply a
+     * verified config -- this is what stops "loaded a partial config, re-read
+     * and it was fine". */
+    bool complete = false;
+    bool stable = false;
+    std::vector<uint8_t> prevBytes;
+    const int kMaxReadAttempts = 4;
+    for (int attempt = 0; attempt < kMaxReadAttempts && !(complete && stable); ++attempt)
+    {
+        if (!m_paramsRead) { complete = false; break; }   // link lost
+        // Let the device + USB pipe settle between passes -- your reliable
+        // manual re-reads were seconds apart; rapid-fire reads collide.
+        if (attempt > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        }
+        const uint8_t report_count = doOneReadPass();
+        qDebug()<<"Read report_count ="<<report_count<<"/"<<cfg_count;
+        complete = (report_count == cfg_count);
+        if (!complete) {
+            qDebug() << "ERROR, not all config received";
             break;
         }
+        std::vector<uint8_t> cur(device_cfg_size);
+        std::memcpy(cur.data(), &gEnv.pDeviceConfig->config, device_cfg_size);
+
+        uint16_t devSum = 0;
+        if (fetchDeviceChecksum(devSum)) {
+            // Definitive: the device told us the checksum of the bytes it sent.
+            const uint16_t mySum = localChecksum();
+            if (mySum == devSum) {
+                stable = true;
+                qDebug() << "All config received (checksum verified)";
+            } else {
+                qDebug() << "Config checksum mismatch (got" << mySum
+                         << "expected" << devSum << ") -- re-reading";
+                prevBytes = std::move(cur);
+            }
+        } else {
+            // Fallback (older firmware, no checksum): two reads must agree.
+            if (!prevBytes.empty() && prevBytes == cur) {
+                stable = true;
+                qDebug() << "All config received (verified stable)";
+            } else {
+                prevBytes = std::move(cur);
+                qDebug() << "Config not stable yet -- re-reading to verify";
+            }
+        }
     }
-    qDebug()<<"Read report_count ="<<report_count<<"/"<<cfg_count;
-    if (report_count == cfg_count){
-        qDebug() << "All config received";
-    } else {
-        qDebug() << "ERROR, not all config received";
+    if (complete && !stable) {
+        qWarning() << "Config read did not stabilise after" << kMaxReadAttempts
+                   << "attempts -- applying the last full read";
     }
 
-    if (report_count == cfg_count) {
+    if (complete) {
         // Migrate if the device was running an older firmware version.
         // gEnv.pDeviceConfig->config currently holds device_cfg_size bytes
         // of legacy-shaped data at offset 0; the rest of the dev_config_t
