@@ -631,19 +631,49 @@ void Flasher::refreshFirmwareInfoCard(const QString &filePath)
     ui->label_FwInfoFile->setText(fi.fileName());
     ui->label_FwInfoSize->setText(QLocale::system().formattedDataSize(fi.size()));
 
-    /* Filename-based board hint until FirmwareImage lands (#18). Names
-     * follow the freejoyx-<board>-<app|boot>-<version>.bin convention,
-     * so a substring match is reliable for our own releases; for hand-
-     * built or third-party files the hint stays "Unknown" and slice 5
-     * will inspect the bytes instead. */
-    const QString nameLower = fi.fileName().toLower();
-    if (nameLower.contains("f103")) {
-        ui->label_FwInfoBoard->setText(tr("F103 (from filename)"));
-    } else if (nameLower.contains("f411")) {
-        ui->label_FwInfoBoard->setText(tr("F411 (from filename)"));
-    } else {
-        ui->label_FwInfoBoard->setText(tr("Unknown"));
-    }
-    ui->label_FwInfoVersion->setText(QStringLiteral("-"));
+    /* Board + version straight from the binary. FreeJoyX bins carry an
+     * embedded ID footer (image_id.c, FreeJoyX#23); footer-less / foreign
+     * bins fall back to FirmwareImage's vector-table heuristic, which still
+     * tells F103 from F411 by the reset-handler address. Replaces the old
+     * filename-substring guess that left everything "Unknown" / "-". */
+    freejoy_style::clearRole(ui->label_FwInfoVerdict, "role");
     ui->label_FwInfoVerdict->clear();
+
+    FirmwareImage image;
+    if (!image.loadFromFile(resolved)) {
+        ui->label_FwInfoBoard->setText(tr("Unknown"));
+        ui->label_FwInfoVersion->setText(QStringLiteral("-"));
+        return;
+    }
+
+    /* Annotate the board with how it was identified so the user can gauge
+     * confidence: a footer read is authoritative; the heuristic is a best
+     * guess from the vector table on a binary with no footer. */
+    QString boardText = image.boardName();
+    if (image.board() != FirmwareImage::Board::Unknown
+        && image.source() == FirmwareImage::Source::VectorTableHeuristic) {
+        boardText += QChar(' ') + tr("(detected)");
+    }
+    ui->label_FwInfoBoard->setText(boardText);
+
+    /* Version from the footer; legacy / foreign binaries carry none. */
+    const QString ver = image.versionLabel();
+    ui->label_FwInfoVersion->setText(ver.isEmpty() ? tr("Legacy binary") : ver);
+
+    /* Surface a board mismatch against the connected device right here so a
+     * wrong-board pick is obvious at selection time. The FlashConfirmationDialog
+     * still hard-refuses a mismatch before any bytes are written -- this is an
+     * earlier, softer heads-up. */
+    if (gEnv.pDeviceConfig && image.board() != FirmwareImage::Board::Unknown) {
+        const uint8_t devBoard = gEnv.pDeviceConfig->paramsReport.board_id;
+        const uint8_t imgBoard =
+            (image.board() == FirmwareImage::Board::F103BluePill)
+                ? uint8_t(BOARD_ID_F103_BLUEPILL) : uint8_t(BOARD_ID_F411_BLACKPILL);
+        if (devBoard != 0 && devBoard != imgBoard) {
+            ui->label_FwInfoVerdict->setText(
+                tr("This firmware is for a different board than the "
+                   "connected device."));
+            freejoy_style::setRole(ui->label_FwInfoVerdict, "role", "status-warning");
+        }
+    }
 }
