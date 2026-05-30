@@ -156,6 +156,12 @@ void PinComboBox::applyTextColor(const QColor &color)
     } else {
         ui->comboBox_PinsType->setPalette(palette());
     }
+    // Under the app stylesheet, QStyleSheetStyle owns the draw and setPalette()
+    // alone often doesn't trigger a repaint -- on interactive selection one
+    // happens anyway, but on a programmatic load (Read / auto-read / device
+    // swap) the closed combobox keeps painting the old (black) colour. Force
+    // the repaint so the role colour shows immediately.
+    ui->comboBox_PinsType->update();
 }
 
 void PinComboBox::reapplyRoleColor()
@@ -419,13 +425,22 @@ void PinComboBox::indexChanged(int index)
 
 void PinComboBox::readFromConfig(uint pin)
 {
+    /* Default to "Not Used" (index 0) and only override when the stored role
+     * is a valid option for this pin. Without the default, a pin the incoming
+     * config does NOT assign would keep the previously-loaded config's value
+     * -- so swapping or re-reading a device merged the old bindings with the
+     * new ones instead of replacing them. Setting index 0 first guarantees a
+     * clean slate per read. (setCurrentIndex is a no-op when the index is
+     * already correct, so unchanged pins don't churn signals.) */
+    int target = 0;
     for (int i = 0; i < m_enumIndex.size(); ++i) {
         if (gEnv.pDeviceConfig->config.pins[pin] == m_enumIndex[i])
         {
-            ui->comboBox_PinsType->setCurrentIndex(int(i));
+            target = int(i);
             break;
         }
     }
+    ui->comboBox_PinsType->setCurrentIndex(target);
 }
 
 void PinComboBox::writeToConfig(uint pin)

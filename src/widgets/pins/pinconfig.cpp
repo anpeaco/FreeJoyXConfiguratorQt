@@ -873,6 +873,16 @@ void PinConfig::readFromConfig(){
         m_pinCBoxPtrList[i]->readFromConfig(i);
     }
     refreshBusToggles();
+
+    /* Re-assert every pin's role colour once the load settles. Each pin's
+     * colour was applied as its index was set above, but the palette-driven
+     * colour can be wiped by an intervening QStyleSheetStyle polish (e.g.
+     * bus-pin enable/disable in refreshBusToggles). reapplyRoleColor() repaints
+     * from the cached role colour, so the pins come back coloured after a Read /
+     * auto-read / device swap instead of reverting to black. */
+    for (int i = 0; i < m_pinCBoxPtrList.size(); ++i) {
+        m_pinCBoxPtrList[i]->reapplyRoleColor();
+    }
 }
 
 void PinConfig::writeToConfig(){
