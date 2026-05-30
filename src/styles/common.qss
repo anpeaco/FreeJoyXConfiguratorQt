@@ -173,10 +173,20 @@ QToolButton:pressed {
 
 QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {
     background-color: palette(base);
-    color: palette(text);
     border: 1px solid palette(mid);
     border-radius: 4px;
     padding: 2px 6px;
+}
+
+/* Text colour is driven by the widget palette, NOT QSS, so PinComboBox can
+ * tint the selected pin role (QPalette::Text/ButtonText set in
+ * pincombobox.cpp) and the popup can honour each item's Qt::ForegroundRole.
+ * A blanket `color: palette(text)` on QComboBox here silently overrides both
+ * (Qt: a stylesheet `color` wins over palette and item ForegroundRole). Pin
+ * the colour explicitly only for the inputs that have no per-item colouring;
+ * plain comboboxes fall back to palette(text) anyway. */
+QLineEdit, QSpinBox, QDoubleSpinBox {
+    color: palette(text);
 }
 
 /* Loud selection only for real text editing. Spinboxes auto-select
@@ -255,9 +265,11 @@ QComboBox::down-arrow {
 }
 /* image: url(...) per-theme in dark.qss / light.qss. */
 
+/* No `color:` here on purpose: the popup list must honour each item's
+ * Qt::ForegroundRole (PinComboBox tints rows per pin function). Plain
+ * comboboxes fall back to the view's palette(text), which is themed. */
 QComboBox QAbstractItemView {
     background-color: palette(base);
-    color: palette(text);
     border: 1px solid palette(mid);
     border-radius: 4px;
     selection-background-color: palette(highlight);

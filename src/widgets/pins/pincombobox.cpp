@@ -141,6 +141,28 @@ void PinComboBox::resetPin()
     }
 }
 
+//! Apply `color` as the closed-combobox text colour and cache it. Set both
+//! ButtonText and Text -- QStyleSheetStyle draws the closed combobox label
+//! from Text on some paths, ButtonText on others. An invalid QColor restores
+//! the inherited default palette ("Not Used" / interaction reset).
+void PinComboBox::applyTextColor(const QColor &color)
+{
+    m_roleColor = color;
+    if (color.isValid()) {
+        QPalette pal = ui->comboBox_PinsType->palette();
+        pal.setColor(QPalette::ButtonText, color);
+        pal.setColor(QPalette::Text,       color);
+        ui->comboBox_PinsType->setPalette(pal);
+    } else {
+        ui->comboBox_PinsType->setPalette(palette());
+    }
+}
+
+void PinComboBox::reapplyRoleColor()
+{
+    applyTextColor(m_roleColor);
+}
+
 void PinComboBox::setIndex_iteraction(int index, int senderIndex)
 {
     if(m_isInteracts == false && m_isCall_Interaction == false)     // ui->comboBox_PinsType->isEnabled()
@@ -150,9 +172,7 @@ void PinComboBox::setIndex_iteraction(int index, int senderIndex)
             ui->comboBox_PinsType->setEnabled(false);
         }
         // change text color
-        QPalette pal = ui->comboBox_PinsType->palette();
-        pal.setColor(QPalette::ButtonText, m_pinTypes[senderIndex].color);
-        ui->comboBox_PinsType->setPalette(pal);
+        applyTextColor(m_pinTypes[senderIndex].color);
 
         m_isInteracts = true;
         ui->comboBox_PinsType->setCurrentIndex(index);
@@ -162,7 +182,7 @@ void PinComboBox::setIndex_iteraction(int index, int senderIndex)
         ui->comboBox_PinsType->setEnabled(true);
         m_isInteracts = false;
         // reset color
-        ui->comboBox_PinsType->setPalette(palette());
+        applyTextColor(QColor());
 
         ui->comboBox_PinsType->setCurrentIndex(index);
     }
@@ -324,11 +344,9 @@ void PinComboBox::indexChanged(int index)
     {
         // change text color
         if (index == 0) {
-            ui->comboBox_PinsType->setPalette(palette());
+            applyTextColor(QColor());
         } else {
-            QPalette pal = ui->comboBox_PinsType->palette();
-            pal.setColor(QPalette::ButtonText, m_pinTypes[m_pinTypesIndex[index]].color);
-            ui->comboBox_PinsType->setPalette(pal);
+            applyTextColor(m_pinTypes[m_pinTypesIndex[index]].color);
         }
 
         int iteractionSize = sizeof(m_pinTypes->interaction) / sizeof(m_pinTypes->interaction[0]);

@@ -101,6 +101,14 @@ public:
     void setLocked(bool locked);
     void resetPin();
 
+    //! Re-apply the current role's text colour to the closed combobox. Needed
+    //! after a pinHighlight polish cycle (PinConfig::highlightPins /
+    //! flashAutoAssignedPin): toggling the QSS highlight property runs
+    //! unpolish/polish, and QStyleSheetStyle overwrites the palette set on role
+    //! selection -- so the role colour has to be restored once the highlight
+    //! clears, or the pin loses its colour permanently.
+    void reapplyRoleColor();
+
     /* Programmatically set this pin's role by device-enum value.
      * Returns true if the enum corresponds to an item currently in
      * the dropdown for this pin (the legal-roles list varies per pin
@@ -145,7 +153,17 @@ private slots:
     void indexChanged(int index);
 
 private:
+    //! Apply `color` as the closed-combobox text colour (invalid QColor ->
+    //! default palette) and cache it in m_roleColor. Single path shared by
+    //! indexChanged / setIndex_iteraction / reapplyRoleColor.
+    void applyTextColor(const QColor &color);
+
     Ui::PinComboBox *ui;
+
+    //! Last text colour applied to the closed combobox (invalid = default
+    //! palette). Cached so reapplyRoleColor() can restore it after a QSS
+    //! polish cycle wipes the manually-set palette.
+    QColor m_roleColor;
 
     int m_currentDevEnum;
     int m_pinNumber;

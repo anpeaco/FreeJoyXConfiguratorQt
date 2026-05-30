@@ -625,6 +625,11 @@ void PinConfig::highlightPins(pin_t pinType, bool enable)
                         freejoy_style::clearRole(cb, "pinHighlight");
                     }
                 }
+                // clearRole's unpolish/polish wipes the palette-driven role
+                // colour; restore it so the pin keeps its colour after hover.
+                if (!enable) {
+                    m_pinCBoxPtrList[i]->reapplyRoleColor();
+                }
                 break;
             }
         }
@@ -650,6 +655,8 @@ void PinConfig::flashAutoAssignedPin(int idx)
         for (auto *cb : box->findChildren<QComboBox*>()) {
             freejoy_style::clearRole(cb, "pinHighlight");
         }
+        // Restore the palette-driven role colour wiped by clearRole's polish.
+        box->reapplyRoleColor();
     });
 }
 
