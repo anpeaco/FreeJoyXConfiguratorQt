@@ -197,26 +197,46 @@
         keep the original two-step flow for users who want explicit
         control. -->
    <item row="0" column="2">
-    <widget class="QPushButton" name="pushButton_FlashConsolidated">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="toolTip">
-      <string>Run the full backup -&gt; bootloader -&gt; flash -&gt; restore sequence in one click. Shows a confirmation dialog with the planned steps before any device state changes.</string>
-     </property>
-     <property name="text">
-      <string>Flash</string>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">font-weight:600;</string>
-     </property>
-    </widget>
+    <layout class="QVBoxLayout" name="layoutV_PrimaryActions">
+     <item>
+      <widget class="QPushButton" name="pushButton_FlashConsolidated">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>Run the full backup -&gt; bootloader -&gt; flash -&gt; restore sequence in one click. Shows a confirmation dialog with the planned steps before any device state changes.</string>
+       </property>
+       <property name="text">
+        <string>Flash</string>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">font-weight:600;</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_DfuInstall">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>Install or completely reinstall the bootloader and application over USB DFU -- no ST-Link or STM32CubeProgrammer needed. Use this for a blank chip, to recover a corrupted bootloader, or to change firmware generation. F411 (BlackPill) only; the board must be put into DFU mode (BOOT0 + reset).</string>
+       </property>
+       <property name="text">
+        <string>Install / Reinstall (USB DFU)…</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item row="1" column="2">
     <widget class="QPushButton" name="pushButton_FlasherMode">

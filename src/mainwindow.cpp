@@ -324,6 +324,8 @@ MainWindow::MainWindow(QWidget *parent)
      * `needs*()` signals by triggering existing helpers. */
     connect(m_advSettings->flasher(), &Flasher::consolidatedFlashRequested,
             this, &MainWindow::onConsolidatedFlashRequested);
+    connect(m_advSettings->flasher(), &Flasher::systemDfuRebootRequested,
+            this, &MainWindow::doEnterSystemDfu);
 
     /* FlashSession -> HidDevice plumbing. Active only while a session
      * is in progress; the slots themselves no-op when m_flashSession is
@@ -1123,6 +1125,23 @@ void MainWindow::doEnterFlashMode()
         qDebug() << "Enter to flash mode";
         m_hidDeviceWorker->enterToFlashMode();
         qDebug() << "Flash mode entry finished";
+        loop.quit();
+    });
+    m_threadGetSendConfig->start();
+    loop.exec();
+    m_threadGetSendConfig->quit();
+    m_threadGetSendConfig->wait();
+}
+
+void MainWindow::doEnterSystemDfu()
+{
+    QEventLoop loop;
+    QObject context;
+    context.moveToThread(m_threadGetSendConfig);
+    connect(m_threadGetSendConfig, &QThread::started, &context, [&]() {
+        qDebug() << "Enter system DFU";
+        m_hidDeviceWorker->enterToSystemDfu();
+        qDebug() << "System DFU command sent";
         loop.quit();
     });
     m_threadGetSendConfig->start();

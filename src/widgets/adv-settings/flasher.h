@@ -36,6 +36,11 @@ signals:
      * FlashProgressDialog and starts a FlashSession in response. */
     void consolidatedFlashRequested(const QString &filePath);
 
+    /* Forwarded from the DfuInstallDialog's "reboot to DFU" button. MainWindow
+     * obliges by sending the "system dfu" report so a live device reboots into
+     * ROM USB DFU (jumper-free reinstall, anpeaco/FreeJoyX#55). */
+    void systemDfuRebootRequested();
+
     /* Sidebar row click. Asks MainWindow to set the toolbar's
      * comboBox_HidDeviceList index -- single-source-of-truth stays on
      * the main combobox; the sidebar is just a more visible re-render
@@ -64,6 +69,10 @@ public slots:
 private slots:
     void on_pushButton_BrowseFirmware_clicked();
     void on_pushButton_FlashConsolidated_clicked();
+    /* Opens the modal DfuInstallDialog -- the USB-DFU install/reinstall path
+     * (anpeaco/FreeJoyXConfiguratorQt#53). Independent of the HID flash flow
+     * above; works on a blank/bricked chip with no connected app device. */
+    void on_pushButton_DfuInstall_clicked();
     void on_toolButton_OpenRecoveryDir_clicked();
     void on_listWidget_Devices_itemActivated(class QListWidgetItem *item);
     void on_listWidget_Devices_currentRowChanged(int row);

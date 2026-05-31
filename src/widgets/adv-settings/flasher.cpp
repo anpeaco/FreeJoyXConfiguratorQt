@@ -22,6 +22,7 @@
 
 #include "common_defines.h"
 #include "deviceconfig.h"
+#include "dialogs/dfuinstalldialog.h"
 #include "dialogs/flashconfirmationdialog.h"
 #include "firmwareimage.h"
 #include "global.h"
@@ -306,6 +307,20 @@ void Flasher::refreshSourceList()
             }
         }
     }
+}
+
+void Flasher::on_pushButton_DfuInstall_clicked()
+{
+    /* USB-DFU install/reinstall is fully self-contained in its own modal
+     * dialog: it detects the ROM-DFU device, resolves the boot+app binaries,
+     * and drives the freejoyx-flash helper. No HID device or flasher-mode
+     * state is required, so this path works even on a blank or bricked chip. */
+    DfuInstallDialog dlg(this);
+    /* The dialog's "reboot connected device to DFU" button asks us to send the
+     * firmware command; forward it up to MainWindow which owns the HID worker. */
+    connect(&dlg, &DfuInstallDialog::rebootToDfuRequested,
+            this, &Flasher::systemDfuRebootRequested);
+    dlg.exec();
 }
 
 void Flasher::on_toolButton_OpenRecoveryDir_clicked()

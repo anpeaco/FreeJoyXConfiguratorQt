@@ -298,6 +298,11 @@ private:
      * REPORT_ID_FLASH receiver. Both block on m_threadGetSendConfig
      * via QEventLoop until the underlying HID exchange returns. */
     void doEnterFlashMode();
+    /* Worker-thread shim for HidDevice::enterToSystemDfu -- sends the
+     * "system dfu" report so a live device reboots into ROM USB DFU for a
+     * jumper-free reinstall (anpeaco/FreeJoyX#55). Mirrors doEnterFlashMode's
+     * QEventLoop-on-m_threadGetSendConfig model. */
+    void doEnterSystemDfu();
     void doFlashFirmwareBytes(const QByteArray *firmware);
 
     /* Owned by MainWindow; constructed in the ctor after m_hidDeviceWorker.

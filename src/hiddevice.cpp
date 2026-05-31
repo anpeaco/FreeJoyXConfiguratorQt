@@ -1083,3 +1083,20 @@ bool HidDevice::enterToFlashMode()
     }
     return false;
 }
+
+bool HidDevice::enterToSystemDfu()
+{
+    if(m_paramsRead)
+    {
+        /* Tell the running app to reboot into the STM32 factory USB DFU (ROM)
+         * bootloader. The device drops off USB and re-enumerates as 0483:df11;
+         * unlike enterToFlashMode we don't wait for the FreeJoy flasher path --
+         * the DfuInstallDialog's own probe loop picks the device up. Always
+         * REPORT_ID_FIRMWARE (5): only current firmware understands this, and
+         * the firmware no-ops it on F103. */
+        uint8_t config_buffer[64] = {REPORT_ID_FIRMWARE,'s','y','s','t','e','m',' ','d','f','u'};
+        hid_write(m_paramsRead, config_buffer, 64);
+        return true;
+    }
+    return false;
+}
