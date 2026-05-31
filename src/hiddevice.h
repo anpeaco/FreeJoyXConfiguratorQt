@@ -60,6 +60,10 @@ public:
     void sendLedState(uint32_t bitmask);
 
     bool enterToFlashMode();
+    /* Tell the running app to reboot into the STM32 factory USB DFU (ROM)
+     * bootloader for a jumper-free reinstall (F411; the firmware ignores it
+     * on F103). anpeaco/FreeJoyX#55. */
+    bool enterToSystemDfu();
     void flashFirmware(const QByteArray *firmware);
 
     void setIsFinish(bool isFinish);

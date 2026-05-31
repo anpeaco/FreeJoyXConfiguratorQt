@@ -25,6 +25,31 @@
         <translation>Период обмена USB</translation>
     </message>
     <message>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="588"/>
+        <source>Default save directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="602"/>
+        <source>Configs save here. Pre-flash device backups go to &lt;path&gt;/backups/.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="618"/>
+        <source>Browse…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="623"/>
+        <source>Open folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="628"/>
+        <source>Reset to default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="widgets/adv-settings/advancedsettings.ui" line="152"/>
         <source>PID</source>
         <translation></translation>
@@ -97,17 +122,29 @@
         <translation>Перезапуск</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="102"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="109"/>
         <source>Show all connected devices</source>
         <translation>Показать все подключённые устройства</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="103"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="110"/>
         <source>Dump every detected FreeJoy device&apos;s USB identity (VID:PID, name, serial). Useful for diagnosing phantom PID conflicts.</source>
         <translation>Выводит USB-идентификацию каждого обнаруженного устройства FreeJoy (VID:PID, имя, серийный номер). Полезно для диагностики фантомных конфликтов PID.</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="205"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="138"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="172"/>
+        <source>Auto-read config from device on connect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="139"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="173"/>
+        <source>When a compatible device connects, automatically read its stored configuration into the configurator. If you have unsaved changes you&apos;ll be asked first. Turn off to manage reads manually.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="246"/>
         <source>&lt;br&gt;Built with Qt %1 (%2)&lt;br&gt;Fork source on &lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot;
                                 href=&quot;https://github.com/anpeaco/FreeJoyXConfiguratorQt&quot;&gt;GitHub&lt;/a&gt;;
                                 upstream &lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot;
@@ -116,24 +153,24 @@
         <translation>&lt;br&gt;Создано с Qt %1 (%2)&lt;br&gt;Исходный код форка на &lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot; href=&quot;https://github.com/anpeaco/FreeJoyXConfiguratorQt&quot;&gt;GitHub&lt;/a&gt;; оригинал &lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot; href=&quot;https://github.com/FreeJoy-Team/FreeJoyConfiguratorQt&quot;&gt;FreeJoyConfiguratorQt&lt;/a&gt;.&lt;br&gt;Распространяется под лицензией GPLv3.&lt;br&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="213"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="254"/>
         <source>&lt;br&gt;See the upstream &lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot;
                             href=&quot;https://github.com/FreeJoy-Team/FreeJoyWiki&quot;&gt;FreeJoy wiki&lt;/a&gt;
                             for detailed wiring and sensor instructions.</source>
         <translation>&lt;br&gt;См. оригинальную &lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot; href=&quot;https://github.com/FreeJoy-Team/FreeJoyWiki&quot;&gt;вики FreeJoy&lt;/a&gt; для подробных инструкций по подключению и датчикам.</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="216"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="257"/>
         <source>About %1 Configurator</source>
         <translation>О программе %1 Configurator</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="293"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="334"/>
         <source>(unnamed)</source>
         <translation>(без имени)</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="304"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="345"/>
         <source>This VID:PID is already used by: &lt;b&gt;%1&lt;/b&gt;. Pick a unique PID to avoid Windows OEMName cache collisions and DirectInput confusion.</source>
         <translation>Этот VID:PID уже используется: &lt;b&gt;%1&lt;/b&gt;. Выберите уникальный PID, чтобы избежать конфликтов в кэше OEMName Windows и путаницы в DirectInput.</translation>
     </message>
@@ -1568,47 +1605,47 @@ This cannot be undone except by reading the config back from the device.</source
         <translation>Отмена</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="139"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="144"/>
         <source>Preparing...</source>
         <translation>Подготовка...</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="140"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="145"/>
         <source>Step 1 of 5: Saving config backup...</source>
         <translation>Шаг 1 из 5: сохранение резервной копии конфигурации...</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="141"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="146"/>
         <source>Step 2 of 5: Entering bootloader mode...</source>
         <translation>Шаг 2 из 5: вход в режим загрузчика...</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="142"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="147"/>
         <source>Step 3 of 5: Flashing firmware...</source>
         <translation>Шаг 3 из 5: прошивка firmware...</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="143"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="148"/>
         <source>Step 4 of 5: Waiting for device to restart...</source>
         <translation>Шаг 4 из 5: ожидание перезапуска устройства...</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="144"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="149"/>
         <source>Step 5 of 5: Restoring config...</source>
         <translation>Шаг 5 из 5: восстановление конфигурации...</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="145"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="150"/>
         <source>Done.</source>
         <translation>Готово.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="146"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="151"/>
         <source>Flash failed.</source>
         <translation>Прошивка не удалась.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="147"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="152"/>
         <source>Device didn&apos;t return — unplug and replug to recover</source>
         <translation>Устройство не вернулось — отключите и снова подключите для восстановления</translation>
     </message>
@@ -1616,90 +1653,92 @@ This cannot be undone except by reading the config back from the device.</source
 <context>
     <name>FlashSession</name>
     <message>
-        <location filename="flash/flashsession.cpp" line="61"/>
+        <location filename="flash/flashsession.cpp" line="73"/>
         <source>No firmware path supplied to FlashSession.</source>
         <translation>В FlashSession не передан путь к прошивке.</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="71"/>
+        <location filename="flash/flashsession.cpp" line="83"/>
         <source>Couldn&apos;t open firmware file: %1</source>
         <translation>Не удалось открыть файл прошивки: %1</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="77"/>
+        <location filename="flash/flashsession.cpp" line="89"/>
         <source>Firmware file is empty: %1</source>
         <translation>Файл прошивки пуст: %1</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="94"/>
+        <location filename="flash/flashsession.cpp" line="106"/>
         <source>Reading current device configuration...</source>
         <translation>Чтение текущей конфигурации устройства...</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="110"/>
+        <location filename="flash/flashsession.cpp" line="122"/>
         <source>Cancelled by user.</source>
         <translation>Отменено пользователем.</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="139"/>
+        <location filename="flash/flashsession.cpp" line="151"/>
         <source>Cancelled: read of current device configuration failed and user declined to proceed without a backup.</source>
         <translation>Отменено: не удалось прочитать текущую конфигурацию устройства, и пользователь отказался продолжать без резервной копии.</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="147"/>
-        <location filename="flash/flashsession.cpp" line="194"/>
+        <location filename="flash/flashsession.cpp" line="159"/>
+        <location filename="flash/flashsession.cpp" line="206"/>
         <source>Sending firmware...</source>
         <translation>Отправка прошивки...</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="153"/>
+        <location filename="flash/flashsession.cpp" line="165"/>
         <source>Rebooting device into bootloader mode...</source>
         <translation>Перезагрузка устройства в режим загрузчика...</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="168"/>
+        <location filename="flash/flashsession.cpp" line="180"/>
         <source>Waiting for device to reappear as flasher...</source>
         <translation>Ожидание повторного появления устройства как флешера...</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="211"/>
+        <location filename="flash/flashsession.cpp" line="223"/>
         <source>Bootloader didn&apos;t reappear within %1 s. Try unplugging and replugging the device -- the flash will resume automatically once the bootloader comes back. If unplugging doesn&apos;t help, click Cancel and try again.</source>
         <translation>Загрузчик не появился снова в течение %1 с. Попробуйте отключить и снова подключить устройство — прошивка автоматически продолжится, как только загрузчик вернётся. Если это не помогает, нажмите «Отмена» и повторите попытку.</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="223"/>
+        <location filename="flash/flashsession.cpp" line="235"/>
         <source>Device didn&apos;t return after %1 s. The flash itself likely succeeded -- the device just hasn&apos;t re-enumerated yet. Try unplugging and replugging now. The configurator will resume automatically once the device comes back.</source>
         <translation>Устройство не вернулось через %1 с. Сама прошивка, скорее всего, прошла успешно — устройство просто ещё не переподключилось. Попробуйте сейчас отключить и снова подключить его. Конфигуратор продолжит автоматически, как только устройство вернётся.</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="229"/>
-        <location filename="flash/flashsession.cpp" line="247"/>
-        <location filename="flash/flashsession.cpp" line="380"/>
+        <location filename="flash/flashsession.cpp" line="241"/>
+        <location filename="flash/flashsession.cpp" line="259"/>
+        <location filename="flash/flashsession.cpp" line="395"/>
+        <location filename="flash/flashsession.cpp" line="411"/>
+        <location filename="flash/flashsession.cpp" line="427"/>
         <source>Your backup is at: %1</source>
         <translation>Ваша резервная копия находится в: %1</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="244"/>
+        <location filename="flash/flashsession.cpp" line="256"/>
         <source>Recovery cancelled by user. The device may need manual recovery via STM32 Cube Programmer + ST-Link.</source>
         <translation>Восстановление отменено пользователем. Возможно, устройству потребуется ручное восстановление через STM32 Cube Programmer + ST-Link.</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="272"/>
+        <location filename="flash/flashsession.cpp" line="284"/>
         <source>Bootloader reported SIZE error -- the firmware image exceeds the device&apos;s app region.</source>
         <translation>Загрузчик сообщил об ошибке SIZE — образ прошивки превышает область приложения устройства.</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="276"/>
+        <location filename="flash/flashsession.cpp" line="288"/>
         <source>Bootloader reported CRC error -- the transferred bytes do not match the expected checksum. Try the flash again; if it keeps failing the firmware file may be corrupted.</source>
         <translation>Загрузчик сообщил об ошибке CRC — переданные байты не совпадают с ожидаемой контрольной суммой. Повторите прошивку; если ошибка повторяется, файл прошивки может быть повреждён.</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="282"/>
+        <location filename="flash/flashsession.cpp" line="294"/>
         <source>Bootloader reported ERASE error -- the device flash could not be erased. This usually means the device&apos;s flash is write-protected; recovery via STM32 Cube Programmer + ST-Link may be required.</source>
         <translation>Загрузчик сообщил об ошибке ERASE — flash-память устройства не удалось стереть. Обычно это означает, что flash защищён от записи; может потребоваться восстановление через STM32 Cube Programmer + ST-Link.</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="288"/>
+        <location filename="flash/flashsession.cpp" line="300"/>
         <source>Lost contact with the device mid-flash. The bootloader&apos;s response stopped coming back -- the USB cable may have been disconnected, or the device&apos;s bootloader may have crashed.
 
 Unplug and replug the device, then retry the flash. If the device doesn&apos;t enumerate at all after replugging, recover via STM32 Cube Programmer + ST-Link.</source>
@@ -1708,48 +1747,58 @@ Unplug and replug the device, then retry the flash. If the device doesn&apos;t e
 Отключите и снова подключите устройство, затем повторите прошивку. Если после переподключения устройство вообще не определяется, восстановите его через STM32 Cube Programmer + ST-Link.</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="298"/>
+        <location filename="flash/flashsession.cpp" line="310"/>
         <source>Bootloader reported unknown error (status=0x%1).</source>
         <translation>Загрузчик сообщил о неизвестной ошибке (status=0x%1).</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="316"/>
+        <location filename="flash/flashsession.cpp" line="328"/>
         <source>Flash complete. Waiting for device to restart...</source>
         <translation>Прошивка завершена. Ожидание перезапуска устройства...</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="338"/>
+        <location filename="flash/flashsession.cpp" line="350"/>
         <source>Device returned with incompatible firmware -- auto-restore skipped.</source>
         <translation>Устройство вернулось с несовместимой прошивкой — автоматическое восстановление пропущено.</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="339"/>
+        <location filename="flash/flashsession.cpp" line="351"/>
         <source>Flash complete. Device runs new firmware but the configurator can&apos;t auto-restore (incompatible wire format).</source>
         <translation>Прошивка завершена. Устройство работает с новой прошивкой, но конфигуратор не может выполнить автоматическое восстановление (несовместимый формат передачи).</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="355"/>
+        <location filename="flash/flashsession.cpp" line="367"/>
         <source>Device factory-reset. Backup remains available for manual restore.</source>
         <translation>Устройство сброшено к заводским настройкам. Резервная копия по-прежнему доступна для ручного восстановления.</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="356"/>
+        <location filename="flash/flashsession.cpp" line="368"/>
         <source>Flash complete; auto-restore skipped per verdict.</source>
         <translation>Прошивка завершена; автоматическое восстановление пропущено согласно вердикту.</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="360"/>
+        <location filename="flash/flashsession.cpp" line="372"/>
         <source>Device back online. Writing saved configuration...</source>
         <translation>Устройство снова в сети. Запись сохранённой конфигурации...</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="373"/>
-        <location filename="flash/flashsession.cpp" line="374"/>
+        <location filename="flash/flashsession.cpp" line="391"/>
+        <source>The device did not confirm the restored configuration in time. The firmware flashed successfully, but the config write-back could not be verified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/flashsession.cpp" line="407"/>
+        <source>Restore cancelled. The firmware was flashed successfully; your previous configuration was not written back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/flashsession.cpp" line="420"/>
+        <location filename="flash/flashsession.cpp" line="421"/>
         <source>Configuration restored. Flash complete.</source>
         <translation>Конфигурация восстановлена. Прошивка завершена.</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="378"/>
+        <location filename="flash/flashsession.cpp" line="425"/>
         <source>Flash completed but the post-flash config write failed.</source>
         <translation>Прошивка завершена, но запись конфигурации после прошивки не удалась.</translation>
     </message>
@@ -1974,17 +2023,22 @@ Check that the file exists and the configurator has permission to read it.</sour
         <translation>[RECOVERY] %1</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="641"/>
-        <source>F103 (from filename)</source>
-        <translation>F103 (из имени файла)</translation>
+        <location filename="widgets/adv-settings/flasher.cpp" line="655"/>
+        <source>(detected)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="643"/>
-        <source>F411 (from filename)</source>
-        <translation>F411 (из имени файла)</translation>
+        <location filename="widgets/adv-settings/flasher.cpp" line="661"/>
+        <source>Legacy binary</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="645"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="674"/>
+        <source>This firmware is for a different board than the connected device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/adv-settings/flasher.cpp" line="644"/>
         <source>Unknown</source>
         <translation>Неизвестно</translation>
     </message>
@@ -2212,14 +2266,14 @@ Check that the file exists and the configurator has permission to read it.</sour
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="mainwindow.cpp" line="458"/>
-        <location filename="mainwindow.cpp" line="706"/>
-        <location filename="mainwindow.cpp" line="1390"/>
+        <location filename="mainwindow.cpp" line="469"/>
+        <location filename="mainwindow.cpp" line="721"/>
+        <location filename="mainwindow.cpp" line="1485"/>
         <source>Connected</source>
         <translation>Подключён</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="432"/>
+        <location filename="mainwindow.cpp" line="443"/>
         <source>Disconnected</source>
         <translation>Отключён</translation>
     </message>
@@ -2315,27 +2369,22 @@ Check that the file exists and the configurator has permission to read it.</sour
         <translation>Конфиг.</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="368"/>
-        <source>Open the configs folder in your file manager</source>
-        <translation>Открыть папку конфигураций в файловом менеджере</translation>
-    </message>
-    <message>
-        <location filename="mainwindow.ui" line="390"/>
+        <location filename="mainwindow.ui" line="378"/>
         <source>Reset All Settings</source>
         <translation>Сбросить все настройки</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="391"/>
+        <location filename="mainwindow.ui" line="379"/>
         <source>Resets every setting (pins, axes, buttons, encoders, sensors, USB identity, gestures, logic, LEDs, shifts &amp; timers) to factory defaults. The change is in-memory only — click Write Config to apply it to the connected device.</source>
         <translation>Сбрасывает все настройки (выводы, оси, кнопки, энкодеры, датчики, USB-идентификацию, жесты, логику, светодиоды, шифты и таймеры) к заводским значениям. Изменение происходит только в памяти — нажмите «Записать конфигурацию», чтобы применить его к подключённому устройству.</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="400"/>
+        <location filename="mainwindow.ui" line="388"/>
         <source>App</source>
         <translation>Программа</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="419"/>
+        <location filename="mainwindow.ui" line="407"/>
         <source>Firmware</source>
         <translation>Прошивка</translation>
     </message>
@@ -2345,270 +2394,295 @@ Check that the file exists and the configurator has permission to read it.</sour
         <translation>Чтение конфига</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="378"/>
+        <location filename="mainwindow.ui" line="366"/>
         <source>Load config from file</source>
         <translation>Загрузить конфиг из файла</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="384"/>
+        <location filename="mainwindow.ui" line="372"/>
         <source>Save config to file</source>
         <translation>Сохранить конфиг в файл</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="97"/>
+        <location filename="mainwindow.cpp" line="98"/>
         <source>%1 Configurator %2</source>
         <translation>%1 Configurator %2</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="188"/>
+        <location filename="mainwindow.cpp" line="193"/>
         <source>— select device —</source>
         <translation>— выберите устройство —</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="429"/>
+        <location filename="mainwindow.cpp" line="440"/>
         <source>Restarting...</source>
         <translation>Перезапуск...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="611"/>
+        <location filename="mainwindow.cpp" line="626"/>
         <source>Unknown (%1)</source>
         <translation>Неизвестно (%1)</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="649"/>
+        <location filename="mainwindow.cpp" line="664"/>
         <source>LEDs are not yet supported on Black Pill (F411). Coming in a future update.</source>
         <translation>Светодиоды пока не поддерживаются на Black Pill (F411). Появятся в будущем обновлении.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="693"/>
+        <location filename="mainwindow.cpp" line="708"/>
         <source>Legacy</source>
         <translation>Устаревш.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="786"/>
+        <location filename="mainwindow.cpp" line="807"/>
         <source>No device detected</source>
         <translation>Устройство не обнаружено</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="787"/>
+        <location filename="mainwindow.cpp" line="808"/>
         <source>Connect a FreeJoy device before using the Flash button. If the device is stuck in DFU mode without enumerating, recover via STM32 Cube Programmer + ST-Link.</source>
         <translation>Подключите устройство FreeJoy перед использованием кнопки прошивки. Если устройство застряло в режиме DFU и не определяется, восстановите его через STM32 Cube Programmer + ST-Link.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="978"/>
+        <location filename="mainwindow.cpp" line="1010"/>
         <source>WARNING: device reports firmware v0x%1 but the flashed binary&apos;s footer says v0x%2. Re-flash recommended.</source>
         <translation>ВНИМАНИЕ: устройство сообщает о прошивке v0x%1, но в нижнем колонтитуле прошитого двоичного файла указано v0x%2. Рекомендуется перепрошивка.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="993"/>
+        <location filename="mainwindow.cpp" line="1025"/>
         <source>Backup saved to %1</source>
         <translation>Резервная копия сохранена в %1</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1198"/>
+        <location filename="mainwindow.cpp" line="1249"/>
         <source>Pending changes. The device still runs its previously-flashed config; the live press preview reflects that, not your edits. Click to write.</source>
         <translation>Несохранённые изменения. Устройство всё ещё работает с ранее прошитой конфигурацией; предпросмотр нажатий в реальном времени отражает её, а не ваши правки. Нажмите для записи.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1269"/>
+        <location filename="mainwindow.cpp" line="1283"/>
+        <source>Load device config?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="1284"/>
+        <source>This device has its own saved configuration.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="1285"/>
+        <source>You have unsaved changes in the configurator. Load the device&apos;s configuration (discarding your changes), or keep your current edits?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="1289"/>
+        <source>Load device config</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="1290"/>
+        <source>Keep my edits</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="1364"/>
         <source>&lt;p&gt;This device is running upstream FreeJoy firmware (%1).&lt;/p&gt;&lt;p&gt;The configurator has read its config and translated it into the current shape. Your existing pin assignments, axes, buttons, shift registers, encoders and LED settings are preserved. New-since-then features (logical buttons, gestures, RGB) carry default values.&lt;/p&gt;&lt;p&gt;To finish upgrading the device:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Review the imported config in the tabs above. &lt;b&gt;Save it to a file&lt;/b&gt; as a backup.&lt;/li&gt;&lt;li&gt;Flash %2 firmware via &lt;i&gt;Advanced Settings &amp;rarr; Firmware flasher&lt;/i&gt;.&lt;/li&gt;&lt;li&gt;After the device reconnects, click &lt;b&gt;Write config to device&lt;/b&gt; to push the migrated config.&lt;/li&gt;&lt;/ol&gt;</source>
         <translation>&lt;p&gt;Это устройство работает с оригинальной прошивкой FreeJoy (%1).&lt;/p&gt;&lt;p&gt;Конфигуратор прочитал её конфигурацию и преобразовал в текущий вид. Ваши существующие назначения выводов, оси, кнопки, сдвиговые регистры, энкодеры и настройки светодиодов сохранены. Появившиеся с тех пор функции (логические кнопки, жесты, RGB) получают значения по умолчанию.&lt;/p&gt;&lt;p&gt;Чтобы завершить обновление устройства:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Просмотрите импортированную конфигурацию во вкладках выше. &lt;b&gt;Сохраните её в файл&lt;/b&gt; как резервную копию.&lt;/li&gt;&lt;li&gt;Прошейте прошивку %2 через &lt;i&gt;Расширенные настройки &amp;rarr; Прошивальщик&lt;/i&gt;.&lt;/li&gt;&lt;li&gt;После повторного подключения устройства нажмите &lt;b&gt;Записать конфигурацию на устройство&lt;/b&gt;, чтобы отправить мигрированную конфигурацию.&lt;/li&gt;&lt;/ol&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1286"/>
+        <location filename="mainwindow.cpp" line="1381"/>
         <source>Legacy config imported</source>
         <translation>Устаревшая конфигурация импортирована</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1319"/>
+        <location filename="mainwindow.cpp" line="1414"/>
         <source>Backup failed</source>
         <translation>Резервное копирование не удалось</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1320"/>
+        <location filename="mainwindow.cpp" line="1415"/>
         <source>&lt;p&gt;Could not read the device&apos;s current config. Proceeding without a backup means a failed flash could leave the device with default settings (you&apos;d lose your current mappings).&lt;/p&gt;&lt;p&gt;Continue with flash anyway?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Не удалось прочитать текущую конфигурацию устройства. Продолжение без резервной копии означает, что неудачная прошивка может оставить устройство с настройками по умолчанию (вы потеряете текущие назначения).&lt;/p&gt;&lt;p&gt;Всё равно продолжить прошивку?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1345"/>
+        <location filename="mainwindow.cpp" line="1440"/>
         <source>Backup OK, writing...</source>
         <translation>Резервная копия готова, запись...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1348"/>
+        <location filename="mainwindow.cpp" line="1443"/>
         <source>Pre-write backup failed</source>
         <translation>Резервное копирование перед записью не удалось</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1349"/>
+        <location filename="mainwindow.cpp" line="1444"/>
         <source>&lt;p&gt;Could not read the device&apos;s current config to back it up before writing.&lt;/p&gt;&lt;p&gt;Continue with the write anyway? If the new config has issues, you&apos;ll have no automatic rollback path -- only configs you previously saved manually.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Не удалось прочитать текущую конфигурацию устройства для резервного копирования перед записью.&lt;/p&gt;&lt;p&gt;Всё равно продолжить запись? Если в новой конфигурации будут проблемы, автоматического отката не будет — только конфигурации, сохранённые вами вручную ранее.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1392"/>
+        <location filename="mainwindow.cpp" line="1487"/>
         <source>Received</source>
         <translation>Полученно</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1402"/>
-        <location filename="mainwindow.cpp" line="1444"/>
+        <location filename="mainwindow.cpp" line="1497"/>
+        <location filename="mainwindow.cpp" line="1539"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1433"/>
+        <location filename="mainwindow.cpp" line="1528"/>
         <source>Sent</source>
         <translation>Отправлено</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1524"/>
+        <location filename="mainwindow.cpp" line="1619"/>
         <source>Disabled because the connected device runs an unsupported firmware version. Flash a known-good build via Advanced Settings → Firmware flasher to regain access.</source>
         <translation>Отключено, потому что подключённое устройство работает с неподдерживаемой версией прошивки. Прошейте заведомо рабочую сборку через Расширенные настройки → Прошивальщик, чтобы восстановить доступ.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1692"/>
+        <location filename="mainwindow.cpp" line="1793"/>
         <source>Reset all settings to defaults?</source>
         <translation>Сбросить все настройки к значениям по умолчанию?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1693"/>
+        <location filename="mainwindow.cpp" line="1794"/>
         <source>&lt;p&gt;This resets every setting in the configurator -- pins, axes, buttons, encoders, sensors, USB identity, gestures, logic, LEDs, shifts &amp;amp; timers -- to factory defaults.&lt;/p&gt;&lt;p&gt;The change is &lt;b&gt;in-memory only&lt;/b&gt;. The connected device keeps its current settings until you click &lt;b&gt;Write Config&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Это сбрасывает все настройки в конфигураторе — выводы, оси, кнопки, энкодеры, датчики, USB-идентификацию, жесты, логику, светодиоды, шифты &amp;amp; таймеры — к заводским значениям.&lt;/p&gt;&lt;p&gt;Изменение происходит &lt;b&gt;только в памяти&lt;/b&gt;. Подключённое устройство сохраняет свои текущие настройки, пока вы не нажмёте &lt;b&gt;Записать конфигурацию&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Продолжить?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1735"/>
+        <location filename="mainwindow.cpp" line="1836"/>
         <source>Incomplete Logic Configuration</source>
         <translation>Неполная конфигурация логики</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1736"/>
+        <location filename="mainwindow.cpp" line="1837"/>
         <source>Logical button %1 has Function = Logic but is missing an operator or Source B. Pick an operator (and Source B for binary operators) before saving.</source>
         <translation>Логическая кнопка %1 имеет Функцию = Логика, но не задан оператор или Источник B. Выберите оператор (и Источник B для бинарных операторов) перед сохранением.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1777"/>
+        <location filename="mainwindow.cpp" line="1878"/>
         <source>Backing up...</source>
         <translation>Резервное копирование...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1890"/>
+        <location filename="mainwindow.cpp" line="1991"/>
         <source>No device connected</source>
         <translation>Устройство не подключено</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1891"/>
+        <location filename="mainwindow.cpp" line="1992"/>
         <source>Connect a device before starting an upgrade.</source>
         <translation>Подключите устройство перед началом обновления.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1909"/>
+        <location filename="mainwindow.cpp" line="2010"/>
         <source>No firmware available</source>
         <translation>Прошивка недоступна</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1910"/>
+        <location filename="mainwindow.cpp" line="2011"/>
         <source>Couldn&apos;t find a matching firmware binary in the configurator&apos;s firmware/ folder. Use Advanced Settings -&gt; Firmware flasher to flash manually.</source>
         <translation>Не удалось найти подходящий двоичный файл прошивки в папке firmware/ конфигуратора. Используйте Расширенные настройки -&gt; Прошивальщик для ручной прошивки.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1940"/>
+        <location filename="mainwindow.cpp" line="2041"/>
         <source>Upgrade firmware?</source>
         <translation>Обновить прошивку?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1941"/>
+        <location filename="mainwindow.cpp" line="2042"/>
         <source>&lt;p&gt;This will:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Read your current config and save a backup file&lt;/li&gt;&lt;li&gt;Flash &lt;b&gt;%1&lt;/b&gt; to the device&lt;/li&gt;&lt;li&gt;Write your migrated config back after the device reconnects&lt;/li&gt;&lt;/ol&gt;&lt;p&gt;Current firmware: &lt;b&gt;%2&lt;/b&gt;&lt;br&gt;Target firmware: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;%4&lt;p&gt;If anything fails mid-flight the device may be left in DFU mode -- recover via STM32 Cube Programmer + ST-Link.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Это:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Прочитает вашу текущую конфигурацию и сохранит файл резервной копии&lt;/li&gt;&lt;li&gt;Прошьёт &lt;b&gt;%1&lt;/b&gt; на устройство&lt;/li&gt;&lt;li&gt;Запишет вашу мигрированную конфигурацию обратно после повторного подключения устройства&lt;/li&gt;&lt;/ol&gt;&lt;p&gt;Текущая прошивка: &lt;b&gt;%2&lt;/b&gt;&lt;br&gt;Целевая прошивка: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;%4&lt;p&gt;Если что-то прервётся в процессе, устройство может остаться в режиме DFU — восстановите через STM32 Cube Programmer + ST-Link.&lt;/p&gt;&lt;p&gt;Продолжить?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1986"/>
-        <location filename="mainwindow.cpp" line="2138"/>
+        <location filename="mainwindow.cpp" line="2087"/>
+        <location filename="mainwindow.cpp" line="2239"/>
         <source>(unnamed)</source>
         <translation>(без имени)</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1997"/>
+        <location filename="mainwindow.cpp" line="2098"/>
         <source>VID:PID already in use</source>
         <translation>VID:PID уже используется</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1998"/>
+        <location filename="mainwindow.cpp" line="2099"/>
         <source>&lt;p&gt;VID &lt;b&gt;%1&lt;/b&gt;:PID &lt;b&gt;%2&lt;/b&gt; is currently used by: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Writing this config will give two devices the same USB identity. Windows&apos; OEMName cache is keyed by VID+PID -- both devices will share one OEM name -- and games using DirectInput may pick a random one or conflate them.&lt;/p&gt;&lt;p&gt;Continue with the write anyway?&lt;/p&gt;</source>
         <translation>&lt;p&gt;VID &lt;b&gt;%1&lt;/b&gt;:PID &lt;b&gt;%2&lt;/b&gt; сейчас используется: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Запись этой конфигурации присвоит двум устройствам одинаковую USB-идентификацию. Кэш OEMName в Windows индексируется по VID+PID — оба устройства будут иметь одно OEM-имя — а игры, использующие DirectInput, могут выбрать случайное или путать их.&lt;/p&gt;&lt;p&gt;Всё равно продолжить запись?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2035"/>
+        <location filename="mainwindow.cpp" line="2136"/>
         <source>Cannot write to this firmware version</source>
         <translation>Невозможно записать в эту версию прошивки</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2036"/>
+        <location filename="mainwindow.cpp" line="2137"/>
         <source>&lt;p&gt;The connected device runs &lt;b&gt;%1&lt;/b&gt;, which this configurator doesn&apos;t have a reverse migrator for.&lt;/p&gt;&lt;p&gt;To write a config, flash a current FreeJoyX firmware first (Advanced Settings -&gt; Firmware flasher).&lt;/p&gt;</source>
         <translation>&lt;p&gt;Подключённое устройство работает с &lt;b&gt;%1&lt;/b&gt;, для которого у этого конфигуратора нет обратного мигратора.&lt;/p&gt;&lt;p&gt;Чтобы записать конфигурацию, сначала прошейте актуальную прошивку FreeJoyX (Расширенные настройки -&gt; Прошивальщик).&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2049"/>
+        <location filename="mainwindow.cpp" line="2150"/>
         <source>Reverse migration failed</source>
         <translation>Обратная миграция не удалась</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2050"/>
+        <location filename="mainwindow.cpp" line="2151"/>
         <source>&lt;p&gt;Couldn&apos;t pack the current config into the %1 wire format. The device wasn&apos;t written to.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Не удалось упаковать текущую конфигурацию в формат передачи %1. На устройство ничего не записано.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2063"/>
+        <location filename="mainwindow.cpp" line="2164"/>
         <source>Write to %1 firmware?</source>
         <translation>Записать в прошивку %1?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2064"/>
+        <location filename="mainwindow.cpp" line="2165"/>
         <source>&lt;p&gt;Writing to %1 firmware will lose the following:&lt;/p&gt;%2&lt;p&gt;The configurator will keep its in-memory copy unchanged -- only the device will see the reduced config. Continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Запись на прошивку %1 приведёт к потере следующего:&lt;/p&gt;%2&lt;p&gt;Конфигуратор сохранит свою копию в памяти без изменений — только устройство увидит урезанную конфигурацию. Продолжить?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2129"/>
+        <location filename="mainwindow.cpp" line="2230"/>
         <source>No FreeJoy devices detected.</source>
         <translation>Устройства FreeJoy не обнаружены.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2144"/>
+        <location filename="mainwindow.cpp" line="2245"/>
         <source>&amp;#9658; marks the device currently selected in the dropdown.</source>
         <translation>&amp;#9658; отмечает устройство, выбранное в выпадающем списке.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2148"/>
+        <location filename="mainwindow.cpp" line="2249"/>
         <source>Connected FreeJoy devices</source>
         <translation>Подключённые устройства FreeJoy</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2237"/>
+        <location filename="mainwindow.cpp" line="2338"/>
         <source>Fast Encoder %1</source>
         <translation>Быстрый энкодер %1</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2249"/>
+        <location filename="mainwindow.cpp" line="2350"/>
         <source>Fast Encoder %1 unavailable</source>
         <translation>Быстрый энкодер %1 недоступен</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2250"/>
+        <location filename="mainwindow.cpp" line="2351"/>
         <source>This board doesn&apos;t expose FAST_ENCODER as a legal role on at least one of the required pins. The encoder wasn&apos;t enabled.</source>
         <translation>Эта плата не предоставляет FAST_ENCODER как допустимую роль хотя бы на одном из требуемых выводов. Энкодер не был включён.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2322"/>
+        <location filename="mainwindow.cpp" line="2423"/>
         <source>Open Config</source>
         <translation>Открыть конфиг</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2322"/>
-        <location filename="mainwindow.cpp" line="2342"/>
+        <location filename="mainwindow.cpp" line="2423"/>
+        <location filename="mainwindow.cpp" line="2453"/>
         <source>Config Files (*.cfg)</source>
         <translation>Файл конфига (*.cfg)</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2341"/>
+        <location filename="mainwindow.cpp" line="2451"/>
         <source>Save Config</source>
         <translation>Сохранить конфиг</translation>
     </message>
@@ -2618,14 +2692,14 @@ Check that the file exists and the configurator has permission to read it.</sour
         <translation>Устройство</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="427"/>
-        <location filename="mainwindow.cpp" line="2399"/>
+        <location filename="mainwindow.ui" line="415"/>
+        <location filename="mainwindow.cpp" line="2532"/>
         <source>Show debug</source>
         <translation>Показать отладку</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1587"/>
-        <location filename="mainwindow.cpp" line="2391"/>
+        <location filename="mainwindow.cpp" line="1682"/>
+        <location filename="mainwindow.cpp" line="2524"/>
         <source>Hide debug</source>
         <translation>Скрыть отладку</translation>
     </message>
@@ -2640,7 +2714,7 @@ Check that the file exists and the configurator has permission to read it.</sour
         <translation></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="698"/>
+        <location filename="mainwindow.cpp" line="713"/>
         <source>Incompatible Firmware</source>
         <translation>Несовмест. прошивка</translation>
     </message>
@@ -2648,517 +2722,517 @@ Check that the file exists and the configurator has permission to read it.</sour
 <context>
     <name>PinComboBox</name>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="155"/>
+        <location filename="widgets/pins/pincombobox.h" line="187"/>
         <source>Pin A0</source>
         <translation>Пин A0</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="156"/>
+        <location filename="widgets/pins/pincombobox.h" line="188"/>
         <source>Pin A1</source>
         <translation>Пин A1</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="157"/>
+        <location filename="widgets/pins/pincombobox.h" line="189"/>
         <source>Pin A2</source>
         <translation>Пин A2</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="158"/>
+        <location filename="widgets/pins/pincombobox.h" line="190"/>
         <source>Pin A3</source>
         <translation>Пин A3</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="159"/>
+        <location filename="widgets/pins/pincombobox.h" line="191"/>
         <source>Pin A4</source>
         <translation>Пин A4</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="160"/>
+        <location filename="widgets/pins/pincombobox.h" line="192"/>
         <source>Pin A5</source>
         <translation>Пин A5</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="161"/>
+        <location filename="widgets/pins/pincombobox.h" line="193"/>
         <source>Pin A6</source>
         <translation>Пин A6</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="162"/>
+        <location filename="widgets/pins/pincombobox.h" line="194"/>
         <source>Pin A7</source>
         <translation>Пин A7</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="163"/>
+        <location filename="widgets/pins/pincombobox.h" line="195"/>
         <source>Pin A8</source>
         <translation>Пин A8</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="164"/>
+        <location filename="widgets/pins/pincombobox.h" line="196"/>
         <source>Pin A9</source>
         <translation>Пин A9</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="165"/>
+        <location filename="widgets/pins/pincombobox.h" line="197"/>
         <source>Pin A10</source>
         <translation>Пин A10</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="166"/>
+        <location filename="widgets/pins/pincombobox.h" line="198"/>
         <source>Pin A15</source>
         <translation>Пин A15</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="167"/>
+        <location filename="widgets/pins/pincombobox.h" line="199"/>
         <source>Pin B0</source>
         <translation>Пин B0</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="168"/>
+        <location filename="widgets/pins/pincombobox.h" line="200"/>
         <source>Pin B1</source>
         <translation>Пин B1</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="169"/>
+        <location filename="widgets/pins/pincombobox.h" line="201"/>
         <source>Pin B3</source>
         <translation>Пин B3</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="170"/>
+        <location filename="widgets/pins/pincombobox.h" line="202"/>
         <source>Pin B4</source>
         <translation>Пин B4</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="171"/>
+        <location filename="widgets/pins/pincombobox.h" line="203"/>
         <source>Pin B5</source>
         <translation>Пин B5</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="172"/>
+        <location filename="widgets/pins/pincombobox.h" line="204"/>
         <source>Pin B6</source>
         <translation>Пин B6</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="173"/>
+        <location filename="widgets/pins/pincombobox.h" line="205"/>
         <source>Pin B7</source>
         <translation>Пин B7</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="174"/>
+        <location filename="widgets/pins/pincombobox.h" line="206"/>
         <source>Pin B8</source>
         <translation>Пин B8</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="175"/>
+        <location filename="widgets/pins/pincombobox.h" line="207"/>
         <source>Pin B9</source>
         <translation>Пин B9</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="176"/>
+        <location filename="widgets/pins/pincombobox.h" line="208"/>
         <source>Pin B10</source>
         <translation>Пин B10</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="177"/>
+        <location filename="widgets/pins/pincombobox.h" line="209"/>
         <source>Pin B11</source>
         <translation>Пин B11</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="178"/>
+        <location filename="widgets/pins/pincombobox.h" line="210"/>
         <source>Pin B12</source>
         <translation>Пин B12</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="179"/>
+        <location filename="widgets/pins/pincombobox.h" line="211"/>
         <source>Pin B13</source>
         <translation>Пин B13</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="180"/>
+        <location filename="widgets/pins/pincombobox.h" line="212"/>
         <source>Pin B14</source>
         <translation>Пин B14</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="181"/>
+        <location filename="widgets/pins/pincombobox.h" line="213"/>
         <source>Pin B15</source>
         <translation>Пин B15</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="182"/>
+        <location filename="widgets/pins/pincombobox.h" line="214"/>
         <source>Pin C13</source>
         <translation>Пин C13</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="183"/>
+        <location filename="widgets/pins/pincombobox.h" line="215"/>
         <source>Pin C14</source>
         <translation>Пин C14</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="184"/>
+        <location filename="widgets/pins/pincombobox.h" line="216"/>
         <source>Pin C15</source>
         <translation>Пин C15</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="189"/>
+        <location filename="widgets/pins/pincombobox.h" line="221"/>
         <source>Not Used</source>
         <translation>Не используется</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="190"/>
+        <location filename="widgets/pins/pincombobox.h" line="222"/>
         <source>Pin is unused.</source>
         <translation>Вывод не используется.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="197"/>
+        <location filename="widgets/pins/pincombobox.h" line="229"/>
         <source>Momentary button or switch wired between this pin and GND. Maps to a button slot in the Buttons tab.</source>
         <translation>Кнопка или переключатель без фиксации между этим выводом и GND. Сопоставляется слоту кнопки на вкладке «Кнопки».</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="204"/>
+        <location filename="widgets/pins/pincombobox.h" line="236"/>
         <source>Momentary button or switch wired between this pin and 3.3V. Maps to a button slot in the Buttons tab.</source>
         <translation>Кнопка или переключатель без фиксации между этим выводом и 3,3 В. Сопоставляется слоту кнопки на вкладке «Кнопки».</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="210"/>
+        <location filename="widgets/pins/pincombobox.h" line="242"/>
         <source>Button Row</source>
         <translation>Строка кнопок</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="211"/>
+        <location filename="widgets/pins/pincombobox.h" line="243"/>
         <source>Row line of a scanned button matrix. Combine with Button Column pins; set the matrix size in the Buttons tab.</source>
         <translation>Линия строки сканируемой матрицы кнопок. Сочетайте с выводами столбцов кнопок; размер матрицы задаётся на вкладке «Кнопки».</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="217"/>
+        <location filename="widgets/pins/pincombobox.h" line="249"/>
         <source>Button Column</source>
         <translation>Колонна кнопок</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="218"/>
+        <location filename="widgets/pins/pincombobox.h" line="250"/>
         <source>Column line of a scanned button matrix. Combine with Button Row pins; set the matrix size in the Buttons tab.</source>
         <translation>Линия столбца сканируемой матрицы кнопок. Сочетайте с выводами строк кнопок; размер матрицы задаётся на вкладке «Кнопки».</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="224"/>
+        <location filename="widgets/pins/pincombobox.h" line="256"/>
         <source>ShiftReg LATCH</source>
         <translation>Регистр LATCH</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="225"/>
+        <location filename="widgets/pins/pincombobox.h" line="257"/>
         <source>74HC165 / CD4021 shift-register LATCH (SH/LD). Can be shared across all chains. Set chain length in the Shift Registers tab.</source>
         <translation>Защёлка (SH/LD) сдвигового регистра 74HC165 / CD4021. Может быть общей для всех цепочек. Длина цепочки задаётся на вкладке «Сдвиговые регистры».</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="231"/>
+        <location filename="widgets/pins/pincombobox.h" line="263"/>
         <source>ShiftReg DATA</source>
         <translation>Регистр DATA</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="407"/>
+        <location filename="widgets/pins/pincombobox.h" line="452"/>
         <source>Serial joystick output (PA9, 115200 baud, every 10 ms) -- e.g. to an ESP32 for a Bluetooth joystick.</source>
         <translation>Последовательный вывод джойстика (PA9, 115200 бод, каждые 10 мс) — например, на ESP32 для Bluetooth-джойстика.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="308"/>
+        <location filename="widgets/pins/pincombobox.h" line="340"/>
         <source>LED Single</source>
         <translation>Светодиод одиночный</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="315"/>
+        <location filename="widgets/pins/pincombobox.h" line="347"/>
         <source>LED Row</source>
         <translation>Светодиодная строка</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="322"/>
+        <location filename="widgets/pins/pincombobox.h" line="354"/>
         <source>LED Column</source>
         <translation>Светодиодная колонна</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="329"/>
+        <location filename="widgets/pins/pincombobox.h" line="361"/>
         <source>LED PWM</source>
         <translation>Светодиод ШИМ</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="350"/>
+        <location filename="widgets/pins/pincombobox.h" line="382"/>
         <source>Axis Analog</source>
         <translation>Аналоговая ось</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="357"/>
+        <location filename="widgets/pins/pincombobox.h" line="389"/>
         <source>Fast Encoder</source>
         <translation>Быстрый энкодер</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="364"/>
+        <location filename="widgets/pins/pincombobox.h" line="396"/>
         <source>SPI SCK</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="371"/>
+        <location filename="widgets/pins/pincombobox.h" line="403"/>
         <source>SPI MOSI</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="378"/>
+        <location filename="widgets/pins/pincombobox.h" line="410"/>
         <source>SPI MISO</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="385"/>
+        <location filename="widgets/pins/pincombobox.h" line="417"/>
         <source>TLE5011 GEN</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="392"/>
+        <location filename="widgets/pins/pincombobox.h" line="432"/>
         <source>I2C SCL</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="399"/>
+        <location filename="widgets/pins/pincombobox.h" line="439"/>
         <source>I2C SDA</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="238"/>
+        <location filename="widgets/pins/pincombobox.h" line="270"/>
         <source>ShiftReg CLK</source>
         <translation>Регистр CLK</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="196"/>
+        <location filename="widgets/pins/pincombobox.h" line="228"/>
         <source>Button to Gnd</source>
         <translation>Кнопка к минусу</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="203"/>
+        <location filename="widgets/pins/pincombobox.h" line="235"/>
         <source>Button to Vcc</source>
         <translation>Кнопка к плюсу</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="232"/>
+        <location filename="widgets/pins/pincombobox.h" line="264"/>
         <source>74HC165 / CD4021 shift-register DATA out (Qh / Q8). One per chain. Set chain length in the Shift Registers tab.</source>
         <translation>Выход данных (Qh / Q8) сдвигового регистра 74HC165 / CD4021. По одному на цепочку. Длина цепочки задаётся на вкладке «Сдвиговые регистры».</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="239"/>
+        <location filename="widgets/pins/pincombobox.h" line="271"/>
         <source>74HC165 / CD4021 shift-register CLOCK. Can be shared across all chains. Set chain length in the Shift Registers tab.</source>
         <translation>Тактовый сигнал сдвигового регистра 74HC165 / CD4021. Может быть общим для всех цепочек. Длина цепочки задаётся на вкладке «Сдвиговые регистры».</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="245"/>
+        <location filename="widgets/pins/pincombobox.h" line="277"/>
         <source>TLE5011 Hall</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="246"/>
+        <location filename="widgets/pins/pincombobox.h" line="278"/>
         <source>Chip-select for an Infineon TLE5011 magnetic angle (Hall) sensor on SPI. Selecting this auto-assigns the shared SPI SCK/MOSI lines and a TLE clock pin; the angle reads out as an axis.</source>
         <translation>Выбор кристалла для магнитного датчика угла (Холла) Infineon TLE5011 по SPI. При выборе автоматически назначаются общие линии SPI SCK/MOSI и вывод тактирования TLE; угол считывается как ось.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="252"/>
+        <location filename="widgets/pins/pincombobox.h" line="284"/>
         <source>TLE5012B Hall</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="253"/>
+        <location filename="widgets/pins/pincombobox.h" line="285"/>
         <source>Chip-select for an Infineon TLE5012B magnetic angle (Hall) sensor on SPI. Auto-assigns the shared SPI SCK/MOSI lines and a TLE clock pin; the angle reads out as an axis.</source>
         <translation>Выбор кристалла для магнитного датчика угла (Холла) Infineon TLE5012B по SPI. Автоматически назначает общие линии SPI SCK/MOSI и вывод тактирования TLE; угол считывается как ось.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="259"/>
+        <location filename="widgets/pins/pincombobox.h" line="291"/>
         <source>MCP3201 ADC (1ch)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="260"/>
+        <location filename="widgets/pins/pincombobox.h" line="292"/>
         <source>Chip-select for an MCP3201 single-channel 12-bit SPI ADC. Auto-assigns the shared SPI SCK/MISO/MOSI lines; the channel maps to an axis in the Axes tab.</source>
         <translation>Выбор кристалла для одноканального 12-битного АЦП MCP3201 по SPI. Автоматически назначает общие линии SPI SCK/MISO/MOSI; канал сопоставляется оси на вкладке «Оси».</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="266"/>
+        <location filename="widgets/pins/pincombobox.h" line="298"/>
         <source>MCP3202 ADC (2ch)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="267"/>
+        <location filename="widgets/pins/pincombobox.h" line="299"/>
         <source>Chip-select for an MCP3202 2-channel 12-bit SPI ADC. Auto-assigns the shared SPI SCK/MISO/MOSI lines; each channel maps to an axis in the Axes tab.</source>
         <translation>Выбор кристалла для 2-канального 12-битного АЦП MCP3202 по SPI. Автоматически назначает общие линии SPI SCK/MISO/MOSI; каждый канал сопоставляется оси на вкладке «Оси».</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="273"/>
+        <location filename="widgets/pins/pincombobox.h" line="305"/>
         <source>MCP3204 ADC (4ch)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="274"/>
+        <location filename="widgets/pins/pincombobox.h" line="306"/>
         <source>Chip-select for an MCP3204 4-channel 12-bit SPI ADC. Auto-assigns the shared SPI SCK/MISO/MOSI lines; each channel maps to an axis in the Axes tab.</source>
         <translation>Выбор кристалла для 4-канального 12-битного АЦП MCP3204 по SPI. Автоматически назначает общие линии SPI SCK/MISO/MOSI; каждый канал сопоставляется оси на вкладке «Оси».</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="280"/>
+        <location filename="widgets/pins/pincombobox.h" line="312"/>
         <source>MCP3208 ADC (8ch)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="281"/>
+        <location filename="widgets/pins/pincombobox.h" line="313"/>
         <source>Chip-select for an MCP3208 8-channel 12-bit SPI ADC. Auto-assigns the shared SPI SCK/MISO/MOSI lines; each channel maps to an axis in the Axes tab.</source>
         <translation>Выбор кристалла для 8-канального 12-битного АЦП MCP3208 по SPI. Автоматически назначает общие линии SPI SCK/MISO/MOSI; каждый канал сопоставляется оси на вкладке «Оси».</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="287"/>
+        <location filename="widgets/pins/pincombobox.h" line="319"/>
         <source>MLX90393 Hall</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="288"/>
+        <location filename="widgets/pins/pincombobox.h" line="320"/>
         <source>Chip-select for an MLX90393 3-axis magnetometer (Hall) on SPI. Auto-assigns the shared SPI SCK/MISO/MOSI lines; output maps to axes in the Axes tab.</source>
         <translation>Выбор кристалла для 3-осевого магнитометра (Холла) MLX90393 по SPI. Автоматически назначает общие линии SPI SCK/MISO/MOSI; выход сопоставляется осям на вкладке «Оси».</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="294"/>
+        <location filename="widgets/pins/pincombobox.h" line="326"/>
         <source>MLX90363 Hall</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="295"/>
+        <location filename="widgets/pins/pincombobox.h" line="327"/>
         <source>Chip-select for an MLX90363 magnetic angle sensor on SPI. Auto-assigns the shared SPI SCK/MISO/MOSI lines; the angle reads out as an axis.</source>
         <translation>Выбор кристалла для магнитного датчика угла MLX90363 по SPI. Автоматически назначает общие линии SPI SCK/MISO/MOSI; угол считывается как ось.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="301"/>
+        <location filename="widgets/pins/pincombobox.h" line="333"/>
         <source>AS5048A encoder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="302"/>
+        <location filename="widgets/pins/pincombobox.h" line="334"/>
         <source>Chip-select for an AMS AS5048A 14-bit magnetic rotary encoder on SPI. Auto-assigns the shared SPI SCK/MISO/MOSI lines; the angle reads out as an axis.</source>
         <translation>Выбор кристалла для 14-битного магнитного энкодера AMS AS5048A по SPI. Автоматически назначает общие линии SPI SCK/MISO/MOSI; угол считывается как ось.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="309"/>
+        <location filename="widgets/pins/pincombobox.h" line="341"/>
         <source>Single LED driven by a button state (max ~20mA). Configure in the LED/PWM tab.</source>
         <translation>Одиночный светодиод, управляемый состоянием кнопки (макс. ~20 мА). Настраивается на вкладке LED/PWM.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="316"/>
+        <location filename="widgets/pins/pincombobox.h" line="348"/>
         <source>Row line of an LED matrix. Combine with LED Column pins; configure in the LED/PWM tab.</source>
         <translation>Линия строки светодиодной матрицы. Сочетайте с выводами столбцов светодиодов; настраивается на вкладке LED/PWM.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="323"/>
+        <location filename="widgets/pins/pincombobox.h" line="355"/>
         <source>Column line of an LED matrix. Combine with LED Row pins; configure in the LED/PWM tab.</source>
         <translation>Линия столбца светодиодной матрицы. Сочетайте с выводами строк светодиодов; настраивается на вкладке LED/PWM.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="330"/>
+        <location filename="widgets/pins/pincombobox.h" line="362"/>
         <source>Single LED with hardware brightness control (PWM, max ~20mA). Only PA8 / PB0 / PB1 / PB4. Configure in the LED/PWM tab.</source>
         <translation>Одиночный светодиод с аппаратной регулировкой яркости (ШИМ, макс. ~20 мА). Только PA8 / PB0 / PB1 / PB4. Настраивается на вкладке LED/PWM.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="336"/>
+        <location filename="widgets/pins/pincombobox.h" line="368"/>
         <source>LED WS2812b</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="337"/>
+        <location filename="widgets/pins/pincombobox.h" line="369"/>
         <source>Addressable WS2812B LED data line (DIN). PA10 only. Configure colors / effects in the LED/PWM tab.</source>
         <translation>Линия данных (DIN) адресуемого светодиода WS2812B. Только PA10. Цвета / эффекты настраиваются на вкладке LED/PWM.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="343"/>
+        <location filename="widgets/pins/pincombobox.h" line="375"/>
         <source>LED PL9823</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="344"/>
+        <location filename="widgets/pins/pincombobox.h" line="376"/>
         <source>Addressable PL9823 LED data line (DIN). PA10 only. Configure colors / effects in the LED/PWM tab.</source>
         <translation>Линия данных (DIN) адресуемого светодиода PL9823. Только PA10. Цвета / эффекты настраиваются на вкладке LED/PWM.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="351"/>
+        <location filename="widgets/pins/pincombobox.h" line="383"/>
         <source>Direct analog input (potentiometer or Hall sensor) read by the ADC. Configure range / curve in the Axes tab.</source>
         <translation>Прямой аналоговый вход (потенциометр или датчик Холла), считываемый АЦП. Диапазон / кривая настраиваются на вкладке «Оси».</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="358"/>
+        <location filename="widgets/pins/pincombobox.h" line="390"/>
         <source>One channel (A or B) of a hardware-quadrature incremental encoder. Pin pairs: PA8+PA9 (Encoder 1), PB6+PB7 (Encoder 2). Used as an axis source.</source>
         <translation>Один канал (A или B) аппаратного квадратурного инкрементального энкодера. Пары выводов: PA8+PA9 (Энкодер 1), PB6+PB7 (Энкодер 2). Используется как источник оси.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="365"/>
+        <location filename="widgets/pins/pincombobox.h" line="397"/>
         <source>Shared SPI clock line. Auto-assigned when you pick an SPI sensor&apos;s chip-select -- you don&apos;t normally set this directly.</source>
         <translation>Общая линия тактирования SPI. Назначается автоматически при выборе линии выбора кристалла SPI-датчика — обычно не задаётся вручную.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="372"/>
+        <location filename="widgets/pins/pincombobox.h" line="404"/>
         <source>Shared SPI data-out line. Auto-assigned when you pick an SPI sensor&apos;s chip-select -- you don&apos;t normally set this directly.</source>
         <translation>Общая линия выходных данных SPI. Назначается автоматически при выборе линии выбора кристалла SPI-датчика — обычно не задаётся вручную.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="379"/>
+        <location filename="widgets/pins/pincombobox.h" line="411"/>
         <source>Shared SPI data-in line. Auto-assigned when you pick an SPI sensor&apos;s chip-select -- you don&apos;t normally set this directly.</source>
         <translation>Общая линия входных данных SPI. Назначается автоматически при выборе линии выбора кристалла SPI-датчика — обычно не задаётся вручную.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="386"/>
+        <location filename="widgets/pins/pincombobox.h" line="418"/>
         <source>TLE5011/5012B clock-generator output (PB6, TIM4). Auto-assigned with a TLE sensor. Conflicts with Encoder 2 (also TIM4).</source>
         <translation>Выход тактового генератора TLE5011/5012B (PB6, TIM4). Назначается автоматически с датчиком TLE. Конфликтует с Энкодером 2 (тоже TIM4).</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="393"/>
+        <location filename="widgets/pins/pincombobox.h" line="433"/>
         <source>I2C clock line for an AS5600 (1x) or ADS1115 (up to 4x) sensor. Pair with I2C SDA. Outputs map to axes; 8-axis total limit.</source>
         <translation>Линия тактирования I2C для датчика AS5600 (1x) или ADS1115 (до 4x). В паре с I2C SDA. Выходы сопоставляются осям; всего не более 8 осей.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="400"/>
+        <location filename="widgets/pins/pincombobox.h" line="440"/>
         <source>I2C data line for an AS5600 (1x) or ADS1115 (up to 4x) sensor. Pair with I2C SCL. Outputs map to axes; 8-axis total limit.</source>
         <translation>Линия данных I2C для датчика AS5600 (1x) или ADS1115 (до 4x). В паре с I2C SCL. Выходы сопоставляются осям; всего не более 8 осей.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="406"/>
+        <location filename="widgets/pins/pincombobox.h" line="451"/>
         <source>UART TX</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="183"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="222"/>
         <source>Buttons</source>
         <translation>Кнопки</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="184"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="223"/>
         <source>Shift Registers</source>
         <translation>Сдвиговые регистры</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="185"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="224"/>
         <source>SPI Devices</source>
         <translation>Устройства SPI</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="186"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="225"/>
         <source>LEDs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="187"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="226"/>
         <source>Analog Axis</source>
         <translation>Аналоговая ось</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="188"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="227"/>
         <source>Encoder</source>
         <translation type="unfinished">Энкодер</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="189"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="228"/>
         <source>I2C Devices</source>
         <translation>Устройства I2C</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="190"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="229"/>
         <source>Serial Output</source>
         <translation>Последовательный вывод</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="191"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="230"/>
         <source>SPI Bus (auto-assigned)</source>
         <translation>Шина SPI (назначается автоматически)</translation>
     </message>
@@ -3171,12 +3245,12 @@ Check that the file exists and the configurator has permission to read it.</sour
         <translation>Выбор платы</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pinconfig.cpp" line="726"/>
+        <location filename="widgets/pins/pinconfig.cpp" line="771"/>
         <source>I2C bus</source>
         <translation>шина I2C</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pinconfig.cpp" line="726"/>
+        <location filename="widgets/pins/pinconfig.cpp" line="771"/>
         <source>SPI bus</source>
         <translation>шина SPI</translation>
     </message>

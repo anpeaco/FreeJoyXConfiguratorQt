@@ -48,9 +48,11 @@ SOURCES += \
     converter.cpp \
     deviceconfig.cpp \
     dialogs/busremapconfirmationdialog.cpp \
+    dialogs/dfuinstalldialog.cpp \
     dialogs/flashconfirmationdialog.cpp \
     dialogs/flashprogressdialog.cpp \
     flash/devicetransitionwatcher.cpp \
+    flash/dfuinstallsession.cpp \
     flash/flashsession.cpp \
     firmwareimage.cpp \
     firmwareupdater.cpp \
@@ -116,9 +118,11 @@ HEADERS += \
     deviceconfig.h \
     devicesync.h \
     dialogs/busremapconfirmationdialog.h \
+    dialogs/dfuinstalldialog.h \
     dialogs/flashconfirmationdialog.h \
     dialogs/flashprogressdialog.h \
     flash/devicetransitionwatcher.h \
+    flash/dfuinstallsession.h \
     flash/flashsession.h \
     firmwareimage.h \
     firmwareupdater.h \

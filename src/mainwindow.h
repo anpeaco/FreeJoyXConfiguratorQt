@@ -49,6 +49,10 @@ private slots:
     void flasherConnected();
     //void getParamsPacket(uint8_t *buffer);
     void getParamsPacket(bool firmwareCompatible);
+    /* Paint the device Version row from the current paramsReport. Called on
+     * every params packet so the FreeJoyX semver (which lands in the second
+     * params half, a packet after connect) is shown instead of a stale 0.0.0. */
+    void updateVersionLabel(bool firmwareCompatible);
 
     void configReceived(bool success);
     void configSent(bool success);
@@ -198,6 +202,23 @@ private:
     bool       m_haveDeviceConfigSnapshot = false;
     QTimer    *m_dirtyCheckTimer = nullptr;
 
+    /* Auto-read-on-connect: when true (default), a compatible device
+     * connecting triggers an automatic Read of its stored config into the
+     * UI. Gated by the dirty check (prompt before discarding unsaved edits),
+     * suppressed during post-write re-enumeration and active flash sessions.
+     * Persisted under OtherSettings/AutoReadOnConnect; toggled from the
+     * Advanced Settings tab via AdvancedSettings::autoReadOnConnectChanged. */
+    bool m_autoReadOnConnect = true;
+
+    /* Suppress auto-read-on-connect briefly after a flash session ends. A
+     * freshly-flashed device (especially F411) can re-enumerate several times
+     * as it settles; by the 2nd/3rd reconnect the session is already Done
+     * (isActive() false) and the post-write-restart flag has been cleared, so
+     * without this the auto-read prompt would wrongly fire over a device the
+     * flash flow already restored. Set in onFlashSessionFinished, cleared by a
+     * short single-shot timer. */
+    bool m_suppressAutoReadAfterFlash = false;
+
     /* True between clicking Write Config and the next deviceConnected.
      * Lets hideConnectDeviceInfo show "Restarting..." instead of
      * "Disconnected" while the chip is re-enumerating after the write,
@@ -266,11 +287,22 @@ private:
      * FlashSession. */
     QString writeAutoBackup();
 
+    /* Build a backups/ path of the form
+     * <prefix>-<deviceName>-<serial>-<YYYYMMDD-HHMMSS>.cfg. Shared by the
+     * pre-flash (writeAutoBackup) and pre-write (writePreWriteDeviceBackup)
+     * backups so every backup is identifiable by board + time. */
+    QString makeBackupPath(const QString &prefix);
+
     /* Worker-thread shims. doEnterFlashMode sends the "bootloader run"
      * report; doFlashFirmwareBytes streams the .bin to the bootloader's
      * REPORT_ID_FLASH receiver. Both block on m_threadGetSendConfig
      * via QEventLoop until the underlying HID exchange returns. */
     void doEnterFlashMode();
+    /* Worker-thread shim for HidDevice::enterToSystemDfu -- sends the
+     * "system dfu" report so a live device reboots into ROM USB DFU for a
+     * jumper-free reinstall (anpeaco/FreeJoyX#55). Mirrors doEnterFlashMode's
+     * QEventLoop-on-m_threadGetSendConfig model. */
+    void doEnterSystemDfu();
     void doFlashFirmwareBytes(const QByteArray *firmware);
 
     /* Owned by MainWindow; constructed in the ctor after m_hidDeviceWorker.
@@ -334,6 +366,23 @@ private:
      * shows/hides label_PendingChanges accordingly. No-op until a
      * snapshot has been taken. */
     void updatePendingChangesBadge();
+
+    /* True when the live UI config differs from the last device-sync
+     * snapshot (m_deviceConfigSnapshot) -- i.e. the user has unsaved edits
+     * that overwriting the UI would discard. False when no snapshot has been
+     * taken yet this session (a fresh session has nothing to lose). Flushes
+     * the UI into dev_config_t. Shared by updatePendingChangesBadge() and the
+     * auto-read-on-connect dirty gate. */
+    bool uiHasUnsavedDeviceEdits();
+
+    /* Auto-read-on-connect entry point. Called once per new device from
+     * getParamsPacket() after firmware compatibility is determined. Honours
+     * m_autoReadOnConnect, skips during post-write restart / active flash
+     * sessions / unreadable firmware, and prompts before discarding unsaved
+     * edits. On go-ahead, triggers the same Read path as the Read Config
+     * button (worker reads async; configReceived splashes + resnapshots). */
+    void maybeAutoReadOnConnect(bool firmwareCompatible, uint16_t deviceVersion,
+                                bool postWriteRestart);
 
     /* Returns true if every logical button slot using Function = Logic
      * has its operator and (for binary operators) Source B set to real

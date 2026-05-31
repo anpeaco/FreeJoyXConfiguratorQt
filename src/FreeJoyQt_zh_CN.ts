@@ -70,6 +70,31 @@
         <translation>字体大小</translation>
     </message>
     <message>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="588"/>
+        <source>Default save directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="602"/>
+        <source>Configs save here. Pre-flash device backups go to &lt;path&gt;/backups/.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="618"/>
+        <source>Browse…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="623"/>
+        <source>Open folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="628"/>
+        <source>Reset to default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="widgets/adv-settings/advancedsettings.ui" line="266"/>
         <source>Remove name</source>
         <translation>删除命名</translation>
@@ -97,17 +122,29 @@
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;有时Windows不会更新游戏设备中的名称,需要从注册表中删除。写入配置时会自动执行此操作,但在设备未连接时可能需要手动删除。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="102"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="109"/>
         <source>Show all connected devices</source>
         <translation>显示所有已连接的设备</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="103"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="110"/>
         <source>Dump every detected FreeJoy device&apos;s USB identity (VID:PID, name, serial). Useful for diagnosing phantom PID conflicts.</source>
         <translation>转储每个检测到的 FreeJoy 设备的 USB 标识（VID:PID、名称、序列号）。用于诊断虚假的 PID 冲突。</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="205"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="138"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="172"/>
+        <source>Auto-read config from device on connect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="139"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="173"/>
+        <source>When a compatible device connects, automatically read its stored configuration into the configurator. If you have unsaved changes you&apos;ll be asked first. Turn off to manage reads manually.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="246"/>
         <source>&lt;br&gt;Built with Qt %1 (%2)&lt;br&gt;Fork source on &lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot;
                                 href=&quot;https://github.com/anpeaco/FreeJoyXConfiguratorQt&quot;&gt;GitHub&lt;/a&gt;;
                                 upstream &lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot;
@@ -116,24 +153,24 @@
         <translation>&lt;br&gt;使用 Qt %1（%2）构建&lt;br&gt;分支源码见 &lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot; href=&quot;https://github.com/anpeaco/FreeJoyXConfiguratorQt&quot;&gt;GitHub&lt;/a&gt;；上游 &lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot; href=&quot;https://github.com/FreeJoy-Team/FreeJoyConfiguratorQt&quot;&gt;FreeJoyConfiguratorQt&lt;/a&gt;。&lt;br&gt;依据 GPLv3 发布。&lt;br&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="213"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="254"/>
         <source>&lt;br&gt;See the upstream &lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot;
                             href=&quot;https://github.com/FreeJoy-Team/FreeJoyWiki&quot;&gt;FreeJoy wiki&lt;/a&gt;
                             for detailed wiring and sensor instructions.</source>
         <translation>&lt;br&gt;有关详细的接线和传感器说明，请参阅上游 &lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot; href=&quot;https://github.com/FreeJoy-Team/FreeJoyWiki&quot;&gt;FreeJoy wiki&lt;/a&gt;。</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="216"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="257"/>
         <source>About %1 Configurator</source>
         <translation>关于 %1 Configurator</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="293"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="334"/>
         <source>(unnamed)</source>
         <translation>(未命名)</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="304"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="345"/>
         <source>This VID:PID is already used by: &lt;b&gt;%1&lt;/b&gt;. Pick a unique PID to avoid Windows OEMName cache collisions and DirectInput confusion.</source>
         <translation>此 VID:PID 已被占用：&lt;b&gt;%1&lt;/b&gt;。请选择唯一的 PID，以避免 Windows OEMName 缓存冲突和 DirectInput 混淆。</translation>
     </message>
@@ -1564,47 +1601,47 @@ This cannot be undone except by reading the config back from the device.</source
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="139"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="144"/>
         <source>Preparing...</source>
         <translation>正在准备……</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="140"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="145"/>
         <source>Step 1 of 5: Saving config backup...</source>
         <translation>第 1/5 步：正在保存配置备份……</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="141"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="146"/>
         <source>Step 2 of 5: Entering bootloader mode...</source>
         <translation>第 2/5 步：正在进入引导加载程序模式……</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="142"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="147"/>
         <source>Step 3 of 5: Flashing firmware...</source>
         <translation>第 3/5 步：正在刷写固件……</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="143"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="148"/>
         <source>Step 4 of 5: Waiting for device to restart...</source>
         <translation>第 4/5 步：正在等待设备重启……</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="144"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="149"/>
         <source>Step 5 of 5: Restoring config...</source>
         <translation>第 5/5 步：正在恢复配置……</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="145"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="150"/>
         <source>Done.</source>
         <translation>完成。</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="146"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="151"/>
         <source>Flash failed.</source>
         <translation>刷写失败。</translation>
     </message>
     <message>
-        <location filename="dialogs/flashprogressdialog.cpp" line="147"/>
+        <location filename="dialogs/flashprogressdialog.cpp" line="152"/>
         <source>Device didn&apos;t return — unplug and replug to recover</source>
         <translation>设备未返回 — 请拔下并重新插入以恢复</translation>
     </message>
@@ -1612,90 +1649,92 @@ This cannot be undone except by reading the config back from the device.</source
 <context>
     <name>FlashSession</name>
     <message>
-        <location filename="flash/flashsession.cpp" line="61"/>
+        <location filename="flash/flashsession.cpp" line="73"/>
         <source>No firmware path supplied to FlashSession.</source>
         <translation>未向 FlashSession 提供固件路径。</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="71"/>
+        <location filename="flash/flashsession.cpp" line="83"/>
         <source>Couldn&apos;t open firmware file: %1</source>
         <translation>无法打开固件文件：%1</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="77"/>
+        <location filename="flash/flashsession.cpp" line="89"/>
         <source>Firmware file is empty: %1</source>
         <translation>固件文件为空：%1</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="94"/>
+        <location filename="flash/flashsession.cpp" line="106"/>
         <source>Reading current device configuration...</source>
         <translation>正在读取当前设备配置……</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="110"/>
+        <location filename="flash/flashsession.cpp" line="122"/>
         <source>Cancelled by user.</source>
         <translation>已被用户取消。</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="139"/>
+        <location filename="flash/flashsession.cpp" line="151"/>
         <source>Cancelled: read of current device configuration failed and user declined to proceed without a backup.</source>
         <translation>已取消：读取当前设备配置失败，且用户拒绝在没有备份的情况下继续。</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="147"/>
-        <location filename="flash/flashsession.cpp" line="194"/>
+        <location filename="flash/flashsession.cpp" line="159"/>
+        <location filename="flash/flashsession.cpp" line="206"/>
         <source>Sending firmware...</source>
         <translation>正在发送固件……</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="153"/>
+        <location filename="flash/flashsession.cpp" line="165"/>
         <source>Rebooting device into bootloader mode...</source>
         <translation>正在将设备重启进入引导加载程序模式……</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="168"/>
+        <location filename="flash/flashsession.cpp" line="180"/>
         <source>Waiting for device to reappear as flasher...</source>
         <translation>正在等待设备以刷写器身份重新出现……</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="211"/>
+        <location filename="flash/flashsession.cpp" line="223"/>
         <source>Bootloader didn&apos;t reappear within %1 s. Try unplugging and replugging the device -- the flash will resume automatically once the bootloader comes back. If unplugging doesn&apos;t help, click Cancel and try again.</source>
         <translation>引导加载程序未在 %1 秒内重新出现。请尝试拔下并重新插入设备 — 引导加载程序恢复后刷写会自动继续。如果拔插无效，请点击“取消”并重试。</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="223"/>
+        <location filename="flash/flashsession.cpp" line="235"/>
         <source>Device didn&apos;t return after %1 s. The flash itself likely succeeded -- the device just hasn&apos;t re-enumerated yet. Try unplugging and replugging now. The configurator will resume automatically once the device comes back.</source>
         <translation>设备在 %1 秒后仍未返回。刷写本身很可能已成功 — 只是设备尚未重新枚举。请现在尝试拔下并重新插入。设备恢复后配置器会自动继续。</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="229"/>
-        <location filename="flash/flashsession.cpp" line="247"/>
-        <location filename="flash/flashsession.cpp" line="380"/>
+        <location filename="flash/flashsession.cpp" line="241"/>
+        <location filename="flash/flashsession.cpp" line="259"/>
+        <location filename="flash/flashsession.cpp" line="395"/>
+        <location filename="flash/flashsession.cpp" line="411"/>
+        <location filename="flash/flashsession.cpp" line="427"/>
         <source>Your backup is at: %1</source>
         <translation>您的备份位于：%1</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="244"/>
+        <location filename="flash/flashsession.cpp" line="256"/>
         <source>Recovery cancelled by user. The device may need manual recovery via STM32 Cube Programmer + ST-Link.</source>
         <translation>恢复已被用户取消。设备可能需要通过 STM32 Cube Programmer + ST-Link 手动恢复。</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="272"/>
+        <location filename="flash/flashsession.cpp" line="284"/>
         <source>Bootloader reported SIZE error -- the firmware image exceeds the device&apos;s app region.</source>
         <translation>引导加载程序报告 SIZE 错误 — 固件映像超出了设备的应用程序区域。</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="276"/>
+        <location filename="flash/flashsession.cpp" line="288"/>
         <source>Bootloader reported CRC error -- the transferred bytes do not match the expected checksum. Try the flash again; if it keeps failing the firmware file may be corrupted.</source>
         <translation>引导加载程序报告 CRC 错误 — 传输的字节与预期校验和不匹配。请重试刷写；如果仍然失败，固件文件可能已损坏。</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="282"/>
+        <location filename="flash/flashsession.cpp" line="294"/>
         <source>Bootloader reported ERASE error -- the device flash could not be erased. This usually means the device&apos;s flash is write-protected; recovery via STM32 Cube Programmer + ST-Link may be required.</source>
         <translation>引导加载程序报告 ERASE 错误 — 无法擦除设备的 Flash。这通常意味着设备的 Flash 处于写保护状态；可能需要通过 STM32 Cube Programmer + ST-Link 恢复。</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="288"/>
+        <location filename="flash/flashsession.cpp" line="300"/>
         <source>Lost contact with the device mid-flash. The bootloader&apos;s response stopped coming back -- the USB cable may have been disconnected, or the device&apos;s bootloader may have crashed.
 
 Unplug and replug the device, then retry the flash. If the device doesn&apos;t enumerate at all after replugging, recover via STM32 Cube Programmer + ST-Link.</source>
@@ -1704,48 +1743,58 @@ Unplug and replug the device, then retry the flash. If the device doesn&apos;t e
 请拔下并重新插入设备，然后重试刷写。如果重新插入后设备完全无法枚举，请通过 STM32 Cube Programmer + ST-Link 恢复。</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="298"/>
+        <location filename="flash/flashsession.cpp" line="310"/>
         <source>Bootloader reported unknown error (status=0x%1).</source>
         <translation>引导加载程序报告未知错误（status=0x%1）。</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="316"/>
+        <location filename="flash/flashsession.cpp" line="328"/>
         <source>Flash complete. Waiting for device to restart...</source>
         <translation>刷写完成。正在等待设备重启……</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="338"/>
+        <location filename="flash/flashsession.cpp" line="350"/>
         <source>Device returned with incompatible firmware -- auto-restore skipped.</source>
         <translation>设备返回时固件不兼容 — 已跳过自动恢复。</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="339"/>
+        <location filename="flash/flashsession.cpp" line="351"/>
         <source>Flash complete. Device runs new firmware but the configurator can&apos;t auto-restore (incompatible wire format).</source>
         <translation>刷写完成。设备运行新固件，但配置器无法自动恢复（传输格式不兼容）。</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="355"/>
+        <location filename="flash/flashsession.cpp" line="367"/>
         <source>Device factory-reset. Backup remains available for manual restore.</source>
         <translation>设备已恢复出厂设置。备份仍可用于手动恢复。</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="356"/>
+        <location filename="flash/flashsession.cpp" line="368"/>
         <source>Flash complete; auto-restore skipped per verdict.</source>
         <translation>刷写完成；根据判定已跳过自动恢复。</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="360"/>
+        <location filename="flash/flashsession.cpp" line="372"/>
         <source>Device back online. Writing saved configuration...</source>
         <translation>设备已重新上线。正在写入已保存的配置……</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="373"/>
-        <location filename="flash/flashsession.cpp" line="374"/>
+        <location filename="flash/flashsession.cpp" line="391"/>
+        <source>The device did not confirm the restored configuration in time. The firmware flashed successfully, but the config write-back could not be verified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/flashsession.cpp" line="407"/>
+        <source>Restore cancelled. The firmware was flashed successfully; your previous configuration was not written back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/flashsession.cpp" line="420"/>
+        <location filename="flash/flashsession.cpp" line="421"/>
         <source>Configuration restored. Flash complete.</source>
         <translation>配置已恢复。刷写完成。</translation>
     </message>
     <message>
-        <location filename="flash/flashsession.cpp" line="378"/>
+        <location filename="flash/flashsession.cpp" line="425"/>
         <source>Flash completed but the post-flash config write failed.</source>
         <translation>刷写已完成，但刷写后的配置写入失败。</translation>
     </message>
@@ -1970,17 +2019,22 @@ Check that the file exists and the configurator has permission to read it.</sour
         <translation>[RECOVERY] %1</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="641"/>
-        <source>F103 (from filename)</source>
-        <translation>F103（来自文件名）</translation>
+        <location filename="widgets/adv-settings/flasher.cpp" line="655"/>
+        <source>(detected)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="643"/>
-        <source>F411 (from filename)</source>
-        <translation>F411（来自文件名）</translation>
+        <location filename="widgets/adv-settings/flasher.cpp" line="661"/>
+        <source>Legacy binary</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="645"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="674"/>
+        <source>This firmware is for a different board than the connected device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/adv-settings/flasher.cpp" line="644"/>
         <source>Unknown</source>
         <translation>未知</translation>
     </message>
@@ -2210,8 +2264,8 @@ Check that the file exists and the configurator has permission to read it.</sour
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="mainwindow.ui" line="427"/>
-        <location filename="mainwindow.cpp" line="2399"/>
+        <location filename="mainwindow.ui" line="415"/>
+        <location filename="mainwindow.cpp" line="2532"/>
         <source>Show debug</source>
         <translation>显示调试信息</translation>
     </message>
@@ -2294,27 +2348,22 @@ Check that the file exists and the configurator has permission to read it.</sour
         <translation>配置</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="368"/>
-        <source>Open the configs folder in your file manager</source>
-        <translation>在文件管理器中打开配置文件夹</translation>
-    </message>
-    <message>
-        <location filename="mainwindow.ui" line="390"/>
+        <location filename="mainwindow.ui" line="378"/>
         <source>Reset All Settings</source>
         <translation>重置所有设置</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="391"/>
+        <location filename="mainwindow.ui" line="379"/>
         <source>Resets every setting (pins, axes, buttons, encoders, sensors, USB identity, gestures, logic, LEDs, shifts &amp; timers) to factory defaults. The change is in-memory only — click Write Config to apply it to the connected device.</source>
         <translation>将每项设置（引脚、轴、按钮、编码器、传感器、USB 标识、手势、逻辑、LED、Shift 和定时器）重置为出厂默认值。该更改仅在内存中 — 点击“写入配置”以将其应用到已连接的设备。</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="400"/>
+        <location filename="mainwindow.ui" line="388"/>
         <source>App</source>
         <translation>应用</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="419"/>
+        <location filename="mainwindow.ui" line="407"/>
         <source>Firmware</source>
         <translation>固件</translation>
     </message>
@@ -2335,9 +2384,9 @@ Check that the file exists and the configurator has permission to read it.</sour
         <translation></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="458"/>
-        <location filename="mainwindow.cpp" line="706"/>
-        <location filename="mainwindow.cpp" line="1390"/>
+        <location filename="mainwindow.cpp" line="469"/>
+        <location filename="mainwindow.cpp" line="721"/>
+        <location filename="mainwindow.cpp" line="1485"/>
         <source>Connected</source>
         <translation>已连接</translation>
     </message>
@@ -2347,7 +2396,7 @@ Check that the file exists and the configurator has permission to read it.</sour
         <translation>设备</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="384"/>
+        <location filename="mainwindow.ui" line="372"/>
         <source>Save config to file</source>
         <translation>将配置保存到文件</translation>
     </message>
@@ -2362,7 +2411,7 @@ Check that the file exists and the configurator has permission to read it.</sour
         <translation>2</translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="378"/>
+        <location filename="mainwindow.ui" line="366"/>
         <source>Load config from file</source>
         <translation>从文件中加载配置</translation>
     </message>
@@ -2372,276 +2421,301 @@ Check that the file exists and the configurator has permission to read it.</sour
         <translation>将配置写入设备</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="432"/>
+        <location filename="mainwindow.cpp" line="443"/>
         <source>Disconnected</source>
         <translation>已断开连接</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="698"/>
+        <location filename="mainwindow.cpp" line="713"/>
         <source>Incompatible Firmware</source>
         <translation>固件不兼容</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="97"/>
+        <location filename="mainwindow.cpp" line="98"/>
         <source>%1 Configurator %2</source>
         <translation>%1 Configurator %2</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="188"/>
+        <location filename="mainwindow.cpp" line="193"/>
         <source>— select device —</source>
         <translation>— 选择设备 —</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="429"/>
+        <location filename="mainwindow.cpp" line="440"/>
         <source>Restarting...</source>
         <translation>正在重启……</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="611"/>
+        <location filename="mainwindow.cpp" line="626"/>
         <source>Unknown (%1)</source>
         <translation>未知 (%1)</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="649"/>
+        <location filename="mainwindow.cpp" line="664"/>
         <source>LEDs are not yet supported on Black Pill (F411). Coming in a future update.</source>
         <translation>Black Pill (F411) 尚不支持 LED。将在未来更新中加入。</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="693"/>
+        <location filename="mainwindow.cpp" line="708"/>
         <source>Legacy</source>
         <translation>旧版</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="786"/>
+        <location filename="mainwindow.cpp" line="807"/>
         <source>No device detected</source>
         <translation>未检测到设备</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="787"/>
+        <location filename="mainwindow.cpp" line="808"/>
         <source>Connect a FreeJoy device before using the Flash button. If the device is stuck in DFU mode without enumerating, recover via STM32 Cube Programmer + ST-Link.</source>
         <translation>使用刷写按钮前请先连接 FreeJoy 设备。如果设备卡在 DFU 模式且无法枚举，请通过 STM32 Cube Programmer + ST-Link 恢复。</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="978"/>
+        <location filename="mainwindow.cpp" line="1010"/>
         <source>WARNING: device reports firmware v0x%1 but the flashed binary&apos;s footer says v0x%2. Re-flash recommended.</source>
         <translation>警告：设备报告固件 v0x%1，但刷写的二进制文件页脚显示 v0x%2。建议重新刷写。</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="993"/>
+        <location filename="mainwindow.cpp" line="1025"/>
         <source>Backup saved to %1</source>
         <translation>备份已保存到 %1</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1198"/>
+        <location filename="mainwindow.cpp" line="1249"/>
         <source>Pending changes. The device still runs its previously-flashed config; the live press preview reflects that, not your edits. Click to write.</source>
         <translation>有待写入的更改。设备仍运行其先前刷写的配置；实时按键预览反映的是该配置，而非您的编辑。点击以写入。</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1269"/>
+        <location filename="mainwindow.cpp" line="1283"/>
+        <source>Load device config?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="1284"/>
+        <source>This device has its own saved configuration.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="1285"/>
+        <source>You have unsaved changes in the configurator. Load the device&apos;s configuration (discarding your changes), or keep your current edits?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="1289"/>
+        <source>Load device config</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="1290"/>
+        <source>Keep my edits</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="1364"/>
         <source>&lt;p&gt;This device is running upstream FreeJoy firmware (%1).&lt;/p&gt;&lt;p&gt;The configurator has read its config and translated it into the current shape. Your existing pin assignments, axes, buttons, shift registers, encoders and LED settings are preserved. New-since-then features (logical buttons, gestures, RGB) carry default values.&lt;/p&gt;&lt;p&gt;To finish upgrading the device:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Review the imported config in the tabs above. &lt;b&gt;Save it to a file&lt;/b&gt; as a backup.&lt;/li&gt;&lt;li&gt;Flash %2 firmware via &lt;i&gt;Advanced Settings &amp;rarr; Firmware flasher&lt;/i&gt;.&lt;/li&gt;&lt;li&gt;After the device reconnects, click &lt;b&gt;Write config to device&lt;/b&gt; to push the migrated config.&lt;/li&gt;&lt;/ol&gt;</source>
         <translation>&lt;p&gt;此设备运行上游 FreeJoy 固件（%1）。&lt;/p&gt;&lt;p&gt;配置器已读取其配置并转换为当前形态。您现有的引脚分配、轴、按钮、移位寄存器、编码器和 LED 设置均已保留。此后新增的功能（逻辑按钮、手势、RGB）采用默认值。&lt;/p&gt;&lt;p&gt;要完成设备升级：&lt;/p&gt;&lt;ol&gt;&lt;li&gt;在上方各选项卡中检查导入的配置。&lt;b&gt;将其保存为文件&lt;/b&gt;作为备份。&lt;/li&gt;&lt;li&gt;通过&lt;i&gt;高级设置 &amp;rarr; 固件刷写器&lt;/i&gt;刷写 %2 固件。&lt;/li&gt;&lt;li&gt;设备重新连接后，点击&lt;b&gt;将配置写入设备&lt;/b&gt;以推送已迁移的配置。&lt;/li&gt;&lt;/ol&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1286"/>
+        <location filename="mainwindow.cpp" line="1381"/>
         <source>Legacy config imported</source>
         <translation>已导入旧版配置</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1319"/>
+        <location filename="mainwindow.cpp" line="1414"/>
         <source>Backup failed</source>
         <translation>备份失败</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1320"/>
+        <location filename="mainwindow.cpp" line="1415"/>
         <source>&lt;p&gt;Could not read the device&apos;s current config. Proceeding without a backup means a failed flash could leave the device with default settings (you&apos;d lose your current mappings).&lt;/p&gt;&lt;p&gt;Continue with flash anyway?&lt;/p&gt;</source>
         <translation>&lt;p&gt;无法读取设备的当前配置。在没有备份的情况下继续意味着刷写失败可能使设备保持默认设置（您将丢失当前的映射）。&lt;/p&gt;&lt;p&gt;仍要继续刷写吗？&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1345"/>
+        <location filename="mainwindow.cpp" line="1440"/>
         <source>Backup OK, writing...</source>
         <translation>备份完成，正在写入……</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1348"/>
+        <location filename="mainwindow.cpp" line="1443"/>
         <source>Pre-write backup failed</source>
         <translation>写入前备份失败</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1349"/>
+        <location filename="mainwindow.cpp" line="1444"/>
         <source>&lt;p&gt;Could not read the device&apos;s current config to back it up before writing.&lt;/p&gt;&lt;p&gt;Continue with the write anyway? If the new config has issues, you&apos;ll have no automatic rollback path -- only configs you previously saved manually.&lt;/p&gt;</source>
         <translation>&lt;p&gt;写入前无法读取设备的当前配置以进行备份。&lt;/p&gt;&lt;p&gt;仍要继续写入吗？如果新配置有问题，将没有自动回滚途径 — 只有您先前手动保存的配置。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1392"/>
+        <location filename="mainwindow.cpp" line="1487"/>
         <source>Received</source>
         <translation>已接收</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1402"/>
-        <location filename="mainwindow.cpp" line="1444"/>
+        <location filename="mainwindow.cpp" line="1497"/>
+        <location filename="mainwindow.cpp" line="1539"/>
         <source>Error</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1433"/>
+        <location filename="mainwindow.cpp" line="1528"/>
         <source>Sent</source>
         <translation>已发送</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1524"/>
+        <location filename="mainwindow.cpp" line="1619"/>
         <source>Disabled because the connected device runs an unsupported firmware version. Flash a known-good build via Advanced Settings → Firmware flasher to regain access.</source>
         <translation>已禁用，因为已连接的设备运行不受支持的固件版本。请通过 高级设置 → 固件刷写器 刷写一个已知良好的构建以恢复访问。</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1692"/>
+        <location filename="mainwindow.cpp" line="1793"/>
         <source>Reset all settings to defaults?</source>
         <translation>将所有设置重置为默认值？</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1693"/>
+        <location filename="mainwindow.cpp" line="1794"/>
         <source>&lt;p&gt;This resets every setting in the configurator -- pins, axes, buttons, encoders, sensors, USB identity, gestures, logic, LEDs, shifts &amp;amp; timers -- to factory defaults.&lt;/p&gt;&lt;p&gt;The change is &lt;b&gt;in-memory only&lt;/b&gt;. The connected device keeps its current settings until you click &lt;b&gt;Write Config&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;这会将配置器中的每项设置 — 引脚、轴、按钮、编码器、传感器、USB 标识、手势、逻辑、LED、Shift &amp;amp; 定时器 — 重置为出厂默认值。&lt;/p&gt;&lt;p&gt;该更改&lt;b&gt;仅在内存中&lt;/b&gt;。在您点击&lt;b&gt;写入配置&lt;/b&gt;之前，已连接的设备会保持其当前设置。&lt;/p&gt;&lt;p&gt;是否继续？&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1735"/>
+        <location filename="mainwindow.cpp" line="1836"/>
         <source>Incomplete Logic Configuration</source>
         <translation>逻辑配置不完整</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1736"/>
+        <location filename="mainwindow.cpp" line="1837"/>
         <source>Logical button %1 has Function = Logic but is missing an operator or Source B. Pick an operator (and Source B for binary operators) before saving.</source>
         <translation>逻辑按钮 %1 的功能 = 逻辑，但缺少运算符或源 B。保存前请选择运算符（二元运算符还需选择源 B）。</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1777"/>
+        <location filename="mainwindow.cpp" line="1878"/>
         <source>Backing up...</source>
         <translation>正在备份……</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1890"/>
+        <location filename="mainwindow.cpp" line="1991"/>
         <source>No device connected</source>
         <translation>未连接设备</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1891"/>
+        <location filename="mainwindow.cpp" line="1992"/>
         <source>Connect a device before starting an upgrade.</source>
         <translation>开始升级前请先连接设备。</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1909"/>
+        <location filename="mainwindow.cpp" line="2010"/>
         <source>No firmware available</source>
         <translation>没有可用的固件</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1910"/>
+        <location filename="mainwindow.cpp" line="2011"/>
         <source>Couldn&apos;t find a matching firmware binary in the configurator&apos;s firmware/ folder. Use Advanced Settings -&gt; Firmware flasher to flash manually.</source>
         <translation>在配置器的 firmware/ 文件夹中找不到匹配的固件二进制文件。请使用 高级设置 -&gt; 固件刷写器 手动刷写。</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1940"/>
+        <location filename="mainwindow.cpp" line="2041"/>
         <source>Upgrade firmware?</source>
         <translation>升级固件？</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1941"/>
+        <location filename="mainwindow.cpp" line="2042"/>
         <source>&lt;p&gt;This will:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Read your current config and save a backup file&lt;/li&gt;&lt;li&gt;Flash &lt;b&gt;%1&lt;/b&gt; to the device&lt;/li&gt;&lt;li&gt;Write your migrated config back after the device reconnects&lt;/li&gt;&lt;/ol&gt;&lt;p&gt;Current firmware: &lt;b&gt;%2&lt;/b&gt;&lt;br&gt;Target firmware: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;%4&lt;p&gt;If anything fails mid-flight the device may be left in DFU mode -- recover via STM32 Cube Programmer + ST-Link.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;此操作将：&lt;/p&gt;&lt;ol&gt;&lt;li&gt;读取您的当前配置并保存备份文件&lt;/li&gt;&lt;li&gt;将 &lt;b&gt;%1&lt;/b&gt; 刷写到设备&lt;/li&gt;&lt;li&gt;在设备重新连接后写回您已迁移的配置&lt;/li&gt;&lt;/ol&gt;&lt;p&gt;当前固件：&lt;b&gt;%2&lt;/b&gt;&lt;br&gt;目标固件：&lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;%4&lt;p&gt;如果中途出现任何失败，设备可能停留在 DFU 模式 — 请通过 STM32 Cube Programmer + ST-Link 恢复。&lt;/p&gt;&lt;p&gt;是否继续？&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1986"/>
-        <location filename="mainwindow.cpp" line="2138"/>
+        <location filename="mainwindow.cpp" line="2087"/>
+        <location filename="mainwindow.cpp" line="2239"/>
         <source>(unnamed)</source>
         <translation>(未命名)</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1997"/>
+        <location filename="mainwindow.cpp" line="2098"/>
         <source>VID:PID already in use</source>
         <translation>VID:PID 已被占用</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1998"/>
+        <location filename="mainwindow.cpp" line="2099"/>
         <source>&lt;p&gt;VID &lt;b&gt;%1&lt;/b&gt;:PID &lt;b&gt;%2&lt;/b&gt; is currently used by: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Writing this config will give two devices the same USB identity. Windows&apos; OEMName cache is keyed by VID+PID -- both devices will share one OEM name -- and games using DirectInput may pick a random one or conflate them.&lt;/p&gt;&lt;p&gt;Continue with the write anyway?&lt;/p&gt;</source>
         <translation>&lt;p&gt;VID &lt;b&gt;%1&lt;/b&gt;:PID &lt;b&gt;%2&lt;/b&gt; 当前被占用：&lt;b&gt;%3&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;写入此配置会使两个设备具有相同的 USB 标识。Windows 的 OEMName 缓存以 VID+PID 为键 — 两个设备将共用一个 OEM 名称 — 使用 DirectInput 的游戏可能会随机选择其一或将它们混淆。&lt;/p&gt;&lt;p&gt;仍要继续写入吗？&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2035"/>
+        <location filename="mainwindow.cpp" line="2136"/>
         <source>Cannot write to this firmware version</source>
         <translation>无法写入此固件版本</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2036"/>
+        <location filename="mainwindow.cpp" line="2137"/>
         <source>&lt;p&gt;The connected device runs &lt;b&gt;%1&lt;/b&gt;, which this configurator doesn&apos;t have a reverse migrator for.&lt;/p&gt;&lt;p&gt;To write a config, flash a current FreeJoyX firmware first (Advanced Settings -&gt; Firmware flasher).&lt;/p&gt;</source>
         <translation>&lt;p&gt;已连接的设备运行 &lt;b&gt;%1&lt;/b&gt;，此配置器没有适用于它的反向迁移器。&lt;/p&gt;&lt;p&gt;要写入配置，请先刷写当前的 FreeJoyX 固件（高级设置 -&gt; 固件刷写器）。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2049"/>
+        <location filename="mainwindow.cpp" line="2150"/>
         <source>Reverse migration failed</source>
         <translation>反向迁移失败</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2050"/>
+        <location filename="mainwindow.cpp" line="2151"/>
         <source>&lt;p&gt;Couldn&apos;t pack the current config into the %1 wire format. The device wasn&apos;t written to.&lt;/p&gt;</source>
         <translation>&lt;p&gt;无法将当前配置打包为 %1 传输格式。未写入设备。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2063"/>
+        <location filename="mainwindow.cpp" line="2164"/>
         <source>Write to %1 firmware?</source>
         <translation>写入 %1 固件？</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2064"/>
+        <location filename="mainwindow.cpp" line="2165"/>
         <source>&lt;p&gt;Writing to %1 firmware will lose the following:&lt;/p&gt;%2&lt;p&gt;The configurator will keep its in-memory copy unchanged -- only the device will see the reduced config. Continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;写入 %1 固件将丢失以下内容：&lt;/p&gt;%2&lt;p&gt;配置器会保持其内存副本不变 — 只有设备会看到精简后的配置。是否继续？&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2129"/>
+        <location filename="mainwindow.cpp" line="2230"/>
         <source>No FreeJoy devices detected.</source>
         <translation>未检测到 FreeJoy 设备。</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2144"/>
+        <location filename="mainwindow.cpp" line="2245"/>
         <source>&amp;#9658; marks the device currently selected in the dropdown.</source>
         <translation>&amp;#9658; 标记当前在下拉框中选定的设备。</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2148"/>
+        <location filename="mainwindow.cpp" line="2249"/>
         <source>Connected FreeJoy devices</source>
         <translation>已连接的 FreeJoy 设备</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2237"/>
+        <location filename="mainwindow.cpp" line="2338"/>
         <source>Fast Encoder %1</source>
         <translation>快速编码器 %1</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2249"/>
+        <location filename="mainwindow.cpp" line="2350"/>
         <source>Fast Encoder %1 unavailable</source>
         <translation>快速编码器 %1 不可用</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2250"/>
+        <location filename="mainwindow.cpp" line="2351"/>
         <source>This board doesn&apos;t expose FAST_ENCODER as a legal role on at least one of the required pins. The encoder wasn&apos;t enabled.</source>
         <translation>此开发板在至少一个所需引脚上未将 FAST_ENCODER 作为合法角色提供。编码器未启用。</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2322"/>
+        <location filename="mainwindow.cpp" line="2423"/>
         <source>Open Config</source>
         <translation>打开配置</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2322"/>
-        <location filename="mainwindow.cpp" line="2342"/>
+        <location filename="mainwindow.cpp" line="2423"/>
+        <location filename="mainwindow.cpp" line="2453"/>
         <source>Config Files (*.cfg)</source>
         <translation>配置文件 (*.cfg)</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2341"/>
+        <location filename="mainwindow.cpp" line="2451"/>
         <source>Save Config</source>
         <translation>保存配置</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1587"/>
-        <location filename="mainwindow.cpp" line="2391"/>
+        <location filename="mainwindow.cpp" line="1682"/>
+        <location filename="mainwindow.cpp" line="2524"/>
         <source>Hide debug</source>
         <translation>隐藏调试信息</translation>
     </message>
@@ -2649,517 +2723,517 @@ Check that the file exists and the configurator has permission to read it.</sour
 <context>
     <name>PinComboBox</name>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="155"/>
+        <location filename="widgets/pins/pincombobox.h" line="187"/>
         <source>Pin A0</source>
         <translation>A0 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="156"/>
+        <location filename="widgets/pins/pincombobox.h" line="188"/>
         <source>Pin A1</source>
         <translation>A1 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="157"/>
+        <location filename="widgets/pins/pincombobox.h" line="189"/>
         <source>Pin A2</source>
         <translation>A2 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="158"/>
+        <location filename="widgets/pins/pincombobox.h" line="190"/>
         <source>Pin A3</source>
         <translation>A3 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="159"/>
+        <location filename="widgets/pins/pincombobox.h" line="191"/>
         <source>Pin A4</source>
         <translation>A4 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="160"/>
+        <location filename="widgets/pins/pincombobox.h" line="192"/>
         <source>Pin A5</source>
         <translation>A5 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="161"/>
+        <location filename="widgets/pins/pincombobox.h" line="193"/>
         <source>Pin A6</source>
         <translation>A6 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="162"/>
+        <location filename="widgets/pins/pincombobox.h" line="194"/>
         <source>Pin A7</source>
         <translation>A7 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="163"/>
+        <location filename="widgets/pins/pincombobox.h" line="195"/>
         <source>Pin A8</source>
         <translation>A8 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="164"/>
+        <location filename="widgets/pins/pincombobox.h" line="196"/>
         <source>Pin A9</source>
         <translation>A9 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="165"/>
+        <location filename="widgets/pins/pincombobox.h" line="197"/>
         <source>Pin A10</source>
         <translation>A10 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="166"/>
+        <location filename="widgets/pins/pincombobox.h" line="198"/>
         <source>Pin A15</source>
         <translation>A15 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="167"/>
+        <location filename="widgets/pins/pincombobox.h" line="199"/>
         <source>Pin B0</source>
         <translation>B0 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="168"/>
+        <location filename="widgets/pins/pincombobox.h" line="200"/>
         <source>Pin B1</source>
         <translation>B1 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="169"/>
+        <location filename="widgets/pins/pincombobox.h" line="201"/>
         <source>Pin B3</source>
         <translation>B3 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="170"/>
+        <location filename="widgets/pins/pincombobox.h" line="202"/>
         <source>Pin B4</source>
         <translation>B4 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="171"/>
+        <location filename="widgets/pins/pincombobox.h" line="203"/>
         <source>Pin B5</source>
         <translation>B5 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="172"/>
+        <location filename="widgets/pins/pincombobox.h" line="204"/>
         <source>Pin B6</source>
         <translation>B6 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="173"/>
+        <location filename="widgets/pins/pincombobox.h" line="205"/>
         <source>Pin B7</source>
         <translation>B7 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="174"/>
+        <location filename="widgets/pins/pincombobox.h" line="206"/>
         <source>Pin B8</source>
         <translation>B8 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="175"/>
+        <location filename="widgets/pins/pincombobox.h" line="207"/>
         <source>Pin B9</source>
         <translation>B9 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="176"/>
+        <location filename="widgets/pins/pincombobox.h" line="208"/>
         <source>Pin B10</source>
         <translation>B10 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="177"/>
+        <location filename="widgets/pins/pincombobox.h" line="209"/>
         <source>Pin B11</source>
         <translation>B11 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="178"/>
+        <location filename="widgets/pins/pincombobox.h" line="210"/>
         <source>Pin B12</source>
         <translation>B12 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="179"/>
+        <location filename="widgets/pins/pincombobox.h" line="211"/>
         <source>Pin B13</source>
         <translation>B13 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="180"/>
+        <location filename="widgets/pins/pincombobox.h" line="212"/>
         <source>Pin B14</source>
         <translation>B14 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="181"/>
+        <location filename="widgets/pins/pincombobox.h" line="213"/>
         <source>Pin B15</source>
         <translation>B15 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="182"/>
+        <location filename="widgets/pins/pincombobox.h" line="214"/>
         <source>Pin C13</source>
         <translation>C13 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="183"/>
+        <location filename="widgets/pins/pincombobox.h" line="215"/>
         <source>Pin C14</source>
         <translation>C14 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="184"/>
+        <location filename="widgets/pins/pincombobox.h" line="216"/>
         <source>Pin C15</source>
         <translation>C15 引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="189"/>
+        <location filename="widgets/pins/pincombobox.h" line="221"/>
         <source>Not Used</source>
         <translation>未使用</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="190"/>
+        <location filename="widgets/pins/pincombobox.h" line="222"/>
         <source>Pin is unused.</source>
         <translation>引脚未使用。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="196"/>
+        <location filename="widgets/pins/pincombobox.h" line="228"/>
         <source>Button to Gnd</source>
         <translation>按钮接 GND</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="197"/>
+        <location filename="widgets/pins/pincombobox.h" line="229"/>
         <source>Momentary button or switch wired between this pin and GND. Maps to a button slot in the Buttons tab.</source>
         <translation>接在此引脚与 GND 之间的瞬时按键或开关。在“按键”选项卡中映射到一个按键槽。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="203"/>
+        <location filename="widgets/pins/pincombobox.h" line="235"/>
         <source>Button to Vcc</source>
         <translation>按钮接 Vcc</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="204"/>
+        <location filename="widgets/pins/pincombobox.h" line="236"/>
         <source>Momentary button or switch wired between this pin and 3.3V. Maps to a button slot in the Buttons tab.</source>
         <translation>接在此引脚与 3.3V 之间的瞬时按键或开关。在“按键”选项卡中映射到一个按键槽。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="211"/>
+        <location filename="widgets/pins/pincombobox.h" line="243"/>
         <source>Row line of a scanned button matrix. Combine with Button Column pins; set the matrix size in the Buttons tab.</source>
         <translation>扫描式按键矩阵的行线。与按键列引脚组合使用；在“按键”选项卡中设置矩阵大小。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="218"/>
+        <location filename="widgets/pins/pincombobox.h" line="250"/>
         <source>Column line of a scanned button matrix. Combine with Button Row pins; set the matrix size in the Buttons tab.</source>
         <translation>扫描式按键矩阵的列线。与按键行引脚组合使用；在“按键”选项卡中设置矩阵大小。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="225"/>
+        <location filename="widgets/pins/pincombobox.h" line="257"/>
         <source>74HC165 / CD4021 shift-register LATCH (SH/LD). Can be shared across all chains. Set chain length in the Shift Registers tab.</source>
         <translation>74HC165 / CD4021 移位寄存器锁存（SH/LD）。可在所有链中共用。在“移位寄存器”选项卡中设置链长度。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="232"/>
+        <location filename="widgets/pins/pincombobox.h" line="264"/>
         <source>74HC165 / CD4021 shift-register DATA out (Qh / Q8). One per chain. Set chain length in the Shift Registers tab.</source>
         <translation>74HC165 / CD4021 移位寄存器数据输出（Qh / Q8）。每条链一个。在“移位寄存器”选项卡中设置链长度。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="239"/>
+        <location filename="widgets/pins/pincombobox.h" line="271"/>
         <source>74HC165 / CD4021 shift-register CLOCK. Can be shared across all chains. Set chain length in the Shift Registers tab.</source>
         <translation>74HC165 / CD4021 移位寄存器时钟。可在所有链中共用。在“移位寄存器”选项卡中设置链长度。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="245"/>
+        <location filename="widgets/pins/pincombobox.h" line="277"/>
         <source>TLE5011 Hall</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="246"/>
+        <location filename="widgets/pins/pincombobox.h" line="278"/>
         <source>Chip-select for an Infineon TLE5011 magnetic angle (Hall) sensor on SPI. Selecting this auto-assigns the shared SPI SCK/MOSI lines and a TLE clock pin; the angle reads out as an axis.</source>
         <translation>用于 SPI 上 Infineon TLE5011 磁性角度（霍尔）传感器的片选。选择后会自动分配共用的 SPI SCK/MOSI 线和一个 TLE 时钟引脚；角度以轴的形式读出。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="252"/>
+        <location filename="widgets/pins/pincombobox.h" line="284"/>
         <source>TLE5012B Hall</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="253"/>
+        <location filename="widgets/pins/pincombobox.h" line="285"/>
         <source>Chip-select for an Infineon TLE5012B magnetic angle (Hall) sensor on SPI. Auto-assigns the shared SPI SCK/MOSI lines and a TLE clock pin; the angle reads out as an axis.</source>
         <translation>用于 SPI 上 Infineon TLE5012B 磁性角度（霍尔）传感器的片选。自动分配共用的 SPI SCK/MOSI 线和一个 TLE 时钟引脚；角度以轴的形式读出。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="259"/>
+        <location filename="widgets/pins/pincombobox.h" line="291"/>
         <source>MCP3201 ADC (1ch)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="260"/>
+        <location filename="widgets/pins/pincombobox.h" line="292"/>
         <source>Chip-select for an MCP3201 single-channel 12-bit SPI ADC. Auto-assigns the shared SPI SCK/MISO/MOSI lines; the channel maps to an axis in the Axes tab.</source>
         <translation>用于 MCP3201 单通道 12 位 SPI ADC 的片选。自动分配共用的 SPI SCK/MISO/MOSI 线；该通道在“轴”选项卡中映射到一个轴。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="266"/>
+        <location filename="widgets/pins/pincombobox.h" line="298"/>
         <source>MCP3202 ADC (2ch)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="267"/>
+        <location filename="widgets/pins/pincombobox.h" line="299"/>
         <source>Chip-select for an MCP3202 2-channel 12-bit SPI ADC. Auto-assigns the shared SPI SCK/MISO/MOSI lines; each channel maps to an axis in the Axes tab.</source>
         <translation>用于 MCP3202 双通道 12 位 SPI ADC 的片选。自动分配共用的 SPI SCK/MISO/MOSI 线；每个通道在“轴”选项卡中映射到一个轴。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="273"/>
+        <location filename="widgets/pins/pincombobox.h" line="305"/>
         <source>MCP3204 ADC (4ch)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="274"/>
+        <location filename="widgets/pins/pincombobox.h" line="306"/>
         <source>Chip-select for an MCP3204 4-channel 12-bit SPI ADC. Auto-assigns the shared SPI SCK/MISO/MOSI lines; each channel maps to an axis in the Axes tab.</source>
         <translation>用于 MCP3204 四通道 12 位 SPI ADC 的片选。自动分配共用的 SPI SCK/MISO/MOSI 线；每个通道在“轴”选项卡中映射到一个轴。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="280"/>
+        <location filename="widgets/pins/pincombobox.h" line="312"/>
         <source>MCP3208 ADC (8ch)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="281"/>
+        <location filename="widgets/pins/pincombobox.h" line="313"/>
         <source>Chip-select for an MCP3208 8-channel 12-bit SPI ADC. Auto-assigns the shared SPI SCK/MISO/MOSI lines; each channel maps to an axis in the Axes tab.</source>
         <translation>用于 MCP3208 八通道 12 位 SPI ADC 的片选。自动分配共用的 SPI SCK/MISO/MOSI 线；每个通道在“轴”选项卡中映射到一个轴。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="287"/>
+        <location filename="widgets/pins/pincombobox.h" line="319"/>
         <source>MLX90393 Hall</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="288"/>
+        <location filename="widgets/pins/pincombobox.h" line="320"/>
         <source>Chip-select for an MLX90393 3-axis magnetometer (Hall) on SPI. Auto-assigns the shared SPI SCK/MISO/MOSI lines; output maps to axes in the Axes tab.</source>
         <translation>用于 SPI 上 MLX90393 三轴磁力计（霍尔）的片选。自动分配共用的 SPI SCK/MISO/MOSI 线；输出在“轴”选项卡中映射到各轴。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="294"/>
+        <location filename="widgets/pins/pincombobox.h" line="326"/>
         <source>MLX90363 Hall</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="295"/>
+        <location filename="widgets/pins/pincombobox.h" line="327"/>
         <source>Chip-select for an MLX90363 magnetic angle sensor on SPI. Auto-assigns the shared SPI SCK/MISO/MOSI lines; the angle reads out as an axis.</source>
         <translation>用于 SPI 上 MLX90363 磁性角度传感器的片选。自动分配共用的 SPI SCK/MISO/MOSI 线；角度以轴的形式读出。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="301"/>
+        <location filename="widgets/pins/pincombobox.h" line="333"/>
         <source>AS5048A encoder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="302"/>
+        <location filename="widgets/pins/pincombobox.h" line="334"/>
         <source>Chip-select for an AMS AS5048A 14-bit magnetic rotary encoder on SPI. Auto-assigns the shared SPI SCK/MISO/MOSI lines; the angle reads out as an axis.</source>
         <translation>用于 SPI 上 AMS AS5048A 14 位磁性旋转编码器的片选。自动分配共用的 SPI SCK/MISO/MOSI 线；角度以轴的形式读出。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="309"/>
+        <location filename="widgets/pins/pincombobox.h" line="341"/>
         <source>Single LED driven by a button state (max ~20mA). Configure in the LED/PWM tab.</source>
         <translation>由按键状态驱动的单个 LED（最大约 20mA）。在 LED/PWM 选项卡中配置。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="316"/>
+        <location filename="widgets/pins/pincombobox.h" line="348"/>
         <source>Row line of an LED matrix. Combine with LED Column pins; configure in the LED/PWM tab.</source>
         <translation>LED 矩阵的行线。与 LED 列引脚组合使用；在 LED/PWM 选项卡中配置。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="323"/>
+        <location filename="widgets/pins/pincombobox.h" line="355"/>
         <source>Column line of an LED matrix. Combine with LED Row pins; configure in the LED/PWM tab.</source>
         <translation>LED 矩阵的列线。与 LED 行引脚组合使用；在 LED/PWM 选项卡中配置。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="330"/>
+        <location filename="widgets/pins/pincombobox.h" line="362"/>
         <source>Single LED with hardware brightness control (PWM, max ~20mA). Only PA8 / PB0 / PB1 / PB4. Configure in the LED/PWM tab.</source>
         <translation>带硬件亮度控制（PWM，最大约 20mA）的单个 LED。仅 PA8 / PB0 / PB1 / PB4。在 LED/PWM 选项卡中配置。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="337"/>
+        <location filename="widgets/pins/pincombobox.h" line="369"/>
         <source>Addressable WS2812B LED data line (DIN). PA10 only. Configure colors / effects in the LED/PWM tab.</source>
         <translation>可寻址 WS2812B LED 数据线（DIN）。仅 PA10。在 LED/PWM 选项卡中配置颜色 / 效果。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="344"/>
+        <location filename="widgets/pins/pincombobox.h" line="376"/>
         <source>Addressable PL9823 LED data line (DIN). PA10 only. Configure colors / effects in the LED/PWM tab.</source>
         <translation>可寻址 PL9823 LED 数据线（DIN）。仅 PA10。在 LED/PWM 选项卡中配置颜色 / 效果。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="351"/>
+        <location filename="widgets/pins/pincombobox.h" line="383"/>
         <source>Direct analog input (potentiometer or Hall sensor) read by the ADC. Configure range / curve in the Axes tab.</source>
         <translation>由 ADC 读取的直接模拟输入（电位器或霍尔传感器）。在“轴”选项卡中配置范围 / 曲线。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="358"/>
+        <location filename="widgets/pins/pincombobox.h" line="390"/>
         <source>One channel (A or B) of a hardware-quadrature incremental encoder. Pin pairs: PA8+PA9 (Encoder 1), PB6+PB7 (Encoder 2). Used as an axis source.</source>
         <translation>硬件正交增量编码器的一个通道（A 或 B）。引脚对：PA8+PA9（编码器 1）、PB6+PB7（编码器 2）。用作轴源。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="365"/>
+        <location filename="widgets/pins/pincombobox.h" line="397"/>
         <source>Shared SPI clock line. Auto-assigned when you pick an SPI sensor&apos;s chip-select -- you don&apos;t normally set this directly.</source>
         <translation>共用的 SPI 时钟线。选择 SPI 传感器的片选时自动分配——通常无需直接设置。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="372"/>
+        <location filename="widgets/pins/pincombobox.h" line="404"/>
         <source>Shared SPI data-out line. Auto-assigned when you pick an SPI sensor&apos;s chip-select -- you don&apos;t normally set this directly.</source>
         <translation>共用的 SPI 数据输出线。选择 SPI 传感器的片选时自动分配——通常无需直接设置。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="379"/>
+        <location filename="widgets/pins/pincombobox.h" line="411"/>
         <source>Shared SPI data-in line. Auto-assigned when you pick an SPI sensor&apos;s chip-select -- you don&apos;t normally set this directly.</source>
         <translation>共用的 SPI 数据输入线。选择 SPI 传感器的片选时自动分配——通常无需直接设置。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="386"/>
+        <location filename="widgets/pins/pincombobox.h" line="418"/>
         <source>TLE5011/5012B clock-generator output (PB6, TIM4). Auto-assigned with a TLE sensor. Conflicts with Encoder 2 (also TIM4).</source>
         <translation>TLE5011/5012B 时钟发生器输出（PB6，TIM4）。随 TLE 传感器自动分配。与编码器 2（同样使用 TIM4）冲突。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="393"/>
+        <location filename="widgets/pins/pincombobox.h" line="433"/>
         <source>I2C clock line for an AS5600 (1x) or ADS1115 (up to 4x) sensor. Pair with I2C SDA. Outputs map to axes; 8-axis total limit.</source>
         <translation>用于 AS5600（1x）或 ADS1115（最多 4x）传感器的 I2C 时钟线。与 I2C SDA 配对。输出映射到各轴；总计最多 8 个轴。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="400"/>
+        <location filename="widgets/pins/pincombobox.h" line="440"/>
         <source>I2C data line for an AS5600 (1x) or ADS1115 (up to 4x) sensor. Pair with I2C SCL. Outputs map to axes; 8-axis total limit.</source>
         <translation>用于 AS5600（1x）或 ADS1115（最多 4x）传感器的 I2C 数据线。与 I2C SCL 配对。输出映射到各轴；总计最多 8 个轴。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="406"/>
+        <location filename="widgets/pins/pincombobox.h" line="451"/>
         <source>UART TX</source>
         <translation>UART TX</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="407"/>
+        <location filename="widgets/pins/pincombobox.h" line="452"/>
         <source>Serial joystick output (PA9, 115200 baud, every 10 ms) -- e.g. to an ESP32 for a Bluetooth joystick.</source>
         <translation>串行摇杆输出（PA9，115200 波特，每 10 毫秒一次）——例如输出到 ESP32 实现蓝牙摇杆。</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="210"/>
+        <location filename="widgets/pins/pincombobox.h" line="242"/>
         <source>Button Row</source>
         <translation>按钮 行</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="217"/>
+        <location filename="widgets/pins/pincombobox.h" line="249"/>
         <source>Button Column</source>
         <translation>按钮 列</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="224"/>
+        <location filename="widgets/pins/pincombobox.h" line="256"/>
         <source>ShiftReg LATCH</source>
         <translation>移位寄存器 LATCH引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="231"/>
+        <location filename="widgets/pins/pincombobox.h" line="263"/>
         <source>ShiftReg DATA</source>
         <translation>移位寄存器 DATA引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="238"/>
+        <location filename="widgets/pins/pincombobox.h" line="270"/>
         <source>ShiftReg CLK</source>
         <translation>移位寄存器 CLK引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="308"/>
+        <location filename="widgets/pins/pincombobox.h" line="340"/>
         <source>LED Single</source>
         <translation>单独LED</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="315"/>
+        <location filename="widgets/pins/pincombobox.h" line="347"/>
         <source>LED Row</source>
         <translation>LED 行</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="322"/>
+        <location filename="widgets/pins/pincombobox.h" line="354"/>
         <source>LED Column</source>
         <translation>LED 列</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="329"/>
+        <location filename="widgets/pins/pincombobox.h" line="361"/>
         <source>LED PWM</source>
         <translation>LED PWM引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="336"/>
+        <location filename="widgets/pins/pincombobox.h" line="368"/>
         <source>LED WS2812b</source>
         <translation>LED WS2812b</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="343"/>
+        <location filename="widgets/pins/pincombobox.h" line="375"/>
         <source>LED PL9823</source>
         <translation>LED PL9823</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="350"/>
+        <location filename="widgets/pins/pincombobox.h" line="382"/>
         <source>Axis Analog</source>
         <translation>模拟轴</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="357"/>
+        <location filename="widgets/pins/pincombobox.h" line="389"/>
         <source>Fast Encoder</source>
         <translation>高速编码器</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="364"/>
+        <location filename="widgets/pins/pincombobox.h" line="396"/>
         <source>SPI SCK</source>
         <translation>SPI SCK引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="371"/>
+        <location filename="widgets/pins/pincombobox.h" line="403"/>
         <source>SPI MOSI</source>
         <translation>SPI MOSI引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="378"/>
+        <location filename="widgets/pins/pincombobox.h" line="410"/>
         <source>SPI MISO</source>
         <translation>SPI MISO引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="385"/>
+        <location filename="widgets/pins/pincombobox.h" line="417"/>
         <source>TLE5011 GEN</source>
         <translation>TLE5011 GEN引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="392"/>
+        <location filename="widgets/pins/pincombobox.h" line="432"/>
         <source>I2C SCL</source>
         <translation>I2C SCL引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="399"/>
+        <location filename="widgets/pins/pincombobox.h" line="439"/>
         <source>I2C SDA</source>
         <translation>I2C SDA引脚</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="183"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="222"/>
         <source>Buttons</source>
         <translation>按键</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="184"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="223"/>
         <source>Shift Registers</source>
         <translation>移位寄存器</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="185"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="224"/>
         <source>SPI Devices</source>
         <translation>SPI 设备</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="186"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="225"/>
         <source>LEDs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="187"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="226"/>
         <source>Analog Axis</source>
         <translation>模拟轴</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="188"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="227"/>
         <source>Encoder</source>
         <translation type="unfinished">编码器</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="189"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="228"/>
         <source>I2C Devices</source>
         <translation>I2C 设备</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="190"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="229"/>
         <source>Serial Output</source>
         <translation>串行输出</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="191"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="230"/>
         <source>SPI Bus (auto-assigned)</source>
         <translation>SPI 总线（自动分配）</translation>
     </message>
@@ -3172,12 +3246,12 @@ Check that the file exists and the configurator has permission to read it.</sour
         <translation>开发板选择</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pinconfig.cpp" line="726"/>
+        <location filename="widgets/pins/pinconfig.cpp" line="771"/>
         <source>I2C bus</source>
         <translation>I2C 总线</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pinconfig.cpp" line="726"/>
+        <location filename="widgets/pins/pinconfig.cpp" line="771"/>
         <source>SPI bus</source>
         <translation>SPI 总线</translation>
     </message>

@@ -1,9 +1,53 @@
 # FreeJoyX — Flashing Procedure
 
-This is the manual flash path: **STM32CubeProgrammer + ST-Link**. Use it
-for first-time installs, recovering a brick, or any situation where the
-configurator's one-click **Upgrade Firmware** button isn't an option (no
-working bootloader on the chip, USB enumeration broken, etc.).
+There are three ways to get firmware onto a board, from easiest to most
+manual:
+
+1. **Routine update (working device)** — the one-click **Upgrade firmware**
+   button in the configurator's main view. Reads your config, flashes the
+   matching binary from the bundled `firmware/` folder over the custom HID
+   bootloader, Writes your config back. Can't replace the bootloader itself.
+2. **F411 install / reinstall over USB DFU** — the **Install / Reinstall
+   (USB DFU)** button in the Firmware/Flasher tab. Writes *both* the
+   bootloader and the app over the chip's factory USB DFU bootloader — **no
+   ST-Link, no STM32CubeProgrammer**. Works on a blank, configured, or
+   bricked F411. See the section below. (F411 only — the F103 ROM bootloader
+   has no USB DFU.)
+3. **Manual ST-Link / CubeProgrammer** — the fallback below. The only route
+   for a blank F103, and the universal recovery path for either board.
+
+The rest of this document covers the manual **STM32CubeProgrammer + ST-Link**
+path (option 3). Use it for a first-time F103 install, recovering a brick
+when USB DFU isn't reachable, or any situation where the in-app paths aren't
+an option.
+
+## F411: install / reinstall over USB DFU (no ST-Link)
+
+The configurator can install or completely reinstall an F411 over the
+STM32 factory USB DFU (DfuSe) bootloader — bootloader **and** app, no SWD
+probe required. This is the easiest first-install and the way to recover or
+upgrade a bootloader on a deployed board.
+
+1. Put the board into **DFU mode**: hold **BOOT0**, tap **NRST** (reset),
+   release BOOT0 — or hold BOOT0 while plugging in USB. The board enumerates
+   as *STM32 BOOTLOADER*.
+2. In the configurator's Firmware/Flasher tab, click **Install / Reinstall
+   (USB DFU)**. The dialog detects the DFU device, confirms the
+   bootloader + app binaries, and writes them.
+3. **Windows**: the first run installs a WinUSB driver for the DFU device
+   (one UAC prompt — automatic, no Zadig, no certificate). **Linux**: drop
+   the `df11` udev rule from `src/linux/99-hid-FreeJoy.rules` into
+   `/etc/udev/rules.d/` so the helper can open the device without root.
+4. Unplug and replug — the board comes up as a working FreeJoy device.
+
+A full reinstall **erases the chip** — the device returns to factory
+defaults, so reload your saved config afterward.
+
+> Note: this path is implemented by a bundled `freejoyx-flash` helper and
+> requires firmware support for the jumper-free "reboot to DFU" trigger
+> (a future convenience); until that lands, use the manual BOOT0 step above.
+
+---
 
 For routine updates on a working device, the **Upgrade firmware** button
 in the configurator's main view is faster — it Reads your config,

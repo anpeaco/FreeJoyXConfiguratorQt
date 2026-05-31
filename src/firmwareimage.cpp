@@ -24,6 +24,9 @@ void FirmwareImage::clear()
     m_board = Board::Unknown;
     m_fwVersion = 0;
     m_buildId = 0;
+    m_verMajor = 0;
+    m_verMinor = 0;
+    m_verPatch = 0;
 }
 
 bool FirmwareImage::loadFromFile(const QString &path)
@@ -93,6 +96,13 @@ bool FirmwareImage::tryParseFooter()
         }
         m_fwVersion = fwVersion;
         m_buildId = buildId;
+        /* Human semver at off+12..14 (added after the wire token; reclaimed
+         * from the reserved tail, struct_size unchanged). Pre-semver footers
+         * have zeros there -> treated as "not present" and we fall back to the
+         * wire token in versionLabel(). */
+        m_verMajor = static_cast<uint8_t>(data[off + 12]);
+        m_verMinor = static_cast<uint8_t>(data[off + 13]);
+        m_verPatch = static_cast<uint8_t>(data[off + 14]);
         m_source = Source::Footer;
         return true;
     }
@@ -147,6 +157,16 @@ QString FirmwareImage::boardName() const
 
 QString FirmwareImage::versionLabel() const
 {
+    /* Prefer the human semver (footer >= the semver addition). All-zero means a
+     * pre-semver binary -> fall back to the wire-format token below. */
+    if (m_verMajor != 0 || m_verMinor != 0 || m_verPatch != 0) {
+        QString v = QStringLiteral("%1.%2.%3")
+            .arg(m_verMajor).arg(m_verMinor).arg(m_verPatch);
+        if (m_buildId != 0) {
+            v += QStringLiteral(" (b%1)").arg(m_buildId);
+        }
+        return v;
+    }
     if (m_fwVersion == 0) {
         return QString();
     }

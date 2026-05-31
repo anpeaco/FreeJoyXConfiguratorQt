@@ -42,6 +42,7 @@
 #include "devicetransitionwatcher.h"
 
 class HidDevice;
+class QTimer;
 
 class FlashSession : public QObject
 {
@@ -100,6 +101,12 @@ public:
      * dialog renders the terminal error so the user sees the cause
      * (unable to recover device). */
     void abortFromRecovery();
+
+    /* User-initiated abort during Restoring (the post-flash config write).
+     * Safe to interrupt: the firmware is already flashed and running; only
+     * the config write-back is skipped, and the backup file is on disk.
+     * Walks to Done (flash succeeded) with a "restore skipped" note. */
+    void cancelDuringRestore();
 
 public slots:
     /* MainWindow proxies these from HidDevice. The session uses them to
@@ -173,8 +180,18 @@ private:
      * own onFlasherFound / onParamsPacketReceived slots). */
     DeviceTransitionWatcher *m_watcher = nullptr;
 
+    /* Watchdog for the Restoring state. The post-flash config write relies on
+     * a configSent signal coming back; if the device re-enumerates badly (e.g.
+     * a duplicate VID:PID confuses post-write re-selection) that signal can be
+     * lost entirely, leaving the session stuck in Restoring forever. This
+     * single-shot timer guarantees an escape: on expiry the session fails
+     * gracefully to a Close-able terminal state. Started on entering Restoring,
+     * stopped on configSent / cancel / fail. */
+    QTimer     *m_restoreTimer = nullptr;
+
 private slots:
     void onWatcherTimedOut(DeviceTransitionWatcher::Target target);
+    void onRestoreTimedOut();
 };
 
 #endif // FLASHSESSION_H

@@ -2,6 +2,7 @@
 #include "ui_advancedsettings.h"
 
 //#include <QFile>
+#include <QCheckBox>
 #include <QComboBox>
 #include <QFileDialog>
 #include <QGridLayout>
@@ -129,6 +130,31 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
 
     /* Initial state -- pill hidden, button shown. */
     refreshPidConflictPill();
+
+    /* Auto-read-on-connect toggle. Added programmatically (same approach as
+     * m_showAllDevicesButton) into the "Other settings" group so the .ui grid
+     * doesn't need restructuring. Persists to OtherSettings/AutoReadOnConnect
+     * and signals MainWindow, which owns the connect-time behaviour. */
+    m_autoReadCheck = new QCheckBox(tr("Auto-read config from device on connect"), this);
+    m_autoReadCheck->setToolTip(tr(
+        "When a compatible device connects, automatically read its stored "
+        "configuration into the configurator. If you have unsaved changes "
+        "you'll be asked first. Turn off to manage reads manually."));
+    gEnv.pAppSettings->beginGroup("OtherSettings");
+    m_autoReadCheck->setChecked(
+        gEnv.pAppSettings->value("AutoReadOnConnect", true).toBool());
+    gEnv.pAppSettings->endGroup();
+    if (auto *otherGrid = findChild<QGridLayout *>(QStringLiteral("gridLayout_7"))) {
+        // Row after the theme switch / font size / About rows, spanning both
+        // columns so the longer label isn't squeezed into one cell.
+        otherGrid->addWidget(m_autoReadCheck, 3, 0, 1, 2, Qt::AlignHCenter);
+    }
+    connect(m_autoReadCheck, &QCheckBox::toggled, this, [this](bool on) {
+        gEnv.pAppSettings->beginGroup("OtherSettings");
+        gEnv.pAppSettings->setValue("AutoReadOnConnect", on);
+        gEnv.pAppSettings->endGroup();
+        emit autoReadOnConnectChanged(on);
+    });
 }
 
 AdvancedSettings::~AdvancedSettings()
@@ -140,6 +166,15 @@ void AdvancedSettings::retranslateUi()
 {
     ui->retranslateUi(this);
     m_flasher->retranslateUi();
+    // Programmatically-created widget: ui->retranslateUi doesn't touch it, so
+    // refresh its strings here for live language switches.
+    if (m_autoReadCheck) {
+        m_autoReadCheck->setText(tr("Auto-read config from device on connect"));
+        m_autoReadCheck->setToolTip(tr(
+            "When a compatible device connects, automatically read its stored "
+            "configuration into the configurator. If you have unsaved changes "
+            "you'll be asked first. Turn off to manage reads manually."));
+    }
 }
 
 Flasher *AdvancedSettings::flasher() const

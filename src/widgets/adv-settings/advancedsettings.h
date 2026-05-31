@@ -8,6 +8,7 @@ QT_BEGIN_NAMESPACE
 class QFile;
 class QLabel;
 class QPushButton;
+class QCheckBox;
 QT_END_NAMESPACE
 
 namespace Ui {
@@ -63,6 +64,12 @@ signals:
     void themeChanged(bool dark);
 
     void fontChanged();
+
+    /* User toggled "Auto-read config from device on connect" on this tab.
+     * MainWindow caches the value (m_autoReadOnConnect) and consults it when
+     * a device connects. The setting is also persisted to QSettings here, so
+     * MainWindow's connect handler only needs to update its cached copy. */
+    void autoReadOnConnectChanged(bool enabled);
 
     /* User clicked "Show all connected devices". MainWindow handles
      * it -- it has the full device list (including the selected
@@ -132,6 +139,13 @@ private:
      * the user dump the full connected-FreeJoy list when a phantom
      * conflict shows up they can't otherwise account for. */
     QPushButton *m_showAllDevicesButton = nullptr;
+
+    /* "Auto-read config from device on connect" toggle. Added
+     * programmatically into the "Other settings" group (gridLayout_7) so the
+     * .ui grid doesn't need restructuring. Initial state + persistence live
+     * under OtherSettings/AutoReadOnConnect; toggling emits
+     * autoReadOnConnectChanged() for MainWindow. */
+    QCheckBox *m_autoReadCheck = nullptr;
 };
 
 #endif // ADVANCEDSETTINGS_H

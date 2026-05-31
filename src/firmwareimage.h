@@ -93,6 +93,11 @@ private:
     Board m_board = Board::Unknown;
     uint16_t m_fwVersion = 0;
     uint16_t m_buildId = 0;
+    /* Human semver from the footer (0.0.0 = pre-semver binary; versionLabel()
+     * then falls back to the wire-format fw_version). */
+    uint8_t  m_verMajor = 0;
+    uint8_t  m_verMinor = 0;
+    uint8_t  m_verPatch = 0;
 };
 
 #endif /* FIRMWAREIMAGE_H */
