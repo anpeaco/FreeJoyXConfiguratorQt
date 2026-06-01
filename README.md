@@ -73,6 +73,35 @@ The release workflow also supports `workflow_dispatch` (with an optional `ref` i
    * `sudo cp 99-hid-FreeJoy.rules /etc/udev/rules.d`
 4. Run the AppImage or build from source.
 
+## Flashing a brand-new F411 — no ST-Link needed (v0.1.4+)
+
+A new (or bricked) **F411 Black Pill** ships with no FreeJoyX firmware, so there's
+nothing for the configurator to talk to over USB HID yet. The built-in **USB DFU
+installer** gets you from a blank chip to a working device using only this app —
+it writes **both the bootloader and the application** over the STM32's factory
+ROM USB DFU bootloader, with **no ST-Link and no STM32CubeProgrammer**.
+
+1. Plug the F411 into USB and open the **Advanced Settings** tab.
+2. Click **F411 Install…** (in the firmware flasher) to open the installer.
+3. Put the board into DFU mode:
+   * If it's already running FreeJoyX, click **Reboot into DFU** in the dialog; **or**
+   * Manually — hold **BOOT0**, tap **NRST** (reset), release **BOOT0** (or hold
+     BOOT0 while plugging in USB). The board re-appears as *STM32 BOOTLOADER*.
+4. The dialog confirms *"Board detected in DFU mode"* and pre-fills the bundled
+   `freejoyx-f411-boot.bin` + `freejoyx-f411-app.bin` (Browse to pick your own).
+5. Click **Install**. ⚠ This **erases the chip and restores factory defaults** —
+   any existing config on the board is lost.
+6. When it finishes, **unplug and replug**. The board now enumerates as a
+   FreeJoyX device and the configurator connects normally.
+
+**Windows:** the first install auto-installs the WinUSB driver (one UAC prompt —
+no Zadig). **Linux:** ships a `df11` udev rule. *(F103 boards have no USB DFU in
+ROM, so they use the ST-Link path instead.)*
+
+After this one-time install, routine app updates can use the normal **Write
+config** / HID **Upgrade firmware** flow — the DFU installer is only for blank or
+bricked chips, or to replace the bootloader itself.
+
 ## Building
 
 ### Windows Build Requirements
