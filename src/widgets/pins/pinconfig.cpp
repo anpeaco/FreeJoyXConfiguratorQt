@@ -176,6 +176,20 @@ void PinConfig::boardChanged(int index)
     if (index == m_lastBoard) {
         return;
     }
+    const int previousBoard = m_lastBoard;
+
+    /* I2C SDA is board-specific (PB11 on F103/ContrLite, PB9 on F411; SCL = PB10
+     * is common). If I2C is active and the SDA slot differs between the two
+     * boards, tear the bus down NOW -- while m_lastBoard still points at the OLD
+     * board, so the (tested) disable path clears the OLD SDA slot -- then re-lay
+     * it after the switch so SCL + the NEW board's SDA slot are claimed. Reuses
+     * the bus toggle paths instead of fighting the interaction/lock system. */
+    const bool migrateI2c =
+        (pinRole(PB_10) == I2C_SCL)
+        && (i2cSdaPinForBoard(previousBoard) != i2cSdaPinForBoard(index));
+    if (migrateI2c) {
+        onBusToggleRequested(PinTypeHelper::BUS_I2C, false);
+    }
 
     /* Detach whichever board widget is currently hosted -- the layout
      * holds exactly one of {bluePill, contrLite, blackPill} at any time
@@ -214,8 +228,20 @@ void PinConfig::boardChanged(int index)
     // (e.g. F411 strips I2C_SDA from slot 22, F103 strips it from slot 20).
     applyBoardSpecificRoleFilters();
 
+    // Re-lay the I2C bus on the new board (SCL + the new board's SDA slot).
+    if (migrateI2c) {
+        onBusToggleRequested(PinTypeHelper::BUS_I2C, true);
+    }
+
     // F411 mutex depends on the active board, so re-evaluate the toggles
     refreshBusToggles();
+}
+
+int PinConfig::i2cSdaPinForBoard(int boardIndex)
+{
+    // Board selector index: 0 BluePill, 1 ContrLite (both F103 -> PB11),
+    // 2 BlackPill (F411 -> PB9). SCL is PB10 on all of them.
+    return (boardIndex == 2) ? PB_9 : PB_11;
 }
 
 void PinConfig::setConnectedBoard(int boardId)
