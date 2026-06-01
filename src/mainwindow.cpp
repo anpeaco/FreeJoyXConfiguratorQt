@@ -1432,8 +1432,15 @@ void MainWindow::finalInitialization()
     gEnv.pDeviceConfig->resetConfig();
     UiReadFromConfig();
 
-    // select config comboBox // should be after "// load config files"
-    connect(ui->comboBox_Configs, &QComboBox::currentTextChanged, this, &MainWindow::curCfgFileChanged);
+    /* Load the picked config on EVERY user selection -- including re-selecting
+     * the one already shown -- so "load it again" works without first switching
+     * to a different entry and back. textActivated fires on any user pick
+     * (popup click or keyboard), unlike currentTextChanged which only fires
+     * when the text changes (so a re-select was silently a no-op). It also
+     * ignores programmatic setCurrentText() (e.g. the post-save dropdown
+     * update), which shouldn't trigger a redundant reload of what's already
+     * in memory. Must be after the initial population above. */
+    connect(ui->comboBox_Configs, &QComboBox::textActivated, this, &MainWindow::curCfgFileChanged);
 }
 
 // current cfg file changed
