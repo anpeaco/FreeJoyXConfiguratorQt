@@ -78,6 +78,23 @@ DfuInstallDialog::DfuInstallDialog(QWidget *parent)
 
 DfuInstallDialog::~DfuInstallDialog() = default;
 
+void DfuInstallDialog::setConnectedDevice(bool f411Present, const QString &name,
+                                          const QString &vidPid)
+{
+    /* The one-click reboot shortcut only does anything when an F411 running
+     * FreeJoyX is connected, so show the row only then -- and label it with
+     * the device's name + VID:PID so the user knows what will be rebooted. */
+    if (!m_rebootRow) return;
+    if (f411Present) {
+        QString id = name.trimmed().isEmpty() ? tr("F411 (Black Pill)") : name.trimmed();
+        if (!vidPid.isEmpty()) id += QStringLiteral(" — ") + vidPid;
+        m_connLabel->setText(tr("Connected: <b>%1</b>").arg(id.toHtmlEscaped()));
+        m_rebootRow->setVisible(true);
+    } else {
+        m_rebootRow->setVisible(false);
+    }
+}
+
 void DfuInstallDialog::buildUi()
 {
     auto *root = new QVBoxLayout(this);
@@ -99,28 +116,42 @@ void DfuInstallDialog::buildUi()
     auto *dfuLay = new QVBoxLayout(dfuBox);
     dfuLay->setSpacing(8);
 
+    /* Preferred path, shown only when an F411 is connected: ask the firmware
+     * to reboot itself into ROM DFU (anpeaco/FreeJoyX#55) -- no jumper. The
+     * whole row is hidden by setConnectedDevice() when no F411 is present
+     * (the reboot command would do nothing). */
+    m_rebootRow = new QWidget(dfuBox);
+    auto *rebootLay = new QVBoxLayout(m_rebootRow);
+    rebootLay->setContentsMargins(0, 0, 0, 0);
+    rebootLay->setSpacing(4);
+    m_connLabel = new QLabel(m_rebootRow);
+    m_connLabel->setWordWrap(true);
+    rebootLay->addWidget(m_connLabel);
+    auto *rebootBtnRow = new QHBoxLayout();
+    auto *rebootHint = new QLabel(tr("Reboot it straight into DFU:"), m_rebootRow);
+    rebootHint->setWordWrap(true);
+    m_rebootBtn = new QPushButton(tr("Reboot into DFU"), m_rebootRow);
+    connect(m_rebootBtn, &QPushButton::clicked, this, &DfuInstallDialog::onRebootToDfu);
+    rebootBtnRow->addWidget(rebootHint, 1);
+    rebootBtnRow->addWidget(m_rebootBtn, 0);
+    rebootLay->addLayout(rebootBtnRow);
+    m_rebootRow->setVisible(false);          // setConnectedDevice() reveals it
+    dfuLay->addWidget(m_rebootRow);
+
+    /* Manual BOOT0 method (always available). */
     m_instructions = new QLabel(dfuBox);
     m_instructions->setTextFormat(Qt::RichText);
     m_instructions->setWordWrap(true);
     m_instructions->setText(tr(
-        "Hold <b>BOOT0</b>, tap <b>NRST</b> (reset), then release BOOT0 — or "
-        "hold BOOT0 while plugging in USB. The board re-appears as "
+        "<b>To enter DFU manually:</b>"
+        "<ol style='margin-left:-20px;'>"
+        "<li>Hold <b>BOOT0</b>.</li>"
+        "<li>Tap <b>NRST</b> (reset), then release it.</li>"
+        "<li>Release <b>BOOT0</b>.</li>"
+        "</ol>"
+        "(Or hold BOOT0 while plugging in USB.) The board then re-appears as "
         "<i>STM32&nbsp;BOOTLOADER</i>."));
     dfuLay->addWidget(m_instructions);
-
-    /* Software trigger (no jumper): if a FreeJoy device is already connected
-     * and running, ask the firmware to reboot itself into ROM DFU
-     * (anpeaco/FreeJoyX#55). Harmless if the firmware predates the command or
-     * nothing is connected -- the user just falls back to the BOOT0 method. */
-    auto *rebootRow = new QHBoxLayout();
-    auto *rebootHint = new QLabel(
-        tr("Already connected and running FreeJoyX?"), dfuBox);
-    rebootHint->setWordWrap(true);
-    m_rebootBtn = new QPushButton(tr("Reboot into DFU"), dfuBox);
-    connect(m_rebootBtn, &QPushButton::clicked, this, &DfuInstallDialog::onRebootToDfu);
-    rebootRow->addWidget(rebootHint, 1);
-    rebootRow->addWidget(m_rebootBtn, 0);
-    dfuLay->addLayout(rebootRow);
 
     /* Detection status + manual re-check. */
     auto *detectRow = new QHBoxLayout();

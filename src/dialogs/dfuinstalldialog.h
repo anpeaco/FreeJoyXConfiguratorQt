@@ -47,6 +47,13 @@ public:
     explicit DfuInstallDialog(QWidget *parent = nullptr);
     ~DfuInstallDialog() override;
 
+    /* Tell the dialog about the currently-connected app-mode device so it can
+     * offer the one-click "reboot into DFU" shortcut. The reboot row is shown
+     * only when an F411 is connected (the reboot command only does anything
+     * there); it then displays the device name + VID:PID. Call before exec(). */
+    void setConnectedDevice(bool f411Present, const QString &name,
+                            const QString &vidPid);
+
 signals:
     /* Emitted by the "reboot connected device to DFU" button. The Flasher
      * forwards this to MainWindow, which sends the "system dfu" report so a
@@ -81,6 +88,8 @@ private:
     DfuInstallSession *m_session = nullptr;
 
     QLabel         *m_instructions = nullptr;
+    QWidget        *m_rebootRow = nullptr;     /* whole reboot option; hidden if no F411 */
+    QLabel         *m_connLabel = nullptr;     /* "<name> — VID:PID" of the connected F411 */
     QLineEdit      *m_bootEdit = nullptr;
     QLineEdit      *m_appEdit = nullptr;
     QLabel         *m_detectLabel = nullptr;
