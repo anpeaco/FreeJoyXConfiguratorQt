@@ -42,6 +42,19 @@ FreeJoyXConfiguratorQt is a fork of [FreeJoyConfiguratorQt](https://github.com/F
 
 Check the upstream [FreeJoy wiki](https://github.com/FreeJoy-Team/FreeJoyWiki) for general usage; FreeJoyX-specific feature notes live in the plan files alongside the firmware repo.
 
+## Release notes
+
+Full history on the [Releases](https://github.com/anpeaco/FreeJoyXConfiguratorQt/releases) page.
+
+### v0.1.4
+- **Pin Config sidebar tidy-up** — flatter Pin Info list with delayed, icon-only wiring tooltips; fixed-height Bus quick-setup; the board selector now sits under Pin Info; removed a stale "F411 SPI/I2C share a pin" note (they coexist since the PB9 routing).
+- **Combined, colour-coded debug log**; live **Packets/Rate** moved to the Device info card; **Write log to file** moved to Advanced Settings.
+- **Device-swap fixes** — no spurious "Pins reassigned" / "Logical Buttons Cleared" popups; pin role colours kept across a board swap; no GEN-pin flash on load; the GEN pin is locked while a TLE owns it; the "Load device config?" prompt now only appears when you have unsaved edits.
+- **Startup opens with no config selected**; re-selecting the same dropdown entry reloads it.
+- **DFU install dialog overhaul** — numbered steps, an F411-only "reboot into DFU" shortcut that shows the connected device's name + VID:PID, colour-coded status, an up-front erase warning, and the Install button locks after a successful write. The main-tab button is now **F411 Install…**.
+- Internal config-load refactor; translation catalogs refreshed.
+- Folds in the never-tagged **v0.1.3**: axis auto-detect on unmapped analog pins, F411 SPI+I2C coexistence, and the DfuSe install/reinstall helper.
+
 ## Downloads
 
 Configurator binaries for both Linux and Windows are published to this repo's [Releases](https://github.com/anpeaco/FreeJoyXConfiguratorQt/releases) by the tag-triggered `release.yml` workflow. The Windows zip is self-contained — Qt DLLs and the MinGW runtime are bundled via `windeployqt` so end users don't need Qt or MinGW installed. Firmware binaries for both boards (F103 BluePill + F411 BlackPill, app + bootloader) live on the paired firmware repo's [Releases](https://github.com/anpeaco/FreeJoyX/releases). Tagging the same `vX.Y.Z` on both repos in lockstep produces matched configurator + firmware artefacts.
@@ -94,7 +107,7 @@ Three GitHub Actions workflows cover this repo:
 To cut a release, tag the same `vX.Y.Z` here and on the firmware repo:
 
 ```bash
-git tag v0.1.2 && git push origin v0.1.2
+git tag v0.1.4 && git push origin v0.1.4
 ```
 
 The release workflow builds and publishes both archives automatically.
