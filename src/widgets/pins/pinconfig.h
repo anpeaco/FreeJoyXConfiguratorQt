@@ -168,6 +168,13 @@ private:
      * reflects the active board. (Lightweight precursor to the per-board
      * capability model in #40.) */
     void applyBoardSpecificRoleFilters();
+
+    /* The I2C SDA pin is board-specific: PB11 on F103 / Controller Lite, PB9 on
+     * F411 (SCL = PB10 is common). Returns the SDA pin (a Pin enum value) for a
+     * board selector index (0 BluePill, 1 ContrLite, 2 BlackPill). boardChanged
+     * uses it to relocate an active I2C bus across the per-board SDA slot on a
+     * board switch (tear down on the old board, re-lay on the new). */
+    static int i2cSdaPinForBoard(int boardIndex);
     /* Lock/unlock a pin's dropdown (by Pin enum value). Skips pins the
      * interaction system is already managing so the two don't fight over the
      * enabled state. Used to lock a bus's pins while its toggle is on. */
