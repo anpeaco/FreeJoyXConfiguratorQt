@@ -172,6 +172,14 @@ private slots:
         QCOMPARE(m_pc->pinRole(PB_8),  int(SHIFT_REG_CLK));
     }
 
+    // NOTE: the "board switch strips pin role colour" fix (boardChanged ->
+    // reapplyRoleColor) is deliberately NOT unit-tested here. The colour wipe is
+    // a QStyleSheetStyle polish artifact whose timing the headless harness can't
+    // reproduce deterministically -- without a stylesheet the palette survives
+    // re-parenting (test always green = vacuous), and forcing a stylesheet makes
+    // the result depend on polish ordering rather than the code path. Verified
+    // visually at runtime instead. See pinconfig.cpp::boardChanged.
+
     // A plain role survives a full F103 -> F411 -> F103 round trip.
     void boardSwitch_roundTrip_preservesPlainRole()
     {
@@ -218,6 +226,34 @@ private slots:
     {
         m_pc->setPinRole(PB_1, TLE5011_CS);              // all auto-claimed pins are free
         QVERIFY(m_pc->autoAssignDisplaced().isEmpty());
+    }
+
+    // No false warning on config load / device swap: when readFromConfig
+    // repopulates every pin from a freshly loaded config, a sensor that
+    // auto-claims a shared pin only displaces the STALE previous-config role,
+    // never a live user mapping -- so #57 must stay silent. (Qt#52-adjacent:
+    // the "Pins reassigned" modal must not pop on every device swap / auto-read.)
+    void configLoad_sensorAutoAssign_noDisplacementWarning()
+    {
+        // Stale UI state left over from the "previous device": a user SR role
+        // on PB6, the very pin a TLE will want for its GEN clock.
+        m_pc->setPinRole(PB_6, SHIFT_REG_DATA);
+        QCOMPARE(m_pc->pinRole(PB_6), int(SHIFT_REG_DATA));
+        QVERIFY(m_pc->autoAssignDisplaced().isEmpty());   // a free-pin set records nothing
+
+        // New device's config arrives: TLE5011 CS on PB1. Loading it auto-claims
+        // GEN on PB6, overwriting the stale SR role mid-load.
+        gEnv.pDeviceConfig->config.pins[PB_1 - 1] = TLE5011_CS;
+        m_pc->readFromConfig();
+
+        // Load applied, and the claim path DID engage -- PB6 no longer holds the
+        // stale SR role (so this isn't a vacuous "nothing happened" test) ...
+        QCOMPARE(m_pc->pinRole(PB_1), int(TLE5011_CS));
+        QVERIFY2(m_pc->pinRole(PB_6) != SHIFT_REG_DATA,
+                 "the sensor auto-claim should have displaced the stale SR role");
+        // ... but NO displacement is recorded, so no modal is raised on load.
+        QVERIFY2(m_pc->autoAssignDisplaced().isEmpty(),
+                 "config load must not raise the #57 displacement warning");
     }
 
     // ---- #65: while a TLE owns the GEN clock on B6, the user must not be able
