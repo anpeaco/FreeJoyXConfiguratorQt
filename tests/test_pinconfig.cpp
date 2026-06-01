@@ -271,6 +271,24 @@ private slots:
                  "B6 options restored after the sensor is removed");
     }
 
+    // ---- #65 follow-up: the GEN pin (B6) must be LOCKED (combobox disabled),
+    //      not just have its options greyed, while a TLE owns it -- so it reads
+    //      as locked like its SCK/MOSI siblings instead of staying clickable. ----
+    void sensorActive_locksGenPinComboBox()
+    {
+        QVERIFY2(m_pc->isPinEditable(PB_6), "B6 editable before any sensor");
+        m_pc->setPinRole(PB_1, TLE5011_CS);             // TLE auto-claims GEN on B6
+        QCOMPARE(m_pc->pinRole(PB_6), int(TLE5011_GEN));
+        QVERIFY2(!m_pc->isPinEditable(PB_6),
+                 "#65: B6 combobox must be locked (disabled) while a TLE owns GEN");
+        // sibling SPI lead is locked the same way -- B6 should match it
+        QVERIFY2(!m_pc->isPinEditable(PB_3), "SCK sibling is locked too (sanity)");
+
+        m_pc->setPinRole(PB_1, NOT_USED);               // remove sensor
+        QVERIFY2(m_pc->isPinEditable(PB_6),
+                 "B6 combobox must unlock when the sensor's CS is cleared");
+    }
+
     // ---- #58: adding an SPI sensor auto-claims the SPI bus; removing the last
     //      one must clear SCK/MISO/MOSI AND drop the SPI bus checkbox. ----
     void spiCheckbox_clearsAfterLastSensorRemoved()

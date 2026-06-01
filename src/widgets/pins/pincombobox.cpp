@@ -140,6 +140,11 @@ void PinComboBox::setLocked(bool locked)
     ui->comboBox_PinsType->setEnabled(!locked);
 }
 
+bool PinComboBox::isComboBoxEnabled() const
+{
+    return ui->comboBox_PinsType->isEnabled();
+}
+
 bool PinComboBox::isRoleOptionEnabled(int deviceEnum) const
 {
     for (int i = 0; i < m_enumIndex.size(); ++i) {
@@ -195,10 +200,15 @@ void PinComboBox::setIndex_iteraction(int index, int senderIndex)
 {
     if(m_isInteracts == false && m_isCall_Interaction == false)     // ui->comboBox_PinsType->isEnabled()
     {
-        if(m_pinTypes[m_pinTypesIndex[index]].deviceEnumIndex != TLE5011_GEN)
-        {
-            ui->comboBox_PinsType->setEnabled(false);
-        }
+        /* Disable the combobox while this pin is owned by an interaction
+         * (a sensor's auto-claimed lead). Upstream exempted TLE5011_GEN here
+         * so its box stayed clickable -- but that made the GEN pin (B6) read
+         * as "not locked" next to its fully-disabled SCK/MOSI siblings when a
+         * TLE is active (GEN is only ever auto-claimed by a TLE). Lock it like
+         * the others; the release branch below re-enables it when the sensor's
+         * CS clears. The #65 option-greying in blockEncoder2TLE5011 stays as
+         * belt-and-suspenders. */
+        ui->comboBox_PinsType->setEnabled(false);
         // change text color
         applyTextColor(m_pinTypes[senderIndex].color);
 

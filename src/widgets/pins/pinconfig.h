@@ -69,6 +69,9 @@ public:
      * greyed out by a per-board / mutex / sensor-lock restriction). Used by the
      * GEN-pin lock (#65) and its tests. */
     bool isPinRoleOptionEnabled(int pin, int role) const;
+    /* True if the pin's role dropdown is interactable; false while a sensor
+     * interaction owns the pin (incl. TLE GEN on B6), which locks the box. */
+    bool isPinEditable(int pin) const;
 
     /* Apply a set of pin -> role assignments with the bus-remap confirmation
      * dialog -- one place for the conflict prompt, the dry-run prediction of

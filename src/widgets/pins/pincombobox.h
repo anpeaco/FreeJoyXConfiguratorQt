@@ -89,6 +89,10 @@ public:
     //! (not greyed out via setIndexStatus). False if the role isn't offered or
     //! has been disabled (e.g. the per-board / mutex / sensor-lock greying).
     bool isRoleOptionEnabled(int deviceEnum) const;
+    //! True if the role dropdown is interactable. False while the pin is owned
+    //! by an interaction (a sensor's auto-claimed lead, incl. TLE GEN), which
+    //! locks the box. Exposed for tests; the sensor-lock UX consumes it visually.
+    bool isComboBoxEnabled() const;
     //! return qvector of item index in m_pinTypes struct
     const QVector<int> &pinTypeIndex() const;
     //! return qvector of device enums in combobox
