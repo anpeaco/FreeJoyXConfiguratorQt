@@ -357,6 +357,13 @@ void ConfigToFile::crossBoardCheck(QWidget *parent, dev_config_t &devC)
 }
 
 
+void ConfigToFile::stampBoardIdFromDevice(dev_config_t &devC, uint8_t deviceBoardId)
+{
+    if (devC.board_id == 0 && deviceBoardId != 0) {
+        devC.board_id = deviceBoardId;
+    }
+}
+
 void ConfigToFile::oldConfigHandler(QWidget *parent, dev_config_t &devC)
 {
     if (devC.firmware_version != FIRMWARE_VERSION) {

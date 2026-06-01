@@ -14,6 +14,16 @@ public:
 
     static void loadDeviceConfigFromFile(QWidget *parent, const QString &fileName, dev_config_t &devC);
     static void saveDeviceConfigToFile(const QString &fileName, dev_config_t &devC);
+
+    /* #60 (board_id provenance): the firmware doesn't persist board_id in
+     * dev_config_t, so a config read from a device -- or an older / hand-built
+     * file -- carries board_id = 0 (unknown). When the device reports a known
+     * board, stamp it onto an UNKNOWN config board_id so the config round-trips
+     * honestly and the firmware's board check doesn't reject the write with
+     * 0xFD. A non-zero (already-known) config board_id is left untouched -- a
+     * genuine cross-board mismatch is the convert prompt's responsibility, not
+     * this. No-op when deviceBoardId is 0 (device board unknown too). */
+    static void stampBoardIdFromDevice(dev_config_t &devC, uint8_t deviceBoardId);
 //signals:
 
 private:
