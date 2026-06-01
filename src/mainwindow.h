@@ -391,9 +391,14 @@ private:
      * m_autoReadOnConnect, skips during post-write restart / active flash
      * sessions / unreadable firmware, and prompts before discarding unsaved
      * edits. On go-ahead, triggers the same Read path as the Read Config
-     * button (worker reads async; configReceived splashes + resnapshots). */
+     * button (worker reads async; configReceived splashes + resnapshots).
+     *
+     * hadUnsavedEdits must be sampled by the caller BEFORE getParamsPacket's
+     * programmatic board switch (setConnectedBoard) mutates the in-memory
+     * config -- otherwise a cross-board swap's pin migration reads as a user
+     * edit and the "keep my edits?" prompt fires with no real changes. */
     void maybeAutoReadOnConnect(bool firmwareCompatible, uint16_t deviceVersion,
-                                bool postWriteRestart);
+                                bool postWriteRestart, bool hadUnsavedEdits);
 
     /* Returns true if every logical button slot using Function = Logic
      * has its operator and (for binary operators) Source B set to real

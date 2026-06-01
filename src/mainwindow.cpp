@@ -636,6 +636,13 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
         m_postWriteFallbackTimer.stop();
         const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
 
+        /* Sample "did the user actually edit anything?" NOW, before the
+         * setConnectedBoard() call below can switch boards and migrate pins
+         * (I2C SDA, per-board role strips) -- a programmatic mutation that
+         * would otherwise look like unsaved edits and wrongly trip the
+         * auto-read "keep my edits?" prompt on a cross-board swap. */
+        const bool hadUnsavedEdits = uiHasUnsavedDeviceEdits();
+
         /* The Version row is painted by updateVersionLabel(), called on EVERY
          * params packet just below this block -- NOT only here. The FreeJoyX
          * semver lives in the SECOND half of the params report, which lands a
@@ -754,7 +761,8 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
          * dirty-aware). Runs after m_deviceChanged was cleared above, so a
          * modal prompt that pumps the event loop can't re-enter this block
          * and double-fire. */
-        maybeAutoReadOnConnect(firmwareCompatible, devVer, wasPostWriteRestart);
+        maybeAutoReadOnConnect(firmwareCompatible, devVer, wasPostWriteRestart,
+                               hadUnsavedEdits);
     }
 
     /* Repaint the Version row every params packet. The FreeJoyX semver is in
@@ -1354,7 +1362,8 @@ void MainWindow::updatePendingChangesBadge()
 
 void MainWindow::maybeAutoReadOnConnect(bool firmwareCompatible,
                                         uint16_t deviceVersion,
-                                        bool postWriteRestart)
+                                        bool postWriteRestart,
+                                        bool hadUnsavedEdits)
 {
     if (!m_autoReadOnConnect) return;            // user opted out (Advanced tab)
     if (postWriteRestart) return;                // device re-enumerating after our Write
@@ -1373,8 +1382,11 @@ void MainWindow::maybeAutoReadOnConnect(bool firmwareCompatible,
     /* Dirty gate: auto-reading overwrites the UI buffer. If the user has
      * unsaved edits relative to the last device sync, ask before discarding
      * them. A clean UI -- or a fresh session with no prior sync -- reads
-     * silently (the frictionless common case). */
-    if (uiHasUnsavedDeviceEdits()) {
+     * silently (the frictionless common case). hadUnsavedEdits is sampled by
+     * getParamsPacket BEFORE its board switch mutates the config, so a
+     * cross-board swap's programmatic pin migration doesn't masquerade as a
+     * user edit here (re-checking uiHasUnsavedDeviceEdits() now would). */
+    if (hadUnsavedEdits) {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Question);
         box.setWindowTitle(tr("Load device config?"));
@@ -1397,32 +1409,28 @@ void MainWindow::maybeAutoReadOnConnect(bool firmwareCompatible,
 }
 
 
-// load default config
+// Startup: open with NO config selected. Populate the dropdown but leave it
+// blank (the user chooses what to load) rather than auto-restoring the last
+// config or silently loading the first file. The tabs open on a clean default
+// config so they're immediately usable; picking a saved config, opening a
+// .cfg, or connecting a device loads real data over the default.
 void MainWindow::finalInitialization()
 {
-    // load config files
-    QStringList filesList = cfgFilesList(m_cfgDirPath);
-    if (filesList.isEmpty() == false) {
-        ui->comboBox_Configs->clear();
-        ui->comboBox_Configs->addItems(filesList);
-        gEnv.pAppSettings->beginGroup("Configs");
-        QString lastCfg(gEnv.pAppSettings->value("LastCfg").toString());
-        gEnv.pAppSettings->endGroup();
-        bool found = false;
-        for (int i = 0; i < filesList.size(); ++i) {
-            if (filesList[i] == lastCfg) {
-                curCfgFileChanged(lastCfg);
-                ui->comboBox_Configs->setCurrentIndex(i);
-                found = true;
-                break;
-            }
-        }
-        if (found == false) {
-            curCfgFileChanged(ui->comboBox_Configs->currentText());
-        }
-    }  else {
-        UiReadFromConfig();
-    }
+    // Populate the dropdown but select nothing. A signal blocker keeps the
+    // setCurrentIndex(-1) from racing the not-yet-connected slot; the
+    // placeholder shows the empty state in the closed combo.
+    QSignalBlocker bl(ui->comboBox_Configs);
+    ui->comboBox_Configs->clear();
+    ui->comboBox_Configs->addItems(cfgFilesList(m_cfgDirPath));
+    ui->comboBox_Configs->setPlaceholderText(tr("Select a config…"));
+    ui->comboBox_Configs->setCurrentIndex(-1);
+    bl.unblock();
+
+    /* Open on a clean default config with all tabs available -- the user
+     * starts from a fresh slate and can edit, pick a saved config, or connect
+     * a device. The blank dropdown is the "nothing loaded yet" signal. */
+    gEnv.pDeviceConfig->resetConfig();
+    UiReadFromConfig();
 
     // select config comboBox // should be after "// load config files"
     connect(ui->comboBox_Configs, &QComboBox::currentTextChanged, this, &MainWindow::curCfgFileChanged);
@@ -1431,6 +1439,11 @@ void MainWindow::finalInitialization()
 // current cfg file changed
 void MainWindow::curCfgFileChanged(const QString &fileName)
 {
+    /* Blank selection (startup no-config state, or the dropdown cleared
+     * during a repopulate) -- nothing to load; keep the current default
+     * config rather than trying to open "<dir>/.cfg". */
+    if (fileName.isEmpty()) return;
+
     QString filePath = m_cfgDirPath + '/' + fileName + ".cfg";
     m_configLoadInProgress = true;
     gEnv.pDeviceConfig->resetConfig();
