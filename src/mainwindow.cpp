@@ -1315,6 +1315,12 @@ bool MainWindow::uiHasUnsavedDeviceEdits()
 
 void MainWindow::updatePendingChangesBadge()
 {
+    /* Don't flush UI->config (via uiHasUnsavedDeviceEdits) while a config
+     * load is staging bytes into dev_config_t that the UI hasn't rendered
+     * yet -- the flush would clobber the load with stale UI. See
+     * m_configLoadInProgress. The badge re-evaluates on the next tick once
+     * the load completes. */
+    if (m_configLoadInProgress) return;
     if (!m_haveDeviceConfigSnapshot || !gEnv.pDeviceConfig) return;
     if (!ui || !ui->pushButton_WriteConfig) return;
 
@@ -1417,9 +1423,11 @@ void MainWindow::finalInitialization()
 void MainWindow::curCfgFileChanged(const QString &fileName)
 {
     QString filePath = m_cfgDirPath + '/' + fileName + ".cfg";
+    m_configLoadInProgress = true;
     gEnv.pDeviceConfig->resetConfig();
     ConfigToFile::loadDeviceConfigFromFile(this, filePath, gEnv.pDeviceConfig->config);
     UiReadFromConfig();
+    m_configLoadInProgress = false;
 }
 // get config file list
 QStringList MainWindow::cfgFilesList(const QString &dirPath)
@@ -2477,9 +2485,11 @@ void MainWindow::on_pushButton_LoadFromFile_clicked()
     // fileName empty -> no update.
     setLastUsedSaveDir(fileName);
 
+    m_configLoadInProgress = true;
     gEnv.pDeviceConfig->resetConfig();
     ConfigToFile::loadDeviceConfigFromFile(this, fileName, gEnv.pDeviceConfig->config);
     UiReadFromConfig();
+    m_configLoadInProgress = false;
     qDebug()<<"done";
 }
 
