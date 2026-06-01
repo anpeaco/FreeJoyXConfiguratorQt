@@ -665,6 +665,15 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
             }
             ui->label_BoardVal->setText(boardName);
             if (boardId != 0) {
+                /* Switching boards here can migrate pins (I2C SDA, per-board
+                 * role strips), which shifts the physical-button breakdown and
+                 * would clear references in the PREVIOUS device's logical
+                 * buttons -- firing a "Logical Buttons Cleared" popup on a mere
+                 * device swap (often stacked on the legacy-import dialog). That
+                 * remap is a programmatic connect side effect, not a user edit,
+                 * so suppress its popup across the switch. The clearing still
+                 * happens; the about-to-load config replaces it anyway. */
+                m_buttonConfig->setRemapWarningSuppressed(true);
                 m_pinConfig->setConnectedBoard(boardId);
                 /* Per-board pin-name dispatch (pinboardnames.h) so the
                  * Axes tab dropdowns show the right silkscreen label
@@ -672,6 +681,7 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
                  * identifier). Identity surfaces (INI keys, dev_config_t
                  * pin enums) are unchanged -- this is purely cosmetic. */
                 m_axesConfig->setConnectedBoard(boardId);
+                m_buttonConfig->setRemapWarningSuppressed(false);
             }
             /* LED tab is disabled on F411 until Phase 8 ports the LED
              * stack to LL. The struct fields persist so a config saved
