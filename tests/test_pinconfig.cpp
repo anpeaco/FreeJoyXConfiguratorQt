@@ -172,6 +172,14 @@ private slots:
         QCOMPARE(m_pc->pinRole(PB_8),  int(SHIFT_REG_CLK));
     }
 
+    // NOTE: the "board switch strips pin role colour" fix (boardChanged ->
+    // reapplyRoleColor) is deliberately NOT unit-tested here. The colour wipe is
+    // a QStyleSheetStyle polish artifact whose timing the headless harness can't
+    // reproduce deterministically -- without a stylesheet the palette survives
+    // re-parenting (test always green = vacuous), and forcing a stylesheet makes
+    // the result depend on polish ordering rather than the code path. Verified
+    // visually at runtime instead. See pinconfig.cpp::boardChanged.
+
     // A plain role survives a full F103 -> F411 -> F103 round trip.
     void boardSwitch_roundTrip_preservesPlainRole()
     {

@@ -242,6 +242,17 @@ void PinConfig::boardChanged(int index)
 
     // F411 mutex depends on the active board, so re-evaluate the toggles
     refreshBusToggles();
+
+    /* Re-assert every pin's role colour after the switch. Re-parenting the
+     * comboboxes into the new board widget plus refreshBusToggles()'s QSS
+     * polish both wipe the palette-driven role colour (same hazard
+     * readFromConfig() guards against). Without this, a device swap that
+     * changes board -- e.g. F103 <-> F411 -- leaves the pins black even when
+     * the user chose "Keep my edits" and no config reload runs to repaint
+     * them. reapplyRoleColor() repaints from each pin's cached role colour. */
+    for (int i = 0; i < m_pinCBoxPtrList.size(); ++i) {
+        m_pinCBoxPtrList[i]->reapplyRoleColor();
+    }
 }
 
 void PinConfig::warnAutoAssignDisplaced()
