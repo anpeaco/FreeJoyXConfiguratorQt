@@ -238,7 +238,7 @@ private:
      * in the public section above. */
     PhysBreakdown m_lastBreakdown;
     bool m_breakdownInitialized = false;
-    bool m_loadInProgress = false;
+    bool m_configLoadInProgress = false;
 
     /* When > 0, remapBreakdown clears references as usual but skips its
      * warning popup -- the bus-remap confirmation already showed the slots,
@@ -338,6 +338,29 @@ private:
     int  m_pulseTargetSlot  = -1;
     int  m_pulseTargetField = 0;
     void setPulseTarget(int slot, int field);
+};
+
+/* RAII wrapper around ButtonConfig::setRemapWarningSuppressed(true/false).
+ * Push on construction, pop on scope exit, so callers that wrap a programmatic
+ * pin/breakdown change (bus toggles, connect-time board switch, load-time
+ * remap) can't leak the suppression depth on an early return. Null-safe so
+ * PinConfig can pass its possibly-null m_buttonConfig. */
+class RemapWarningSuppressor
+{
+public:
+    explicit RemapWarningSuppressor(ButtonConfig *bc) : m_bc(bc)
+    {
+        if (m_bc) m_bc->setRemapWarningSuppressed(true);
+    }
+    ~RemapWarningSuppressor()
+    {
+        if (m_bc) m_bc->setRemapWarningSuppressed(false);
+    }
+    RemapWarningSuppressor(const RemapWarningSuppressor &) = delete;
+    RemapWarningSuppressor &operator=(const RemapWarningSuppressor &) = delete;
+
+private:
+    ButtonConfig *m_bc;
 };
 
 #endif // BUTTONCONFIG_H
