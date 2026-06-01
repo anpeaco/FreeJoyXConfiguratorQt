@@ -199,6 +199,27 @@ private slots:
         QCOMPARE(m_pc->pinRole(PB_5), int(SPI_MOSI));
     }
 
+    // ---- #57: a sensor auto-assign that overwrites a user role must RECORD the
+    //      displacement, so the user is warned instead of silently losing it. ----
+    void sensorAutoAssign_recordsDisplacedRole()
+    {
+        m_pc->setPinRole(PB_6, SHIFT_REG_DATA);          // user role on the GEN pin (PB6)
+        QCOMPARE(m_pc->pinRole(PB_6), int(SHIFT_REG_DATA));
+        m_pc->setPinRole(PB_1, TLE5011_CS);              // TLE5011 -> auto-claims GEN on PB6
+        bool recorded = false;
+        for (const auto &d : m_pc->autoAssignDisplaced()) {
+            if (d.pin == PB_6 && d.role == SHIFT_REG_DATA) recorded = true;
+        }
+        QVERIFY2(recorded, "#57: overwriting SR DATA on PB6 must be recorded for a warning");
+    }
+
+    // No false warning: auto-assigning onto free pins records no displacement.
+    void sensorAutoAssign_noDisplacementOnFreePins()
+    {
+        m_pc->setPinRole(PB_1, TLE5011_CS);              // all auto-claimed pins are free
+        QVERIFY(m_pc->autoAssignDisplaced().isEmpty());
+    }
+
     // ---- #58: adding an SPI sensor auto-claims the SPI bus; removing the last
     //      one must clear SCK/MISO/MOSI AND drop the SPI bus checkbox. ----
     void spiCheckbox_clearsAfterLastSensorRemoved()

@@ -237,6 +237,19 @@ void PinConfig::boardChanged(int index)
     refreshBusToggles();
 }
 
+void PinConfig::warnAutoAssignDisplaced()
+{
+    if (m_autoAssignDisplaced.isEmpty()) {
+        return;
+    }
+    QStringList lines;
+    for (const auto &d : m_autoAssignDisplaced) {
+        lines << tr("%1 — was %2").arg(d.pinName, d.roleText);
+    }
+    m_autoAssignDisplaced.clear();
+    emit pinRolesAutoDisplaced(lines);
+}
+
 int PinConfig::i2cSdaPinForBoard(int boardIndex)
 {
     // Board selector index: 0 BluePill, 1 ContrLite (both F103 -> PB11),
@@ -266,6 +279,21 @@ void PinConfig::pinInteraction(int index, int senderIndex, int pin)
                 if (m_pinCBoxPtrList[i]->pinTypeIndex()[j] == index)
                 {
                     if(m_pinCBoxPtrList[i]->interactCount() == 0){
+                        /* #57: if this pin already held a user role (not an
+                         * interaction-managed follower), the auto-claim is about
+                         * to overwrite it. Record the displacement so the user is
+                         * warned -- captured BEFORE the overwrite so the old role
+                         * name is still readable. The warning is flushed once,
+                         * deferred, by warnAutoAssignDisplaced. */
+                        const int priorRole = m_pinCBoxPtrList[i]->currentDevEnum();
+                        if (priorRole != NOT_USED && !m_pinCBoxPtrList[i]->isInteracts()) {
+                            if (m_autoAssignDisplaced.isEmpty()) {
+                                QTimer::singleShot(0, this, &PinConfig::warnAutoAssignDisplaced);
+                            }
+                            m_autoAssignDisplaced.append(
+                                { i + 1, priorRole, pinGuiName(i + 1),
+                                  m_pinCBoxPtrList[i]->currentRoleText() });
+                        }
                         m_pinCBoxPtrList[i]->setInteractCount(m_pinCBoxPtrList[i]->interactCount() + pin);
                         m_pinCBoxPtrList[i]->setIndex_iteraction(j, senderIndex);
                         // this combobox just got auto-claimed -- flash it so the

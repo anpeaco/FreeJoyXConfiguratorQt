@@ -253,6 +253,15 @@ MainWindow::MainWindow(QWidget *parent)
     // shift reg buttons count shiftRegsButtonsCount
     connect(m_shiftRegConfig, &ShiftRegistersConfig::shiftRegButtonsCountChanged,
             m_pinConfig, &PinConfig::shiftRegButtonsCountChanged);
+    // #57: warn when a sensor's auto-assign overwrote user-assigned pin roles.
+    connect(m_pinConfig, &PinConfig::pinRolesAutoDisplaced, this,
+            [this](const QStringList &lines) {
+        QMessageBox::warning(this, tr("Pins reassigned"),
+            tr("Adding that device took over pins that already had roles:\n\n%1\n\n"
+               "Those inputs are no longer mapped where they were — check your "
+               "wiring and re-assign them elsewhere if needed.")
+                .arg(lines.join("\n")));
+    });
     // buttonts/LEDs limit reached
     connect(m_pinConfig, &PinConfig::limitReached, this, &MainWindow::blockWRConfigToDevice);
     // axes source changed//axesSourceChanged

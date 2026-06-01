@@ -82,6 +82,13 @@ public:
                       const QVector<QPair<int, int>> &targets,
                       QWidget *parent = nullptr);
 
+    /* A pin whose user-assigned role was overwritten by a sensor's auto-assign.
+     * Captured before the overwrite so the displaced role can be reported. */
+    struct DisplacedPin { int pin; int role; QString pinName; QString roleText; };
+    /* The displacements recorded by the most recent sensor auto-assign burst.
+     * Exposed for tests; production consumes them via pinRolesAutoDisplaced. */
+    QVector<DisplacedPin> autoAssignDisplaced() const { return m_autoAssignDisplaced; }
+
 signals:
     void totalButtonsValueChanged(int count);
     /* Forwarded from CurrentConfig::physicalButtonBreakdownChanged. Fires
@@ -96,6 +103,12 @@ signals:
     void limitReached(bool limit);
     void ledPwmSelected(Pin pin, bool selected);
     void ledRgbSelected(Pin pin, bool selected);
+
+    /* Emitted (deferred, once per sensor-add burst) when a sensor's auto-assign
+     * overwrote one or more user-assigned pin roles. MainWindow shows a warning
+     * listing them so the reassignment isn't silent (#57). Each line is
+     * "<pin> -- was <role>". */
+    void pinRolesAutoDisplaced(const QStringList &lines);
     //void pinTypeSelected(Pin pin, pin_types_t type, bool selected);
 
     //protected:
@@ -148,6 +161,14 @@ private:
      * same pinHighlight QSS role as highlightPins(); clears itself
      * after a short delay. idx is a 0-based index into m_pinCBoxPtrList. */
     void flashAutoAssignedPin(int idx);
+
+    /* #57: roles overwritten by the in-progress sensor auto-assign. Filled in
+     * pinInteraction just before each overwrite; flushed (once, deferred) by
+     * warnAutoAssignDisplaced after the synchronous interaction settles, which
+     * emits pinRolesAutoDisplaced so the user is warned instead of silently
+     * losing the mapping. Deferred so no modal opens mid-interaction. */
+    QVector<DisplacedPin> m_autoAssignDisplaced;
+    void warnAutoAssignDisplaced();
 
     /* Recompute the I2C / SPI quick-setup toggle states from the live pin
      * roles and push them to the Pin Info panel (checked + enabled). Enforces
