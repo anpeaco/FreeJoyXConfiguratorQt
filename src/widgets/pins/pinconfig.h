@@ -181,6 +181,14 @@ private:
     QVector<DisplacedPin> m_autoAssignDisplaced;
     void warnAutoAssignDisplaced();
 
+    /* True while readFromConfig() is repopulating every pin from a freshly
+     * loaded config (Read from device, auto-read on connect, device swap,
+     * INI load). In that path a sensor auto-claiming a shared pin only
+     * "overwrites" the stale role left over from the previous config -- not
+     * a live user mapping -- so the #57 displacement warning is meaningless
+     * and is suppressed. Only interactive auto-assign should warn. */
+    bool m_suppressDisplaceWarning = false;
+
     /* Recompute the I2C / SPI quick-setup toggle states from the live pin
      * roles and push them to the Pin Info panel (checked + enabled). Enforces
      * the F411 SPI/I2C mutex (shared PB3) and locks the SPI toggle while an SPI

@@ -293,7 +293,8 @@ void PinConfig::pinInteraction(int index, int senderIndex, int pin)
                          * name is still readable. The warning is flushed once,
                          * deferred, by warnAutoAssignDisplaced. */
                         const int priorRole = m_pinCBoxPtrList[i]->currentDevEnum();
-                        if (priorRole != NOT_USED && !m_pinCBoxPtrList[i]->isInteracts()) {
+                        if (priorRole != NOT_USED && !m_pinCBoxPtrList[i]->isInteracts()
+                            && !m_suppressDisplaceWarning) {
                             if (m_autoAssignDisplaced.isEmpty()) {
                                 QTimer::singleShot(0, this, &PinConfig::warnAutoAssignDisplaced);
                             }
@@ -937,9 +938,14 @@ void PinConfig::readFromConfig(){
         pins[22] = NOT_USED;
     }
 
+    /* Suppress the #57 displacement warning while every pin is repopulated
+     * from the loaded config: a sensor auto-claiming a shared pin here only
+     * displaces the stale previous-config role, not a live user mapping. */
+    m_suppressDisplaceWarning = true;
     for (int i = 0; i < m_pinCBoxPtrList.size(); ++i) {
         m_pinCBoxPtrList[i]->readFromConfig(i);
     }
+    m_suppressDisplaceWarning = false;
     refreshBusToggles();
 
     /* Re-assert every pin's role colour once the load settles. Each pin's
