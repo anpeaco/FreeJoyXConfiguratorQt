@@ -106,9 +106,18 @@ bool PinComboBox::isInteracts() const
     return m_isInteracts;
 }
 
+int PinComboBox::liveDevEnum() const
+{
+    const int idx = ui->comboBox_PinsType->currentIndex();
+    if (idx >= 0 && idx < m_enumIndex.size() && m_enumIndex[idx] >= 0) {
+        return m_enumIndex[idx];
+    }
+    return NOT_USED;
+}
+
 int PinComboBox::currentDevEnum() const
 {
-    return m_currentDevEnum;
+    return liveDevEnum();
 }
 //! Set selected index enable or disable. Also strikes through the item's
 //! text when disabled so the conflict is visually obvious -- Qt's default
@@ -444,6 +453,9 @@ void PinComboBox::readFromConfig(uint pin)
 }
 
 void PinComboBox::writeToConfig(uint pin)
-{   
-    gEnv.pDeviceConfig->config.pins[pin] = m_currentDevEnum;
+{
+    // Use the live combobox selection, not the cached m_currentDevEnum, which can
+    // be stale after an interaction-driven clear (would otherwise re-write a
+    // just-removed sensor role).
+    gEnv.pDeviceConfig->config.pins[pin] = liveDevEnum();
 }

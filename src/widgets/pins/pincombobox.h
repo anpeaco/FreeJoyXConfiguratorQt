@@ -158,6 +158,13 @@ private:
     //! indexChanged / setIndex_iteraction / reapplyRoleColor.
     void applyTextColor(const QColor &color);
 
+    /* The live role read straight off the combobox's current selection.
+     * Preferred over the cached m_currentDevEnum, which can go stale when a
+     * sensor lead is cleared via the interaction system (the follower release
+     * re-enters indexChanged and the cache write is skipped). The combobox is
+     * the source of truth. */
+    int liveDevEnum() const;
+
     Ui::PinComboBox *ui;
 
     //! Last text colour applied to the closed combobox (invalid = default
