@@ -15,6 +15,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "mousewheelguard.h"
+#include "scopeflag.h"
 #include "configtofile.h"
 #include "selectfolder.h"
 #include "style_helpers.h"
@@ -35,6 +36,14 @@
 #include <QDebug>
 #include <QFile>
 #include <QFileInfo>
+
+namespace {
+/* Auto-read-on-connect is suppressed for this long after a flash finishes, so
+ * the device's post-flash re-enumeration(s) don't prompt a read over the config
+ * the flash flow already restored. Longer than the post-write fallback (5s) to
+ * absorb the F411's multi re-enum. */
+constexpr int kSuppressAutoReadAfterFlashMs = 10000;
+}
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -673,7 +682,7 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
                  * remap is a programmatic connect side effect, not a user edit,
                  * so suppress its popup across the switch. The clearing still
                  * happens; the about-to-load config replaces it anyway. */
-                m_buttonConfig->setRemapWarningSuppressed(true);
+                RemapWarningSuppressor suppressor(m_buttonConfig);
                 m_pinConfig->setConnectedBoard(boardId);
                 /* Per-board pin-name dispatch (pinboardnames.h) so the
                  * Axes tab dropdowns show the right silkscreen label
@@ -681,7 +690,6 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
                  * identifier). Identity surfaces (INI keys, dev_config_t
                  * pin enums) are unchanged -- this is purely cosmetic. */
                 m_axesConfig->setConnectedBoard(boardId);
-                m_buttonConfig->setRemapWarningSuppressed(false);
             }
             /* LED tab is disabled on F411 until Phase 8 ports the LED
              * stack to LL. The struct fields persist so a config saved
@@ -988,10 +996,10 @@ void MainWindow::onFlashSessionFinished(bool success, const QString &finalDetail
     m_flashSessionBackupPending = false;
     /* The flash flow already restored the config (or deliberately didn't);
      * auto-read must not prompt over the device while it settles through its
-     * post-flash re-enumeration(s). Suppress for a short grace window -- longer
-     * than the post-write fallback (5s) to absorb the F411's multi re-enum. */
+     * post-flash re-enumeration(s). Suppress for a short grace window. */
     m_suppressAutoReadAfterFlash = true;
-    QTimer::singleShot(10000, this, [this]() { m_suppressAutoReadAfterFlash = false; });
+    QTimer::singleShot(kSuppressAutoReadAfterFlashMs, this,
+                       [this]() { m_suppressAutoReadAfterFlash = false; });
     /* Re-evaluate the toolbar Upgrade button now that the session has
      * ended -- getParamsPacket's call site is gated on isActive(), so
      * it doesn't fire during the session. Without this explicit refresh
@@ -1426,15 +1434,12 @@ void MainWindow::maybeAutoReadOnConnect(bool firmwareCompatible,
 // .cfg, or connecting a device loads real data over the default.
 void MainWindow::finalInitialization()
 {
-    // Populate the dropdown but select nothing. A signal blocker keeps the
-    // setCurrentIndex(-1) from racing the not-yet-connected slot; the
-    // placeholder shows the empty state in the closed combo.
-    QSignalBlocker bl(ui->comboBox_Configs);
-    ui->comboBox_Configs->clear();
-    ui->comboBox_Configs->addItems(cfgFilesList(m_cfgDirPath));
+    // Populate the dropdown but select nothing -- the placeholder shows the
+    // empty state, and the load slot isn't connected until below, so the
+    // setCurrentIndex(-1) can't trigger a load.
+    repopulateConfigDropdown();
     ui->comboBox_Configs->setPlaceholderText(tr("Select a config…"));
     ui->comboBox_Configs->setCurrentIndex(-1);
-    bl.unblock();
 
     /* Open on a clean default config with all tabs available -- the user
      * starts from a fresh slate and can edit, pick a saved config, or connect
@@ -1453,6 +1458,17 @@ void MainWindow::finalInitialization()
     connect(ui->comboBox_Configs, &QComboBox::textActivated, this, &MainWindow::curCfgFileChanged);
 }
 
+void MainWindow::loadConfigFromFile(const QString &filePath)
+{
+    /* m_configLoadInProgress gates the 1 Hz dirty poller so it doesn't flush
+     * stale UI over the config we're staging mid-load. RAII-scoped so an early
+     * return can't leave it stuck set. */
+    BoolFlagGuard loadGuard(m_configLoadInProgress);
+    gEnv.pDeviceConfig->resetConfig();
+    ConfigToFile::loadDeviceConfigFromFile(this, filePath, gEnv.pDeviceConfig->config);
+    UiReadFromConfig();
+}
+
 // current cfg file changed
 void MainWindow::curCfgFileChanged(const QString &fileName)
 {
@@ -1461,12 +1477,7 @@ void MainWindow::curCfgFileChanged(const QString &fileName)
      * config rather than trying to open "<dir>/.cfg". */
     if (fileName.isEmpty()) return;
 
-    QString filePath = m_cfgDirPath + '/' + fileName + ".cfg";
-    m_configLoadInProgress = true;
-    gEnv.pDeviceConfig->resetConfig();
-    ConfigToFile::loadDeviceConfigFromFile(this, filePath, gEnv.pDeviceConfig->config);
-    UiReadFromConfig();
-    m_configLoadInProgress = false;
+    loadConfigFromFile(m_cfgDirPath + '/' + fileName + ".cfg");
 }
 // get config file list
 QStringList MainWindow::cfgFilesList(const QString &dirPath)
@@ -1478,6 +1489,15 @@ QStringList MainWindow::cfgFilesList(const QString &dirPath)
     }
     cfgs.sort(Qt::CaseInsensitive);
     return cfgs;
+}
+
+void MainWindow::repopulateConfigDropdown()
+{
+    // Signal-blocked across BOTH clear and addItems so an intermediate
+    // selection change can't fire the load slot mid-refill.
+    QSignalBlocker bl(ui->comboBox_Configs);
+    ui->comboBox_Configs->clear();
+    ui->comboBox_Configs->addItems(cfgFilesList(m_cfgDirPath));
 }
 
 
@@ -2499,14 +2519,15 @@ void MainWindow::onFastEncoderEnableToggleRequested(int slotIndex, bool desiredE
          * toggling the checkbox back on. Wrap in the remap-warning
          * suppression so clearing two pins doesn't fire two popups
          * (matches the enable path's single-dialog UX). */
-        m_buttonConfig->setRemapWarningSuppressed(true);
-        if (m_pinConfig->pinRole(pinA) == FAST_ENCODER) {
-            m_pinConfig->setPinRole(pinA, NOT_USED);
+        {
+            RemapWarningSuppressor suppressor(m_buttonConfig);
+            if (m_pinConfig->pinRole(pinA) == FAST_ENCODER) {
+                m_pinConfig->setPinRole(pinA, NOT_USED);
+            }
+            if (m_pinConfig->pinRole(pinB) == FAST_ENCODER) {
+                m_pinConfig->setPinRole(pinB, NOT_USED);
+            }
         }
-        if (m_pinConfig->pinRole(pinB) == FAST_ENCODER) {
-            m_pinConfig->setPinRole(pinB, NOT_USED);
-        }
-        m_buttonConfig->setRemapWarningSuppressed(false);
         m_encoderConfig->refreshFastEncoderUi(slotIndex);
     }
 }
@@ -2535,11 +2556,7 @@ void MainWindow::on_pushButton_LoadFromFile_clicked()
     // fileName empty -> no update.
     setLastUsedSaveDir(fileName);
 
-    m_configLoadInProgress = true;
-    gEnv.pDeviceConfig->resetConfig();
-    ConfigToFile::loadDeviceConfigFromFile(this, fileName, gEnv.pDeviceConfig->config);
-    UiReadFromConfig();
-    m_configLoadInProgress = false;
+    loadConfigFromFile(fileName);
     qDebug()<<"done";
 }
 
@@ -2567,10 +2584,7 @@ void MainWindow::on_pushButton_SaveToFile_clicked()
     ConfigToFile::saveDeviceConfigToFile(file.absoluteFilePath(), gEnv.pDeviceConfig->config);
 
     QTimer::singleShot(200, this, [this, file]{
-        QSignalBlocker bl(ui->comboBox_Configs);
-        ui->comboBox_Configs->clear();
-        ui->comboBox_Configs->addItems(cfgFilesList(m_cfgDirPath));
-        bl.unblock();
+        repopulateConfigDropdown();
 
         QString fileName(file.fileName());
         fileName.remove(fileName.size() - 4, 4); // 4 = ".cfg" characters count
@@ -2583,10 +2597,7 @@ void MainWindow::applySaveDirectoryChange(const QString &path)
 {
     if (path.isEmpty() || path == m_cfgDirPath) return;
     m_cfgDirPath = path;
-    QSignalBlocker bl(ui->comboBox_Configs);
-    ui->comboBox_Configs->clear();
-    bl.unblock();
-    ui->comboBox_Configs->addItems(cfgFilesList(m_cfgDirPath));
+    repopulateConfigDropdown();
 }
 
 QString MainWindow::lastUsedSaveDir() const

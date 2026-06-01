@@ -352,6 +352,17 @@ private:
 
     void curCfgFileChanged(const QString &fileName);
     QStringList cfgFilesList(const QString &dirPath);
+
+    /* Refill the config dropdown from the current save directory without
+     * disturbing the selection logic (signal-blocked clear + addItems). One
+     * place for the repopulate used at startup, after Save, and on dir change. */
+    void repopulateConfigDropdown();
+
+    /* Load a .cfg from disk into dev_config_t and render it: reset, read file,
+     * fan out to the UI, all bracketed by m_configLoadInProgress so the dirty
+     * poller doesn't clobber the staged load. Shared by the dropdown-pick and
+     * the Load-from-file button. */
+    void loadConfigFromFile(const QString &filePath);
     QIcon pixmapToIcon(QPixmap pixmap, const QColor &color);
     void updateColor();
 

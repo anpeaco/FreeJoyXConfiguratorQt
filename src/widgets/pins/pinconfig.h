@@ -144,7 +144,6 @@ private:
     QList<PinComboBox *> m_pinCBoxPtrList;
 
     QString m_defaultLabelStyle;
-    bool m_maxButtonsWarning;
 
     int m_shiftLatchCount;
     int m_shiftDataCount;
@@ -173,6 +172,12 @@ private:
      * after a short delay. idx is a 0-based index into m_pinCBoxPtrList. */
     void flashAutoAssignedPin(int idx);
 
+    /* Re-apply every pin's cached role colour. Re-parenting the comboboxes
+     * into a board widget and refreshBusToggles()'s QSS polish both wipe the
+     * palette-driven colour, so a board switch or a config load has to repaint
+     * from the cache or the pins go black. Shared by boardChanged + readFromConfig. */
+    void reapplyAllRoleColors();
+
     /* #57: roles overwritten by the in-progress sensor auto-assign. Filled in
      * pinInteraction just before each overwrite; flushed (once, deferred) by
      * warnAutoAssignDisplaced after the synchronous interaction settles, which
@@ -191,7 +196,7 @@ private:
      *     user mapping), and
      *   - the blue auto-assigned-pin flash (e.g. TLE5xxx GEN flashing when a
      *     loaded config's sensor claims it). */
-    bool m_loadingConfig = false;
+    bool m_configLoadInProgress = false;
 
     /* Recompute the I2C / SPI quick-setup toggle states from the live pin
      * roles and push them to the Pin Info panel (checked + enabled). Enforces

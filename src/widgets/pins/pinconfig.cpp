@@ -14,6 +14,7 @@
 #include "style_helpers.h"
 #include "dialogs/busremapconfirmationdialog.h"
 #include "buttons/buttonconfig.h"
+#include "scopeflag.h"
 #include <QSet>
 
 // todo: change "int pinNumber" to enum Pin
@@ -30,7 +31,6 @@ PinConfig::PinConfig(QWidget *parent) :         // pin handling was the first th
     m_blackPill->hide();
     m_contrLite->hide();
 
-    m_maxButtonsWarning = false;
     m_shiftLatchCount = m_shiftDataCount = m_shiftClkCount = 0;
 
     // create pin combo box. i+1! start from 1
@@ -243,13 +243,14 @@ void PinConfig::boardChanged(int index)
     // F411 mutex depends on the active board, so re-evaluate the toggles
     refreshBusToggles();
 
-    /* Re-assert every pin's role colour after the switch. Re-parenting the
-     * comboboxes into the new board widget plus refreshBusToggles()'s QSS
-     * polish both wipe the palette-driven role colour (same hazard
-     * readFromConfig() guards against). Without this, a device swap that
-     * changes board -- e.g. F103 <-> F411 -- leaves the pins black even when
-     * the user chose "Keep my edits" and no config reload runs to repaint
-     * them. reapplyRoleColor() repaints from each pin's cached role colour. */
+    /* Re-assert pin role colours: re-parenting the comboboxes into the new
+     * board widget + refreshBusToggles()'s QSS polish wipe them, and on a
+     * "Keep my edits" device swap no config reload runs to repaint. */
+    reapplyAllRoleColors();
+}
+
+void PinConfig::reapplyAllRoleColors()
+{
     for (int i = 0; i < m_pinCBoxPtrList.size(); ++i) {
         m_pinCBoxPtrList[i]->reapplyRoleColor();
     }
@@ -305,7 +306,7 @@ void PinConfig::pinInteraction(int index, int senderIndex, int pin)
                          * deferred, by warnAutoAssignDisplaced. */
                         const int priorRole = m_pinCBoxPtrList[i]->currentDevEnum();
                         if (priorRole != NOT_USED && !m_pinCBoxPtrList[i]->isInteracts()
-                            && !m_loadingConfig) {
+                            && !m_configLoadInProgress) {
                             if (m_autoAssignDisplaced.isEmpty()) {
                                 QTimer::singleShot(0, this, &PinConfig::warnAutoAssignDisplaced);
                             }
@@ -322,7 +323,7 @@ void PinConfig::pinInteraction(int index, int senderIndex, int pin)
                         // sensor pick, not for repainting a loaded config -- else
                         // e.g. TLE5xxx GEN flashes blue every time you select a
                         // device that has a TLE bound.
-                        if (!m_loadingConfig) flashAutoAssignedPin(i);
+                        if (!m_configLoadInProgress) flashAutoAssignedPin(i);
                     }
                     else if (m_pinCBoxPtrList[i]->isInteracts() == true){
                         m_pinCBoxPtrList[i]->setInteractCount(m_pinCBoxPtrList[i]->interactCount() + pin);
@@ -821,13 +822,15 @@ bool PinConfig::reassignPins(const QString &actionName,
     // which fires ButtonConfig's per-pin remap warning -- once per pin. The
     // dialog already listed every slot that will clear, so silence the popup
     // for the duration of the burst.
-    if (m_buttonConfig) m_buttonConfig->setRemapWarningSuppressed(true);
-    for (const auto &t : targets) {
-        // Setting an I2C/SPI/encoder lead auto-claims its sibling pins via the
-        // interaction system; explicit set is symmetric and order-independent.
-        setPinRole(t.first, t.second);
+    {
+        RemapWarningSuppressor suppressor(m_buttonConfig);
+        for (const auto &t : targets) {
+            // Setting an I2C/SPI/encoder lead auto-claims its sibling pins via
+            // the interaction system; explicit set is symmetric and
+            // order-independent.
+            setPinRole(t.first, t.second);
+        }
     }
-    if (m_buttonConfig) m_buttonConfig->setRemapWarningSuppressed(false);
     return true;
 }
 
@@ -865,11 +868,10 @@ void PinConfig::onBusToggleRequested(int bus, bool enable)
         // -- the intent is unambiguous and the action is fully reversible by
         // re-toggling. Still suppress the per-pin remap warning to match the
         // single-dialog UX of the enable path.
-        if (m_buttonConfig) m_buttonConfig->setRemapWarningSuppressed(true);
+        RemapWarningSuppressor suppressor(m_buttonConfig);
         for (const auto &t : targets) {
             setPinRole(t.first, NOT_USED);
         }
-        if (m_buttonConfig) m_buttonConfig->setRemapWarningSuppressed(false);
     }
     // setPinRole -> pinIndexChanged -> refreshBusToggles already runs, but call
     // again so the toggle settles even if a role was rejected (setPinRole false).
@@ -958,23 +960,21 @@ void PinConfig::readFromConfig(){
      * auto-assign feedback is suppressed: the #57 displacement warning (a
      * sensor "overwriting" a shared pin here only displaces the stale
      * previous-config role) and the blue auto-assigned-pin flash (e.g.
-     * TLE5xxx GEN flashing when a loaded config's sensor claims it). */
-    m_loadingConfig = true;
-    for (int i = 0; i < m_pinCBoxPtrList.size(); ++i) {
-        m_pinCBoxPtrList[i]->readFromConfig(i);
+     * TLE5xxx GEN flashing when a loaded config's sensor claims it). Scoped
+     * so the flag clears before refreshBusToggles, matching prior behaviour. */
+    {
+        BoolFlagGuard loadGuard(m_configLoadInProgress);
+        for (int i = 0; i < m_pinCBoxPtrList.size(); ++i) {
+            m_pinCBoxPtrList[i]->readFromConfig(i);
+        }
     }
-    m_loadingConfig = false;
     refreshBusToggles();
 
-    /* Re-assert every pin's role colour once the load settles. Each pin's
-     * colour was applied as its index was set above, but the palette-driven
-     * colour can be wiped by an intervening QStyleSheetStyle polish (e.g.
-     * bus-pin enable/disable in refreshBusToggles). reapplyRoleColor() repaints
-     * from the cached role colour, so the pins come back coloured after a Read /
-     * auto-read / device swap instead of reverting to black. */
-    for (int i = 0; i < m_pinCBoxPtrList.size(); ++i) {
-        m_pinCBoxPtrList[i]->reapplyRoleColor();
-    }
+    /* Re-assert every pin's role colour once the load settles -- the
+     * palette-driven colour can be wiped by an intervening QStyleSheetStyle
+     * polish (e.g. bus-pin enable/disable in refreshBusToggles), so repaint
+     * from the cache or the pins revert to black after a Read / auto-read. */
+    reapplyAllRoleColors();
 }
 
 void PinConfig::writeToConfig(){

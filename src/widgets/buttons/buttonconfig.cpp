@@ -480,7 +480,7 @@ void ButtonConfig::setUiOnOff(int value)
     //      through classify/rederive, then refresh each row's UI.
     //   4. Rebuild the physical-button grid (the part setUiOnOff
     //      always did).
-    if (!m_loadInProgress) {
+    if (!m_configLoadInProgress) {
         for (int i = 0; i < m_logicButtonPtrList.size(); ++i) {
             m_logicButtonPtrList[i]->writeToConfig();
         }
@@ -966,12 +966,12 @@ void ButtonConfig::setRemapWarningSuppressed(bool suppressed)
 
 void ButtonConfig::beginConfigLoad()
 {
-    m_loadInProgress = true;
+    m_configLoadInProgress = true;
 }
 
 void ButtonConfig::endConfigLoad()
 {
-    m_loadInProgress = false;
+    m_configLoadInProgress = false;
 
     // Live breakdown derived from the just-loaded pin / SR / a2b config.
     const PhysBreakdown live = currentBreakdown();
@@ -997,9 +997,8 @@ void ButtonConfig::endConfigLoad()
         // stacked on the legacy-import dialog during a device swap -- is just
         // noise. References still get cleared, and the save / write paths
         // already gate on confirmLogicConfigComplete() before anything ships.
-        setRemapWarningSuppressed(true);
+        RemapWarningSuppressor suppressor(this);
         remapBreakdown(saved, live);
-        setRemapWarningSuppressed(false);
     }
 
     m_lastBreakdown = live;
@@ -1008,7 +1007,7 @@ void ButtonConfig::endConfigLoad()
 
 void ButtonConfig::maybeRemap()
 {
-    if (m_loadInProgress) return;
+    if (m_configLoadInProgress) return;
 
     if (!m_breakdownInitialized) {
         m_lastBreakdown = currentBreakdown();
