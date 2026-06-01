@@ -130,6 +130,13 @@ QString PinConfig::pinRoleText(int pin) const
     return m_pinCBoxPtrList[idx]->currentRoleText();
 }
 
+bool PinConfig::isPinRoleOptionEnabled(int pin, int role) const
+{
+    const int idx = pin - 1;
+    if (idx < 0 || idx >= m_pinCBoxPtrList.size()) return false;
+    return m_pinCBoxPtrList[idx]->isRoleOptionEnabled(role);
+}
+
 QString PinConfig::pinGuiName(int pin) const
 {
     const int idx = pin - 1;
@@ -565,29 +572,29 @@ void PinConfig::blockPA10RGB(int currentDeviceEnum, int previousDeviceEnum, int 
 // comboboxes. Same pattern as blockPA10RGB above.
 void PinConfig::blockEncoder2TLE5011(int currentDeviceEnum, int previousDeviceEnum, int pinNumber)
 {
-    static int encoder2Count = 0;
-    static int tleGenCount = 0;
-
+    // m_m_encoder2Count / m_m_tleGenCount are per-instance members (not function-local
+    // statics) so they reset with the widget and never accumulate across
+    // instances.
     const int PB6Index = PB_6 - PA_0;
     const int PB7Index = PB_7 - PA_0;
 
     // Track FAST_ENCODER selections on PB6 / PB7 (Encoder 2 channels).
     // FAST_ENCODER on PA8 / PA9 is Encoder 1 -- not our concern here.
     if ((pinNumber == PB_6 || pinNumber == PB_7) && currentDeviceEnum == FAST_ENCODER) {
-        encoder2Count++;
+        m_encoder2Count++;
     } else if ((pinNumber == PB_6 || pinNumber == PB_7) && previousDeviceEnum == FAST_ENCODER) {
-        encoder2Count--;
+        m_encoder2Count--;
     }
 
     // Track TLE5011_GEN on PB6 (the only pin it's allowed on).
     if (pinNumber == PB_6 && currentDeviceEnum == TLE5011_GEN) {
-        tleGenCount++;
+        m_tleGenCount++;
     } else if (pinNumber == PB_6 && previousDeviceEnum == TLE5011_GEN) {
-        tleGenCount--;
+        m_tleGenCount--;
     }
 
     // Encoder 2 active -> disable TLE5011_GEN role on PB6.
-    const bool encoder2Active = encoder2Count > 0;
+    const bool encoder2Active = m_encoder2Count > 0;
     if (encoder2Active) {
         if (m_pinCBoxPtrList[PB6Index]->currentDevEnum() == TLE5011_GEN) {
             m_pinCBoxPtrList[PB6Index]->resetPin();
@@ -610,7 +617,7 @@ void PinConfig::blockEncoder2TLE5011(int currentDeviceEnum, int previousDeviceEn
     // TLE5011_GEN active -> disable FAST_ENCODER role on PB6 and PB7.
     // (FAST_ENCODER on PA8 / PA9 stays available; only the PB6/PB7
     // comboboxes are locally restricted.)
-    const bool tleActive = tleGenCount > 0;
+    const bool tleActive = m_tleGenCount > 0;
     if (tleActive) {
         if (m_pinCBoxPtrList[PB6Index]->currentDevEnum() == FAST_ENCODER) {
             m_pinCBoxPtrList[PB6Index]->resetPin();
@@ -618,10 +625,16 @@ void PinConfig::blockEncoder2TLE5011(int currentDeviceEnum, int previousDeviceEn
         if (m_pinCBoxPtrList[PB7Index]->currentDevEnum() == FAST_ENCODER) {
             m_pinCBoxPtrList[PB7Index]->resetPin();
         }
-        for (int i = 0; i < m_pinCBoxPtrList[PB6Index]->enumIndex().size(); ++i) {
-            if (m_pinCBoxPtrList[PB6Index]->enumIndex()[i] == FAST_ENCODER) {
+        /* #65: GEN is auto-assigned to PB6 and PB6 is the only pin it can use,
+         * so while a TLE owns it, lock B6 to GEN -- disable every OTHER role
+         * option there so the user can't overwrite the clock and silently break
+         * the sensor. (GEN's own status is managed by the encoder2 branch above;
+         * we only touch non-GEN options.) B6 frees when the sensor's CS -> Not
+         * Used releases GEN and m_tleGenCount drops. */
+        const QVector<int> &b6on = m_pinCBoxPtrList[PB6Index]->enumIndex();
+        for (int i = 0; i < b6on.size(); ++i) {
+            if (b6on[i] >= 0 && b6on[i] != TLE5011_GEN) {
                 m_pinCBoxPtrList[PB6Index]->setIndexStatus(i, false);
-                break;
             }
         }
         for (int i = 0; i < m_pinCBoxPtrList[PB7Index]->enumIndex().size(); ++i) {
@@ -631,10 +644,11 @@ void PinConfig::blockEncoder2TLE5011(int currentDeviceEnum, int previousDeviceEn
             }
         }
     } else {
-        for (int i = 0; i < m_pinCBoxPtrList[PB6Index]->enumIndex().size(); ++i) {
-            if (m_pinCBoxPtrList[PB6Index]->enumIndex()[i] == FAST_ENCODER) {
+        // No TLE -> restore B6's non-GEN options (GEN handled by encoder2 branch).
+        const QVector<int> &b6off = m_pinCBoxPtrList[PB6Index]->enumIndex();
+        for (int i = 0; i < b6off.size(); ++i) {
+            if (b6off[i] >= 0 && b6off[i] != TLE5011_GEN) {
                 m_pinCBoxPtrList[PB6Index]->setIndexStatus(i, true);
-                break;
             }
         }
         for (int i = 0; i < m_pinCBoxPtrList[PB7Index]->enumIndex().size(); ++i) {

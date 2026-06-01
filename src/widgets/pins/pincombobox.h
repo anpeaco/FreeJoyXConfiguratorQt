@@ -85,6 +85,10 @@ public:
     //! return pointer to the first element, size=PINS_COUNT
     const pins *pinList() const;
     int currentDevEnum() const;
+    //! True if the dropdown option for `deviceEnum` is currently selectable
+    //! (not greyed out via setIndexStatus). False if the role isn't offered or
+    //! has been disabled (e.g. the per-board / mutex / sensor-lock greying).
+    bool isRoleOptionEnabled(int deviceEnum) const;
     //! return qvector of item index in m_pinTypes struct
     const QVector<int> &pinTypeIndex() const;
     //! return qvector of device enums in combobox

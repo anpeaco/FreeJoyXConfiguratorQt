@@ -65,6 +65,10 @@ public:
     bool setPinRole(int pin, int deviceEnum);
     int pinRole(int pin) const;
     QString pinRoleText(int pin) const;
+    /* True if `role` is a currently-selectable option in `pin`'s dropdown (not
+     * greyed out by a per-board / mutex / sensor-lock restriction). Used by the
+     * GEN-pin lock (#65) and its tests. */
+    bool isPinRoleOptionEnabled(int pin, int role) const;
 
     /* Apply a set of pin -> role assignments with the bus-remap confirmation
      * dialog -- one place for the conflict prompt, the dry-run prediction of
@@ -145,6 +149,13 @@ private:
     int m_shiftLatchCount;
     int m_shiftDataCount;
     int m_shiftClkCount;
+
+    /* PB6/TIM4 mutex counters (Encoder 2 FAST_ENCODER on PB6/PB7 vs TLE5011_GEN
+     * on PB6). Per-instance members so they reset with the widget instead of
+     * accumulating across instances like the old function-local statics did.
+     * Maintained + consumed in blockEncoder2TLE5011. */
+    int m_encoder2Count = 0;
+    int m_tleGenCount = 0;
 
     void signalsForWidgets(int currentDeviceEnum, int previousDeviceEnum, int pinNumber, QString pinName);
     void pinTypeLimit(int currentDeviceEnum, int previousDeviceEnum);
