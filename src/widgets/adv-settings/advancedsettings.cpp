@@ -155,6 +155,27 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
         gEnv.pAppSettings->endGroup();
         emit autoReadOnConnectChanged(on);
     });
+
+    /* "Write log to file" toggle -- moved out of the debug pane so it's
+     * reachable without opening Show Debug. Same pattern as auto-read:
+     * persists to OtherSettings/LogEnabled and signals MainWindow, which
+     * forwards it to the DebugWindow logger. */
+    m_writeLogCheck = new QCheckBox(tr("Write log to file"), this);
+    m_writeLogCheck->setToolTip(tr(
+        "Append the debug log to a dated file under Documents/FreeJoy/log/. "
+        "Useful for capturing a bench session to review later."));
+    gEnv.pAppSettings->beginGroup("OtherSettings");
+    m_writeLogCheck->setChecked(gEnv.pAppSettings->value("LogEnabled", false).toBool());
+    gEnv.pAppSettings->endGroup();
+    if (auto *otherGrid = findChild<QGridLayout *>(QStringLiteral("gridLayout_7"))) {
+        otherGrid->addWidget(m_writeLogCheck, 4, 0, 1, 2, Qt::AlignHCenter);
+    }
+    connect(m_writeLogCheck, &QCheckBox::toggled, this, [this](bool on) {
+        gEnv.pAppSettings->beginGroup("OtherSettings");
+        gEnv.pAppSettings->setValue("LogEnabled", on);
+        gEnv.pAppSettings->endGroup();
+        emit writeLogChanged(on);
+    });
 }
 
 AdvancedSettings::~AdvancedSettings()
@@ -174,6 +195,12 @@ void AdvancedSettings::retranslateUi()
             "When a compatible device connects, automatically read its stored "
             "configuration into the configurator. If you have unsaved changes "
             "you'll be asked first. Turn off to manage reads manually."));
+    }
+    if (m_writeLogCheck) {
+        m_writeLogCheck->setText(tr("Write log to file"));
+        m_writeLogCheck->setToolTip(tr(
+            "Append the debug log to a dated file under Documents/FreeJoy/log/. "
+            "Useful for capturing a bench session to review later."));
     }
 }
 

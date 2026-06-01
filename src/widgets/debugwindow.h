@@ -1,7 +1,6 @@
 #ifndef DEBUGWINDOW_H
 #define DEBUGWINDOW_H
 
-#include <QElapsedTimer>
 #include <QWidget>
 
 namespace Ui {
@@ -16,28 +15,37 @@ public:
     explicit DebugWindow(QWidget *parent = nullptr);
     ~DebugWindow();
 
-    void retranslateUi();
+    /* Severity / category of a log line. Drives the colour each line is
+     * rendered in and the [TAG] it carries. App messages map here from the
+     * QtMsgType in main.cpp's CustomMessageHandler; button events and the
+     * marker get their own categories. */
+    enum class LogLevel { Debug, Info, Warn, Error, Button, Marker };
 
-    void devicePacketReceived();
-    void resetPacketsCount();
+    void retranslateUi();
 
     void logicalButtonState(int buttonNumber, bool state);
     void physicalButtonState(int buttonNumber, bool state);
 
-    Q_INVOKABLE // for multithreading -- unsure if correct, but works. CustomMessageHandler in main
-        void printMsg(const QString &msg); // unsure about the reference; may need to receive a copy under multithreading
+    /* Toggled from Advanced Settings (the checkbox moved out of this widget).
+     * Gates appendToLogFile; the persisted OtherSettings/LogEnabled is read on
+     * construction so logging is correct whether or not this pane was opened. */
+    void setWriteToFile(bool on);
+
+    Q_INVOKABLE // for multithreading -- CustomMessageHandler in main posts here
+        void printMsg(const QString &msg, int level = int(LogLevel::Info));
 
 private slots:
-    void on_checkBox_WriteLog_clicked(bool checked);
     void on_pushButton_LogMarker_clicked();
+    void on_pushButton_LogClear_clicked();
 
 private:
     Ui::DebugWindow *ui;
-    void buttonLogReset();
+
+    /* Single sink for every log line: stamps, tags + colours by level, appends
+     * to the combined view, and mirrors the plain text to the on-disk log. */
+    void appendLine(LogLevel level, const QString &msg);
     void appendToLogFile(const QString &line);
 
-    int m_packetsCount;
-    QElapsedTimer m_timer;
     bool m_writeToFile;
 };
 

@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QElapsedTimer>
 #include <QSettings>
 #include <QTimer>
 #include <QTranslator>
@@ -188,6 +189,16 @@ private:
 
     DebugWindow *m_debugWindow = nullptr;
     bool m_debugIsEnable;
+
+    /* Packet stats shown in the Device info card (relocated out of the debug
+     * pane so they're visible whenever a device is connected). m_packetsReceived
+     * counts USB reports since connect; the rate is the mean inter-packet time
+     * sampled over a 5 s window. Reset on (dis)connect. */
+    int m_packetsReceived = 0;
+    int m_packetRateSamples = 0;
+    QElapsedTimer m_packetRateTimer;
+    void onDevicePacketReceived();
+    void resetPacketStats();
 
     bool m_deviceChanged;
 

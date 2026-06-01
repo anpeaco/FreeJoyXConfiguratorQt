@@ -322,6 +322,10 @@
              <item row="2" column="1"><widget class="QLabel" name="label_SerialVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="wordWrap"><bool>true</bool></property></widget></item>
              <item row="3" column="0"><widget class="QLabel" name="label_BoardKey"><property name="text"><string>Board</string></property></widget></item>
              <item row="3" column="1"><widget class="QLabel" name="label_BoardVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property></widget></item>
+             <item row="4" column="0"><widget class="QLabel" name="label_PacketsKey"><property name="text"><string>Packets</string></property><property name="toolTip"><string>USB report packets received from the device since it connected</string></property></widget></item>
+             <item row="4" column="1"><widget class="QLabel" name="label_PacketsVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="toolTip"><string>USB report packets received from the device since it connected</string></property></widget></item>
+             <item row="5" column="0"><widget class="QLabel" name="label_RateKey"><property name="text"><string>Rate</string></property><property name="toolTip"><string>Average time between received packets, sampled over 5 s</string></property></widget></item>
+             <item row="5" column="1"><widget class="QLabel" name="label_RateVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="toolTip"><string>Average time between received packets, sampled over 5 s</string></property></widget></item>
             </layout>
            </widget>
           </item>
@@ -415,6 +419,12 @@
             <property name="text"><string>Show debug</string></property>
            </widget>
           </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_Wiki">
+            <property name="minimumSize"><size><width>165</width><height>37</height></size></property>
+            <property name="text"><string>Wiki</string></property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>
@@ -423,31 +433,6 @@
          <property name="orientation"><enum>Qt::Vertical</enum></property>
          <property name="sizeHint" stdset="0"><size><width>20</width><height>20</height></size></property>
         </spacer>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="1,0,1">
-         <property name="spacing"><number>0</number></property>
-         <item>
-          <spacer name="horizontalSpacer_9">
-           <property name="orientation"><enum>Qt::Horizontal</enum></property>
-           <property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pushButton_Wiki">
-           <property name="cursor"><cursorShape>PointingHandCursor</cursorShape></property>
-           <property name="text"><string/></property>
-           <property name="icon"><iconset resource="resources.qrc"><normaloff>:/Images/icons/lucide/book-open.svg</normaloff>:/Images/icons/lucide/book-open.svg</iconset></property>
-           <property name="iconSize"><size><width>30</width><height>30</height></size></property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_6">
-           <property name="orientation"><enum>Qt::Horizontal</enum></property>
-           <property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property>
-          </spacer>
-         </item>
-        </layout>
        </item>
       </layout>
      </widget>

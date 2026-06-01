@@ -71,6 +71,12 @@ signals:
      * MainWindow's connect handler only needs to update its cached copy. */
     void autoReadOnConnectChanged(bool enabled);
 
+    /* User toggled "Write log to file" on this tab. Persisted to
+     * OtherSettings/LogEnabled here; MainWindow forwards it to the DebugWindow
+     * logger (which may not exist yet, so the persisted value is the source of
+     * truth read on debug-pane creation). */
+    void writeLogChanged(bool enabled);
+
     /* User clicked "Show all connected devices". MainWindow handles
      * it -- it has the full device list (including the selected
      * device, which AdvancedSettings's "other" snapshot excludes). */
@@ -146,6 +152,11 @@ private:
      * under OtherSettings/AutoReadOnConnect; toggling emits
      * autoReadOnConnectChanged() for MainWindow. */
     QCheckBox *m_autoReadCheck = nullptr;
+
+    /* "Write log to file" toggle, relocated from the debug pane. Same
+     * programmatic-add pattern; persists OtherSettings/LogEnabled and emits
+     * writeLogChanged() for MainWindow to forward to the logger. */
+    QCheckBox *m_writeLogCheck = nullptr;
 };
 
 #endif // ADVANCEDSETTINGS_H

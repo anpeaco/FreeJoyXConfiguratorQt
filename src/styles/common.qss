@@ -134,23 +134,6 @@ QPushButton[feedback="warning"] {
     border-color: %accent-amber-border%;
 }
 
-/* Wiki / book icon-only round button in the Device sidebar. */
-QPushButton#pushButton_Wiki {
-    border: 1px solid palette(mid);
-    border-radius: 15px;
-    padding: 0px;
-    margin: 0px;
-    min-width: 30px;
-    max-width: 30px;
-    min-height: 30px;
-    max-height: 30px;
-}
-
-QPushButton#pushButton_Wiki:hover {
-    border-color: palette(highlight);
-    background-color: palette(alternate-base);
-}
-
 /* ----- Tool buttons -------------------------------------------------- */
 
 QToolButton {

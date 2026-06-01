@@ -16,6 +16,7 @@
 GlobalEnvironment gEnv;
 #include "deviceconfig.h"
 #include "devicesync.h"
+#include "widgets/debugwindow.h"   // DebugWindow::LogLevel for the message handler
 
 // Get the default Qt message handler.
 static const QtMessageHandler QT_DEFAULT_MESSAGE_HANDLER = qInstallMessageHandler(nullptr);
@@ -25,8 +26,20 @@ void CustomMessageHandler(QtMsgType type, const QMessageLogContext &context, con
 {
     // mutex?
     if (gEnv.pDebugWindow != nullptr) {
-        // for multithreading -- unsure if correct, but works // unsure about the reference; may need to pass a copy under multithreading
-        QMetaObject::invokeMethod(gEnv.pDebugWindow, "printMsg", Qt::QueuedConnection, Q_ARG(QString, msg));
+        // Map the Qt severity to the debug log's level so the line is tagged +
+        // colour-coded (DEBUG/INFO/WARN/ERROR). Queued: the handler can fire
+        // from the HID worker thread.
+        DebugWindow::LogLevel level;
+        switch (type) {
+            case QtDebugMsg:    level = DebugWindow::LogLevel::Debug; break;
+            case QtInfoMsg:     level = DebugWindow::LogLevel::Info;  break;
+            case QtWarningMsg:  level = DebugWindow::LogLevel::Warn;  break;
+            case QtCriticalMsg:
+            case QtFatalMsg:    level = DebugWindow::LogLevel::Error; break;
+            default:            level = DebugWindow::LogLevel::Info;  break;
+        }
+        QMetaObject::invokeMethod(gEnv.pDebugWindow, "printMsg", Qt::QueuedConnection,
+                                  Q_ARG(QString, msg), Q_ARG(int, int(level)));
     }
 
     // Call the default handler.
