@@ -88,7 +88,12 @@ public:
      * bus-remap confirmation already lists the slots that will clear, so
      * PinConfig wraps the *real* apply burst -- which fires a remap per
      * displaced pin -- in setRemapWarningSuppressed(true/false) so it doesn't
-     * pop a second (or doubled) popup. The clearing itself still happens. */
+     * pop a second (or doubled) popup. The clearing itself still happens.
+     *
+     * Reference-counted (true = push, false = pop) so callers can NEST safely:
+     * a device-connect board switch suppresses across the whole switch, and the
+     * bus-migration toggles inside it (which suppress/restore their own pair)
+     * no longer prematurely re-enable the popup. Suppressed while depth > 0. */
     void setRemapWarningSuppressed(bool suppressed);
 
     void retranslateUi();
@@ -235,9 +240,12 @@ private:
     bool m_breakdownInitialized = false;
     bool m_loadInProgress = false;
 
-    /* When true, remapBreakdown clears references as usual but skips its
-     * warning popup -- the bus-remap confirmation already showed the slots. */
-    bool m_remapWarningSuppressed = false;
+    /* When > 0, remapBreakdown clears references as usual but skips its
+     * warning popup -- the bus-remap confirmation already showed the slots,
+     * or the remap is a programmatic device-connect side effect. Reference
+     * counted via setRemapWarningSuppressed(true/false) so nested suppressors
+     * compose. */
+    int m_remapWarningSuppressDepth = 0;
 
     /* When true, setUiOnOff returns immediately -- no UI flush, no auto-remap,
      * no grid rebuild -- so a predict-then-revert pin edit leaves

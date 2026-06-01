@@ -910,7 +910,7 @@ void ButtonConfig::remapBreakdown(const PhysBreakdown &oldB,
     // dialog, and applies as a burst of pin edits that each re-enter here -- so
     // stay quiet to avoid a second (or doubled) popup. The references above are
     // still cleared either way.
-    if (!brokenSlots.isEmpty() && !m_remapWarningSuppressed) {
+    if (!brokenSlots.isEmpty() && m_remapWarningSuppressDepth == 0) {
         QStringList slotStrs;
         for (int s : brokenSlots) slotStrs << QString::number(s + 1);
         QMessageBox::warning(
@@ -954,7 +954,14 @@ void ButtonConfig::setDryRun(bool dryRun)
 
 void ButtonConfig::setRemapWarningSuppressed(bool suppressed)
 {
-    m_remapWarningSuppressed = suppressed;
+    // Reference-counted push/pop so nested suppressors compose (a connect-time
+    // board switch wrapping the bus-migration toggles inside it). Clamp at 0 so
+    // an unbalanced pop can't leave the popup permanently disabled.
+    if (suppressed) {
+        ++m_remapWarningSuppressDepth;
+    } else if (m_remapWarningSuppressDepth > 0) {
+        --m_remapWarningSuppressDepth;
+    }
 }
 
 void ButtonConfig::beginConfigLoad()
@@ -983,7 +990,16 @@ void ButtonConfig::endConfigLoad()
         // written by a configurator version that didn't run the
         // in-session auto-remap. Translate references through the saved
         // baseline so they end up valid under the live breakdown.
+        //
+        // Suppress the "Logical Buttons Cleared" popup: this is a
+        // programmatic load-time reconciliation (e.g. reading / migrating a
+        // device's config on connect), not a user edit, so a modal -- often
+        // stacked on the legacy-import dialog during a device swap -- is just
+        // noise. References still get cleared, and the save / write paths
+        // already gate on confirmLogicConfigComplete() before anything ships.
+        setRemapWarningSuppressed(true);
         remapBreakdown(saved, live);
+        setRemapWarningSuppressed(false);
     }
 
     m_lastBreakdown = live;
