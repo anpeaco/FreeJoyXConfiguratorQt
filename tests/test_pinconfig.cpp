@@ -9,6 +9,7 @@
 // seam gap in PINCONFIG_MODEL_PLAN.md.
 #include <QtTest>
 #include <QSettings>
+#include <QCheckBox>
 #include "global.h"          // Pin enum (PA_0..), gEnv
 #include "common_defines.h"  // BOARD_ID_*
 #include "common_types.h"    // role enum
@@ -30,6 +31,13 @@ class TestPinConfig : public QObject
     {
         QMetaObject::invokeMethod(m_pc, "onBusToggleRequested", Qt::DirectConnection,
                                   Q_ARG(int, bus), Q_ARG(bool, enable));
+    }
+
+    // Read the quick-setup bus checkbox state by object name (no production hook).
+    bool busChecked(const char *objectName)
+    {
+        auto *cb = m_pc->findChild<QCheckBox *>(QString::fromLatin1(objectName));
+        return cb && cb->isChecked();
     }
 
 private slots:
@@ -189,6 +197,19 @@ private slots:
         QCOMPARE(m_pc->pinRole(PB_3), int(SPI_SCK));
         QCOMPARE(m_pc->pinRole(PB_4), int(SPI_MISO));
         QCOMPARE(m_pc->pinRole(PB_5), int(SPI_MOSI));
+    }
+
+    // ---- #58: adding an SPI sensor auto-claims the SPI bus; removing the last
+    //      one must clear SCK/MISO/MOSI AND drop the SPI bus checkbox. ----
+    void spiCheckbox_clearsAfterLastSensorRemoved()
+    {
+        m_pc->setPinRole(PB_1, TLE5011_CS);             // SPI sensor -> auto-claims bus
+        QCOMPARE(m_pc->pinRole(PB_3), int(SPI_SCK));    // SCK auto-claimed
+        QVERIFY2(busChecked("checkBox_spiBus"), "SPI box should read on while a sensor owns the bus");
+
+        m_pc->setPinRole(PB_1, NOT_USED);               // remove the only SPI sensor
+        QCOMPARE(m_pc->pinRole(PB_3), int(NOT_USED));   // SCK released (user confirms this works)
+        QVERIFY2(!busChecked("checkBox_spiBus"), "#58: SPI box must clear once no sensor owns the bus");
     }
 };
 
