@@ -1569,6 +1569,11 @@ void MainWindow::configReceived(bool success)
 
     if (success == true)
     {
+        // #60: the firmware returns board_id=0 in the config; stamp the device's
+        // real board (from the params report) so a later Save / round-trip stays
+        // honest and a write-back isn't rejected with 0xFD.
+        ConfigToFile::stampBoardIdFromDevice(gEnv.pDeviceConfig->config,
+                                             gEnv.pDeviceConfig->paramsReport.board_id);
         UiReadFromConfig();
         // Working config now matches the device's flashed config -- tell the
         // app-wide hub so device-derived caches (e.g. AxesConfig's auto-detect
@@ -2169,6 +2174,12 @@ void MainWindow::doActualWriteToDevice()
      * on_pushButton_WriteConfig_clicked (when no backup was possible)
      * or from configReceived after the pre-write backup completes. */
     UiWriteToConfig();
+
+    // #60: stamp the connected device's board onto an unknown (0) board_id so a
+    // file / native config written here isn't rejected with 0xFD. A known but
+    // mismatched board_id is left for the convert prompt + firmware to handle.
+    ConfigToFile::stampBoardIdFromDevice(gEnv.pDeviceConfig->config,
+                                         gEnv.pDeviceConfig->paramsReport.board_id);
 
     /* PID-conflict gate. If the about-to-be-written VID:PID matches
      * another currently-connected FreeJoy device, ask the user before

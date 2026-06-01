@@ -46,8 +46,26 @@ int main(int argc, char **argv)
              << cfg.pins[14] << cfg.pins[15] << cfg.pins[16]
              << cfg.pins[17] << cfg.pins[18] << cfg.pins[19];
 
-    const bool pass = (cfg.pins[0] == 5 && cfg.pins[14] == 28 && cfg.pins[16] == 20);
-    qDebug() << "[HARNESS] RESULT:" << (pass ? "PASS (load populated the struct)"
-                                             : "FAIL (struct stayed empty -> load bug)");
+    // --- #60: stampBoardIdFromDevice (board_id provenance helper) ---
+    bool boardIdPass = true;
+    {
+        dev_config_t c; std::memset(&c, 0, sizeof(c));
+        c.board_id = 0;
+        ConfigToFile::stampBoardIdFromDevice(c, 2);     // unknown -> stamp device board
+        boardIdPass = boardIdPass && (c.board_id == 2);
+
+        c.board_id = 1;                                 // genuine BluePill config
+        ConfigToFile::stampBoardIdFromDevice(c, 2);     // ...being written on a BlackPill
+        boardIdPass = boardIdPass && (c.board_id == 1); // unchanged: real mismatch -> convert
+
+        c.board_id = 0;
+        ConfigToFile::stampBoardIdFromDevice(c, 0);     // device board also unknown
+        boardIdPass = boardIdPass && (c.board_id == 0); // no-op
+    }
+    qDebug() << "[HARNESS] #60 stampBoardIdFromDevice:" << (boardIdPass ? "PASS" : "FAIL");
+
+    const bool loadPass = (cfg.pins[0] == 5 && cfg.pins[14] == 28 && cfg.pins[16] == 20);
+    const bool pass = loadPass && boardIdPass;
+    qDebug() << "[HARNESS] RESULT:" << (pass ? "PASS" : "FAIL");
     return pass ? 0 : 1;
 }
