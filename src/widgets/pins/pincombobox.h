@@ -421,7 +421,7 @@ private:
         {},
         {}, {QColor(53, 153, 120)}},
 
-        {TLE5011_GEN,    tr("TLE5011 GEN"),
+        {TLE5011_GEN,    tr("TLE5xxx GEN"),
         tr("TLE5011/5012B clock-generator output (PB6, TIM4). Auto-assigned with a TLE sensor. Conflicts with Encoder 2 (also TIM4)."),
         GRP_SPI_BUS,
         {PB_6},
