@@ -1290,215 +1290,265 @@ Dies kann nur durch erneutes Einlesen der Konfiguration vom Gerät rückgängig 
 <context>
     <name>DfuInstallDialog</name>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="46"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="47"/>
         <source>Install / Reinstall Firmware (USB DFU)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="85"/>
-        <source>&lt;b&gt;Step 1 &amp;mdash; put the board into USB DFU mode.&lt;/b&gt;&lt;br&gt;Hold &lt;b&gt;BOOT0&lt;/b&gt;, tap &lt;b&gt;NRST&lt;/b&gt; (reset), then release BOOT0 &amp;mdash; or hold BOOT0 while plugging in USB. The board then enumerates as &lt;i&gt;STM32&amp;nbsp;BOOTLOADER&lt;/i&gt; and is detected below.&lt;br&gt;This works on a blank, configured, or even bricked chip and writes &lt;b&gt;both&lt;/b&gt; the bootloader and the application.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="101"/>
-        <source>Device already connected and running? Skip the buttons:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="103"/>
-        <source>Reboot it into DFU</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="111"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="158"/>
         <source>Looking for a board in DFU mode…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="112"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="160"/>
         <source>Re-check</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="119"/>
-        <source>Firmware to write (F411)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="129"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="180"/>
         <source>Browse…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="139"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="190"/>
         <source>Bootloader (0x08000000):</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="142"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="193"/>
         <source>Application (0x08020000):</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="148"/>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="321"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="394"/>
         <source>Idle.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="164"/>
-        <source>Install / Reinstall</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="167"/>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="370"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="233"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="450"/>
         <source>Close</source>
         <translation type="unfinished">Schließen</translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="183"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="249"/>
         <source>The install helper (freejoyx-flash) is missing from the application folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="219"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="287"/>
         <source>Choose bootloader binary</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="222"/>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="232"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="290"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="300"/>
         <source>Firmware (*.bin);;All files (*)</source>
         <translation type="unfinished">Firmware (*.bin);;Alle Dateien (*)</translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="229"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="297"/>
         <source>Choose application binary</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="242"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="310"/>
         <source>Sent reboot-to-DFU command; waiting for the board to re-enumerate in DFU mode…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="245"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="313"/>
         <source>Rebooting into DFU… if nothing happens, use the BOOT0 method above.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="262"/>
-        <source>✅ Board detected in DFU mode — ready to write.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="263"/>
-        <source>No board in DFU mode yet. Follow Step 1 above.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="274"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="347"/>
         <source>Missing firmware</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="275"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="348"/>
         <source>Both a bootloader and an application .bin are required, and both files must exist.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="281"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="354"/>
         <source>Erase and reinstall?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="282"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="355"/>
         <source>&lt;p&gt;This erases the chip and writes a fresh bootloader and application over USB DFU.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Any existing configuration on the board will be lost&lt;/b&gt; (the device returns to factory defaults).&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="296"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="369"/>
         <source>Couldn&apos;t start</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="298"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="371"/>
         <source>The install couldn&apos;t be started.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="307"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="380"/>
         <source>Starting install…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="314"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="387"/>
         <source>Preparing USB driver…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="315"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="388"/>
         <source>Erasing…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="316"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="389"/>
         <source>Writing bootloader…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="317"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="390"/>
         <source>Writing application…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="318"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="391"/>
         <source>Verifying…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="319"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="392"/>
         <source>Done.</source>
         <translation type="unfinished">Fertig.</translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="320"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="393"/>
         <source>Failed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="dialogs/dfuinstalldialog.cpp" line="347"/>
-        <source>✅ Firmware installed.</source>
+        <source>Missing firmware</source>
+        <oldsource>✅ Firmware installed.</oldsource>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="348"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="89"/>
+        <source>F411 (Black Pill)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="91"/>
+        <source>Connected: &lt;b&gt;%1&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="107"/>
+        <source>Writes the FreeJoyX &lt;b&gt;bootloader and application&lt;/b&gt; to an &lt;b&gt;F411 (Black Pill)&lt;/b&gt; over the chip&apos;s built-in USB DFU — no ST-Link or STM32CubeProgrammer. Works on a blank, configured, or bricked board.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="115"/>
+        <source>1.  Put the board in DFU mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="131"/>
+        <source>Reboot it straight into DFU:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="133"/>
+        <source>Reboot into DFU</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="145"/>
+        <source>&lt;b&gt;To enter DFU manually:&lt;/b&gt;&lt;ol style=&apos;margin-left:-20px;&apos;&gt;&lt;li&gt;Hold &lt;b&gt;BOOT0&lt;/b&gt;.&lt;/li&gt;&lt;li&gt;Tap &lt;b&gt;NRST&lt;/b&gt; (reset), then release it.&lt;/li&gt;&lt;li&gt;Release &lt;b&gt;BOOT0&lt;/b&gt;.&lt;/li&gt;&lt;/ol&gt;(Or hold BOOT0 while plugging in USB.) The board then re-appears as &lt;i&gt;STM32&amp;nbsp;BOOTLOADER&lt;/i&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="169"/>
+        <source>2.  Firmware to write (F411)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="179"/>
+        <source>Browse for a .bin…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="199"/>
+        <source>Ready.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="207"/>
+        <source>Log</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="223"/>
+        <source>⚠  Installing erases the board and restores factory defaults — its current configuration is lost.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="230"/>
+        <source>Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="331"/>
+        <source>Board detected in DFU mode — ready to write.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="334"/>
+        <source>No board in DFU mode yet — follow step 1 above.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="422"/>
+        <source>Firmware installed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="424"/>
+        <source>Install complete. Unplug/replug to use the board; reopen this dialog to install again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="427"/>
         <source>Done</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="349"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="428"/>
         <source>Firmware installed. Unplug and replug the board to start using it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="352"/>
-        <source>❌ Install failed.</source>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="431"/>
+        <source>Install failed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="353"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="433"/>
         <source>Install failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="354"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="434"/>
         <source>The install did not complete.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="370"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="450"/>
         <source>Cancel</source>
         <translation type="unfinished">Abbrechen</translation>
     </message>
@@ -2095,7 +2145,7 @@ Stecken Sie das Gerät ab und wieder an und wiederholen Sie das Flashen. Wenn si
     </message>
     <message>
         <location filename="widgets/adv-settings/flasher.ui" line="216"/>
-        <location filename="widgets/adv-settings/flasher.cpp" line="500"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="512"/>
         <source>Flash</source>
         <translation>Flashen</translation>
     </message>
@@ -2106,7 +2156,7 @@ Stecken Sie das Gerät ab und wieder an und wiederholen Sie das Flashen. Wenn si
     </message>
     <message>
         <location filename="widgets/adv-settings/flasher.ui" line="235"/>
-        <source>Install / Reinstall (USB DFU)…</source>
+        <source>F411 Install…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2165,87 +2215,87 @@ Stecken Sie das Gerät ab und wieder an und wiederholen Sie das Flashen. Wenn si
         <translation>[Lokal] %1</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="335"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="347"/>
         <source>Open firmware (build outputs) folder</source>
         <translation>Firmware-Ordner (Build-Ausgaben) öffnen</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="337"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="349"/>
         <source>Open recovery (fallback builds) folder</source>
         <translation>Recovery-Ordner (Fallback-Builds) öffnen</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="340"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="352"/>
         <source>Refresh from GitHub</source>
         <translation>Von GitHub aktualisieren</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="345"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="357"/>
         <source>Clear [Browsed] firmware history</source>
         <translation>[Durchsucht]-Firmware-Verlauf löschen</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="392"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="404"/>
         <source>Choose firmware binary</source>
         <translation>Firmware-Binärdatei auswählen</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="394"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="406"/>
         <source>Firmware (*.bin);;All files (*)</source>
         <translation>Firmware (*.bin);;Alle Dateien (*)</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="429"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="441"/>
         <source>Pick a firmware source</source>
         <translation>Firmware-Quelle auswählen</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="430"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="442"/>
         <source>Select a firmware build from the Source dropdown, or click &lt;b&gt;Browse...&lt;/b&gt; to pick a .bin from disk.</source>
         <translation>Wählen Sie einen Firmware-Build aus dem Quell-Dropdown oder klicken Sie auf &lt;b&gt;Durchsuchen...&lt;/b&gt;, um eine .bin von der Festplatte zu wählen.</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="467"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="479"/>
         <source>Download and flash this firmware?</source>
         <translation>Diese Firmware herunterladen und flashen?</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="468"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="480"/>
         <source>&lt;p&gt;The selected firmware isn&apos;t downloaded yet.&lt;/p&gt;&lt;p&gt;Source: &lt;b&gt;%1&lt;/b&gt;&lt;br&gt;Tag: &lt;b&gt;%2&lt;/b&gt;&lt;br&gt;Asset: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Die ausgewählte Firmware ist noch nicht heruntergeladen.&lt;/p&gt;&lt;p&gt;Quelle: &lt;b&gt;%1&lt;/b&gt;&lt;br&gt;Tag: &lt;b&gt;%2&lt;/b&gt;&lt;br&gt;Asset: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Fortfahren?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="480"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="492"/>
         <source>Downloading...</source>
         <translation>Wird heruntergeladen...</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="485"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="497"/>
         <source>Firmware unavailable</source>
         <translation>Firmware nicht verfügbar</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="486"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="498"/>
         <source>The selected firmware source couldn&apos;t be resolved to a file. Try refreshing the source list or pick a different entry.</source>
         <translation>Die ausgewählte Firmware-Quelle konnte keiner Datei zugeordnet werden. Aktualisieren Sie die Quellliste oder wählen Sie einen anderen Eintrag.</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="504"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="516"/>
         <source>Download failed</source>
         <translation>Download fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="505"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="517"/>
         <source>Couldn&apos;t download the selected firmware from GitHub. Check your internet connection and try again.</source>
         <translation>Die ausgewählte Firmware konnte nicht von GitHub heruntergeladen werden. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="521"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="533"/>
         <source>Couldn&apos;t open firmware</source>
         <translation>Firmware konnte nicht geöffnet werden</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="522"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="534"/>
         <source>Couldn&apos;t read the firmware file:
 %1
 
@@ -2256,27 +2306,27 @@ Check that the file exists and the configurator has permission to read it.</sour
 Prüfen Sie, ob die Datei existiert und der Configurator die Leseberechtigung hat.</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="559"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="571"/>
         <source>[RECOVERY] %1</source>
         <translation>[RECOVERY] %1</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="670"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="682"/>
         <source>(detected)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="676"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="688"/>
         <source>Legacy binary</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="689"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="701"/>
         <source>This firmware is for a different board than the connected device.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="659"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="671"/>
         <source>Unknown</source>
         <translation>Unbekannt</translation>
     </message>
@@ -2381,7 +2431,7 @@ Prüfen Sie, ob die Datei existiert und der Configurator die Leseberechtigung ha
         <location filename="widgets/led/ledconfig.ui" line="753"/>
         <location filename="widgets/led/ledconfig.ui" line="838"/>
         <source> ms</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ms</translation>
     </message>
     <message>
         <location filename="widgets/led/ledconfig.ui" line="593"/>
@@ -2495,7 +2545,7 @@ Prüfen Sie, ob die Datei existiert und der Configurator die Leseberechtigung ha
     <message>
         <location filename="widgets/led_rgb/ledrgbconfig.ui" line="187"/>
         <source> ms</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ms</translation>
     </message>
     <message>
         <location filename="widgets/led_rgb/ledrgbconfig.ui" line="208"/>
@@ -2675,7 +2725,7 @@ Prüfen Sie, ob die Datei existiert und der Configurator die Leseberechtigung ha
     </message>
     <message>
         <location filename="mainwindow.ui" line="419"/>
-        <location filename="mainwindow.cpp" line="2690"/>
+        <location filename="mainwindow.cpp" line="2707"/>
         <source>Show debug</source>
         <translation>Fehlersuche anzeigen</translation>
     </message>
@@ -2686,13 +2736,13 @@ Prüfen Sie, ob die Datei existiert und der Configurator die Leseberechtigung ha
     </message>
     <message>
         <location filename="mainwindow.cpp" line="496"/>
-        <location filename="mainwindow.cpp" line="768"/>
-        <location filename="mainwindow.cpp" line="1642"/>
+        <location filename="mainwindow.cpp" line="785"/>
+        <location filename="mainwindow.cpp" line="1659"/>
         <source>Connected</source>
         <translation>Verbunden</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="760"/>
+        <location filename="mainwindow.cpp" line="777"/>
         <source>Incompatible Firmware</source>
         <translation>Inkompatible Firmware</translation>
     </message>
@@ -2726,286 +2776,286 @@ Those inputs are no longer mapped where they were — check your wiring and re-a
         <translation>Neustart...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="632"/>
+        <location filename="mainwindow.cpp" line="634"/>
         <source>Unknown (%1)</source>
         <translation>Unbekannt (%1)</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="711"/>
+        <location filename="mainwindow.cpp" line="713"/>
         <source>LEDs are not yet supported on Black Pill (F411). Coming in a future update.</source>
         <translation>LEDs werden auf dem Black Pill (F411) noch nicht unterstützt. Kommt in einem zukünftigen Update.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="755"/>
+        <location filename="mainwindow.cpp" line="772"/>
         <source>Legacy</source>
         <translation>Legacy</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="858"/>
+        <location filename="mainwindow.cpp" line="875"/>
         <source>No device detected</source>
         <translation>Kein Gerät erkannt</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="859"/>
+        <location filename="mainwindow.cpp" line="876"/>
         <source>Connect a FreeJoy device before using the Flash button. If the device is stuck in DFU mode without enumerating, recover via STM32 Cube Programmer + ST-Link.</source>
         <translation>Verbinden Sie ein FreeJoy-Gerät, bevor Sie die Flash-Schaltfläche verwenden. Wenn das Gerät im DFU-Modus feststeckt und sich nicht anmeldet, stellen Sie es über STM32 Cube Programmer + ST-Link wieder her.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1083"/>
+        <location filename="mainwindow.cpp" line="1100"/>
         <source>WARNING: device reports firmware v0x%1 but the flashed binary&apos;s footer says v0x%2. Re-flash recommended.</source>
         <translation>WARNUNG: Das Gerät meldet Firmware v0x%1, aber der Footer der geflashten Binärdatei gibt v0x%2 an. Erneutes Flashen empfohlen.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1098"/>
+        <location filename="mainwindow.cpp" line="1115"/>
         <source>Backup saved to %1</source>
         <translation>Backup gespeichert unter %1</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1375"/>
+        <location filename="mainwindow.cpp" line="1392"/>
         <source>Pending changes. The device still runs its previously-flashed config; the live press preview reflects that, not your edits. Click to write.</source>
         <translation>Ausstehende Änderungen. Das Gerät führt noch seine zuvor geflashte Konfiguration aus; die Live-Tastenvorschau spiegelt diese wider, nicht Ihre Änderungen. Zum Schreiben klicken.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1413"/>
+        <location filename="mainwindow.cpp" line="1430"/>
         <source>Load device config?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1414"/>
+        <location filename="mainwindow.cpp" line="1431"/>
         <source>This device has its own saved configuration.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1415"/>
+        <location filename="mainwindow.cpp" line="1432"/>
         <source>You have unsaved changes in the configurator. Load the device&apos;s configuration (discarding your changes), or keep your current edits?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1419"/>
+        <location filename="mainwindow.cpp" line="1436"/>
         <source>Load device config</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1420"/>
+        <location filename="mainwindow.cpp" line="1437"/>
         <source>Keep my edits</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1444"/>
+        <location filename="mainwindow.cpp" line="1461"/>
         <source>Select a config…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1516"/>
+        <location filename="mainwindow.cpp" line="1533"/>
         <source>&lt;p&gt;This device is running upstream FreeJoy firmware (%1).&lt;/p&gt;&lt;p&gt;The configurator has read its config and translated it into the current shape. Your existing pin assignments, axes, buttons, shift registers, encoders and LED settings are preserved. New-since-then features (logical buttons, gestures, RGB) carry default values.&lt;/p&gt;&lt;p&gt;To finish upgrading the device:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Review the imported config in the tabs above. &lt;b&gt;Save it to a file&lt;/b&gt; as a backup.&lt;/li&gt;&lt;li&gt;Flash %2 firmware via &lt;i&gt;Advanced Settings &amp;rarr; Firmware flasher&lt;/i&gt;.&lt;/li&gt;&lt;li&gt;After the device reconnects, click &lt;b&gt;Write config to device&lt;/b&gt; to push the migrated config.&lt;/li&gt;&lt;/ol&gt;</source>
         <translation>&lt;p&gt;Dieses Gerät führt die Upstream-FreeJoy-Firmware (%1) aus.&lt;/p&gt;&lt;p&gt;Der Configurator hat dessen Konfiguration gelesen und in die aktuelle Form übersetzt. Ihre vorhandenen Pin-Zuordnungen, Achsen, Tasten, Schieberegister, Encoder und LED-Einstellungen bleiben erhalten. Seither neue Funktionen (logische Tasten, Gesten, RGB) erhalten Standardwerte.&lt;/p&gt;&lt;p&gt;So schließen Sie das Upgrade des Geräts ab:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Überprüfen Sie die importierte Konfiguration in den Tabs oben. &lt;b&gt;Speichern Sie sie als Datei&lt;/b&gt; als Backup.&lt;/li&gt;&lt;li&gt;Flashen Sie die %2-Firmware über &lt;i&gt;Erweiterte Einstellungen &amp;rarr; Firmware-Flasher&lt;/i&gt;.&lt;/li&gt;&lt;li&gt;Klicken Sie nach dem erneuten Verbinden des Geräts auf &lt;b&gt;Konfiguration auf Gerät schreiben&lt;/b&gt;, um die migrierte Konfiguration zu übertragen.&lt;/li&gt;&lt;/ol&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1533"/>
+        <location filename="mainwindow.cpp" line="1550"/>
         <source>Legacy config imported</source>
         <translation>Legacy-Konfiguration importiert</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1566"/>
+        <location filename="mainwindow.cpp" line="1583"/>
         <source>Backup failed</source>
         <translation>Sicherung fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1567"/>
+        <location filename="mainwindow.cpp" line="1584"/>
         <source>&lt;p&gt;Could not read the device&apos;s current config. Proceeding without a backup means a failed flash could leave the device with default settings (you&apos;d lose your current mappings).&lt;/p&gt;&lt;p&gt;Continue with flash anyway?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Die aktuelle Konfiguration des Geräts konnte nicht gelesen werden. Ohne Backup fortzufahren bedeutet, dass ein fehlgeschlagenes Flashen das Gerät mit Standardeinstellungen zurücklassen könnte (Sie würden Ihre aktuellen Zuordnungen verlieren).&lt;/p&gt;&lt;p&gt;Trotzdem mit dem Flashen fortfahren?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1592"/>
+        <location filename="mainwindow.cpp" line="1609"/>
         <source>Backup OK, writing...</source>
         <translation>Backup OK, wird geschrieben...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1595"/>
+        <location filename="mainwindow.cpp" line="1612"/>
         <source>Pre-write backup failed</source>
         <translation>Backup vor dem Schreiben fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1596"/>
+        <location filename="mainwindow.cpp" line="1613"/>
         <source>&lt;p&gt;Could not read the device&apos;s current config to back it up before writing.&lt;/p&gt;&lt;p&gt;Continue with the write anyway? If the new config has issues, you&apos;ll have no automatic rollback path -- only configs you previously saved manually.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Die aktuelle Konfiguration des Geräts konnte vor dem Schreiben nicht zur Sicherung gelesen werden.&lt;/p&gt;&lt;p&gt;Trotzdem mit dem Schreiben fortfahren? Wenn die neue Konfiguration Probleme hat, gibt es keinen automatischen Rückweg – nur zuvor manuell gespeicherte Konfigurationen.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1644"/>
+        <location filename="mainwindow.cpp" line="1661"/>
         <source>Received</source>
         <translation>Empfangen</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1654"/>
-        <location filename="mainwindow.cpp" line="1696"/>
+        <location filename="mainwindow.cpp" line="1671"/>
+        <location filename="mainwindow.cpp" line="1713"/>
         <source>Error</source>
         <translation>Fehler</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1685"/>
+        <location filename="mainwindow.cpp" line="1702"/>
         <source>Sent</source>
         <translation>Gesendet</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1751"/>
+        <location filename="mainwindow.cpp" line="1768"/>
         <source> ms</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ms</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1810"/>
+        <location filename="mainwindow.cpp" line="1827"/>
         <source>Disabled because the connected device runs an unsupported firmware version. Flash a known-good build via Advanced Settings → Firmware flasher to regain access.</source>
         <translation>Deaktiviert, weil das verbundene Gerät eine nicht unterstützte Firmware-Version ausführt. Flashen Sie über Erweiterte Einstellungen → Firmware-Flasher einen bekannten funktionierenden Build, um den Zugriff wiederzuerlangen.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1873"/>
-        <location filename="mainwindow.cpp" line="2682"/>
+        <location filename="mainwindow.cpp" line="1890"/>
+        <location filename="mainwindow.cpp" line="2699"/>
         <source>Hide debug</source>
         <translation>Debug ausblenden</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1984"/>
+        <location filename="mainwindow.cpp" line="2001"/>
         <source>Reset all settings to defaults?</source>
         <translation>Alle Einstellungen auf Standardwerte zurücksetzen?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1985"/>
+        <location filename="mainwindow.cpp" line="2002"/>
         <source>&lt;p&gt;This resets every setting in the configurator -- pins, axes, buttons, encoders, sensors, USB identity, gestures, logic, LEDs, shifts &amp;amp; timers -- to factory defaults.&lt;/p&gt;&lt;p&gt;The change is &lt;b&gt;in-memory only&lt;/b&gt;. The connected device keeps its current settings until you click &lt;b&gt;Write Config&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Dies setzt jede Einstellung im Configurator – Pins, Achsen, Tasten, Encoder, Sensoren, USB-Identität, Gesten, Logik, LEDs, Shifts &amp;amp; Timer – auf die Werkseinstellungen zurück.&lt;/p&gt;&lt;p&gt;Die Änderung erfolgt &lt;b&gt;nur im Arbeitsspeicher&lt;/b&gt;. Das verbundene Gerät behält seine aktuellen Einstellungen, bis Sie auf &lt;b&gt;Konfiguration schreiben&lt;/b&gt; klicken.&lt;/p&gt;&lt;p&gt;Fortfahren?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2027"/>
+        <location filename="mainwindow.cpp" line="2044"/>
         <source>Incomplete Logic Configuration</source>
         <translation>Unvollständige Logikkonfiguration</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2028"/>
+        <location filename="mainwindow.cpp" line="2045"/>
         <source>Logical button %1 has Function = Logic but is missing an operator or Source B. Pick an operator (and Source B for binary operators) before saving.</source>
         <translation>Logische Taste %1 hat Funktion = Logik, aber es fehlt ein Operator oder Quelle B. Wählen Sie vor dem Speichern einen Operator (und Quelle B für binäre Operatoren).</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2069"/>
+        <location filename="mainwindow.cpp" line="2086"/>
         <source>Backing up...</source>
         <translation>Sicherung läuft...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2182"/>
+        <location filename="mainwindow.cpp" line="2199"/>
         <source>No device connected</source>
         <translation>Kein Gerät verbunden</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2183"/>
+        <location filename="mainwindow.cpp" line="2200"/>
         <source>Connect a device before starting an upgrade.</source>
         <translation>Verbinden Sie ein Gerät, bevor Sie ein Upgrade starten.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2201"/>
+        <location filename="mainwindow.cpp" line="2218"/>
         <source>No firmware available</source>
         <translation>Keine Firmware verfügbar</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2202"/>
+        <location filename="mainwindow.cpp" line="2219"/>
         <source>Couldn&apos;t find a matching firmware binary in the configurator&apos;s firmware/ folder. Use Advanced Settings -&gt; Firmware flasher to flash manually.</source>
         <translation>Im firmware/-Ordner des Configurators wurde keine passende Firmware-Binärdatei gefunden. Verwenden Sie Erweiterte Einstellungen -&gt; Firmware-Flasher, um manuell zu flashen.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2232"/>
+        <location filename="mainwindow.cpp" line="2249"/>
         <source>Upgrade firmware?</source>
         <translation>Firmware aktualisieren?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2233"/>
+        <location filename="mainwindow.cpp" line="2250"/>
         <source>&lt;p&gt;This will:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Read your current config and save a backup file&lt;/li&gt;&lt;li&gt;Flash &lt;b&gt;%1&lt;/b&gt; to the device&lt;/li&gt;&lt;li&gt;Write your migrated config back after the device reconnects&lt;/li&gt;&lt;/ol&gt;&lt;p&gt;Current firmware: &lt;b&gt;%2&lt;/b&gt;&lt;br&gt;Target firmware: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;%4&lt;p&gt;If anything fails mid-flight the device may be left in DFU mode -- recover via STM32 Cube Programmer + ST-Link.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Dies wird:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Ihre aktuelle Konfiguration lesen und eine Backup-Datei speichern&lt;/li&gt;&lt;li&gt;&lt;b&gt;%1&lt;/b&gt; auf das Gerät flashen&lt;/li&gt;&lt;li&gt;Ihre migrierte Konfiguration nach dem erneuten Verbinden des Geräts zurückschreiben&lt;/li&gt;&lt;/ol&gt;&lt;p&gt;Aktuelle Firmware: &lt;b&gt;%2&lt;/b&gt;&lt;br&gt;Ziel-Firmware: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;%4&lt;p&gt;Wenn unterwegs etwas fehlschlägt, kann das Gerät im DFU-Modus zurückbleiben – stellen Sie es über STM32 Cube Programmer + ST-Link wieder her.&lt;/p&gt;&lt;p&gt;Fortfahren?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2284"/>
-        <location filename="mainwindow.cpp" line="2436"/>
+        <location filename="mainwindow.cpp" line="2301"/>
+        <location filename="mainwindow.cpp" line="2453"/>
         <source>(unnamed)</source>
         <translation>(unbenannt)</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2295"/>
+        <location filename="mainwindow.cpp" line="2312"/>
         <source>VID:PID already in use</source>
         <translation>VID:PID bereits in Verwendung</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2296"/>
+        <location filename="mainwindow.cpp" line="2313"/>
         <source>&lt;p&gt;VID &lt;b&gt;%1&lt;/b&gt;:PID &lt;b&gt;%2&lt;/b&gt; is currently used by: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Writing this config will give two devices the same USB identity. Windows&apos; OEMName cache is keyed by VID+PID -- both devices will share one OEM name -- and games using DirectInput may pick a random one or conflate them.&lt;/p&gt;&lt;p&gt;Continue with the write anyway?&lt;/p&gt;</source>
         <translation>&lt;p&gt;VID &lt;b&gt;%1&lt;/b&gt;:PID &lt;b&gt;%2&lt;/b&gt; wird derzeit verwendet von: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Das Schreiben dieser Konfiguration gibt zwei Geräten dieselbe USB-Identität. Der OEMName-Cache von Windows wird über VID+PID indexiert – beide Geräte teilen sich einen OEM-Namen – und Spiele, die DirectInput verwenden, wählen möglicherweise ein zufälliges aus oder verwechseln sie.&lt;/p&gt;&lt;p&gt;Trotzdem mit dem Schreiben fortfahren?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2333"/>
+        <location filename="mainwindow.cpp" line="2350"/>
         <source>Cannot write to this firmware version</source>
         <translation>Auf diese Firmware-Version kann nicht geschrieben werden</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2334"/>
+        <location filename="mainwindow.cpp" line="2351"/>
         <source>&lt;p&gt;The connected device runs &lt;b&gt;%1&lt;/b&gt;, which this configurator doesn&apos;t have a reverse migrator for.&lt;/p&gt;&lt;p&gt;To write a config, flash a current FreeJoyX firmware first (Advanced Settings -&gt; Firmware flasher).&lt;/p&gt;</source>
         <translation>&lt;p&gt;Das verbundene Gerät führt &lt;b&gt;%1&lt;/b&gt; aus, für das dieser Configurator keinen Rückwärts-Migrator hat.&lt;/p&gt;&lt;p&gt;Um eine Konfiguration zu schreiben, flashen Sie zuerst eine aktuelle FreeJoyX-Firmware (Erweiterte Einstellungen -&gt; Firmware-Flasher).&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2347"/>
+        <location filename="mainwindow.cpp" line="2364"/>
         <source>Reverse migration failed</source>
         <translation>Rückwärtsmigration fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2348"/>
+        <location filename="mainwindow.cpp" line="2365"/>
         <source>&lt;p&gt;Couldn&apos;t pack the current config into the %1 wire format. The device wasn&apos;t written to.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Die aktuelle Konfiguration konnte nicht in das %1-Wire-Format gepackt werden. Auf das Gerät wurde nicht geschrieben.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2361"/>
+        <location filename="mainwindow.cpp" line="2378"/>
         <source>Write to %1 firmware?</source>
         <translation>Auf %1-Firmware schreiben?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2362"/>
+        <location filename="mainwindow.cpp" line="2379"/>
         <source>&lt;p&gt;Writing to %1 firmware will lose the following:&lt;/p&gt;%2&lt;p&gt;The configurator will keep its in-memory copy unchanged -- only the device will see the reduced config. Continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Das Schreiben auf die %1-Firmware verliert Folgendes:&lt;/p&gt;%2&lt;p&gt;Der Configurator behält seine Kopie im Arbeitsspeicher unverändert – nur das Gerät sieht die reduzierte Konfiguration. Fortfahren?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2427"/>
+        <location filename="mainwindow.cpp" line="2444"/>
         <source>No FreeJoy devices detected.</source>
         <translation>Keine FreeJoy-Geräte erkannt.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2442"/>
+        <location filename="mainwindow.cpp" line="2459"/>
         <source>&amp;#9658; marks the device currently selected in the dropdown.</source>
         <translation>&amp;#9658; markiert das aktuell im Dropdown ausgewählte Gerät.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2446"/>
+        <location filename="mainwindow.cpp" line="2463"/>
         <source>Connected FreeJoy devices</source>
         <translation>Verbundene FreeJoy-Geräte</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2535"/>
+        <location filename="mainwindow.cpp" line="2552"/>
         <source>Fast Encoder %1</source>
         <translation>Schneller Encoder %1</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2547"/>
+        <location filename="mainwindow.cpp" line="2564"/>
         <source>Fast Encoder %1 unavailable</source>
         <translation>Schneller Encoder %1 nicht verfügbar</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2548"/>
+        <location filename="mainwindow.cpp" line="2565"/>
         <source>This board doesn&apos;t expose FAST_ENCODER as a legal role on at least one of the required pins. The encoder wasn&apos;t enabled.</source>
         <translation>Diese Platine bietet FAST_ENCODER auf mindestens einem der erforderlichen Pins nicht als gültige Rolle an. Der Encoder wurde nicht aktiviert.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2589"/>
+        <location filename="mainwindow.cpp" line="2606"/>
         <source>Open Config</source>
         <translation>Konfiguration öffnen</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2589"/>
-        <location filename="mainwindow.cpp" line="2617"/>
+        <location filename="mainwindow.cpp" line="2606"/>
+        <location filename="mainwindow.cpp" line="2634"/>
         <source>Config Files (*.cfg)</source>
         <translation>Konfig-Dateien (*.cfg)</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2615"/>
+        <location filename="mainwindow.cpp" line="2632"/>
         <source>Save Config</source>
         <translation>Konfiguration speichern</translation>
     </message>
@@ -3907,7 +3957,7 @@ Wenn Sie Nein wählen, bleibt die geladene Konfiguration unverändert – das Ge
         <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="513"/>
         <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="527"/>
         <source> ms</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ms</translation>
     </message>
     <message>
         <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="394"/>
