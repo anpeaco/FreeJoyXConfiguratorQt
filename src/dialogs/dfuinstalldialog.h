@@ -97,6 +97,11 @@ private:
     QTimer *m_detectTimer = nullptr;  /* periodic re-probe so plugging in is noticed */
     bool    m_devicePresent = false;
     bool    m_installing = false;
+    /* Latches true after a successful install so the Install button stays
+     * disabled -- the board is no longer in a fresh DFU state, and running
+     * the write again over the just-finished session misbehaves. Cleared only
+     * by reopening the dialog. */
+    bool    m_installed = false;
 };
 
 #endif // DFUINSTALLDIALOG_H

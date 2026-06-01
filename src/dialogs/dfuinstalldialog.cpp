@@ -382,6 +382,7 @@ void DfuInstallDialog::onLogLine(const QString &line)
 void DfuInstallDialog::onFinished(bool success, const QString &detail)
 {
     m_installing = false;
+    if (success) m_installed = true;   // latch BEFORE setControlsLocked so Install stays off
     setControlsLocked(false);
     appendLog(detail);
 
@@ -389,6 +390,9 @@ void DfuInstallDialog::onFinished(bool success, const QString &detail)
         m_progress->setValue(100);
         m_stageLabel->setText(tr("Firmware installed."));
         m_stageLabel->setStyleSheet(QStringLiteral("color: #27ae60; font-weight: bold;"));
+        m_detectLabel->setText(tr("Install complete. Unplug/replug to use the "
+                                  "board; reopen this dialog to install again."));
+        m_detectLabel->setStyleSheet(QString());
         QMessageBox::information(this, tr("Done"),
             tr("Firmware installed. Unplug and replug the board to start "
                "using it."));
@@ -408,7 +412,7 @@ void DfuInstallDialog::setControlsLocked(bool locked)
     m_browseAppBtn->setEnabled(!locked);
     m_rebootBtn->setEnabled(!locked);
     m_detectBtn->setEnabled(!locked && DfuInstallSession::helperAvailable());
-    m_installBtn->setEnabled(!locked && m_devicePresent
+    m_installBtn->setEnabled(!locked && !m_installed && m_devicePresent
                              && !m_bootEdit->text().isEmpty()
                              && !m_appEdit->text().isEmpty());
     /* Close doubles as Cancel during a write. */
@@ -418,7 +422,8 @@ void DfuInstallDialog::setControlsLocked(bool locked)
 void DfuInstallDialog::refreshInstallEnabled()
 {
     if (m_installing) return;            /* setControlsLocked owns the state then */
-    const bool ready = m_devicePresent
+    const bool ready = !m_installed
+                       && m_devicePresent
                        && DfuInstallSession::helperAvailable()
                        && !m_bootEdit->text().isEmpty()
                        && !m_appEdit->text().isEmpty();
