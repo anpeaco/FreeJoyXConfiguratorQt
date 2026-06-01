@@ -137,6 +137,13 @@ bool PinConfig::isPinRoleOptionEnabled(int pin, int role) const
     return m_pinCBoxPtrList[idx]->isRoleOptionEnabled(role);
 }
 
+bool PinConfig::isPinEditable(int pin) const
+{
+    const int idx = pin - 1;
+    if (idx < 0 || idx >= m_pinCBoxPtrList.size()) return false;
+    return m_pinCBoxPtrList[idx]->isComboBoxEnabled();
+}
+
 QString PinConfig::pinGuiName(int pin) const
 {
     const int idx = pin - 1;
