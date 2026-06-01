@@ -305,7 +305,7 @@ void PinConfig::pinInteraction(int index, int senderIndex, int pin)
                          * deferred, by warnAutoAssignDisplaced. */
                         const int priorRole = m_pinCBoxPtrList[i]->currentDevEnum();
                         if (priorRole != NOT_USED && !m_pinCBoxPtrList[i]->isInteracts()
-                            && !m_suppressDisplaceWarning) {
+                            && !m_loadingConfig) {
                             if (m_autoAssignDisplaced.isEmpty()) {
                                 QTimer::singleShot(0, this, &PinConfig::warnAutoAssignDisplaced);
                             }
@@ -316,8 +316,13 @@ void PinConfig::pinInteraction(int index, int senderIndex, int pin)
                         m_pinCBoxPtrList[i]->setInteractCount(m_pinCBoxPtrList[i]->interactCount() + pin);
                         m_pinCBoxPtrList[i]->setIndex_iteraction(j, senderIndex);
                         // this combobox just got auto-claimed -- flash it so the
-                        // user sees which shared pins the sensor grabbed
-                        flashAutoAssignedPin(i);
+                        // user sees which shared pins the sensor grabbed. Skipped
+                        // during a programmatic config load (device read / swap /
+                        // file open): the flash is feedback for an interactive
+                        // sensor pick, not for repainting a loaded config -- else
+                        // e.g. TLE5xxx GEN flashes blue every time you select a
+                        // device that has a TLE bound.
+                        if (!m_loadingConfig) flashAutoAssignedPin(i);
                     }
                     else if (m_pinCBoxPtrList[i]->isInteracts() == true){
                         m_pinCBoxPtrList[i]->setInteractCount(m_pinCBoxPtrList[i]->interactCount() + pin);
@@ -949,14 +954,16 @@ void PinConfig::readFromConfig(){
         pins[22] = NOT_USED;
     }
 
-    /* Suppress the #57 displacement warning while every pin is repopulated
-     * from the loaded config: a sensor auto-claiming a shared pin here only
-     * displaces the stale previous-config role, not a live user mapping. */
-    m_suppressDisplaceWarning = true;
+    /* Mark the whole repopulation as a programmatic load so interactive
+     * auto-assign feedback is suppressed: the #57 displacement warning (a
+     * sensor "overwriting" a shared pin here only displaces the stale
+     * previous-config role) and the blue auto-assigned-pin flash (e.g.
+     * TLE5xxx GEN flashing when a loaded config's sensor claims it). */
+    m_loadingConfig = true;
     for (int i = 0; i < m_pinCBoxPtrList.size(); ++i) {
         m_pinCBoxPtrList[i]->readFromConfig(i);
     }
-    m_suppressDisplaceWarning = false;
+    m_loadingConfig = false;
     refreshBusToggles();
 
     /* Re-assert every pin's role colour once the load settles. Each pin's

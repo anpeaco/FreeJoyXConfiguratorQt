@@ -183,11 +183,15 @@ private:
 
     /* True while readFromConfig() is repopulating every pin from a freshly
      * loaded config (Read from device, auto-read on connect, device swap,
-     * INI load). In that path a sensor auto-claiming a shared pin only
-     * "overwrites" the stale role left over from the previous config -- not
-     * a live user mapping -- so the #57 displacement warning is meaningless
-     * and is suppressed. Only interactive auto-assign should warn. */
-    bool m_suppressDisplaceWarning = false;
+     * INI load). Auto-claim side effects that are feedback for an
+     * INTERACTIVE sensor pick are meaningless during a programmatic load and
+     * are suppressed while this is set:
+     *   - the #57 displacement warning (a sensor "overwriting" a shared pin
+     *     here only displaces the stale previous-config role, not a live
+     *     user mapping), and
+     *   - the blue auto-assigned-pin flash (e.g. TLE5xxx GEN flashing when a
+     *     loaded config's sensor claims it). */
+    bool m_loadingConfig = false;
 
     /* Recompute the I2C / SPI quick-setup toggle states from the live pin
      * roles and push them to the Pin Info panel (checked + enabled). Enforces
