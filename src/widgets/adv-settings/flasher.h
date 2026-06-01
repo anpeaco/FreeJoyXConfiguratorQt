@@ -66,6 +66,12 @@ public slots:
                              ushort vid,
                              ushort pid);
 
+    /* The currently-connected app-mode device, pushed by MainWindow on
+     * connect/disconnect. Cached so the DFU install dialog can offer its
+     * one-click "reboot into DFU" shortcut only when an F411 is present.
+     * `name` / `vidPid` are blank when nothing is connected. */
+    void setConnectedDeviceInfo(bool isF411, const QString &name, const QString &vidPid);
+
 private slots:
     void on_pushButton_BrowseFirmware_clicked();
     void on_pushButton_FlashConsolidated_clicked();
@@ -124,6 +130,12 @@ private:
     bool m_inFlasherMode = false;
     QString m_lastDeviceName;
     QString m_lastDeviceSerial;
+
+    /* Connected app-mode device summary (setConnectedDeviceInfo), consumed
+     * when opening the DFU install dialog. */
+    bool m_connectedIsF411 = false;
+    QString m_connectedName;
+    QString m_connectedVidPid;
 
     /* Refresh the per-row "Selected firmware" info card from the picked
      * file path. */

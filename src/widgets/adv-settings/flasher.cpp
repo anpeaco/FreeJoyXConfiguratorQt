@@ -309,6 +309,14 @@ void Flasher::refreshSourceList()
     }
 }
 
+void Flasher::setConnectedDeviceInfo(bool isF411, const QString &name,
+                                     const QString &vidPid)
+{
+    m_connectedIsF411 = isF411;
+    m_connectedName   = name;
+    m_connectedVidPid = vidPid;
+}
+
 void Flasher::on_pushButton_DfuInstall_clicked()
 {
     /* USB-DFU install/reinstall is fully self-contained in its own modal
@@ -316,6 +324,10 @@ void Flasher::on_pushButton_DfuInstall_clicked()
      * and drives the freejoyx-flash helper. No HID device or flasher-mode
      * state is required, so this path works even on a blank or bricked chip. */
     DfuInstallDialog dlg(this);
+    /* Offer the one-click reboot-to-DFU shortcut only when an F411 is
+     * connected (the command does nothing otherwise); the dialog shows the
+     * device name + VID:PID. */
+    dlg.setConnectedDevice(m_connectedIsF411, m_connectedName, m_connectedVidPid);
     /* The dialog's "reboot connected device to DFU" button asks us to send the
      * firmware command; forward it up to MainWindow which owns the HID worker. */
     connect(&dlg, &DfuInstallDialog::rebootToDfuRequested,

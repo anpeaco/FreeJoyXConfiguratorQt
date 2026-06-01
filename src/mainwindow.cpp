@@ -530,6 +530,8 @@ void MainWindow::setDeviceInfo(const QString &vidHex, const QString &pidHex, con
             ui->tabWidget->setTabEnabled(ledTabIdx, true);
             ui->tabWidget->setTabToolTip(ledTabIdx, QString());
         }
+        /* Nothing connected -> the DFU dialog's reboot shortcut has no target. */
+        m_advSettings->flasher()->setConnectedDeviceInfo(false, QString(), QString());
         return;
     }
     ui->label_VidPidVal->setText(vidHex + QStringLiteral(":") + pidHex);
@@ -711,8 +713,23 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
                     : tr("LEDs are not yet supported on Black Pill (F411). "
                          "Coming in a future update."));
             }
+
+            /* Tell the Flasher whether the connected device is an F411 (+ its
+             * identity), so the DFU install dialog offers the reboot-to-DFU
+             * shortcut only when it can actually work. */
+            const QString vidPid =
+                (!m_currentDeviceVid.isEmpty() && !m_currentDevicePid.isEmpty())
+                    ? (m_currentDeviceVid + QStringLiteral(":") + m_currentDevicePid)
+                    : QString();
+            m_advSettings->flasher()->setConnectedDeviceInfo(
+                boardId == BOARD_ID_F411_BLACKPILL,
+                QString::fromLatin1(gEnv.pDeviceConfig->config.device_name).trimmed(),
+                vidPid);
         } else {
             ui->label_BoardVal->setText(QStringLiteral("—"));
+            /* Unrecognised firmware -> board_id can't be trusted; don't offer
+             * the reboot shortcut. */
+            m_advSettings->flasher()->setConnectedDeviceInfo(false, QString(), QString());
         }
 
         if (firmwareCompatible == false) {

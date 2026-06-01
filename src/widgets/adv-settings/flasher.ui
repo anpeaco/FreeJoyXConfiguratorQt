@@ -232,7 +232,7 @@
         <string>&lt;p&gt;Install or reinstall the bootloader and application over USB DFU — no ST-Link or STM32CubeProgrammer needed. Use it for a blank chip, a corrupted bootloader, or to change firmware generation.&lt;/p&gt;&lt;p&gt;F411 (BlackPill) only; the board must be in DFU mode (BOOT0 + reset).&lt;/p&gt;</string>
        </property>
        <property name="text">
-        <string>Install / Reinstall (USB DFU)…</string>
+        <string>F411 Install…</string>
        </property>
       </widget>
      </item>

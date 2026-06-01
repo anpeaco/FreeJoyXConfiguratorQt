@@ -23,6 +23,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFileInfo>
+#include <QFont>
 
 namespace {
 
@@ -45,6 +46,9 @@ DfuInstallDialog::DfuInstallDialog(QWidget *parent)
 {
     setWindowTitle(tr("Install / Reinstall Firmware (USB DFU)"));
     setModal(true);
+    /* Drop the title-bar "?" context-help button (Windows adds it to dialogs
+     * by default) -- there's no per-widget "What's This" help here. */
+    setWindowFlag(Qt::WindowContextHelpButtonHint, false);
 
     buildUi();
 
@@ -74,49 +78,95 @@ DfuInstallDialog::DfuInstallDialog(QWidget *parent)
 
 DfuInstallDialog::~DfuInstallDialog() = default;
 
+void DfuInstallDialog::setConnectedDevice(bool f411Present, const QString &name,
+                                          const QString &vidPid)
+{
+    /* The one-click reboot shortcut only does anything when an F411 running
+     * FreeJoyX is connected, so show the row only then -- and label it with
+     * the device's name + VID:PID so the user knows what will be rebooted. */
+    if (!m_rebootRow) return;
+    if (f411Present) {
+        QString id = name.trimmed().isEmpty() ? tr("F411 (Black Pill)") : name.trimmed();
+        if (!vidPid.isEmpty()) id += QStringLiteral(" — ") + vidPid;
+        m_connLabel->setText(tr("Connected: <b>%1</b>").arg(id.toHtmlEscaped()));
+        m_rebootRow->setVisible(true);
+    } else {
+        m_rebootRow->setVisible(false);
+    }
+}
+
 void DfuInstallDialog::buildUi()
 {
     auto *root = new QVBoxLayout(this);
+    root->setSpacing(10);
 
-    /* --- How to enter ROM DFU --------------------------------------- */
-    m_instructions = new QLabel(this);
+    /* --- What this does --------------------------------------------- */
+    auto *intro = new QLabel(this);
+    intro->setTextFormat(Qt::RichText);
+    intro->setWordWrap(true);
+    intro->setText(tr(
+        "Writes the FreeJoyX <b>bootloader and application</b> to an "
+        "<b>F411 (Black Pill)</b> over the chip's built-in USB DFU — no "
+        "ST-Link or STM32CubeProgrammer. Works on a blank, configured, or "
+        "bricked board."));
+    root->addWidget(intro);
+
+    /* --- Step 1: get the chip into ROM DFU -------------------------- */
+    auto *dfuBox = new QGroupBox(tr("1.  Put the board in DFU mode"), this);
+    auto *dfuLay = new QVBoxLayout(dfuBox);
+    dfuLay->setSpacing(8);
+
+    /* Preferred path, shown only when an F411 is connected: ask the firmware
+     * to reboot itself into ROM DFU (anpeaco/FreeJoyX#55) -- no jumper. The
+     * whole row is hidden by setConnectedDevice() when no F411 is present
+     * (the reboot command would do nothing). */
+    m_rebootRow = new QWidget(dfuBox);
+    auto *rebootLay = new QVBoxLayout(m_rebootRow);
+    rebootLay->setContentsMargins(0, 0, 0, 0);
+    rebootLay->setSpacing(4);
+    m_connLabel = new QLabel(m_rebootRow);
+    m_connLabel->setWordWrap(true);
+    rebootLay->addWidget(m_connLabel);
+    auto *rebootBtnRow = new QHBoxLayout();
+    auto *rebootHint = new QLabel(tr("Reboot it straight into DFU:"), m_rebootRow);
+    rebootHint->setWordWrap(true);
+    m_rebootBtn = new QPushButton(tr("Reboot into DFU"), m_rebootRow);
+    connect(m_rebootBtn, &QPushButton::clicked, this, &DfuInstallDialog::onRebootToDfu);
+    rebootBtnRow->addWidget(rebootHint, 1);
+    rebootBtnRow->addWidget(m_rebootBtn, 0);
+    rebootLay->addLayout(rebootBtnRow);
+    m_rebootRow->setVisible(false);          // setConnectedDevice() reveals it
+    dfuLay->addWidget(m_rebootRow);
+
+    /* Manual BOOT0 method (always available). */
+    m_instructions = new QLabel(dfuBox);
     m_instructions->setTextFormat(Qt::RichText);
     m_instructions->setWordWrap(true);
     m_instructions->setText(tr(
-        "<b>Step 1 &mdash; put the board into USB DFU mode.</b><br>"
-        "Hold <b>BOOT0</b>, tap <b>NRST</b> (reset), then release BOOT0 &mdash; "
-        "or hold BOOT0 while plugging in USB. The board then enumerates as "
-        "<i>STM32&nbsp;BOOTLOADER</i> and is detected below.<br>"
-        "This works on a blank, configured, or even bricked chip and writes "
-        "<b>both</b> the bootloader and the application."));
-    root->addWidget(m_instructions);
+        "<b>To enter DFU manually:</b>"
+        "<ol style='margin-left:-20px;'>"
+        "<li>Hold <b>BOOT0</b>.</li>"
+        "<li>Tap <b>NRST</b> (reset), then release it.</li>"
+        "<li>Release <b>BOOT0</b>.</li>"
+        "</ol>"
+        "(Or hold BOOT0 while plugging in USB.) The board then re-appears as "
+        "<i>STM32&nbsp;BOOTLOADER</i>."));
+    dfuLay->addWidget(m_instructions);
 
-    /* --- Software trigger (no jumper) ------------------------------- */
-    /* If a FreeJoy device is already connected and running, ask the firmware
-     * to reboot itself into ROM DFU (anpeaco/FreeJoyX#55) -- no BOOT0 needed.
-     * Harmless if the firmware predates the command or nothing is connected;
-     * the user just falls back to the BOOT0 method above. */
-    auto *rebootRow = new QHBoxLayout();
-    auto *rebootHint = new QLabel(
-        tr("Device already connected and running? Skip the buttons:"), this);
-    rebootHint->setWordWrap(true);
-    m_rebootBtn = new QPushButton(tr("Reboot it into DFU"), this);
-    connect(m_rebootBtn, &QPushButton::clicked, this, &DfuInstallDialog::onRebootToDfu);
-    rebootRow->addWidget(rebootHint, 1);
-    rebootRow->addWidget(m_rebootBtn, 0);
-    root->addLayout(rebootRow);
-
-    /* --- Detection status ------------------------------------------- */
+    /* Detection status + manual re-check. */
     auto *detectRow = new QHBoxLayout();
-    m_detectLabel = new QLabel(tr("Looking for a board in DFU mode…"), this);
-    m_detectBtn = new QPushButton(tr("Re-check"), this);
+    m_detectLabel = new QLabel(tr("Looking for a board in DFU mode…"), dfuBox);
+    m_detectLabel->setWordWrap(true);
+    m_detectBtn = new QPushButton(tr("Re-check"), dfuBox);
     connect(m_detectBtn, &QPushButton::clicked, this, &DfuInstallDialog::onRefreshDetect);
     detectRow->addWidget(m_detectLabel, 1);
     detectRow->addWidget(m_detectBtn, 0);
-    root->addLayout(detectRow);
+    dfuLay->addLayout(detectRow);
 
-    /* --- Binaries to write ------------------------------------------ */
-    auto *binBox = new QGroupBox(tr("Firmware to write (F411)"), this);
+    root->addWidget(dfuBox);
+
+    /* --- Step 2: binaries to write ---------------------------------- */
+    auto *binBox = new QGroupBox(tr("2.  Firmware to write (F411)"), this);
     auto *binForm = new QFormLayout(binBox);
 
     auto makePathRow = [this](QLineEdit *&edit, QPushButton *&btn,
@@ -126,6 +176,7 @@ void DfuInstallDialog::buildUi()
         h->setContentsMargins(0, 0, 0, 0);
         edit = new QLineEdit(w);
         edit->setReadOnly(true);
+        edit->setPlaceholderText(tr("Browse for a .bin…"));
         btn = new QPushButton(tr("Browse…"), w);
         connect(edit, &QLineEdit::textChanged, this, [this](const QString &) {
             refreshInstallEnabled();
@@ -144,8 +195,8 @@ void DfuInstallDialog::buildUi()
                                 SLOT(onBrowseApp())));
     root->addWidget(binBox);
 
-    /* --- Progress --------------------------------------------------- */
-    m_stageLabel = new QLabel(tr("Idle."), this);
+    /* --- Progress + log --------------------------------------------- */
+    m_stageLabel = new QLabel(tr("Ready."), this);
     root->addWidget(m_stageLabel);
 
     m_progress = new QProgressBar(this);
@@ -153,15 +204,30 @@ void DfuInstallDialog::buildUi()
     m_progress->setValue(0);
     root->addWidget(m_progress);
 
+    auto *logLabel = new QLabel(tr("Log"), this);
+    logLabel->setStyleSheet(QStringLiteral("color: palette(mid);"));
+    root->addWidget(logLabel);
+
     m_log = new QPlainTextEdit(this);
     m_log->setReadOnly(true);
     m_log->setMaximumBlockCount(500);
-    m_log->setMinimumHeight(120);
+    m_log->setMinimumHeight(110);
+    QFont logFont = m_log->font();
+    logFont.setFamily(QStringLiteral("Consolas"));
+    logFont.setStyleHint(QFont::Monospace);
+    m_log->setFont(logFont);
     root->addWidget(m_log, 1);
 
-    /* --- Action buttons --------------------------------------------- */
+    /* --- Erase warning (always visible) + action buttons ------------ */
+    auto *warn = new QLabel(
+        tr("⚠  Installing erases the board and restores factory defaults — "
+           "its current configuration is lost."), this);
+    warn->setWordWrap(true);
+    warn->setStyleSheet(QStringLiteral("color: #c0392b;"));   // red, both themes
+    root->addWidget(warn);
+
     auto *btnRow = new QHBoxLayout();
-    m_installBtn = new QPushButton(tr("Install / Reinstall"), this);
+    m_installBtn = new QPushButton(tr("Install"), this);
     m_installBtn->setDefault(true);
     connect(m_installBtn, &QPushButton::clicked, this, &DfuInstallDialog::onInstallClicked);
     m_closeBtn = new QPushButton(tr("Close"), this);
@@ -182,11 +248,13 @@ void DfuInstallDialog::buildUi()
     if (!DfuInstallSession::helperAvailable()) {
         m_detectLabel->setText(tr("The install helper (freejoyx-flash) is "
                                   "missing from the application folder."));
+        m_detectLabel->setStyleSheet(QStringLiteral("color: #c0392b; font-weight: bold;"));
         m_installBtn->setEnabled(false);
         m_detectBtn->setEnabled(false);
+        m_rebootBtn->setEnabled(false);
     }
 
-    resize(560, 460);
+    resize(580, 540);
 }
 
 void DfuInstallDialog::prefillBundledBinaries()
@@ -244,6 +312,7 @@ void DfuInstallDialog::onRebootToDfu()
     if (!m_installing) {
         m_detectLabel->setText(tr("Rebooting into DFU… if nothing happens, "
                                   "use the BOOT0 method above."));
+        m_detectLabel->setStyleSheet(QString());
     }
 }
 
@@ -258,9 +327,13 @@ void DfuInstallDialog::onAvailability(bool present)
 {
     m_devicePresent = present;
     if (!m_installing) {
-        m_detectLabel->setText(present
-            ? tr("✅ Board detected in DFU mode — ready to write.")
-            : tr("No board in DFU mode yet. Follow Step 1 above."));
+        if (present) {
+            m_detectLabel->setText(tr("Board detected in DFU mode — ready to write."));
+            m_detectLabel->setStyleSheet(QStringLiteral("color: #27ae60; font-weight: bold;"));
+        } else {
+            m_detectLabel->setText(tr("No board in DFU mode yet — follow step 1 above."));
+            m_detectLabel->setStyleSheet(QString());
+        }
     }
     refreshInstallEnabled();
 }
@@ -321,6 +394,7 @@ void DfuInstallDialog::onStageChanged(DfuInstallSession::Stage s, const QString 
     case DfuInstallSession::Stage::Idle:              label = tr("Idle."); break;
     }
     m_stageLabel->setText(label);
+    m_stageLabel->setStyleSheet(QString());   // terminal colouring is set in onFinished
     if (!detail.isEmpty()) appendLog(detail);
     const int p = weightedProgress(s, 0, 0);
     if (p >= 0) m_progress->setValue(p);    /* <0 == "leave the bar where it is" */
@@ -339,17 +413,23 @@ void DfuInstallDialog::onLogLine(const QString &line)
 void DfuInstallDialog::onFinished(bool success, const QString &detail)
 {
     m_installing = false;
+    if (success) m_installed = true;   // latch BEFORE setControlsLocked so Install stays off
     setControlsLocked(false);
     appendLog(detail);
 
     if (success) {
         m_progress->setValue(100);
-        m_stageLabel->setText(tr("✅ Firmware installed."));
+        m_stageLabel->setText(tr("Firmware installed."));
+        m_stageLabel->setStyleSheet(QStringLiteral("color: #27ae60; font-weight: bold;"));
+        m_detectLabel->setText(tr("Install complete. Unplug/replug to use the "
+                                  "board; reopen this dialog to install again."));
+        m_detectLabel->setStyleSheet(QString());
         QMessageBox::information(this, tr("Done"),
             tr("Firmware installed. Unplug and replug the board to start "
                "using it."));
     } else {
-        m_stageLabel->setText(tr("❌ Install failed."));
+        m_stageLabel->setText(tr("Install failed."));
+        m_stageLabel->setStyleSheet(QStringLiteral("color: #c0392b; font-weight: bold;"));
         QMessageBox::critical(this, tr("Install failed"),
             detail.isEmpty() ? tr("The install did not complete.") : detail);
         /* Resume detection so the user can retry after re-entering DFU. */
@@ -363,7 +443,7 @@ void DfuInstallDialog::setControlsLocked(bool locked)
     m_browseAppBtn->setEnabled(!locked);
     m_rebootBtn->setEnabled(!locked);
     m_detectBtn->setEnabled(!locked && DfuInstallSession::helperAvailable());
-    m_installBtn->setEnabled(!locked && m_devicePresent
+    m_installBtn->setEnabled(!locked && !m_installed && m_devicePresent
                              && !m_bootEdit->text().isEmpty()
                              && !m_appEdit->text().isEmpty());
     /* Close doubles as Cancel during a write. */
@@ -373,7 +453,8 @@ void DfuInstallDialog::setControlsLocked(bool locked)
 void DfuInstallDialog::refreshInstallEnabled()
 {
     if (m_installing) return;            /* setControlsLocked owns the state then */
-    const bool ready = m_devicePresent
+    const bool ready = !m_installed
+                       && m_devicePresent
                        && DfuInstallSession::helperAvailable()
                        && !m_bootEdit->text().isEmpty()
                        && !m_appEdit->text().isEmpty();
