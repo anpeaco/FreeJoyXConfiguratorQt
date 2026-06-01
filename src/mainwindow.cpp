@@ -43,6 +43,11 @@ namespace {
  * the flash flow already restored. Longer than the post-write fallback (5s) to
  * absorb the F411's multi re-enum. */
 constexpr int kSuppressAutoReadAfterFlashMs = 10000;
+
+/* Height the debug pane opens to (and the amount the window grows/shrinks when
+ * it's shown/hidden). ~120 was the original; raised to fit roughly two more log
+ * lines. Used in on_pushButton_ShowDebug_clicked + the startup restore. */
+constexpr int kDebugPaneHeight = 156;
 }
 
 MainWindow::MainWindow(QWidget *parent)
@@ -286,6 +291,11 @@ MainWindow::MainWindow(QWidget *parent)
     // auto-read-on-connect toggle (Advanced tab) -> update the cached flag
     connect(m_advSettings, &AdvancedSettings::autoReadOnConnectChanged,
             this, [this](bool on) { m_autoReadOnConnect = on; });
+    // write-log toggle (Advanced tab) -> forward to the debug logger if it
+    // exists; the setting itself is persisted by AdvancedSettings and re-read
+    // when the debug pane is created.
+    connect(m_advSettings, &AdvancedSettings::writeLogChanged,
+            this, [this](bool on) { if (m_debugWindow) m_debugWindow->setWriteToFile(on); });
     // default save directory changed (Advanced tab)
     connect(m_advSettings, &AdvancedSettings::saveDirectoryChanged,
             this, &MainWindow::applySaveDirectoryChange);
@@ -471,10 +481,7 @@ void MainWindow::hideConnectDeviceInfo()
     }
     blockWRConfigToDevice(true);
     ui->pushButton_UpgradeFirmware->setDisabled(true);
-    // debug window
-    if (m_debugWindow) {
-        m_debugWindow->resetPacketsCount();
-    }
+    resetPacketStats();
     // disable curve point
     QTimer::singleShot(3000, this, [&] {   // not the best approach
         if (ui->pushButton_ReadConfig->isEnabled() == false) {
@@ -489,9 +496,7 @@ void MainWindow::flasherConnected()
     ui->label_DeviceStatus->setText(tr("Connected"));
     freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-connected");
     blockWRConfigToDevice(true);
-    if (m_debugWindow) {
-        m_debugWindow->resetPacketsCount();
-    }
+    resetPacketStats();
     if (ui->pushButton_ReadConfig->isEnabled() == false) {
         m_axesCurvesConfig->deviceStatus(false);
     }
@@ -820,10 +825,8 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
         }
         timer.restart();
     }
-    // debug info
-    if (m_debugWindow) {
-        m_debugWindow->devicePacketReceived();
-    }
+    // packet stats (Device info card)
+    onDevicePacketReceived();
 
     // debug tab
 #ifdef QT_DEBUG
@@ -1728,6 +1731,40 @@ void MainWindow::configSent(bool success)
 #endif
 }
 
+void MainWindow::onDevicePacketReceived()
+{
+    /* Count every USB report and show it in the Device card. The rate is the
+     * mean inter-packet time over a 5 s window (same maths the debug pane used
+     * to do, relocated here so the stats show whenever a device is connected,
+     * not only while the debug pane is open). The packet-count label is updated
+     * on a 100 ms throttle so it doesn't repaint on every report. */
+    static QElapsedTimer countThrottle;
+    m_packetsReceived++;
+    if (!countThrottle.isValid() || countThrottle.hasExpired(100)) {
+        ui->label_PacketsVal->setNum(m_packetsReceived);
+        countThrottle.start();
+    }
+
+    if (m_packetRateTimer.isValid() && m_packetRateTimer.hasExpired(5000)) {
+        const double ms = double(m_packetRateTimer.restart())
+                        / double(m_packetRateSamples ? m_packetRateSamples : 1);
+        ui->label_RateVal->setText(QString::number(ms, 'f', 3) + tr(" ms"));
+        m_packetRateSamples = 0;
+    } else if (!m_packetRateTimer.isValid()) {
+        m_packetRateTimer.start();
+    }
+    m_packetRateSamples++;
+}
+
+void MainWindow::resetPacketStats()
+{
+    m_packetsReceived = 0;
+    m_packetRateSamples = 0;
+    m_packetRateTimer.invalidate();
+    ui->label_PacketsVal->setText(QStringLiteral("—"));
+    ui->label_RateVal->setText(QStringLiteral("—"));
+}
+
 void MainWindow::blockWRConfigToDevice(bool block)
 {
     ui->pushButton_ReadConfig->setDisabled(block);
@@ -1867,7 +1904,7 @@ void MainWindow::loadAppConfig()
     if (m_debugIsEnable){
         on_pushButton_ShowDebug_clicked();
         if (this->isMaximized() == false){
-            resize(width(), height() - 120 - ui->layoutG_MainLayout->verticalSpacing());
+            resize(width(), height() - kDebugPaneHeight - ui->layoutG_MainLayout->verticalSpacing());
         }
     }
     // auto-read config from device on connect (default on)
@@ -2636,9 +2673,9 @@ void MainWindow::on_pushButton_ShowDebug_clicked()
 
     if (m_debugWindow->isVisible() == false)
     {
-        m_debugWindow->setMinimumHeight(120);
+        m_debugWindow->setMinimumHeight(kDebugPaneHeight);
         if (this->isMaximized() == false){
-            resize(width(), height() + 120 + ui->layoutG_MainLayout->verticalSpacing());
+            resize(width(), height() + kDebugPaneHeight + ui->layoutG_MainLayout->verticalSpacing());
         }
         m_debugWindow->setVisible(true);
         m_debugIsEnable = true;
@@ -2647,7 +2684,7 @@ void MainWindow::on_pushButton_ShowDebug_clicked()
         m_debugWindow->setVisible(false);
         m_debugWindow->setMinimumHeight(0);
         if (this->isMaximized() == false){
-            resize(width(), height() - 120 - ui->layoutG_MainLayout->verticalSpacing());    // and in LoadAppConfig()
+            resize(width(), height() - kDebugPaneHeight - ui->layoutG_MainLayout->verticalSpacing());    // and in LoadAppConfig()
         }
         m_debugIsEnable = false;
         ui->pushButton_ShowDebug->setText(tr("Show debug"));

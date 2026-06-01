@@ -66,13 +66,45 @@ QString buttonTypeLabel(button_type_t t)
 }
 
 } // namespace
+namespace {
+
+// Colour for each log level. Empty (invalid) -> render with the widget's
+// default palette text colour so INFO stays theme-correct (light/dark). The
+// rest are mid-tones chosen to read on both themes.
+QString colorForLevel(DebugWindow::LogLevel level)
+{
+    switch (level) {
+        case DebugWindow::LogLevel::Debug:  return QStringLiteral("#7f8c8d"); // grey
+        case DebugWindow::LogLevel::Info:   return QString();                 // default
+        case DebugWindow::LogLevel::Warn:   return QStringLiteral("#d9822b"); // amber
+        case DebugWindow::LogLevel::Error:  return QStringLiteral("#e74c3c"); // red
+        case DebugWindow::LogLevel::Button: return QStringLiteral("#2e86de"); // blue
+        case DebugWindow::LogLevel::Marker: return QStringLiteral("#8e44ad"); // purple
+    }
+    return QString();
+}
+
+// Short [TAG] prepended to each line.
+QString tagForLevel(DebugWindow::LogLevel level)
+{
+    switch (level) {
+        case DebugWindow::LogLevel::Debug:  return QStringLiteral("DEBUG");
+        case DebugWindow::LogLevel::Info:   return QStringLiteral("INFO");
+        case DebugWindow::LogLevel::Warn:   return QStringLiteral("WARN");
+        case DebugWindow::LogLevel::Error:  return QStringLiteral("ERROR");
+        case DebugWindow::LogLevel::Button: return QStringLiteral("BTN");
+        case DebugWindow::LogLevel::Marker: return QStringLiteral("MARK");
+    }
+    return QStringLiteral("INFO");
+}
+
+} // namespace
+
 DebugWindow::DebugWindow(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::DebugWindow)
 {
     ui->setupUi(this);
-
-    m_packetsCount = 0;
 
     QString docLoc = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     if (docLoc.isEmpty() == false) {
@@ -84,12 +116,10 @@ DebugWindow::DebugWindow(QWidget *parent)
     const bool logEnabled = s.value("LogEnabled", false).toBool();
     s.endGroup();
 
-    /* Mirror the persisted setting into BOTH the UI checkbox state AND
-     * the m_writeToFile flag that printMsg actually gates on. Previous
-     * code only synced the UI; m_writeToFile stayed false until the
-     * user clicked the checkbox, so logging silently no-op'd until then
-     * even if the UI showed it as enabled. */
-    ui->checkBox_WriteLog->setChecked(logEnabled);
+    /* The "Write log to file" checkbox now lives in Advanced Settings; this
+     * widget just reads the persisted setting on creation so file logging is
+     * correct even before the pane is opened. Advanced re-pushes changes via
+     * setWriteToFile(). */
     m_writeToFile = logEnabled;
 }
 
@@ -103,39 +133,9 @@ void DebugWindow::retranslateUi()
     ui->retranslateUi(this);
 }
 
-void DebugWindow::devicePacketReceived()
+void DebugWindow::setWriteToFile(bool on)
 {
-    //    if (isVisible()){
-    //    }
-    static int count = 0;
-    static QElapsedTimer packet_timer;
-
-    m_packetsCount++;
-    if (packet_timer.hasExpired(100)) {
-        ui->label_PacketsCount->setNum(m_packetsCount);
-        packet_timer.start();
-    }
-
-    if (m_timer.hasExpired(5000) && m_timer.isValid()) {
-        ui->label_PacketsSpeed->setText(QString::number((double(m_timer.restart()) / double(count)), 'f', 3)
-                                        + tr(" ms"));
-        count = 0;
-    } else if (m_timer.isValid() == false) { // valid/invalid toggle keeps display correct across device connect/disconnect
-        m_timer.start();
-    }
-
-    count++;
-}
-
-void DebugWindow::resetPacketsCount()
-{
-    m_packetsCount = 0;
-    ui->label_PacketsCount->setNum(m_packetsCount);
-
-    m_timer.invalidate();
-    ui->label_PacketsSpeed->setText(tr("0 ms"));
-
-    buttonLogReset();
+    m_writeToFile = on;
 }
 
 void DebugWindow::appendToLogFile(const QString &line)
@@ -169,23 +169,57 @@ void DebugWindow::appendToLogFile(const QString &line)
     out << line;
 }
 
-void DebugWindow::printMsg(const QString &msg)
+void DebugWindow::appendLine(LogLevel level, const QString &msg)
 {
-    QString log(QDateTime::currentDateTime().toString("hh:mm:ss.zzz") + ": " + msg + '\n');
-    ui->textBrowser_DebugMsg->insertPlainText(log);         // append?
-    ui->textBrowser_DebugMsg->moveCursor(QTextCursor::End); // works oddly with plainTextEdit
+    /* The one sink every log line flows through. Builds a
+     *   HH:mm:ss.zzz [TAG] message
+     * line, renders it colour-coded by level in the combined view, and mirrors
+     * the same (plain) text to the on-disk log. */
+    const QString stamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
+    const QString tag   = tagForLevel(level);
+    const QString plain = stamp + QStringLiteral(" [") + tag + QStringLiteral("] ") + msg;
 
-    appendToLogFile(log);
+    // Only the [TAG] status code carries the level colour; the timestamp and
+    // message stay in the default palette colour so the line reads normally and
+    // just the status code stands out (and it's theme-correct). Escape the
+    // message so qDebug output with '<' / '&' (pointers, templates) renders
+    // literally. INFO has no colour -> its tag is the default colour too.
+    const QString color = colorForLevel(level);
+    QString tagHtml = QStringLiteral("[") + tag + QStringLiteral("]");
+    if (level == LogLevel::Marker) {
+        tagHtml = QStringLiteral("<b>") + tagHtml + QStringLiteral("</b>");
+    }
+    if (!color.isEmpty()) {
+        tagHtml = QStringLiteral("<span style=\"color:%1;\">%2</span>").arg(color, tagHtml);
+    }
+    const QString html = stamp.toHtmlEscaped() + QStringLiteral(" ") + tagHtml
+                       + QStringLiteral(" ") + msg.toHtmlEscaped();
+
+    ui->textBrowser_Log->moveCursor(QTextCursor::End);
+    ui->textBrowser_Log->insertHtml(html + QStringLiteral("<br>"));
+    ui->textBrowser_Log->moveCursor(QTextCursor::End);
+
+    appendToLogFile(plain + '\n');
+}
+
+void DebugWindow::printMsg(const QString &msg, int level)
+{
+    appendLine(static_cast<LogLevel>(level), msg);
 }
 
 void DebugWindow::on_pushButton_LogMarker_clicked()
 {
-    /* A distinctive line the user can grep for when reviewing the log
-     * file after a bench session. Routed through printMsg so it lands
-     * in both the in-app textBrowser and the on-disk log (if enabled). */
+    /* A distinctive line the user can spot (and grep for) when reviewing the
+     * log after a bench session. */
     static int counter = 0;
     ++counter;
-    printMsg(QString("================ MARKER #%1 ================").arg(counter));
+    appendLine(LogLevel::Marker, QStringLiteral("———— MARKER #%1 ————").arg(counter));
+}
+
+void DebugWindow::on_pushButton_LogClear_clicked()
+{
+    // Clears the in-app view only; the on-disk log file is untouched.
+    ui->textBrowser_Log->clear();
 }
 
 void DebugWindow::logicalButtonState(int buttonNumber, bool state)
@@ -197,8 +231,8 @@ void DebugWindow::logicalButtonState(int buttonNumber, bool state)
      * up the slot's configured type and physical_num via the global
      * device config to enrich the line. Defensive against out-of-range
      * slot numbers or a null pDeviceConfig (theoretically possible
-     * during startup races) -- render '?' rather than crashing. */
-    const QString stamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
+     * during startup races) -- render '?' rather than crashing. Lands in
+     * the combined log under the BTN category (blue). */
     QString typeStr = QStringLiteral("?");
     QString physStr = QStringLiteral("?");
     if (gEnv.pDeviceConfig != nullptr
@@ -209,47 +243,19 @@ void DebugWindow::logicalButtonState(int buttonNumber, bool state)
         physStr = (btn.physical_num < 0) ? QStringLiteral("-")
                                          : QString::number(btn.physical_num + 1);
     }
-    const QString line = stamp + QStringLiteral(" | LBTN slot=") + QString::number(buttonNumber)
-                       + QStringLiteral(" type=") + typeStr
-                       + QStringLiteral(" phys=") + physStr
-                       + QStringLiteral(" state=") + (state ? QStringLiteral("ON") : QStringLiteral("OFF"))
-                       + '\n';
-
-    ui->textBrowser_ButtonsLog->insertPlainText(line);
-    ui->textBrowser_ButtonsLog->moveCursor(QTextCursor::End);
-
-    appendToLogFile(line);
+    appendLine(LogLevel::Button,
+               QStringLiteral("LBTN slot=") + QString::number(buttonNumber)
+                   + QStringLiteral(" type=") + typeStr
+                   + QStringLiteral(" phys=") + physStr
+                   + QStringLiteral(" state=") + (state ? QStringLiteral("ON") : QStringLiteral("OFF")));
 }
 
 void DebugWindow::physicalButtonState(int buttonNumber, bool state)
 {
-    /* Structured log line:
-     *   HH:mm:ss.zzz | PBTN phys=N state=ON|OFF
-     *
-     * Routed to both the merged in-app log panel and the on-disk log
-     * so the physical->logical correlation is visible in the UI during
-     * bench testing without tab-switching to the log file. */
-    const QString stamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
-    const QString line = stamp + QStringLiteral(" | PBTN phys=") + QString::number(buttonNumber)
-                       + QStringLiteral(" state=") + (state ? QStringLiteral("ON") : QStringLiteral("OFF"))
-                       + '\n';
-
-    ui->textBrowser_ButtonsLog->insertPlainText(line);
-    ui->textBrowser_ButtonsLog->moveCursor(QTextCursor::End);
-
-    appendToLogFile(line);
-}
-
-void DebugWindow::buttonLogReset()
-{
-    ui->textBrowser_ButtonsLog->clear();
-}
-
-void DebugWindow::on_checkBox_WriteLog_clicked(bool checked)
-{
-    gEnv.pAppSettings->beginGroup("OtherSettings");
-    gEnv.pAppSettings->setValue("LogEnabled", checked);
-    gEnv.pAppSettings->endGroup();
-
-    m_writeToFile = checked;
+    /* Physical button edge -- lands in the combined log under the BTN
+     * category so the physical->logical correlation is visible in one
+     * timeline during bench testing. */
+    appendLine(LogLevel::Button,
+               QStringLiteral("PBTN phys=") + QString::number(buttonNumber)
+                   + QStringLiteral(" state=") + (state ? QStringLiteral("ON") : QStringLiteral("OFF")));
 }

@@ -131,8 +131,6 @@ void MainWindow::themeChanged(bool dark)
     // theme values before applying — single source of truth in style_helpers.h.
     qApp->setStyleSheet(freejoy_style::applyAccentTokens(qss, dark));
 
-    ui->pushButton_Wiki->setIcon(QIcon(":/Images/icons/lucide/book-open.svg"));
-
     updateColor();
 
     gEnv.pAppSettings->beginGroup("StyleSettings");

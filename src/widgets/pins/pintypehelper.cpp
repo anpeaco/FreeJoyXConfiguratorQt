@@ -3,7 +3,10 @@
 #include <QHoverEvent>
 #include <QDebug>
 #include <QCheckBox>
+#include <QLabel>
 #include <QSignalBlocker>
+#include <QToolTip>
+#include <QCursor>
 
 PinTypeHelper::PinTypeHelper(QWidget *parent) :
     QWidget(parent),
@@ -11,14 +14,44 @@ PinTypeHelper::PinTypeHelper(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    /* Short delay before a row's wiring-detail tooltip pops, so it doesn't
+     * flash up the instant the cursor crosses the info icon (QToolTip::showText
+     * is otherwise immediate, unlike Qt's built-in tooltip delay). */
+    m_tipTimer.setSingleShot(true);
+    connect(&m_tipTimer, &QTimer::timeout, this, [this] {
+        if (m_pendingTipLabel)
+            QToolTip::showText(QCursor::pos(),
+                               m_rowHelp.value(m_pendingTipLabel), m_pendingTipLabel);
+    });
+
     // not sure which is better -- this approach, or a new HoverLabel class inheriting from QLabel
     for (auto &&c : ui->groupBox->children()) {
         QLabel *label = qobject_cast<QLabel*>(c);
-        if (label) {
-            label->installEventFilter(this);
-            label->setMouseTracking(true);
-            label->setAttribute(Qt::WA_Hover, true);
-        }
+        if (!label) continue;
+        // Whole-row hover still drives the pin highlight (helpHovered).
+        label->installEventFilter(this);
+        label->setMouseTracking(true);
+        label->setAttribute(Qt::WA_Hover, true);
+
+        /* But the wiring-detail tooltip should only pop over the info icon,
+         * not anywhere on the row. Pull the row's help HTML out of the
+         * widget tooltip, make the icon's <a href> link drive it via
+         * linkHovered, and show/hide it manually as a rich-text tooltip. */
+        const QString help = label->toolTip();
+        if (help.isEmpty()) continue;
+        m_rowHelp.insert(label, help);
+        label->setToolTip(QString());
+        label->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+        connect(label, &QLabel::linkHovered, this, [this, label](const QString &href) {
+            if (href.isEmpty()) {
+                m_tipTimer.stop();
+                m_pendingTipLabel = nullptr;
+                QToolTip::hideText();
+            } else {
+                m_pendingTipLabel = label;
+                m_tipTimer.start(600);   // ms before the tooltip appears
+            }
+        });
     }
 
     ui->label_analogAxis->setProperty("pinType", AXIS_ANALOG);
