@@ -140,6 +140,19 @@ void PinComboBox::setLocked(bool locked)
     ui->comboBox_PinsType->setEnabled(!locked);
 }
 
+bool PinComboBox::isRoleOptionEnabled(int deviceEnum) const
+{
+    for (int i = 0; i < m_enumIndex.size(); ++i) {
+        if (m_enumIndex[i] == deviceEnum) {
+            // setIndexStatus() stores 0 at Qt::UserRole-1 to disable an item;
+            // an item never touched has no such data and is selectable.
+            const QVariant v = ui->comboBox_PinsType->itemData(i, Qt::UserRole - 1);
+            return !v.isValid() || v.toInt() != 0;
+        }
+    }
+    return false;   // role not offered on this pin
+}
+
 void PinComboBox::resetPin()
 {
     ui->comboBox_PinsType->setCurrentIndex(0);

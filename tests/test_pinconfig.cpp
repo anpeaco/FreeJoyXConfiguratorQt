@@ -220,6 +220,21 @@ private slots:
         QVERIFY(m_pc->autoAssignDisplaced().isEmpty());
     }
 
+    // ---- #65: while a TLE owns the GEN clock on B6, the user must not be able
+    //      to overwrite it -- B6's non-GEN options are locked off. ----
+    void sensorActive_locksGenPin()
+    {
+        QVERIFY(m_pc->isPinRoleOptionEnabled(PB_6, SHIFT_REG_DATA));   // free before
+        m_pc->setPinRole(PB_1, TLE5011_CS);             // TLE active -> GEN auto-claims B6
+        QCOMPARE(m_pc->pinRole(PB_6), int(TLE5011_GEN));
+        QVERIFY(m_pc->isPinRoleOptionEnabled(PB_6, TLE5011_GEN));      // GEN stays selectable
+        QVERIFY2(!m_pc->isPinRoleOptionEnabled(PB_6, SHIFT_REG_DATA),
+                 "#65: B6 non-GEN options must be disabled while a TLE is active");
+        m_pc->setPinRole(PB_1, NOT_USED);               // remove sensor -> frees B6
+        QVERIFY2(m_pc->isPinRoleOptionEnabled(PB_6, SHIFT_REG_DATA),
+                 "B6 options restored after the sensor is removed");
+    }
+
     // ---- #58: adding an SPI sensor auto-claims the SPI bus; removing the last
     //      one must clear SCK/MISO/MOSI AND drop the SPI bus checkbox. ----
     void spiCheckbox_clearsAfterLastSensorRemoved()
