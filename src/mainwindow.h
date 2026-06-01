@@ -202,6 +202,17 @@ private:
     bool       m_haveDeviceConfigSnapshot = false;
     QTimer    *m_dirtyCheckTimer = nullptr;
 
+    /* Guards the 1 Hz dirty poll (updatePendingChangesBadge ->
+     * uiHasUnsavedDeviceEdits -> flushUiToConfig) from firing while a
+     * config load is mid-flight. A load stages freshly-read bytes into
+     * dev_config_t and only renders them via UiReadFromConfig() once the
+     * load returns. If the load opens a modal (e.g. the cross-board
+     * convert prompt) its nested event loop lets the timer tick -- and
+     * flushUiToConfig would then write the still-stale UI back over the
+     * just-loaded config, blanking it. Set across the whole
+     * reset+load+UiReadFromConfig sequence at every file-load entry point. */
+    bool       m_configLoadInProgress = false;
+
     /* Auto-read-on-connect: when true (default), a compatible device
      * connecting triggers an automatic Read of its stored config into the
      * UI. Gated by the dirty check (prompt before discarding unsaved edits),
