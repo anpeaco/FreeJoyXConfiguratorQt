@@ -196,7 +196,7 @@ void DfuInstallDialog::buildUi()
     root->addWidget(warn);
 
     auto *btnRow = new QHBoxLayout();
-    m_installBtn = new QPushButton(tr("Install / Reinstall"), this);
+    m_installBtn = new QPushButton(tr("Install"), this);
     m_installBtn->setDefault(true);
     connect(m_installBtn, &QPushButton::clicked, this, &DfuInstallDialog::onInstallClicked);
     m_closeBtn = new QPushButton(tr("Close"), this);
