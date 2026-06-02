@@ -37,6 +37,12 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
 {
     ui->setupUi(this);
 
+    // The VID/PID caution triangles are loaded as the raw (black) lucide SVG in
+    // the .ui; tint them to the amber warning colour so they read on both
+    // themes. Amber is theme-independent, so this set-once is enough.
+    ui->info_VID->setPixmap(freejoy_style::warningPixmap(16));
+    ui->info_PID->setPixmap(freejoy_style::warningPixmap(16));
+
     m_flasher = new Flasher(this);
     ui->layoutH_Flasher->addWidget(m_flasher);
 

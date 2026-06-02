@@ -1,5 +1,6 @@
 #include "selectfolder.h"
 #include "ui_selectfolder.h"
+#include "style_helpers.h"
 #include <QFileDialog>
 
 SelectFolder::SelectFolder(const QString &folderPath, QWidget *parent) :
@@ -13,6 +14,8 @@ SelectFolder::SelectFolder(const QString &folderPath, QWidget *parent) :
 
     ui->lineEdit_currentFolder->setReadOnly(true);
     ui->lineEdit_currentFolder->setText(folderPath);
+
+    freejoy_style::setThemedIcon(ui->toolButton_selFolder, QStringLiteral(":/Images/icons/lucide/folder.svg"));
 
     connect(ui->pushButton_ok, &QPushButton::clicked, this, &SelectFolder::accept);
 

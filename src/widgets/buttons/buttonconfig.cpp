@@ -34,8 +34,9 @@ ButtonConfig::ButtonConfig(QWidget *parent)
     // 28x26 header label boxes. Re-render at 16x16 so they sit cleanly
     // inside the row without enlarging the column widths.
     const QSize headerIconSize(16, 16);
-    ui->label_7->setPixmap(QIcon(QStringLiteral(":/Images/icons/lucide/eye-off.svg")).pixmap(headerIconSize));
-    ui->label_6->setPixmap(QIcon(QStringLiteral(":/Images/icons/lucide/arrow-down-up.svg")).pixmap(headerIconSize));
+    freejoy_style::setThemedIcon(ui->label_7, QStringLiteral(":/Images/icons/lucide/eye-off.svg"), headerIconSize);
+    freejoy_style::setThemedIcon(ui->label_6, QStringLiteral(":/Images/icons/lucide/arrow-down-up.svg"), headerIconSize);
+    freejoy_style::setThemedIcon(ui->pushButton_ClearAllLogical, QStringLiteral(":/Images/icons/lucide/rotate-ccw.svg"));
 
     // dynamic creation with scroll
 #ifdef DYNAMIC_CREATION
@@ -357,7 +358,9 @@ void ButtonConfig::physButtonsCreator(int count)
                                     .arg(label)
                                     .arg(slot + 1)
                                     .arg(group_end), this);
-        header->setStyleSheet("font-weight: bold; padding-top: 6px;");
+        // padding-top separates the header from the group above; padding-bottom
+        // opens a gap between the header and its own row of button circles.
+        header->setStyleSheet("font-weight: bold; padding-top: 6px; padding-bottom: 6px;");
         ui->layoutG_PhysicalButton->addWidget(header, row, 0, 1, kCols);
         row++;
 

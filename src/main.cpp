@@ -10,6 +10,7 @@
 #include <QStandardPaths>
 #include <QDir>
 #include "infolabel.h"
+#include "windowthemehelper.h"
 
 // global environment
 #include "global.h"
@@ -69,6 +70,11 @@ int main(int argc, char *argv[])
     QApplication::setStyle(QStyleFactory::create("Fusion"));
     QApplication::setStyle(new InfoProxyStyle(qApp->style()));
     QApplication a(argc, argv);
+
+    // Apply the active theme's title bar (Windows dark mode) to every dialog
+    // as it is shown, not just the main window. themeChanged() seeds the
+    // active-theme flag this filter reads.
+    a.installEventFilter(new freejoy_style::TitleBarThemeFilter(&a));
 
     QString docLoc = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     if (docLoc.isEmpty() == false) {

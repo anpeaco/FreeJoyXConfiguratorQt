@@ -11,6 +11,7 @@
 #include "global.h"
 #include "common_types.h"
 #include "deviceconfig.h"
+#include "style_helpers.h"
 #include <QDebug>
 #include <QStandardPaths>
 
@@ -105,6 +106,11 @@ DebugWindow::DebugWindow(QWidget *parent)
     , ui(new Ui::DebugWindow)
 {
     ui->setupUi(this);
+
+    // Theme-track the monochrome glyph icons (light grey on dark, near-black
+    // on light) instead of the .ui's fixed-black SVGs.
+    freejoy_style::setThemedIcon(ui->pushButton_LogMarker, QStringLiteral(":/Images/icons/lucide/bookmark.svg"));
+    freejoy_style::setThemedIcon(ui->pushButton_LogClear,  QStringLiteral(":/Images/icons/lucide/rotate-ccw.svg"));
 
     QString docLoc = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     if (docLoc.isEmpty() == false) {

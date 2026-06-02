@@ -75,14 +75,12 @@ AxesConfig::AxesConfig(QWidget *parent)
     /* §5.5 "pin changes not on device yet" banner. Inserted above the axis
      * list; hidden until the working analog-pin set diverges from the
      * device's flashed set (updatePendingPinBanner). */
-    m_pinPendingBanner = new QLabel(this);
-    m_pinPendingBanner->setWordWrap(true);
-    m_pinPendingBanner->setText(
-        freejoy_style::warningIconHtml() + QStringLiteral("&nbsp;") + tr(
-        "Pin changes aren't on the device yet — auto-detect uses the "
-        "device's current pins. Write Config to detect newly-assigned "
-        "analog pins."));
-    freejoy_style::setRole(m_pinPendingBanner, "role", "status-warning");
+    // Full-width caution bar: the shared legible banner widget (icon + text
+    // boxed and vertically centred), matching the dialog warning bars.
+    m_pinPendingBanner = freejoy_style::makeAlertBanner(freejoy_style::accentAmber(),
+        tr("Pin changes aren't on the device yet — auto-detect uses the "
+           "device's current pins. Write Config to detect newly-assigned "
+           "analog pins."), this);
     m_pinPendingBanner->hide();
     ui->verticalLayout->insertWidget(0, m_pinPendingBanner);
 

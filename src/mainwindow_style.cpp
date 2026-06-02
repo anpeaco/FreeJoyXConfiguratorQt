@@ -12,27 +12,7 @@
 #include <QFile>
 #include <QToolTip>
 
-#if defined Q_OS_WIN && _MSC_VER
-    #include <dwmapi.h>
-    #pragma comment (lib,"Dwmapi.lib") // fixes error LNK2019: unresolved external symbol __imp__DwmExtendFrameIntoClientArea
-
-    enum : WORD {
-        DwmwaUseImmersiveDarkMode = 20,
-        DwmwaUseImmersiveDarkModeBefore20h1 = 19
-    };
-
-    bool setDarkBorderToWindow(HWND hwnd, bool dark)
-    {
-        const BOOL darkBorder = dark ? TRUE : FALSE;
-        const bool ok =
-                SUCCEEDED(DwmSetWindowAttribute(hwnd, DwmwaUseImmersiveDarkMode, &darkBorder, sizeof(darkBorder)))
-                || SUCCEEDED(DwmSetWindowAttribute(hwnd, DwmwaUseImmersiveDarkModeBefore20h1, &darkBorder, sizeof(darkBorder)));
-        if (!ok) {
-            qDebug()<<QString("%1: Unable to set %2 window border.").arg(__FUNCTION__, dark ? "dark" : "light");
-        }
-        return ok;
-    }
-#endif
+#include "windowthemehelper.h"
 
 // Read the contents of a QSS resource file (or return empty on failure).
 // Caller appends or overrides as needed.
@@ -78,9 +58,6 @@ void MainWindow::themeChanged(bool dark)
         qApp->setPalette(pal);
 
         styleName = "white";
-#if defined Q_OS_WIN && _MSC_VER
-        setDarkBorderToWindow((HWND)window()->winId(), false);
-#endif
     }
     else
     {
@@ -90,6 +67,10 @@ void MainWindow::themeChanged(bool dark)
         pal.setColor(QPalette::AlternateBase,    QColor(66, 67, 72));
         pal.setColor(QPalette::Button,           QColor(58, 60, 65));
         pal.setColor(QPalette::Mid,              QColor(80, 82, 88));
+        // Midlight is the QTabBar::tab:hover background (common.qss). Without
+        // setting it, Qt auto-derives a light value, washing out the near-white
+        // tab text on hover. Keep it dark, a touch above the unselected tab fill.
+        pal.setColor(QPalette::Midlight,         QColor(78, 80, 86));
         pal.setColor(QPalette::Dark,             QColor(40, 41, 45));
         pal.setColor(QPalette::Light,            QColor(80, 82, 88));
         pal.setColor(QPalette::Shadow,           QColor(20, 20, 20));
@@ -113,9 +94,6 @@ void MainWindow::themeChanged(bool dark)
         qApp->setPalette(pal);
 
         styleName = "dark";
-#if defined Q_OS_WIN && _MSC_VER
-        setDarkBorderToWindow((HWND)window()->winId(), true);
-#endif
     }
 
     // Concatenate the structural QSS with the theme-specific overrides
@@ -130,6 +108,20 @@ void MainWindow::themeChanged(bool dark)
     // Resolve the semantic accent tokens (%accent-...%, gradients) to their
     // theme values before applying — single source of truth in style_helpers.h.
     qApp->setStyleSheet(freejoy_style::applyAccentTokens(qss, dark));
+
+    // Re-tint every monochrome glyph icon to the new theme's ink. The palette
+    // is already applied above, so iconInk() reads the correct colour. Reaches
+    // all widgets (tabs + open dialogs) via qApp->allWidgets().
+    freejoy_style::retintThemedIcons();
+
+    // Track the active theme and re-skin every open top-level window's title
+    // bar (MainWindow + any dialog already on screen). Dialogs opened later
+    // pick it up via the TitleBarThemeFilter installed on qApp in main().
+    freejoy_style::setDarkThemeActive(dark);
+    const auto topWindows = QApplication::topLevelWidgets();
+    for (QWidget *win : topWindows) {
+        freejoy_style::applyDarkTitleBar(win, dark);
+    }
 
     updateColor();
 

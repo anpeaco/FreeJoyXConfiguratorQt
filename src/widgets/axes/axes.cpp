@@ -43,6 +43,17 @@ Axes::Axes(int axisNumber, QWidget *parent)
     freejoy_style::setRole(ui->pushButton_DetectSource, "role", "compact");
     freejoy_style::setRole(ui->pushButton_ClearA2b,   "role", "compact");
 
+    // Theme-track the monochrome glyph icons so they read as light grey on the
+    // dark theme instead of near-black. The .ui binds the black SVG; this
+    // overrides it with a palette-tinted copy and registers for re-tint on
+    // theme change. (pushButton_DetectSource is themed live in setDetectArmed.)
+    freejoy_style::setThemedIcon(ui->pushButton_ResetCalib,   QStringLiteral(":/Images/icons/lucide/rotate-ccw.svg"));
+    freejoy_style::setThemedIcon(ui->pushButton_ClearA2b,     QStringLiteral(":/Images/icons/lucide/rotate-ccw.svg"));
+    freejoy_style::setThemedIcon(ui->pushButton_SetCenter,    QStringLiteral(":/Images/icons/lucide/target.svg"));
+    // Idle-state icon for the detect button; setDetectArmed() re-themes it
+    // through the armed / sequence states as the user interacts.
+    freejoy_style::setThemedIcon(ui->pushButton_DetectSource, QStringLiteral(":/Images/icons/lucide/target.svg"));
+
     // Clear buttons-from-axes for this axis: set the count to 0.
     connect(ui->pushButton_ClearA2b, &QPushButton::clicked, this, [this]() {
         ui->spinBox_A2bCount->setValue(0);
@@ -296,11 +307,11 @@ void Axes::setDetectArmed(bool armed, bool sequence)
     // Three-state icon (the .ui iconset only covers off/on, so the
     // sequence state is applied explicitly): idle -> one-shot armed ->
     // armed mid auto-sequence walk.
-    static const QIcon kIdle(QStringLiteral(":/Images/icons/lucide/target.svg"));
-    static const QIcon kArmed(QStringLiteral(":/Images/icons/lucide/radio.svg"));
-    static const QIcon kSequence(QStringLiteral(":/Images/icons/lucide/crosshair.svg"));
-    ui->pushButton_DetectSource->setIcon(
-        !armed ? kIdle : (sequence ? kSequence : kArmed));
+    const QString detectSvg = !armed
+        ? QStringLiteral(":/Images/icons/lucide/target.svg")
+        : (sequence ? QStringLiteral(":/Images/icons/lucide/crosshair.svg")
+                    : QStringLiteral(":/Images/icons/lucide/radio.svg"));
+    freejoy_style::setThemedIcon(ui->pushButton_DetectSource, detectSvg);
 
     ui->pushButton_DetectSource->setToolTip(armed
         ? (sequence
