@@ -239,7 +239,10 @@ linux {
 
 win32 {
     RC_FILE = winapp.rc
-    LIBS += -lhid -lsetupapi
+    # dwmapi: immersive dark-mode title bar/frame (DwmSetWindowAttribute).
+    # MSVC also auto-links via #pragma comment in mainwindow_style.cpp;
+    # MinGW needs it here.
+    LIBS += -lhid -lsetupapi -ldwmapi
     SOURCES += \
         windows/hidapi.c
 }

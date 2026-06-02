@@ -12,9 +12,11 @@
 #include <QFile>
 #include <QToolTip>
 
-#if defined Q_OS_WIN && _MSC_VER
+#if defined Q_OS_WIN
     #include <dwmapi.h>
-    #pragma comment (lib,"Dwmapi.lib") // fixes error LNK2019: unresolved external symbol __imp__DwmExtendFrameIntoClientArea
+    #if defined(_MSC_VER)
+        #pragma comment (lib,"Dwmapi.lib") // MSVC auto-link; MinGW links via -ldwmapi in src.pro
+    #endif
 
     enum : WORD {
         DwmwaUseImmersiveDarkMode = 20,
@@ -78,7 +80,7 @@ void MainWindow::themeChanged(bool dark)
         qApp->setPalette(pal);
 
         styleName = "white";
-#if defined Q_OS_WIN && _MSC_VER
+#if defined Q_OS_WIN
         setDarkBorderToWindow((HWND)window()->winId(), false);
 #endif
     }
@@ -113,7 +115,7 @@ void MainWindow::themeChanged(bool dark)
         qApp->setPalette(pal);
 
         styleName = "dark";
-#if defined Q_OS_WIN && _MSC_VER
+#if defined Q_OS_WIN
         setDarkBorderToWindow((HWND)window()->winId(), true);
 #endif
     }
