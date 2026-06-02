@@ -17,6 +17,10 @@ on:
         description: 'Ref of anpeaco/FreeJoyXConfigurator to build freejoyx-flash from'
         required: false
         default: 'main'
+      firmware_ref:
+        description: 'FreeJoyX firmware release tag to bundle F411 bins from (default: paired tag)'
+        required: false
+        default: ''
 
 permissions:
   contents: write  # softprops/action-gh-release needs write to create / modify the Release
@@ -81,6 +85,20 @@ jobs:
       - name: Build freejoyx-flash helper
         run: cargo build --release --manifest-path helper-src/Cargo.toml -p freejoyx-flash
 
+      # Bundle the F411 firmware so "F411 Install…" works out of the box. The
+      # paired FreeJoyX release ships per-board app+boot .bins; the DFU dialog
+      # auto-discovers them under the un-versioned names in a firmware/ folder.
+      # anpeaco/FreeJoyX is public, so the asset URLs need no auth.
+      - name: Download F411 firmware
+        env:
+          FW: ${{ inputs.firmware_ref || inputs.ref || github.ref_name }}
+        run: |
+          set -euxo pipefail
+          mkdir -p fw
+          base="https://github.com/anpeaco/FreeJoyX/releases/download/$FW"
+          curl -fSL -o fw/freejoyx-f411-boot.bin "$base/freejoyx-f411-boot-$FW.bin"
+          curl -fSL -o fw/freejoyx-f411-app.bin  "$base/freejoyx-f411-app-$FW.bin"
+
       # Build a self-contained AppImage so the download needs nothing
       # pre-installed: linuxdeploy's Qt plugin bundles the Qt libraries and
       # plugins (xcb platform plugin, all imageformats incl. qjpeg, styles).
@@ -108,9 +126,11 @@ jobs:
           chmod +x linuxdeploy*.AppImage
 
           # Assemble the AppDir.
-          mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/bin/firmware
           cp src/FreeJoyXConfiguratorQt               AppDir/usr/bin/
           cp helper-src/target/release/freejoyx-flash AppDir/usr/bin/
+          cp fw/freejoyx-f411-boot.bin AppDir/usr/bin/firmware/
+          cp fw/freejoyx-f411-app.bin  AppDir/usr/bin/firmware/
           cp src/Images/icon.png AppDir/FreeJoyXConfiguratorQt.png
           {
             echo '[Desktop Entry]'
@@ -193,6 +213,18 @@ jobs:
         shell: cmd
         run: cargo build --release --manifest-path helper-src\Cargo.toml -p freejoyx-flash
 
+      # See the Linux job: bundle the paired F411 firmware so "F411 Install…"
+      # finds its bins with no manual browsing. anpeaco/FreeJoyX is public.
+      - name: Download F411 firmware
+        shell: pwsh
+        env:
+          FW: ${{ inputs.firmware_ref || inputs.ref || github.ref_name }}
+        run: |
+          New-Item -ItemType Directory -Path fw | Out-Null
+          $base = "https://github.com/anpeaco/FreeJoyX/releases/download/$env:FW"
+          Invoke-WebRequest -Uri "$base/freejoyx-f411-boot-$env:FW.bin" -OutFile fw\freejoyx-f411-boot.bin
+          Invoke-WebRequest -Uri "$base/freejoyx-f411-app-$env:FW.bin"  -OutFile fw\freejoyx-f411-app.bin
+
       - name: Package
         shell: pwsh
         run: |
@@ -212,6 +244,11 @@ jobs:
             exit 1
           }
           Copy-Item $helperPath dist\
+
+          # Bundle the paired F411 firmware under firmware/ for "F411 Install…".
+          New-Item -ItemType Directory -Path dist\firmware | Out-Null
+          Copy-Item fw\freejoyx-f411-boot.bin dist\firmware\
+          Copy-Item fw\freejoyx-f411-app.bin  dist\firmware\
 
           # Primary deploy: windeployqt resolves every needed Qt DLL + plugin
           # automatically (platforms\qwindows, all imageformats incl. qjpeg,
