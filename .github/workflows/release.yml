@@ -86,7 +86,10 @@ jobs:
         with:
           tag_name: ${{ inputs.ref || github.ref_name }}
           files: FreeJoyXConfiguratorQt-linux-${{ inputs.ref || github.ref_name }}.tar.gz
-          generate_release_notes: true
+          # Only auto-generate notes when first cutting a tag. On a manual
+          # re-run (retro-bundling an asset) leave the existing -- often
+          # hand-edited -- release body untouched.
+          generate_release_notes: ${{ github.event_name == 'push' }}
           fail_on_unmatched_files: true
           draft: false
 
@@ -206,6 +209,7 @@ jobs:
         with:
           tag_name: ${{ inputs.ref || github.ref_name }}
           files: FreeJoyXConfiguratorQt-windows-${{ inputs.ref || github.ref_name }}.zip
-          generate_release_notes: true
+          # See the Linux job: preserve hand-edited notes on manual re-runs.
+          generate_release_notes: ${{ github.event_name == 'push' }}
           fail_on_unmatched_files: true
           draft: false
