@@ -11,6 +11,10 @@ on:
         description: 'Tag to (re)build release for (e.g., v0.1.1)'
         required: false
         default: ''
+      helper_ref:
+        description: 'Ref of anpeaco/FreeJoyXConfigurator to build freejoyx-flash from'
+        required: false
+        default: 'main'
 
 permissions:
   contents: write  # softprops/action-gh-release needs write to create / modify the Release
@@ -42,12 +46,32 @@ jobs:
           qmake CONFIG+=release FreeJoyQt.pro
           make -j$(nproc)
 
+      # The configurator shells out to the `freejoyx-flash` install helper,
+      # which lives in the sibling anpeaco/FreeJoyXConfigurator repo. It must
+      # ship next to the executable or "Install Firmware" fails with
+      # "Install helper (freejoyx-flash) is missing from the application
+      # folder." (issue #80). Build it here and bundle it below.
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Checkout flash helper source
+        uses: actions/checkout@v6
+        with:
+          repository: anpeaco/FreeJoyXConfigurator
+          ref: ${{ inputs.helper_ref || 'main' }}
+          path: helper-src
+
+      - name: Build freejoyx-flash helper
+        run: cargo build --release --manifest-path helper-src/Cargo.toml -p freejoyx-flash
+
       - name: Package
         run: |
           mkdir -p dist
           # qmake's SUBDIRS template on Linux drops the binary at src/<TARGET>
           # (no release/ subdir like the MinGW build on Windows).
           cp src/FreeJoyXConfiguratorQt dist/
+          # Bundle the install helper next to the executable.
+          cp helper-src/target/release/freejoyx-flash dist/
           tar -czf FreeJoyXConfiguratorQt-linux-${{ github.ref_name }}.tar.gz -C dist .
 
       - name: Publish to GitHub Release
@@ -82,6 +106,25 @@ jobs:
           qmake CONFIG+=release FreeJoyQt.pro
           mingw32-make -j%NUMBER_OF_PROCESSORS%
 
+      # See the Linux job: the freejoyx-flash install helper must ship next to
+      # the executable or firmware install fails (issue #80). The default
+      # build needs only nusb, so the stock MSVC toolchain suffices (the
+      # winusb-autobind feature -- which would need ARM64 build tools -- is
+      # off by default).
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Checkout flash helper source
+        uses: actions/checkout@v6
+        with:
+          repository: anpeaco/FreeJoyXConfigurator
+          ref: ${{ inputs.helper_ref || 'main' }}
+          path: helper-src
+
+      - name: Build freejoyx-flash helper
+        shell: cmd
+        run: cargo build --release --manifest-path helper-src\Cargo.toml -p freejoyx-flash
+
       - name: Package
         shell: pwsh
         run: |
@@ -93,6 +136,14 @@ jobs:
             exit 1
           }
           Copy-Item $exePath dist\
+
+          # Bundle the install helper next to the executable.
+          $helperPath = "helper-src\target\release\freejoyx-flash.exe"
+          if (-not (Test-Path $helperPath)) {
+            Write-Error "freejoyx-flash.exe not found at $helperPath"
+            exit 1
+          }
+          Copy-Item $helperPath dist\
 
           # Manual Qt deploy. windeployqt repeatedly failed with "Unable to
           # find the platform plugin." on install-qt-action's Qt install
