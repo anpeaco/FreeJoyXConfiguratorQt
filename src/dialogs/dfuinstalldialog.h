@@ -66,7 +66,8 @@ private slots:
     void onBrowseBoot();
     void onBrowseApp();
     void onInstallClicked();
-    void onRefreshDetect();
+    void onRefreshDetect();    /* silent background poll (timer) */
+    void onManualRecheck();    /* user-driven verbose re-check (button) */
 
     /* DfuInstallSession feeds. */
     void onAvailability(bool present);

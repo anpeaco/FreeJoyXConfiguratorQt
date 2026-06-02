@@ -7,6 +7,7 @@
   */
 
 #include "dfuinstalldialog.h"
+#include "style_helpers.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -158,7 +159,7 @@ void DfuInstallDialog::buildUi()
     m_detectLabel = new QLabel(tr("Looking for a board in DFU mode…"), dfuBox);
     m_detectLabel->setWordWrap(true);
     m_detectBtn = new QPushButton(tr("Re-check"), dfuBox);
-    connect(m_detectBtn, &QPushButton::clicked, this, &DfuInstallDialog::onRefreshDetect);
+    connect(m_detectBtn, &QPushButton::clicked, this, &DfuInstallDialog::onManualRecheck);
     detectRow->addWidget(m_detectLabel, 1);
     detectRow->addWidget(m_detectBtn, 0);
     dfuLay->addLayout(detectRow);
@@ -219,11 +220,11 @@ void DfuInstallDialog::buildUi()
     root->addWidget(m_log, 1);
 
     /* --- Erase warning (always visible) + action buttons ------------ */
-    auto *warn = new QLabel(
-        tr("⚠  Installing erases the board and restores factory defaults — "
+    /* Boxed red "danger" banner: filled + outlined area with a mono Lucide
+     * triangle and legible neutral text, icon + text vertically centred. */
+    auto *warn = freejoy_style::makeAlertBanner(freejoy_style::accentRed(),
+        tr("Installing erases the board and restores factory defaults — "
            "its current configuration is lost."), this);
-    warn->setWordWrap(true);
-    warn->setStyleSheet(QStringLiteral("color: #c0392b;"));   // red, both themes
     root->addWidget(warn);
 
     auto *btnRow = new QHBoxLayout();
@@ -320,7 +321,22 @@ void DfuInstallDialog::onRefreshDetect()
 {
     if (m_installing) return;            /* don't probe over a live write */
     if (!DfuInstallSession::helperAvailable()) return;
-    m_session->probe();
+    m_session->probe(/*verbose=*/false); /* background poll -- stays quiet */
+}
+
+void DfuInstallDialog::onManualRecheck()
+{
+    if (m_installing) return;            /* don't probe over a live write */
+    /* The user pressed Re-check, so always give visible feedback -- the old
+     * behaviour (a silent probe that only flipped a label) was reported as
+     * "nothing happens". A missing helper is itself a result worth showing. */
+    if (!DfuInstallSession::helperAvailable()) {
+        appendLog(tr("The install helper (freejoyx-flash) is missing from the "
+                     "application folder — cannot re-check."));
+        return;
+    }
+    appendLog(tr("Re-checking for a board in DFU mode…"));
+    m_session->probe(/*verbose=*/true);  /* narrate what the helper enumerates */
 }
 
 void DfuInstallDialog::onAvailability(bool present)

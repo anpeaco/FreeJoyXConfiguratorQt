@@ -58,7 +58,7 @@ QString DfuInstallSession::helperPath()
     return QFileInfo::exists(path) ? path : QString();
 }
 
-void DfuInstallSession::probe()
+void DfuInstallSession::probe(bool verbose)
 {
     /* Coalesce: if a probe (or an install) is already running, skip. The
      * caller polls availability via the signal, so a missed probe just
@@ -73,20 +73,26 @@ void DfuInstallSession::probe()
     }
 
     m_probing = true;
+    m_probeVerbose = verbose;
     m_sawError = false;
     m_stdoutBuf.clear();
+    m_stderrBuf.clear();
 
     m_proc = new QProcess(this);
     m_proc->setProcessChannelMode(QProcess::SeparateChannels);
     connect(m_proc, &QProcess::readyReadStandardOutput,
             this, &DfuInstallSession::onReadyReadStdout);
+    connect(m_proc, &QProcess::readyReadStandardError,
+            this, &DfuInstallSession::onReadyReadStderr);
     connect(m_proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this, &DfuInstallSession::onProcessFinished);
     connect(m_proc, &QProcess::errorOccurred,
             this, &DfuInstallSession::onProcessErrorOccurred);
 
-    m_proc->start(helper, { QStringLiteral("probe"),
-                            QStringLiteral("--board"), QStringLiteral("f411") });
+    QStringList probeArgs{ QStringLiteral("probe"),
+                           QStringLiteral("--board"), QStringLiteral("f411") };
+    if (verbose) probeArgs << QStringLiteral("--verbose");
+    m_proc->start(helper, probeArgs);
 }
 
 bool DfuInstallSession::start(const Params &p)
@@ -107,15 +113,19 @@ bool DfuInstallSession::start(const Params &p)
     }
 
     m_probing = false;
+    m_probeVerbose = false;
     m_sawError = false;
     m_lastErrorDetail.clear();
     m_stdoutBuf.clear();
+    m_stderrBuf.clear();
     setStage(Stage::BindingDriver, tr("Preparing USB driver..."));
 
     m_proc = new QProcess(this);
     m_proc->setProcessChannelMode(QProcess::SeparateChannels);
     connect(m_proc, &QProcess::readyReadStandardOutput,
             this, &DfuInstallSession::onReadyReadStdout);
+    connect(m_proc, &QProcess::readyReadStandardError,
+            this, &DfuInstallSession::onReadyReadStderr);
     connect(m_proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this, &DfuInstallSession::onProcessFinished);
     connect(m_proc, &QProcess::errorOccurred,
@@ -148,6 +158,27 @@ void DfuInstallSession::onReadyReadStdout()
         line.remove(QLatin1Char('\r'));     /* tolerate CRLF from the Windows build */
         if (!line.isEmpty()) {
             handleLine(line);
+        }
+    }
+}
+
+void DfuInstallSession::onReadyReadStderr()
+{
+    if (!m_proc) return;
+    /* The helper writes its protocol to stdout; stderr only carries
+     * out-of-band noise -- a Rust panic, a libwdi diagnostic, a dynamic-linker
+     * "missing DLL" message. Historically this channel was dropped on the
+     * floor, which is exactly why a helper that failed to start or panicked
+     * looked like a silent "no board detected". Surface every line in the log
+     * so those failures are visible. */
+    m_stderrBuf += QString::fromUtf8(m_proc->readAllStandardError());
+    int nl;
+    while ((nl = m_stderrBuf.indexOf(QLatin1Char('\n'))) >= 0) {
+        QString line = m_stderrBuf.left(nl);
+        m_stderrBuf.remove(0, nl + 1);
+        line.remove(QLatin1Char('\r'));
+        if (!line.isEmpty()) {
+            emit logLine(QStringLiteral("[helper] ") + line);
         }
     }
 }
@@ -190,8 +221,23 @@ void DfuInstallSession::onProcessFinished(int exitCode, QProcess::ExitStatus sta
     if (m_probing) {
         const bool present = (!crashed && exitCode == 0
                               && m_lastErrorDetail == QStringLiteral("present"));
+        /* A user-driven re-check gets a closing line in the log so it never
+         * looks like nothing happened -- and so a non-zero exit / crash (helper
+         * couldn't run) is distinguishable from a clean "no board". */
+        if (m_probeVerbose) {
+            if (crashed) {
+                emit logLine(tr("Re-check: helper crashed before reporting."));
+            } else if (exitCode != 0) {
+                emit logLine(tr("Re-check: helper exited with code %1.").arg(exitCode));
+            } else {
+                emit logLine(present
+                    ? tr("Re-check: board present in DFU mode.")
+                    : tr("Re-check: no board in DFU mode."));
+            }
+        }
         m_lastErrorDetail.clear();
         m_probing = false;
+        m_probeVerbose = false;
         m_proc->deleteLater();
         m_proc = nullptr;
         emit availability(present);
@@ -228,7 +274,17 @@ void DfuInstallSession::onProcessErrorOccurred(QProcess::ProcessError error)
      * result here for that case; other errors still funnel through finished. */
     if (error == QProcess::FailedToStart) {
         if (m_probing) {
+            /* The probe normally fails silently (the periodic poll would spam
+             * otherwise), but FailedToStart means the helper binary itself
+             * couldn't launch -- blocked by SmartScreen/AV, missing runtime
+             * DLL, not executable. That's never "no board"; always surface it
+             * so the user/log shows the real reason rather than a misleading
+             * "not detected". */
+            emit logLine(tr("Couldn't launch the install helper (%1): %2")
+                             .arg(helperPath(),
+                                  m_proc ? m_proc->errorString() : tr("unknown error")));
             m_probing = false;
+            m_probeVerbose = false;
             if (m_proc) { m_proc->deleteLater(); m_proc = nullptr; }
             emit availability(false);
             return;
