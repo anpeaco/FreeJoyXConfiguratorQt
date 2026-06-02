@@ -3,12 +3,14 @@ name: Release
 on:
   push:
     tags: ['v*']
-  # Allow manual re-run against an existing tag to retro-add a new
-  # platform asset without cutting a new release.
+  # Allow manual re-run against an existing tag to rebuild and re-publish its
+  # release assets (e.g. to retro-bundle the freejoyx-flash helper) without
+  # cutting a new tag. The `ref` input drives both the source checkout and the
+  # target release.
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Tag to (re)build release for (e.g., v0.1.1)'
+        description: 'Tag to (re)build & re-publish the release for (e.g., v0.1.4)'
         required: false
         default: ''
       helper_ref:
@@ -21,11 +23,16 @@ permissions:
 
 jobs:
   build-linux:
-    name: Build Linux release ${{ github.ref_name }}
+    name: Build Linux release ${{ inputs.ref || github.ref_name }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          # On a tag push this is empty -> checks out the pushed tag. On a
+          # manual re-run, build the tag named in the `ref` input so we can
+          # retro-update an existing release (e.g. v0.1.4).
+          ref: ${{ inputs.ref || github.ref_name }}
 
       - name: Install system dependencies
         run: |
@@ -72,22 +79,25 @@ jobs:
           cp src/FreeJoyXConfiguratorQt dist/
           # Bundle the install helper next to the executable.
           cp helper-src/target/release/freejoyx-flash dist/
-          tar -czf FreeJoyXConfiguratorQt-linux-${{ github.ref_name }}.tar.gz -C dist .
+          tar -czf FreeJoyXConfiguratorQt-linux-${{ inputs.ref || github.ref_name }}.tar.gz -C dist .
 
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: FreeJoyXConfiguratorQt-linux-${{ github.ref_name }}.tar.gz
+          tag_name: ${{ inputs.ref || github.ref_name }}
+          files: FreeJoyXConfiguratorQt-linux-${{ inputs.ref || github.ref_name }}.tar.gz
           generate_release_notes: true
           fail_on_unmatched_files: true
           draft: false
 
   build-windows:
-    name: Build Windows release ${{ github.ref_name }}
+    name: Build Windows release ${{ inputs.ref || github.ref_name }}
     runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.ref_name }}
 
       - name: Install Qt 5.15.2 (MinGW 8.1.0)
         uses: jurplel/install-qt-action@v4
@@ -189,12 +199,13 @@ jobs:
           Write-Host "=== dist/ contents ==="
           Get-ChildItem -Recurse dist | Format-Table FullName, Length
 
-          Compress-Archive -Path dist\* -DestinationPath "FreeJoyXConfiguratorQt-windows-${{ github.ref_name }}.zip"
+          Compress-Archive -Path dist\* -DestinationPath "FreeJoyXConfiguratorQt-windows-${{ inputs.ref || github.ref_name }}.zip"
 
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: FreeJoyXConfiguratorQt-windows-${{ github.ref_name }}.zip
+          tag_name: ${{ inputs.ref || github.ref_name }}
+          files: FreeJoyXConfiguratorQt-windows-${{ inputs.ref || github.ref_name }}.zip
           generate_release_notes: true
           fail_on_unmatched_files: true
           draft: false
