@@ -215,11 +215,15 @@ jobs:
           ref: ${{ inputs.helper_ref || 'main' }}
           path: helper-src
 
-      # libwdi-sys embeds the WDK WinUSB/WDF co-installers; with WDK_DIR unset
-      # it looks under a hardcoded "Windows Kits\8.0" path that isn't on the
-      # runner. Assemble a WDK_DIR (redist\wdf\<arch>\{WdfCoInstaller01011,
-      # winusbcoinstaller2}.dll) from co-installers already on the image and
-      # point WDK_DIR at it for the build below.
+      # libwdi-sys embeds WinUSB/WDF co-installers from a WDK "redist\wdf"
+      # path that isn't on the runner (WDK 22H2 dropped the legacy redist).
+      # Assemble a WDK_DIR and point WDK_DIR at it. We use the real DLLs if the
+      # image happens to carry them, else inert placeholders: libwdi only needs
+      # the files to EXIST so its embedder can bake them in, and freejoyx-flash
+      # force-installs WinUSB via SetupAPI (UpdateDriverForPlugAndPlayDevices)
+      # with its own inf/cat -- it never invokes the embedded co-installer (see
+      # the helper's driver.rs bind_winusb_inner()), so the bytes are inert on
+      # Win10/11.
       - name: Stage WDK co-installers (WDK_DIR)
         shell: pwsh
         run: |
@@ -234,27 +238,20 @@ jobs:
           foreach ($a in 'x64','x86') {
             New-Item -ItemType Directory -Force -Path (Join-Path $wdk "redist\wdf\$a") | Out-Null
           }
-          $missing = @()
           foreach ($a in 'x64','x86') {
             $archPat = if ($a -eq 'x64') { 'x64|amd64' } else { 'x86' }
             foreach ($n in $need) {
+              $dst = Join-Path $wdk "redist\wdf\$a\$n"
               $src = Get-ChildItem -Path $roots -Recurse -Filter $n -ErrorAction SilentlyContinue |
                      Where-Object { $_.FullName -match "\\($archPat)\\" } |
                      Select-Object -First 1 -ExpandProperty FullName
               if ($src) {
-                Copy-Item $src (Join-Path $wdk "redist\wdf\$a\$n") -Force
-                Write-Host "found $a\$n  <-  $src"
+                Copy-Item $src $dst -Force
+                Write-Host "real  $a\$n  <-  $src"
               } else {
-                $missing += "$a\$n"
+                [System.IO.File]::WriteAllBytes($dst, [byte[]](1..32))
+                Write-Host "stub  $a\$n  (placeholder; embedded co-installer is unused at runtime)"
               }
-            }
-          }
-          if ($missing.Count) {
-            Write-Host "::warning::WDK co-installers not located: $($missing -join ', ')"
-            Write-Host "=== co-installer inventory under Windows Kits ==="
-            foreach ($r in $roots) {
-              Get-ChildItem $r -Recurse -Include $need -ErrorAction SilentlyContinue |
-                Select-Object -ExpandProperty FullName
             }
           }
           "WDK_DIR=$wdk" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
