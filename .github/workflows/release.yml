@@ -177,9 +177,12 @@ jobs:
           New-Item -ItemType Directory -Path dist\platforms | Out-Null
           Copy-Item "$qtPlug\platforms\qwindows.dll" dist\platforms\
 
-          # Image format plugins for SVG icons + PNG resources
+          # Image format plugins. PNG is built into QtGui, but SVG icons need
+          # qsvg, .ico needs qico, and the BluePill/BlackPill board *render*
+          # images are JPEGs (:/Images/*_render.jpg) so they need qjpeg --
+          # without it the board pictures show blank (issue #80 follow-up).
           New-Item -ItemType Directory -Path dist\imageformats | Out-Null
-          foreach ($plug in 'qsvg.dll', 'qico.dll') {
+          foreach ($plug in 'qsvg.dll', 'qico.dll', 'qjpeg.dll') {
             if (Test-Path "$qtPlug\imageformats\$plug") {
               Copy-Item "$qtPlug\imageformats\$plug" dist\imageformats\
             }
