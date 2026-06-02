@@ -200,28 +200,13 @@ jobs:
       # WinUSB driver onto the STM32 ROM DFU device (0483:DF11) itself via one
       # UAC prompt -- otherwise the user must run Zadig by hand before an
       # install can reach the device.
+      # NOTE: winusb-autobind pulls libwdi-sys, which always compiles an ARM64
+      # installer stub and so needs the MSVC ARM64 build tools. Those ship on
+      # the GitHub windows runner image, so we rely on them being present --
+      # do NOT `setup.exe modify` to add them: modifying Visual Studio on a
+      # hosted runner tears the job down mid-run.
       - name: Install Rust toolchain (MSVC)
         uses: dtolnay/rust-toolchain@stable
-
-      # winusb-autobind pulls libwdi-sys, which always compiles an ARM64
-      # installer stub and therefore needs the MSVC ARM64 build tools. They
-      # ship on the GitHub windows image; ensure the component is present
-      # (best-effort -- the helper build below is the real check).
-      - name: Ensure MSVC ARM64 build tools
-        shell: pwsh
-        run: |
-          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-          $setup   = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\setup.exe"
-          if ((-not (Test-Path $vswhere)) -or (-not (Test-Path $setup))) {
-            Write-Warning "VS installer not found -- assuming ARM64 tools are present."
-            exit 0
-          }
-          $installPath = & $vswhere -latest -property installationPath
-          & $setup modify --installPath "$installPath" `
-            --add Microsoft.VisualStudio.Component.VC.Tools.ARM64 `
-            --quiet --norestart --nocache
-          Write-Host "ARM64 component ensure exit code: $LASTEXITCODE"
-          exit 0
 
       - name: Checkout flash helper source
         uses: actions/checkout@v6
