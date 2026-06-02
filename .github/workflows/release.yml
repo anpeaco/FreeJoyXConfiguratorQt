@@ -228,6 +228,7 @@ jobs:
       - name: Package
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Path dist | Out-Null
           # qmake's SUBDIRS template Release build lands at src\release\.
           $exePath = "src\release\FreeJoyXConfiguratorQt.exe"
@@ -263,6 +264,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             Write-Warning "windeployqt exit $LASTEXITCODE -- relying on the manual copy floor below."
           }
+          # Do NOT let windeployqt's exit code leak to the step result: the
+          # cmdlets below don't touch $LASTEXITCODE, so a non-zero here would
+          # fail the whole step at the end even though packaging succeeds.
+          $global:LASTEXITCODE = 0
 
           # Fallback floor: guarantee the known-needed pieces exist even if
           # windeployqt misbehaves on the install-qt-action layout. These are
@@ -308,6 +313,7 @@ jobs:
           Get-ChildItem -Recurse dist | Format-Table FullName, Length
 
           Compress-Archive -Path dist\* -DestinationPath "FreeJoyXConfiguratorQt-windows-${{ inputs.ref || github.ref_name }}.zip"
+          exit 0
 
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
