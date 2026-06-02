@@ -15,6 +15,14 @@ on:
 permissions:
   contents: write  # softprops/action-gh-release needs write to create / modify the Release
 
+env:
+  # Source of the `freejoyx-flash` install helper. The configurator shells out
+  # to this Rust binary for the F411 USB-DFU install/reinstall flow and expects
+  # it bundled next to the executable (see src/flash/dfuinstallsession.cpp).
+  # Bump FREEJOYX_FLASH_REF to a tag/SHA to pin a specific helper build.
+  FREEJOYX_FLASH_REPO: anpeaco/FreeJoyXConfigurator
+  FREEJOYX_FLASH_REF: main
+
 jobs:
   build-linux:
     name: Build Linux release ${{ github.ref_name }}
@@ -23,10 +31,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Checkout install helper source
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ env.FREEJOYX_FLASH_REPO }}
+          ref: ${{ env.FREEJOYX_FLASH_REF }}
+          path: freejoyx-flash-src
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libudev-dev
+          # build-essential/libudev-dev for the Qt app; libusb-1.0/pkg-config
+          # for the freejoyx-flash helper's USB (DfuSe) backend.
+          sudo apt-get install -y build-essential libudev-dev libusb-1.0-0-dev pkg-config
 
       - name: Install Qt 5.15.2
         uses: jurplel/install-qt-action@v4
@@ -42,12 +59,32 @@ jobs:
           qmake CONFIG+=release FreeJoyQt.pro
           make -j$(nproc)
 
+      - name: Build install helper (freejoyx-flash)
+        # Build only the helper binary (the repo also hosts the full Rust
+        # configurator rewrite, which we don't need here). --bin resolves the
+        # target across a workspace or a single crate alike.
+        run: cargo build --release --bin freejoyx-flash --manifest-path freejoyx-flash-src/Cargo.toml
+
       - name: Package
         run: |
           mkdir -p dist
           # qmake's SUBDIRS template on Linux drops the binary at src/<TARGET>
           # (no release/ subdir like the MinGW build on Windows).
           cp src/FreeJoyXConfiguratorQt dist/
+
+          # Bundle the DfuSe install helper next to the configurator so the
+          # in-app "Install / Reinstall (USB DFU)" feature can find it.
+          # DfuInstallSession::helperPath() looks for it in the application
+          # folder; without it the feature hard-stops (issue #80). Fail the
+          # release loudly rather than ship a broken installer again.
+          helper="freejoyx-flash-src/target/release/freejoyx-flash"
+          if [ ! -f "$helper" ]; then
+            echo "::error::install helper not found at $helper -- F411 USB-DFU install would ship broken"
+            exit 1
+          fi
+          cp "$helper" dist/
+          chmod +x dist/freejoyx-flash
+
           tar -czf FreeJoyXConfiguratorQt-linux-${{ github.ref_name }}.tar.gz -C dist .
 
       - name: Publish to GitHub Release
@@ -64,6 +101,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Checkout install helper source
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ env.FREEJOYX_FLASH_REPO }}
+          ref: ${{ env.FREEJOYX_FLASH_REF }}
+          path: freejoyx-flash-src
 
       - name: Install Qt 5.15.2 (MinGW 8.1.0)
         uses: jurplel/install-qt-action@v4
@@ -82,6 +126,12 @@ jobs:
           qmake CONFIG+=release FreeJoyQt.pro
           mingw32-make -j%NUMBER_OF_PROCESSORS%
 
+      - name: Build install helper (freejoyx-flash)
+        shell: pwsh
+        # cargo / Rust (MSVC) ships preinstalled on windows-latest runners.
+        # --bin builds only the helper, not the full Rust configurator rewrite.
+        run: cargo build --release --bin freejoyx-flash --manifest-path freejoyx-flash-src\Cargo.toml
+
       - name: Package
         shell: pwsh
         run: |
@@ -93,6 +143,18 @@ jobs:
             exit 1
           }
           Copy-Item $exePath dist\
+
+          # Bundle the DfuSe install helper (freejoyx-flash.exe) next to the
+          # configurator. DfuInstallSession::helperPath() looks for it in the
+          # application folder; without it the in-app "Install / Reinstall
+          # (USB DFU)" feature hard-stops with "install helper is missing"
+          # (issue #80). Fail loudly rather than ship a broken zip again.
+          $helperPath = "freejoyx-flash-src\target\release\freejoyx-flash.exe"
+          if (-not (Test-Path $helperPath)) {
+            Write-Error "install helper not found at $helperPath -- F411 USB-DFU install would ship broken"
+            exit 1
+          }
+          Copy-Item $helperPath dist\
 
           # Manual Qt deploy. windeployqt repeatedly failed with "Unable to
           # find the platform plugin." on install-qt-action's Qt install
