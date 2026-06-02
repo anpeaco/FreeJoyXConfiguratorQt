@@ -95,6 +95,25 @@ pub fn ensure_reachable() -> Result<(), String> {
     Ok(())
 }
 
+/// Human-readable name of the driver currently bound to the 0483:df11 DFU
+/// device, for probe diagnostics. `Some("WinUSB")`, `Some("STTub30")`, etc.
+/// `None` when the device isn't present, the driver can't be read, or this
+/// build can't introspect drivers (only the `winusb-autobind` Windows build
+/// links libwdi, which is what reads the bound driver).
+#[cfg(all(windows, feature = "winusb-autobind"))]
+pub fn current_driver_name() -> Option<String> {
+    match current_driver().ok()? {
+        DriverState::WinUsb => Some("WinUSB".to_string()),
+        DriverState::Other(name) => Some(name),
+        DriverState::Absent => None,
+    }
+}
+
+#[cfg(not(all(windows, feature = "winusb-autobind")))]
+pub fn current_driver_name() -> Option<String> {
+    None
+}
+
 #[cfg(all(windows, feature = "winusb-autobind"))]
 enum DriverState {
     WinUsb,

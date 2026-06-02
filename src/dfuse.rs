@@ -82,6 +82,49 @@ pub fn device_present() -> bool {
     }
 }
 
+/// Narrate the USB enumeration over the LOG channel so a failed probe is
+/// debuggable from the configurator's log pane. Emits one line per device nusb
+/// can see, a summary of whether the STM32 ROM DFU (0483:df11) is among them,
+/// and — when this build can introspect drivers (the `winusb-autobind`
+/// feature) — the driver currently bound to it. `device_present()` swallows the
+/// enumeration error to a bare `false`; here we surface it instead, since "USB
+/// enumeration failed" and "device just isn't there" call for different fixes.
+pub fn probe_verbose() {
+    use crate::proto;
+    match nusb::list_devices() {
+        Ok(it) => {
+            let mut count = 0usize;
+            let mut found = false;
+            for d in it {
+                count += 1;
+                let is_dfu = d.vendor_id() == DFU_VID && d.product_id() == DFU_PID;
+                found |= is_dfu;
+                proto::log(&format!(
+                    "probe: usb {:04x}:{:04x}{} {}",
+                    d.vendor_id(),
+                    d.product_id(),
+                    if is_dfu { "  <- STM32 ROM DFU" } else { "" },
+                    d.product_string().unwrap_or("")
+                ));
+            }
+            proto::log(&format!(
+                "probe: enumerated {count} USB device(s); STM32 DFU (0483:df11) {}",
+                if found { "PRESENT" } else { "NOT found" }
+            ));
+            if found {
+                if let Some(drv) = crate::driver::current_driver_name() {
+                    proto::log(&format!(
+                        "probe: DFU device driver = \"{drv}\" (must be WinUSB on Windows to flash)"
+                    ));
+                }
+            }
+        }
+        Err(e) => {
+            proto::log(&format!("probe: USB enumeration failed: {e}"));
+        }
+    }
+}
+
 fn find() -> Option<DeviceInfo> {
     nusb::list_devices()
         .ok()?

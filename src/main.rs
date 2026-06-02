@@ -62,6 +62,14 @@ fn cmd_probe(args: &[String]) -> i32 {
     // Board is parsed for contract stability but unused — a ROM DFU device
     // looks the same regardless of which app is (or isn't) flashed.
     let _ = flag(args, "--board");
+    // `--verbose` makes the probe narrate what it enumerated via LOG lines so
+    // an "absent" verdict is diagnosable from the configurator's log pane
+    // (which device IDs were seen, whether 0483:df11 was among them, the bound
+    // driver). The configurator passes it only for a manual re-check, never the
+    // background poll, so the log doesn't fill with noise.
+    if has_flag(args, "--verbose") {
+        dfuse::probe_verbose();
+    }
     proto::probe(dfuse::device_present());
     0
 }
@@ -181,4 +189,9 @@ fn flag(args: &[String], name: &str) -> Option<String> {
         .position(|a| a == name)
         .and_then(|i| args.get(i + 1))
         .cloned()
+}
+
+/// Presence check for a valueless flag (e.g. `--verbose`).
+fn has_flag(args: &[String], name: &str) -> bool {
+    args.iter().any(|a| a == name)
 }
