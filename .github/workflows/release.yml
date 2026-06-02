@@ -37,7 +37,17 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libudev-dev
+          # build-essential + libudev-dev for the build; the libxcb*/libxkb*
+          # runtime libs must be present on the builder so linuxdeploy's Qt
+          # plugin can copy them into the AppImage (Qt's xcb platform plugin
+          # needs them, and the headless runner doesn't ship them all).
+          sudo apt-get install -y \
+            build-essential libudev-dev \
+            libxcb1 libxcb-glx0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+            libxcb-randr0 libxcb-render0 libxcb-render-util0 libxcb-shape0 \
+            libxcb-shm0 libxcb-sync1 libxcb-util1 libxcb-xfixes0 \
+            libxcb-xinerama0 libxcb-xkb1 libxkbcommon0 libxkbcommon-x11-0 \
+            libfontconfig1 libfreetype6 libx11-xcb1 libgl1
 
       - name: Install Qt 5.15.2
         uses: jurplel/install-qt-action@v4
@@ -71,21 +81,66 @@ jobs:
       - name: Build freejoyx-flash helper
         run: cargo build --release --manifest-path helper-src/Cargo.toml -p freejoyx-flash
 
-      - name: Package
+      # Build a self-contained AppImage so the download needs nothing
+      # pre-installed: linuxdeploy's Qt plugin bundles the Qt libraries and
+      # plugins (xcb platform plugin, all imageformats incl. qjpeg, styles).
+      # The freejoyx-flash helper is dropped next to the executable in
+      # usr/bin/ so applicationDirPath() still finds it at runtime.
+      - name: Package (AppImage)
+        env:
+          OUTPUT: FreeJoyXConfiguratorQt-linux-${{ inputs.ref || github.ref_name }}.AppImage
+          VERSION: ${{ inputs.ref || github.ref_name }}
         run: |
-          mkdir -p dist
-          # qmake's SUBDIRS template on Linux drops the binary at src/<TARGET>
-          # (no release/ subdir like the MinGW build on Windows).
-          cp src/FreeJoyXConfiguratorQt dist/
-          # Bundle the install helper next to the executable.
-          cp helper-src/target/release/freejoyx-flash dist/
-          tar -czf FreeJoyXConfiguratorQt-linux-${{ inputs.ref || github.ref_name }}.tar.gz -C dist .
+          set -euxo pipefail
+          # Runners may lack FUSE; tell the AppImage tooling to self-extract.
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          # Point the Qt plugin at the kit we just built against. cwd goes on
+          # PATH so linuxdeploy discovers the qt plugin (with extract-and-run
+          # it executes from a temp dir, so it won't look in $PWD otherwise).
+          export QMAKE="$QT_ROOT_DIR/bin/qmake"
+          export PATH="$PWD:$QT_ROOT_DIR/bin:$PATH"
+
+          base=https://github.com/linuxdeploy
+          wget -qO linuxdeploy.AppImage \
+            "$base/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
+          wget -qO linuxdeploy-plugin-qt.AppImage \
+            "$base/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage"
+          chmod +x linuxdeploy*.AppImage
+
+          # Assemble the AppDir.
+          mkdir -p AppDir/usr/bin
+          cp src/FreeJoyXConfiguratorQt               AppDir/usr/bin/
+          cp helper-src/target/release/freejoyx-flash AppDir/usr/bin/
+          cp src/Images/icon.png AppDir/FreeJoyXConfiguratorQt.png
+          {
+            echo '[Desktop Entry]'
+            echo 'Type=Application'
+            echo 'Name=FreeJoyX Configurator'
+            echo 'Exec=FreeJoyXConfiguratorQt'
+            echo 'Icon=FreeJoyXConfiguratorQt'
+            echo 'Categories=Utility;'
+            echo 'Terminal=false'
+          } > AppDir/FreeJoyXConfiguratorQt.desktop
+
+          ./linuxdeploy.AppImage --appdir AppDir \
+            --executable AppDir/usr/bin/FreeJoyXConfiguratorQt \
+            --desktop-file AppDir/FreeJoyXConfiguratorQt.desktop \
+            --icon-file AppDir/FreeJoyXConfiguratorQt.png \
+            --plugin qt \
+            --output appimage
+
+          # linuxdeploy honours $OUTPUT for the filename, but normalise just
+          # in case the tool version ignores it.
+          if [ ! -f "$OUTPUT" ]; then
+            mv FreeJoyX*.AppImage "$OUTPUT"
+          fi
+          ls -l "$OUTPUT"
 
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.ref || github.ref_name }}
-          files: FreeJoyXConfiguratorQt-linux-${{ inputs.ref || github.ref_name }}.tar.gz
+          files: FreeJoyXConfiguratorQt-linux-${{ inputs.ref || github.ref_name }}.AppImage
           # Only auto-generate notes when first cutting a tag. On a manual
           # re-run (retro-bundling an asset) leave the existing -- often
           # hand-edited -- release body untouched.
@@ -158,13 +213,23 @@ jobs:
           }
           Copy-Item $helperPath dist\
 
-          # Manual Qt deploy. windeployqt repeatedly failed with "Unable to
-          # find the platform plugin." on install-qt-action's Qt install
-          # layout despite plugins/platforms/qwindows.dll being present.
-          # Just copy what we know we need: src.pro uses Core/Gui/Network/
-          # Widgets/Svg, plus the windows platform plugin, plus image
-          # format plugins for SVG/PNG icons, plus the SQL light plugins
-          # for styles, plus MinGW runtime.
+          # Primary deploy: windeployqt resolves every needed Qt DLL + plugin
+          # automatically (platforms\qwindows, all imageformats incl. qjpeg,
+          # styles, ...) and writes a qt.conf -- so the bundle can't silently
+          # drift the way a hand-maintained list does. Invoke the kit's own
+          # windeployqt explicitly (not whatever is first on PATH) with the
+          # MinGW runtime on PATH so --compiler-runtime works. An earlier
+          # "Unable to find the platform plugin" failure came from invoking
+          # the wrong windeployqt; pinning the full path avoids that.
+          $env:PATH = "$env:QT_ROOT_DIR\bin;$env:IQTA_TOOLS\mingw810_64\bin;$env:PATH"
+          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --no-translations --compiler-runtime "dist\FreeJoyXConfiguratorQt.exe"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Warning "windeployqt exit $LASTEXITCODE -- relying on the manual copy floor below."
+          }
+
+          # Fallback floor: guarantee the known-needed pieces exist even if
+          # windeployqt misbehaves on the install-qt-action layout. These are
+          # cheap and idempotent (Copy-Item overwrites identical files).
           $qtBin = "$env:QT_ROOT_DIR\bin"
           $qtPlug = "$env:QT_ROOT_DIR\plugins"
 
