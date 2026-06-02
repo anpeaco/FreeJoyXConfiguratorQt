@@ -15,6 +15,18 @@ on:
 permissions:
   contents: write  # softprops/action-gh-release needs write to create / modify the Release
 
+# The configurator ships two sidecar artifacts it does NOT build itself:
+#   - freejoyx-flash  -- the DfuSe install helper, built + released by the Rust
+#     repo (anpeaco/FreeJoyXConfigurator, release-flash.yml). Pinned by tag here
+#     so a configurator release is reproducible; bump when a new helper ships.
+#   - the F411 boot+app firmware bins, pulled from the LATEST anpeaco/FreeJoyX
+#     release so a download always carries current firmware.
+# Both are fetched with `gh release download` (all three repos are public, so
+# the default job token has read access) rather than rebuilt here -- that keeps
+# the Rust toolchain + libwdi/WDK mess out of this Qt workflow.
+env:
+  FLASH_HELPER_TAG: flash-v0.1.4   # pinned freejoyx-flash helper release tag
+
 jobs:
   build-linux:
     name: Build Linux release ${{ github.ref_name }}
@@ -42,12 +54,34 @@ jobs:
           qmake CONFIG+=release FreeJoyQt.pro
           make -j$(nproc)
 
+      - name: Fetch flasher helper + F411 firmware
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist/firmware
+          # Pinned freejoyx-flash helper (Linux) from the Rust repo.
+          gh release download "$FLASH_HELPER_TAG" --repo anpeaco/FreeJoyXConfigurator \
+            --pattern 'freejoyx-flash-linux-x64' --dir dist --clobber
+          mv dist/freejoyx-flash-linux-x64 dist/freejoyx-flash
+          chmod +x dist/freejoyx-flash
+          # Latest F411 firmware (app + boot) from the firmware repo.
+          gh release download --repo anpeaco/FreeJoyX \
+            --pattern 'freejoyx-f411-app-*.bin' --pattern 'freejoyx-f411-boot-*.bin' \
+            --dir dist/firmware --clobber
+          # The configurator looks for UNVERSIONED names next to the exe or under
+          # firmware/ (dfuinstalldialog.cpp kBootBinName/kAppBinName) -- strip the
+          # version suffix the release assets carry.
+          mv dist/firmware/freejoyx-f411-app-*.bin  dist/firmware/freejoyx-f411-app.bin
+          mv dist/firmware/freejoyx-f411-boot-*.bin dist/firmware/freejoyx-f411-boot.bin
+
       - name: Package
         run: |
-          mkdir -p dist
           # qmake's SUBDIRS template on Linux drops the binary at src/<TARGET>
-          # (no release/ subdir like the MinGW build on Windows).
+          # (no release/ subdir like the MinGW build on Windows). dist/ already
+          # holds the helper + firmware/ from the previous step.
           cp src/FreeJoyXConfiguratorQt dist/
+          echo "=== dist/ contents ==="
+          find dist -type f -printf '%P\t%s bytes\n'
           tar -czf FreeJoyXConfiguratorQt-linux-${{ github.ref_name }}.tar.gz -C dist .
 
       - name: Publish to GitHub Release
@@ -135,10 +169,32 @@ jobs:
             }
           }
 
-          Write-Host "=== dist/ contents ==="
+          Write-Host "=== dist/ (app + Qt runtime) assembled ==="
           Get-ChildItem -Recurse dist | Format-Table FullName, Length
 
-          Compress-Archive -Path dist\* -DestinationPath "FreeJoyXConfiguratorQt-windows-${{ github.ref_name }}.zip"
+      - name: Fetch flasher helper + F411 firmware, then zip
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          New-Item -ItemType Directory -Path dist\firmware -Force | Out-Null
+          # Pinned freejoyx-flash helper (Windows) from the Rust repo.
+          gh release download "$env:FLASH_HELPER_TAG" --repo anpeaco/FreeJoyXConfigurator `
+            --pattern 'freejoyx-flash-windows-x64.exe' --dir dist --clobber
+          Move-Item -Force dist\freejoyx-flash-windows-x64.exe dist\freejoyx-flash.exe
+          # Latest F411 firmware (app + boot) from the firmware repo.
+          gh release download --repo anpeaco/FreeJoyX `
+            --pattern 'freejoyx-f411-app-*.bin' --pattern 'freejoyx-f411-boot-*.bin' `
+            --dir dist\firmware --clobber
+          # The configurator expects UNVERSIONED names (dfuinstalldialog.cpp
+          # kBootBinName/kAppBinName) -- strip the version suffix.
+          Get-ChildItem dist\firmware\freejoyx-f411-app-*.bin  | Select-Object -First 1 |
+            Move-Item -Destination dist\firmware\freejoyx-f411-app.bin -Force
+          Get-ChildItem dist\firmware\freejoyx-f411-boot-*.bin | Select-Object -First 1 |
+            Move-Item -Destination dist\firmware\freejoyx-f411-boot.bin -Force
+          Write-Host "=== final dist/ contents ==="
+          Get-ChildItem -Recurse dist | Format-Table FullName, Length
+          Compress-Archive -Path dist\* -DestinationPath "FreeJoyXConfiguratorQt-windows-${{ github.ref_name }}.zip" -Force
 
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2

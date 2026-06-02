@@ -47,6 +47,10 @@ ButtonLogical::ButtonLogical(int buttonIndex, QWidget *parent)
     // spinbox.
     ui->pushButton_Listen->installEventFilter(this);
     ui->pushButton_ListenB->installEventFilter(this);
+    // Idle-state themed glyph; setListenArmed() re-themes through the armed /
+    // sequence states. Without this the .ui's black target shows until first arm.
+    freejoy_style::setThemedIcon(ui->pushButton_Listen,  QStringLiteral(":/Images/icons/lucide/target.svg"));
+    freejoy_style::setThemedIcon(ui->pushButton_ListenB, QStringLiteral(":/Images/icons/lucide/target.svg"));
     m_listenClickTimer = new QTimer(this);
     m_listenClickTimer->setSingleShot(true);
     connect(m_listenClickTimer, &QTimer::timeout, this, [this]() {
@@ -363,10 +367,11 @@ void ButtonLogical::setListenArmed(int field, bool armed, bool sequence)
     // Three-state icon (the .ui iconset only covers off/on, so the
     // sequence state is applied explicitly): idle -> one-shot armed ->
     // armed mid auto-sequence walk.
-    static const QIcon kIdle(QStringLiteral(":/Images/icons/lucide/target.svg"));
-    static const QIcon kArmed(QStringLiteral(":/Images/icons/lucide/radio.svg"));
-    static const QIcon kSequence(QStringLiteral(":/Images/icons/lucide/crosshair.svg"));
-    btn->setIcon(!armed ? kIdle : (sequence ? kSequence : kArmed));
+    const QString listenSvg = !armed
+        ? QStringLiteral(":/Images/icons/lucide/target.svg")
+        : (sequence ? QStringLiteral(":/Images/icons/lucide/crosshair.svg")
+                    : QStringLiteral(":/Images/icons/lucide/radio.svg"));
+    freejoy_style::setThemedIcon(btn, listenSvg);
 }
 
 int ButtonLogical::currentFocus() const

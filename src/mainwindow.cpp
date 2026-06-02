@@ -1384,15 +1384,18 @@ void MainWindow::updatePendingChangesBadge()
     if (changed == currentlyMarked) return;
     if (changed) {
         // Subtle filled-dot icon (Lucide-style) signals "unsaved
-        // changes" the same way IDE tabs mark modified files.
-        QIcon dot(QStringLiteral(":/Images/icons/lucide/circle-modified.svg"));
-        ui->pushButton_WriteConfig->setIcon(dot);
+        // changes" the same way IDE tabs mark modified files. Themed so it
+        // reads as light grey on the dark theme instead of near-black.
         ui->pushButton_WriteConfig->setIconSize(QSize(12, 12));
+        freejoy_style::setThemedIcon(ui->pushButton_WriteConfig, QStringLiteral(":/Images/icons/lucide/circle-modified.svg"));
         ui->pushButton_WriteConfig->setToolTip(
             tr("Pending changes. The device still runs its previously-flashed "
                "config; the live press preview reflects that, not your edits. "
                "Click to write."));
     } else {
+        // Drop the themed-icon tag too, so a later theme change doesn't
+        // re-tint (and thus resurrect) the cleared dot.
+        freejoy_style::clearThemedIcon(ui->pushButton_WriteConfig);
         ui->pushButton_WriteConfig->setIcon(QIcon());
         ui->pushButton_WriteConfig->setToolTip(QString());
     }

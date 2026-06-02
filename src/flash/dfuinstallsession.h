@@ -113,8 +113,14 @@ public:
      * arrives via availability(bool). A chip in ROM-DFU mode reports
      * present; anything else reports absent. Safe to call repeatedly (e.g.
      * on a device-list refresh); a probe in flight is coalesced (the later
-     * call is ignored). */
-    void probe();
+     * call is ignored).
+     *
+     * When verbose is true the helper is passed `--verbose`, making it narrate
+     * the USB enumeration (every device ID it saw, whether 0483:df11 is among
+     * them, the bound driver) via logLine() so an "absent" verdict is
+     * diagnosable. Pass it only for a user-driven re-check, never the
+     * background poll, or the log fills with per-second noise. */
+    void probe(bool verbose = false);
 
     /* Begin the install/reinstall. Returns false (without starting) if a
      * session is already active, the helper is missing, or a required path
@@ -141,6 +147,7 @@ signals:
 
 private slots:
     void onReadyReadStdout();
+    void onReadyReadStderr();
     void onProcessFinished(int exitCode, QProcess::ExitStatus status);
     void onProcessErrorOccurred(QProcess::ProcessError error);
 
@@ -153,10 +160,12 @@ private:
 
     QProcess *m_proc = nullptr;     /* the running install/probe process; null when idle */
     bool      m_probing = false;    /* true while a probe() process is in flight */
+    bool      m_probeVerbose = false; /* the in-flight probe was asked to narrate */
     bool      m_sawError = false;   /* an ERROR line was emitted -> don't synthesise another */
     Stage     m_stage = Stage::Idle;
     QString   m_lastErrorDetail;
     QString   m_stdoutBuf;          /* accumulates partial lines across reads */
+    QString   m_stderrBuf;          /* accumulates partial stderr lines across reads */
 };
 
 #endif // DFUINSTALLSESSION_H

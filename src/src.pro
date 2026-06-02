@@ -40,6 +40,7 @@ INCLUDEPATH +="widgets" \
 
 SOURCES += \
     mainwindow_style.cpp \
+    windowthemehelper.cpp \
     widgets/altspinbox.cpp \
     widgets/axes-curves/axescurvesbutton.cpp \
     widgets/axes-curves/axescurvesprofiles.cpp \
@@ -107,6 +108,7 @@ SOURCES += \
 
 HEADERS += \
     style_helpers.h \
+    windowthemehelper.h \
     widgets/altspinbox.h \
     widgets/axes-curves/axescurvesbutton.h \
     widgets/axes-curves/axescurvesprofiles.h \
@@ -239,7 +241,7 @@ linux {
 
 win32 {
     RC_FILE = winapp.rc
-    LIBS += -lhid -lsetupapi
+    LIBS += -lhid -lsetupapi -ldwmapi
     SOURCES += \
         windows/hidapi.c
 }

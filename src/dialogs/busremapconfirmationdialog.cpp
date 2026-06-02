@@ -28,11 +28,14 @@ BusRemapConfirmationDialog::BusRemapConfirmationDialog(const QString &actionName
         tr("Enabling %1 will reassign %n pin(s) that are already mapped. "
            "Their current functions will be cleared.", "", conflicts.size())
             .arg(actionName);
-    // Light-yellow warning note with a yellow border and the Lucide
-    // triangle-alert icon -- the shared warning-banner look used app-wide.
-    ui->label_Banner->setText(freejoy_style::warningIconHtml()
-                              + QStringLiteral("&nbsp;") + bannerText);
-    ui->label_Banner->setStyleSheet(freejoy_style::warningBannerQss());
+    // Shared legible warning banner (icon + text boxed and vertically centred).
+    // Swap it in for the .ui placeholder label so this dialog matches the rest.
+    auto *banner = freejoy_style::makeAlertBanner(freejoy_style::accentAmber(),
+                                                  bannerText, this);
+    if (QLayout *lay = ui->label_Banner->parentWidget()->layout()) {
+        lay->replaceWidget(ui->label_Banner, banner);
+    }
+    ui->label_Banner->hide();
 
     /* Bulleted "PIN -- current role" list, rendered like the flash dialog's
      * step list so the two confirmation surfaces read consistently. */

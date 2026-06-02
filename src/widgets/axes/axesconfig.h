@@ -205,7 +205,7 @@ private:
      * when the working AXIS_ANALOG pin set differs from what's flashed (or
      * when never synced), because auto-detect only sees the device's
      * flashed pins. Rebuilt each tick + on sync events. */
-    QLabel *m_pinPendingBanner = nullptr;
+    QWidget *m_pinPendingBanner = nullptr;   // banner frame (see makeAlertBanner)
     void updatePendingPinBanner();
 
     /* Settle gate for auto-sequence advances. When the walk advances to

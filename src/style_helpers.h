@@ -1,13 +1,20 @@
 #ifndef STYLE_HELPERS_H
 #define STYLE_HELPERS_H
 
+#include <QAbstractButton>
+#include <QApplication>
 #include <QBuffer>
 #include <QByteArray>
 #include <QColor>
+#include <QFrame>
+#include <QHBoxLayout>
 #include <QHash>
 #include <QIcon>
+#include <QLabel>
 #include <QPainter>
+#include <QPalette>
 #include <QPixmap>
+#include <QSize>
 #include <QString>
 #include <QStyle>
 #include <QVariant>
@@ -134,13 +141,15 @@ inline QString applyAccentTokens(QString qss, bool dark)
     return qss;
 }
 
-// The Lucide "triangle-alert" icon, rendered to a pixmap and tinted to the
-// warning colour (the SVG draws with currentColor, which renders black, so
-// we recolour it). Cached per size.
-inline QPixmap warningPixmap(int px = 14)
+// The Lucide "triangle-alert" icon rendered to a pixmap and tinted to `color`
+// (the SVG draws with currentColor, which renders black, so we recolour it).
+// Cached per (colour, size) so the amber warning and red danger variants can
+// coexist.
+inline QPixmap tintedTrianglePixmap(const QColor &color, int px = 14)
 {
-    static QHash<int, QPixmap> cache;
-    if (!cache.contains(px)) {
+    static QHash<QString, QPixmap> cache;
+    const QString key = color.name() + QLatin1Char('@') + QString::number(px);
+    if (!cache.contains(key)) {
         QPixmap base = QIcon(QStringLiteral(":/Images/icons/lucide/triangle-alert.svg"))
                            .pixmap(px, px);
         QPixmap tinted(base.size());
@@ -148,33 +157,40 @@ inline QPixmap warningPixmap(int px = 14)
         QPainter p(&tinted);
         p.drawPixmap(0, 0, base);
         p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-        p.fillRect(tinted.rect(), warningColor());
+        p.fillRect(tinted.rect(), color);
         p.end();
-        cache.insert(px, tinted);
+        cache.insert(key, tinted);
     }
-    return cache.value(px);
+    return cache.value(key);
 }
 
-// An inline <img> tag (base64 PNG data URI) for the warning icon, so any
-// rich-text QLabel can show the icon next to text via setText(). Lets us use
-// one consistent warning icon everywhere without a separate icon widget.
-// Cached.
-inline QString warningIconHtml(int px = 14)
+// An inline <img> tag (base64 PNG data URI) for the tinted triangle, so any
+// rich-text QLabel can show the icon next to text via setText(). Cached per
+// (colour, size).
+inline QString triangleIconHtml(const QColor &color, int px = 14)
 {
-    static QString cached;
-    if (cached.isEmpty()) {
+    static QHash<QString, QString> cache;
+    const QString key = color.name() + QLatin1Char('@') + QString::number(px);
+    if (!cache.contains(key)) {
         QByteArray ba;
         QBuffer buf(&ba);
         buf.open(QIODevice::WriteOnly);
-        warningPixmap(px).save(&buf, "PNG");
+        tintedTrianglePixmap(color, px).save(&buf, "PNG");
         // vertical-align:middle so the icon sits centered with the text on
         // its line rather than riding high on the baseline.
-        cached = QStringLiteral("<img style=\"vertical-align: middle;\" "
-                                "src=\"data:image/png;base64,%1\"/>")
-                     .arg(QString::fromLatin1(ba.toBase64()));
+        cache.insert(key, QStringLiteral("<img style=\"vertical-align: middle;\" "
+                                          "src=\"data:image/png;base64,%1\"/>")
+                              .arg(QString::fromLatin1(ba.toBase64())));
     }
-    return cached;
+    return cache.value(key);
 }
+
+// Amber warning variants (the long-standing default).
+inline QPixmap warningPixmap(int px = 14)    { return tintedTrianglePixmap(warningColor(), px); }
+inline QString warningIconHtml(int px = 14)  { return triangleIconHtml(warningColor(), px); }
+
+// Red "danger" triangle, for destructive-action warnings (erase / overwrite).
+inline QString dangerIconHtml(int px = 14)   { return triangleIconHtml(accentRed(), px); }
 
 // Shared "warning note" banner stylesheet: a light-yellow fill with a yellow
 // (amber) border and amber ink, for confirmation/warning surfaces that need to
@@ -182,13 +198,167 @@ inline QString warningIconHtml(int px = 14)
 // reads as pale yellow on the light theme and a soft amber tint on dark. Apply
 // to a QLabel and prefix its text with warningIconHtml() for the leading icon,
 // so every warning banner across the app looks identical.
-inline QString warningBannerQss()
+// Shared alert-banner styling for full-width message bars (warning / danger /
+// info). The legibility key: text uses palette(text) -- a high-contrast
+// neutral ink that tracks the theme (light grey on dark, near-black on light)
+// -- instead of same-hue coloured text on a coloured fill, which washed out.
+// Severity is signalled by the accent-tinted fill, the solid accent border,
+// and the matching coloured leading icon (pair with *IconHtml()). One look for
+// every bar; only the hue differs.
+inline QString alertBannerQss(const QColor &accent)
 {
-    return QStringLiteral("padding:8px; border-radius:4px; "
-                          "background-color:%1; border:1px solid %2; color:%3;")
-        .arg(rgbaStr(accentAmber(), 40),
-             hexStr(accentAmber()),
-             hexStr(warningColor()));
+    return QStringLiteral("padding:8px 10px; border-radius:4px; "
+                          "background-color:%1; border:1px solid %2; "
+                          "color:palette(text);")
+        .arg(rgbaStr(accent, 46), hexStr(accent));
+}
+
+// Amber caution bar.   Pair with warningIconHtml().
+inline QString warningBannerQss() { return alertBannerQss(accentAmber()); }
+// Red destructive bar. Pair with dangerIconHtml().
+inline QString dangerBannerQss()  { return alertBannerQss(accentRed()); }
+// Blue informational bar (theme-aware blue). Pair with a tinted info icon.
+inline QString infoBannerQss()    { return alertBannerQss(accentBlue(true)); }
+
+// Build a complete alert banner as a widget: a coloured, outlined box holding a
+// tinted triangle icon and the message, laid out side-by-side and vertically
+// centred. This is the alignment-safe replacement for the old "icon-as-inline-
+// <img> inside one QLabel" pattern, where Qt's rich-text baseline handling left
+// the icon riding above the text. Text uses the default (palette) label colour,
+// so it stays legible and theme-tracking. Pass accentAmber()/accentRed()/
+// accentBlue() for warning / danger / info.
+inline QFrame *makeAlertBanner(const QColor &accent, const QString &text,
+                               QWidget *parent = nullptr)
+{
+    auto *frame = new QFrame(parent);
+    // Box chrome only (fill + border + radius); inner padding comes from the
+    // layout margins so it can't double up with QSS padding. Scope the rule to
+    // this frame via an objectName selector -- a bare `QFrame {}` selector also
+    // matches QLabel (a QFrame subclass), which drew a second border around the
+    // child text label.
+    frame->setObjectName(QStringLiteral("fjAlertBanner"));
+    frame->setStyleSheet(QStringLiteral(
+        "QFrame#fjAlertBanner { border-radius:4px; background-color:%1; border:1px solid %2; }")
+        .arg(rgbaStr(accent, 46), hexStr(accent)));
+
+    auto *row = new QHBoxLayout(frame);
+    row->setContentsMargins(10, 7, 10, 7);
+    row->setSpacing(8);
+
+    auto *icon = new QLabel(frame);
+    icon->setPixmap(tintedTrianglePixmap(accent, 16));
+    icon->setFixedSize(16, 16);
+    icon->setScaledContents(true);
+
+    auto *msg = new QLabel(text, frame);
+    msg->setWordWrap(true);
+
+    row->addWidget(icon, 0, Qt::AlignVCenter);
+    row->addWidget(msg, 1);
+    return frame;
+}
+
+// ----- Themed monochrome glyph icons ------------------------------------
+//
+// The Lucide SVGs draw with `currentColor`, which Qt's SVG renderer paints
+// black regardless of palette -- fine on the light theme, invisible-ish on
+// the dark one. The long-standing fix (see warningPixmap above and the
+// per-widget pixmapToIcon()/coloringPixmap() copies in AxesCurves*) is to
+// render the glyph and recolour every opaque pixel via CompositionMode_SourceIn.
+//
+// These helpers generalise that into one place plus a tiny opt-in registry:
+// setThemedIcon() tags a widget with its source SVG, and retintThemedIcons()
+// re-renders every tagged widget when the theme flips. Tint colour tracks
+// QPalette::Text so it flips automatically -- near-black on light, light grey
+// on dark -- matching the rest of the UI's text ink.
+
+// Foreground ink for monochrome glyph icons (tracks the active palette).
+inline QColor iconInk() { return QApplication::palette().color(QPalette::Text); }
+
+// Render a monochrome (currentColor) SVG and tint every opaque pixel to
+// `color`, preserving the glyph's alpha shape.
+inline QPixmap tintedSvgPixmap(const QString &svgPath, const QSize &size, const QColor &color)
+{
+    QPixmap pm = QIcon(svgPath).pixmap(size);
+    if (pm.isNull()) {
+        return pm;
+    }
+    QPainter p(&pm);
+    p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+    p.fillRect(pm.rect(), color);
+    p.end();
+    return pm;
+}
+
+inline QIcon tintedSvgIcon(const QString &svgPath, const QSize &size, const QColor &color)
+{
+    return QIcon(tintedSvgPixmap(svgPath, size, color));
+}
+
+// Dynamic-property keys recording a widget's themed-icon source + render size,
+// so retintThemedIcons() can re-render it after a theme change.
+constexpr const char *kThemedIconSvgProp  = "fjThemedIconSvg";
+constexpr const char *kThemedIconSizeProp = "fjThemedIconSize";
+
+// Give a button a theme-tracking icon: tinted to iconInk() now, re-tinted by
+// retintThemedIcons() on every theme flip. Render size follows the button's
+// configured iconSize() (set in the .ui), falling back to 16x16.
+inline void setThemedIcon(QAbstractButton *btn, const QString &svgPath)
+{
+    if (btn == nullptr) {
+        return;
+    }
+    QSize sz = btn->iconSize();
+    if (!sz.isValid() || sz.isEmpty()) {
+        sz = QSize(16, 16);
+    }
+    btn->setProperty(kThemedIconSvgProp, svgPath);
+    btn->setProperty(kThemedIconSizeProp, sz);
+    btn->setIcon(tintedSvgIcon(svgPath, sz, iconInk()));
+}
+
+// QLabel variant for icon-as-pixmap headers / info badges.
+inline void setThemedIcon(QLabel *label, const QString &svgPath, const QSize &size)
+{
+    if (label == nullptr) {
+        return;
+    }
+    label->setProperty(kThemedIconSvgProp, svgPath);
+    label->setProperty(kThemedIconSizeProp, size);
+    label->setPixmap(tintedSvgPixmap(svgPath, size, iconInk()));
+}
+
+// Drop a widget's themed-icon tag (e.g. when an indicator icon is cleared) so
+// retintThemedIcons() won't resurrect it.
+inline void clearThemedIcon(QWidget *w)
+{
+    if (w == nullptr) {
+        return;
+    }
+    w->setProperty(kThemedIconSvgProp, QVariant());
+    w->setProperty(kThemedIconSizeProp, QVariant());
+}
+
+// Re-tint every themed icon in the application to the current palette ink.
+// Uses qApp->allWidgets() so it reaches child tabs and free-standing dialogs
+// alike -- no parent walking, no per-widget event filters.
+inline void retintThemedIcons()
+{
+    const QColor ink = iconInk();
+    const auto widgets = QApplication::allWidgets();
+    for (QWidget *w : widgets) {
+        const QVariant pathVar = w->property(kThemedIconSvgProp);
+        if (!pathVar.isValid()) {
+            continue;
+        }
+        const QString path = pathVar.toString();
+        const QSize sz = w->property(kThemedIconSizeProp).toSize();
+        if (auto *btn = qobject_cast<QAbstractButton *>(w)) {
+            btn->setIcon(tintedSvgIcon(path, sz, ink));
+        } else if (auto *lbl = qobject_cast<QLabel *>(w)) {
+            lbl->setPixmap(tintedSvgPixmap(path, sz, ink));
+        }
+    }
 }
 
 // Set a dynamic property on a widget and force a style refresh so the

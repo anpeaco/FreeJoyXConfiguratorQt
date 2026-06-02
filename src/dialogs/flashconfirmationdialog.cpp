@@ -233,13 +233,17 @@ void FlashConfirmationDialog::renderForVerdict(const Inputs &inputs)
 
     if (m_verdict == Verdict::Incompatible) {
         ui->label_Warning->clear();
+        ui->label_Warning->hide();
     } else {
-        // Shared light-yellow warning note (yellow border + triangle-alert
-        // icon), matching the bus-remap confirmation banner. Keep the .ui text
-        // (already translated) and just prepend the icon + apply the banner QSS.
-        ui->label_Warning->setStyleSheet(freejoy_style::warningBannerQss());
-        ui->label_Warning->setText(freejoy_style::warningIconHtml()
-            + QStringLiteral("&nbsp;") + ui->label_Warning->text());
+        // Shared legible warning banner (icon + text boxed and vertically
+        // centred). Keep the .ui's already-translated text; swap the label for
+        // the banner widget so it matches the bus-remap / install bars.
+        auto *banner = freejoy_style::makeAlertBanner(freejoy_style::accentAmber(),
+                                                      ui->label_Warning->text(), this);
+        if (QLayout *lay = ui->label_Warning->parentWidget()->layout()) {
+            lay->replaceWidget(ui->label_Warning, banner);
+        }
+        ui->label_Warning->hide();
     }
 }
 
