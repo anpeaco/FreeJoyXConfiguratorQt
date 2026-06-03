@@ -127,6 +127,11 @@ fn cmd_install(args: &[String]) -> i32 {
 }
 
 fn run_install(boot: &[u8], app: &[u8]) -> Result<(), String> {
+    proto::log(&format!(
+        "install: bootloader {} bytes -> 0x{BOOT_ADDR:08x}, app {} bytes -> 0x{APP_ADDR:08x}",
+        boot.len(),
+        app.len(),
+    ));
     proto::stage(Stage::BindDriver);
     driver::ensure_reachable()?;
 
