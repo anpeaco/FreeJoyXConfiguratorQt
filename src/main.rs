@@ -4,7 +4,13 @@
 //! ```text
 //! freejoyx-flash probe   --board f411
 //! freejoyx-flash install --board f411 --boot <bootBin> --app <appBin>
+//! freejoyx-flash bind    --board f411
 //! ```
+//!
+//! `bind` installs/repairs the WinUSB binding for the ROM DFU device on its
+//! own (the same step `install` runs first). The configurator calls it when a
+//! probe reports `needs-driver` — the device is present at the OS driver layer
+//! but not yet usable by the flasher.
 //!
 //! All progress/results go to stdout as the line protocol in [`proto`].
 //! Exit code 0 == success, non-zero == failure (with an `ERROR` line first).
@@ -31,8 +37,12 @@ fn real_main() -> i32 {
     match args[0].as_str() {
         "probe" => cmd_probe(&args),
         "install" => cmd_install(&args),
+        // Install/repair the WinUSB binding by itself (the same step `install`
+        // runs first). Surfaced by the configurator's "Install WinUSB driver"
+        // action when a probe reports `needs-driver`.
+        "bind" => cmd_bind(&args),
         // Internal: the self-elevated WinUSB driver install (invoked with UAC
-        // by the install flow). Not meant to be run by hand.
+        // by `bind`/`install`). Not meant to be run by hand.
         "bind-winusb" => cmd_bind_winusb(),
         other => {
             proto::error("usage", &format!("unknown subcommand `{other}`"));
@@ -67,11 +77,43 @@ fn cmd_probe(args: &[String]) -> i32 {
     // (which device IDs were seen, whether 0483:df11 was among them, the bound
     // driver). The configurator passes it only for a manual re-check, never the
     // background poll, so the log doesn't fill with noise.
-    if has_flag(args, "--verbose") {
+    let verbose = has_flag(args, "--verbose");
+    if verbose {
         dfuse::probe_verbose();
     }
-    proto::probe(dfuse::device_present());
+    // `present` = nusb can enumerate (and so open) the WinUSB-bound ROM DFU.
+    // When it can't, the device may still be physically present but not yet
+    // WinUSB-bound — nusb is blind to that, but libwdi isn't. Only consult the
+    // driver layer on a manual re-check (`--verbose`): it enumerates every USB
+    // device, which is too heavy for the background poll. A `needs-driver`
+    // verdict lets the configurator offer to install the binding.
+    let result = if dfuse::device_present() {
+        proto::Probe::Present
+    } else if verbose && driver::driver_layer_present() {
+        proto::Probe::NeedsDriver
+    } else {
+        proto::Probe::Absent
+    };
+    proto::probe(result);
     0
+}
+
+/// Install/repair the WinUSB binding for the ROM DFU device, standalone. This
+/// is the same `ensure_reachable` step `install` runs first; exposing it lets
+/// the configurator fix the driver before nusb can see the device (the probe
+/// `needs-driver` case). One UAC prompt on Windows; a no-op elsewhere.
+fn cmd_bind(args: &[String]) -> i32 {
+    let _ = flag(args, "--board");
+    match driver::ensure_reachable() {
+        Ok(()) => {
+            proto::log("WinUSB driver step complete");
+            0
+        }
+        Err(e) => {
+            proto::error("bind", &e);
+            1
+        }
+    }
 }
 
 fn cmd_install(args: &[String]) -> i32 {

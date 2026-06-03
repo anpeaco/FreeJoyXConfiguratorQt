@@ -114,6 +114,28 @@ pub fn current_driver_name() -> Option<String> {
     None
 }
 
+/// True when the ROM DFU device (0483:df11) exists at the OS driver layer — on
+/// any driver, or none — even when nusb can't enumerate/open it yet. That's the
+/// usual state of a fresh Windows machine before WinUSB is bound: Device Manager
+/// shows "STM32 BOOTLOADER", but nusb (and so [`crate::dfuse::device_present`])
+/// reports nothing, because the device isn't on a driver nusb can use. libwdi
+/// (which this consults) sees it regardless, so `probe` can report `needs-driver`
+/// and the configurator can offer to install the binding instead of giving up.
+/// Always `false` on builds that can't introspect drivers (non-autobind / non-
+/// Windows), where the WinUSB bind isn't applicable anyway.
+#[cfg(all(windows, feature = "winusb-autobind"))]
+pub fn driver_layer_present() -> bool {
+    matches!(
+        current_driver(),
+        Ok(DriverState::WinUsb | DriverState::Other(_))
+    )
+}
+
+#[cfg(not(all(windows, feature = "winusb-autobind")))]
+pub fn driver_layer_present() -> bool {
+    false
+}
+
 #[cfg(all(windows, feature = "winusb-autobind"))]
 enum DriverState {
     WinUsb,

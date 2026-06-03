@@ -7,7 +7,7 @@
 //! PROGRESS <bytesDone> <bytesTotal>
 //! LOG <free-form text...>
 //! ERROR <code> <free-form message...>
-//! PROBE <present|absent>
+//! PROBE <present|needs-driver|absent>
 //! ```
 //!
 //! Everything goes to stdout and is flushed per-line so the GUI updates
@@ -63,10 +63,45 @@ pub fn error(code: &str, msg: &str) {
     line(&format!("ERROR {code} {msg}"));
 }
 
-pub fn probe(present: bool) {
-    line(if present {
-        "PROBE present"
-    } else {
-        "PROBE absent"
-    });
+/// Outcome of a `probe`, reported as `PROBE <token>`. Keep the tokens in sync
+/// with `DfuInstallSession`'s parser on the Qt side.
+///
+/// `NeedsDriver` is the key addition: the ROM DFU device is present at the OS
+/// driver layer (libwdi can see it) but isn't usable by the flasher yet because
+/// it isn't WinUSB-bound — the typical state on a fresh Windows machine. nusb
+/// (which backs [`Present`]) can't enumerate such a device, so without this the
+/// configurator would report a flat "absent" and never offer to install the
+/// driver. The Qt side turns `NeedsDriver` into an "Install WinUSB driver"
+/// action that runs the `bind` subcommand.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Probe {
+    Present,
+    NeedsDriver,
+    Absent,
+}
+
+impl Probe {
+    pub fn token(self) -> &'static str {
+        match self {
+            Probe::Present => "present",
+            Probe::NeedsDriver => "needs-driver",
+            Probe::Absent => "absent",
+        }
+    }
+}
+
+pub fn probe(result: Probe) {
+    line(&format!("PROBE {}", result.token()));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn probe_tokens_match_the_qt_contract() {
+        assert_eq!(Probe::Present.token(), "present");
+        assert_eq!(Probe::NeedsDriver.token(), "needs-driver");
+        assert_eq!(Probe::Absent.token(), "absent");
+    }
 }
