@@ -75,6 +75,25 @@ fn dfu_functional(device: &nusb::Device) -> Option<DfuFunc> {
         .and_then(|d| parse_dfu_func(&d))
 }
 
+/// Decode the DFU functional descriptor's bmAttributes into a readable summary
+/// like `dnload upload manifest-tolerant`.
+fn dfu_attr_summary(attributes: u8) -> String {
+    let mut parts = Vec::new();
+    if attributes & 0x01 != 0 {
+        parts.push("dnload");
+    }
+    if attributes & 0x02 != 0 {
+        parts.push("upload");
+    }
+    if attributes & 0x04 != 0 {
+        parts.push("manifest-tolerant");
+    }
+    if attributes & 0x08 != 0 {
+        parts.push("will-detach");
+    }
+    parts.join(" ")
+}
+
 /// Human name for a DFU bState (GETSTATUS byte 4), for readable logs.
 fn dfu_state_name(s: u8) -> &'static str {
     match s {
@@ -162,14 +181,11 @@ fn log_device_diagnostics(info: &DeviceInfo, device: &nusb::Device, func: Option
     }
     match func {
         Some(f) => proto::log(&format!(
-            "dfu: functional descriptor: wTransferSize={}, bmAttributes=0x{:02x} [{}{}{}{}], \
+            "dfu: functional descriptor: wTransferSize={}, bmAttributes=0x{:02x} [{}], \
              wDetachTimeOut={} ms, bcdDFU={}.{:02x}",
             f.transfer_size,
             f.attributes,
-            if f.attributes & 0x01 != 0 { "dnload " } else { "" },
-            if f.attributes & 0x02 != 0 { "upload " } else { "" },
-            if f.attributes & 0x04 != 0 { "manifest-tolerant " } else { "" },
-            if f.attributes & 0x08 != 0 { "will-detach" } else { "" },
+            dfu_attr_summary(f.attributes),
             f.detach_timeout,
             f.dfu_version >> 8,
             f.dfu_version & 0xff,
@@ -633,7 +649,10 @@ mod tests {
     fn weact_hid_bootloader_is_recognised_but_not_the_rom_dfu() {
         // The WeAct BlackPill's resident HID bootloader is recognised so the
         // probe can advise on it...
-        assert_eq!(non_dfuse_bootloader(0x0483, 0x572A), Some("WeAct HID bootloader"));
+        assert_eq!(
+            non_dfuse_bootloader(0x0483, 0x572A),
+            Some("WeAct HID bootloader")
+        );
         // ...but it must never be treated as the flashable ROM DfuSe device.
         assert!(non_dfuse_bootloader(DFU_VID, DFU_PID).is_none());
         // An unrelated device isn't claimed by either table.
