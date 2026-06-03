@@ -13,6 +13,31 @@ use nusb::{DeviceInfo, Interface};
 pub const DFU_VID: u16 = 0x0483;
 pub const DFU_PID: u16 = 0xDF11;
 
+/// USB IDs of bootloaders we sometimes see on F411 boards that are *not* the ST
+/// ROM DfuSe device this flasher drives. We can't flash through any of these:
+/// they speak their own protocol (not DfuSe class transfers), and a resident
+/// flash bootloader also occupies 0x08000000 — exactly where the FreeJoyX
+/// bootloader must be written — so it can't rewrite itself. The WeAct BlackPill
+/// notably ships with the WeAct HID bootloader pre-flashed (0483:572a), so a
+/// brand-new board sits here rather than in ROM DFU. Recognising these lets the
+/// probe explain *why* nothing flashable was found (and what to do about it)
+/// instead of a bare "absent". The flash path (`device_present`/`find`) stays
+/// strictly 0483:df11 — adding these here would only turn a clean "no board"
+/// into a mid-flash failure.
+const KNOWN_NON_DFUSE_BOOTLOADERS: &[(u16, u16, &str)] = &[
+    (0x0483, 0x572A, "WeAct HID bootloader"),
+    (0x1EAF, 0x0003, "Maple/STM32duino DFU bootloader"),
+];
+
+/// If `(vid, pid)` is a bootloader we recognise but can't flash through, its
+/// human name; otherwise `None`.
+fn non_dfuse_bootloader(vid: u16, pid: u16) -> Option<&'static str> {
+    KNOWN_NON_DFUSE_BOOTLOADERS
+        .iter()
+        .find(|&&(v, p, _)| v == vid && p == pid)
+        .map(|&(_, _, name)| name)
+}
+
 /// DFU class requests (USB DFU 1.1, bRequest values).
 const DFU_DNLOAD: u8 = 1;
 const DFU_UPLOAD: u8 = 2;
@@ -95,15 +120,28 @@ pub fn probe_verbose() {
         Ok(it) => {
             let mut count = 0usize;
             let mut found = false;
+            // Remember a recognised-but-unflashable bootloader (e.g. a WeAct
+            // BlackPill sitting in its HID bootloader) so we can give targeted
+            // advice when the ROM DFU itself is absent.
+            let mut wrong_bootloader: Option<&'static str> = None;
             for d in it {
                 count += 1;
-                let is_dfu = d.vendor_id() == DFU_VID && d.product_id() == DFU_PID;
+                let (vid, pid) = (d.vendor_id(), d.product_id());
+                let is_dfu = vid == DFU_VID && pid == DFU_PID;
                 found |= is_dfu;
+                let note = if is_dfu {
+                    "  <- STM32 ROM DFU".to_string()
+                } else if let Some(name) = non_dfuse_bootloader(vid, pid) {
+                    wrong_bootloader = Some(name);
+                    format!("  <- {name} (not ROM DFU, can't flash this)")
+                } else {
+                    String::new()
+                };
                 proto::log(&format!(
                     "probe: usb {:04x}:{:04x}{} {}",
-                    d.vendor_id(),
-                    d.product_id(),
-                    if is_dfu { "  <- STM32 ROM DFU" } else { "" },
+                    vid,
+                    pid,
+                    note,
                     d.product_string().unwrap_or("")
                 ));
             }
@@ -117,6 +155,16 @@ pub fn probe_verbose() {
                         "probe: DFU device driver = \"{drv}\" (must be WinUSB on Windows to flash)"
                     ));
                 }
+            } else if let Some(name) = wrong_bootloader {
+                // The board is here, just in the wrong bootloader. Spell out the
+                // fix rather than leaving the user with a bare "NOT found".
+                proto::log(&format!(
+                    "probe: a {name} is present — this board is in its own bootloader, \
+                     not the STM32 ROM DFU. To flash, enter ROM DFU: hold BOOT0 while \
+                     plugging in USB (or BOOT0 + tap NRST), so it re-appears as 0483:df11. \
+                     If it still doesn't show, this board's ROM USB-DFU isn't coming up — \
+                     flash via ST-Link / STM32CubeProgrammer instead."
+                ));
             }
         }
         Err(e) => {
@@ -361,6 +409,17 @@ mod tests {
     fn exact_sector_boundary_does_not_bleed_into_the_next() {
         // Exactly 128 KB at S5 must NOT also erase S6.
         assert_eq!(overlapping_sectors(APP_ADDR, 128 * 1024), vec![0x0802_0000]);
+    }
+
+    #[test]
+    fn weact_hid_bootloader_is_recognised_but_not_the_rom_dfu() {
+        // The WeAct BlackPill's resident HID bootloader is recognised so the
+        // probe can advise on it...
+        assert_eq!(non_dfuse_bootloader(0x0483, 0x572A), Some("WeAct HID bootloader"));
+        // ...but it must never be treated as the flashable ROM DfuSe device.
+        assert!(non_dfuse_bootloader(DFU_VID, DFU_PID).is_none());
+        // An unrelated device isn't claimed by either table.
+        assert_eq!(non_dfuse_bootloader(0x1234, 0x5678), None);
     }
 
     #[test]
