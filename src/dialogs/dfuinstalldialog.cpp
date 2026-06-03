@@ -55,6 +55,8 @@ DfuInstallDialog::DfuInstallDialog(QWidget *parent)
 
     connect(m_session, &DfuInstallSession::availability,
             this, &DfuInstallDialog::onAvailability);
+    connect(m_session, &DfuInstallSession::driverInstallFinished,
+            this, &DfuInstallDialog::onDriverInstallFinished);
     connect(m_session, &DfuInstallSession::stageChanged,
             this, &DfuInstallDialog::onStageChanged);
     connect(m_session, &DfuInstallSession::progress,
@@ -160,7 +162,15 @@ void DfuInstallDialog::buildUi()
     m_detectLabel->setWordWrap(true);
     m_detectBtn = new QPushButton(tr("Re-check"), dfuBox);
     connect(m_detectBtn, &QPushButton::clicked, this, &DfuInstallDialog::onManualRecheck);
+    /* Shown only when a probe reports NeedsDriver: the board is present but its
+     * USB driver isn't installed (typical fresh-Windows state). Hidden until
+     * then; on Linux/macOS the needs-driver verdict never arises, so it stays
+     * hidden there. */
+    m_driverBtn = new QPushButton(tr("Install WinUSB driver"), dfuBox);
+    m_driverBtn->setVisible(false);
+    connect(m_driverBtn, &QPushButton::clicked, this, &DfuInstallDialog::onInstallDriverClicked);
     detectRow->addWidget(m_detectLabel, 1);
+    detectRow->addWidget(m_driverBtn, 0);
     detectRow->addWidget(m_detectBtn, 0);
     dfuLay->addLayout(detectRow);
 
@@ -339,19 +349,67 @@ void DfuInstallDialog::onManualRecheck()
     m_session->probe(/*verbose=*/true);  /* narrate what the helper enumerates */
 }
 
-void DfuInstallDialog::onAvailability(bool present)
+void DfuInstallDialog::onAvailability(DfuInstallSession::Availability avail)
 {
-    m_devicePresent = present;
-    if (!m_installing) {
-        if (present) {
+    using Avail = DfuInstallSession::Availability;
+    m_devicePresent = (avail == Avail::Ready);
+    m_driverNeeded  = (avail == Avail::NeedsDriver);
+
+    if (!m_installing && !m_bindingDriver) {
+        switch (avail) {
+        case Avail::Ready:
             m_detectLabel->setText(tr("Board detected in DFU mode — ready to write."));
             m_detectLabel->setStyleSheet(QStringLiteral("color: #27ae60; font-weight: bold;"));
-        } else {
+            break;
+        case Avail::NeedsDriver:
+            m_detectLabel->setText(tr("Board found, but its USB driver isn't installed — "
+                                      "click \"Install WinUSB driver\"."));
+            m_detectLabel->setStyleSheet(QStringLiteral("color: #d68910; font-weight: bold;"));
+            break;
+        case Avail::Absent:
             m_detectLabel->setText(tr("No board in DFU mode yet — follow step 1 above."));
             m_detectLabel->setStyleSheet(QString());
+            break;
         }
     }
+
+    /* Reveal the driver button only when it's actionable. */
+    m_driverBtn->setVisible(m_driverNeeded);
+    m_driverBtn->setEnabled(m_driverNeeded && !m_installing && !m_bindingDriver
+                            && DfuInstallSession::helperAvailable());
     refreshInstallEnabled();
+}
+
+void DfuInstallDialog::onInstallDriverClicked()
+{
+    if (m_installing || m_bindingDriver) return;
+    if (!DfuInstallSession::helperAvailable()) return;
+
+    m_bindingDriver = true;
+    m_driverBtn->setEnabled(false);
+    m_detectBtn->setEnabled(false);
+    m_detectLabel->setText(tr("Installing the WinUSB driver… approve the Windows "
+                              "prompt if it appears."));
+    m_detectLabel->setStyleSheet(QString());
+    appendLog(tr("Installing the WinUSB driver for the DFU device…"));
+    m_session->installDriver();
+}
+
+void DfuInstallDialog::onDriverInstallFinished(bool ok, const QString &detail)
+{
+    m_bindingDriver = false;
+    if (!detail.isEmpty()) appendLog(detail);
+    m_detectBtn->setEnabled(DfuInstallSession::helperAvailable());
+    if (!ok) {
+        QMessageBox::warning(this, tr("Driver install"),
+            detail.isEmpty() ? tr("The WinUSB driver couldn't be installed.")
+                             : detail);
+    } else {
+        appendLog(tr("Re-checking for the board now that the driver is installed…"));
+    }
+    /* Re-probe (verbose) so the now-bound device is picked up and the label /
+     * Install button update for the new state. */
+    if (!m_installing) m_session->probe(/*verbose=*/true);
 }
 
 void DfuInstallDialog::onInstallClicked()
@@ -459,6 +517,8 @@ void DfuInstallDialog::setControlsLocked(bool locked)
     m_browseAppBtn->setEnabled(!locked);
     m_rebootBtn->setEnabled(!locked);
     m_detectBtn->setEnabled(!locked && DfuInstallSession::helperAvailable());
+    m_driverBtn->setEnabled(!locked && m_driverNeeded
+                            && DfuInstallSession::helperAvailable());
     m_installBtn->setEnabled(!locked && !m_installed && m_devicePresent
                              && !m_bootEdit->text().isEmpty()
                              && !m_appEdit->text().isEmpty());

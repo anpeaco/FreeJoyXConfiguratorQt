@@ -39,7 +39,11 @@
   *
   * Probe (used to enable/disable the UI entry):
   *     freejoyx-flash probe --board f411
-  *   Prints exactly one line `PROBE present` or `PROBE absent`, exit 0.
+  *   Prints exactly one line `PROBE present`, `PROBE needs-driver`, or
+  *   `PROBE absent`, exit 0. `needs-driver` means the ROM DFU device is present
+  *   at the OS driver layer but isn't WinUSB-bound yet (so nusb -- and thus a
+  *   plain `present` check -- can't see it); the dialog offers to install the
+  *   driver. Only surfaced on a `--verbose` (manual re-check) probe.
   *
   * Install/reinstall (writes bootloader + app in one DfuSe session):
   *     freejoyx-flash install --board f411 --boot <bootBin> --app <appBin>
@@ -47,13 +51,18 @@
   *   prompt the first time on Windows; no-op on Linux/macOS), erase, write
   *   bootloader -> 0x08000000, write app -> 0x08020000, verify, leave DFU.
   *
+  * Install the WinUSB driver on its own (the same bind step `install` does
+  * first), so the driver can be fixed before nusb can see the device:
+  *     freejoyx-flash bind --board f411
+  *   One UAC prompt on Windows; no-op elsewhere. exit 0 on success.
+  *
   * --- Helper stdout protocol (one record per line, space-delimited) ---
   *
   *   STAGE <bind-driver|erase|write-boot|write-app|verify|done>
   *   PROGRESS <bytesDone> <bytesTotal>     // during write-boot / write-app
   *   LOG <free-form text...>               // appended verbatim to the log view
   *   ERROR <code> <free-form message...>   // a single terminal failure line
-  *   PROBE <present|absent>                // probe mode only
+  *   PROBE <present|needs-driver|absent>   // probe mode only
   *
   * Exit code: 0 = success. Non-zero = failure; the helper is expected to have
   * emitted an ERROR line first, but this class also synthesises a generic
@@ -88,6 +97,17 @@ public:
     };
     Q_ENUM(Stage)
 
+    /* Result of probe(). `Ready` = a WinUSB-bound 0483:df11 nusb can open and
+     * flash now. `NeedsDriver` = the device is present at the OS driver layer
+     * but not WinUSB-bound (nusb can't see it); installDriver() can fix it.
+     * `Absent` = no DFU device. Maps to the `PROBE <token>` wire values. */
+    enum class Availability {
+        Absent,
+        NeedsDriver,
+        Ready,
+    };
+    Q_ENUM(Availability)
+
     struct Params {
         QString bootBinPath;            /* required: bootloader .bin */
         QString appBinPath;             /* required: application .bin */
@@ -110,8 +130,9 @@ public:
     const QString &lastErrorDetail() const { return m_lastErrorDetail; }
 
     /* Async availability probe: spawns `freejoyx-flash probe`. The result
-     * arrives via availability(bool). A chip in ROM-DFU mode reports
-     * present; anything else reports absent. Safe to call repeatedly (e.g.
+     * arrives via availability(Availability): Ready for a WinUSB-bound chip in
+     * ROM-DFU mode, NeedsDriver for one present but not yet WinUSB-bound (only
+     * on a verbose re-check), Absent otherwise. Safe to call repeatedly (e.g.
      * on a device-list refresh); a probe in flight is coalesced (the later
      * call is ignored).
      *
@@ -121,6 +142,14 @@ public:
      * diagnosable. Pass it only for a user-driven re-check, never the
      * background poll, or the log fills with per-second noise. */
     void probe(bool verbose = false);
+
+    /* Install/repair the WinUSB binding for the ROM DFU device on its own, by
+     * running `freejoyx-flash bind` (the same step install() does first). Use
+     * this when probe() reports NeedsDriver -- it fixes the driver so a
+     * subsequent probe can see the device. Raises one UAC prompt on Windows;
+     * a no-op elsewhere. The outcome arrives via driverInstallFinished(); LOG
+     * lines stream through logLine(). Coalesced if a session is already active. */
+    void installDriver();
 
     /* Begin the install/reinstall. Returns false (without starting) if a
      * session is already active, the helper is missing, or a required path
@@ -135,7 +164,12 @@ public:
 
 signals:
     /* Result of probe(). */
-    void availability(bool present);
+    void availability(DfuInstallSession::Availability avail);
+
+    /* Result of installDriver(). ok == the bind helper exited cleanly; detail
+     * is a human-readable summary for the dialog's log. The dialog should
+     * re-probe afterwards to pick up the now-bound device. */
+    void driverInstallFinished(bool ok, const QString &detail);
 
     void stageChanged(DfuInstallSession::Stage s, const QString &detail);
     void progress(qint64 bytesDone, qint64 bytesTotal);
@@ -161,6 +195,7 @@ private:
     QProcess *m_proc = nullptr;     /* the running install/probe process; null when idle */
     bool      m_probing = false;    /* true while a probe() process is in flight */
     bool      m_probeVerbose = false; /* the in-flight probe was asked to narrate */
+    bool      m_binding = false;    /* true while an installDriver() process is in flight */
     bool      m_sawError = false;   /* an ERROR line was emitted -> don't synthesise another */
     Stage     m_stage = Stage::Idle;
     QString   m_lastErrorDetail;
