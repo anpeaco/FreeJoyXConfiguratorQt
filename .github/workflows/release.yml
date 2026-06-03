@@ -147,9 +147,13 @@ jobs:
           New-Item -ItemType Directory -Path dist\platforms | Out-Null
           Copy-Item "$qtPlug\platforms\qwindows.dll" dist\platforms\
 
-          # Image format plugins for SVG icons + PNG resources
+          # Image format plugins for SVG icons + PNG/JPEG resources. qjpeg is
+          # required for the F103/F411 board renders (Images/*_render.jpg in
+          # resources.qrc) -- without it Qt silently fails to decode them and
+          # the board images come up blank. PNG (pinout.png) is handled by Qt
+          # core, so only JPEG/SVG/ICO need explicit plugins here.
           New-Item -ItemType Directory -Path dist\imageformats | Out-Null
-          foreach ($plug in 'qsvg.dll', 'qico.dll') {
+          foreach ($plug in 'qsvg.dll', 'qico.dll', 'qjpeg.dll') {
             if (Test-Path "$qtPlug\imageformats\$plug") {
               Copy-Item "$qtPlug\imageformats\$plug" dist\imageformats\
             }
