@@ -68,9 +68,11 @@ private slots:
     void onInstallClicked();
     void onRefreshDetect();    /* silent background poll (timer) */
     void onManualRecheck();    /* user-driven verbose re-check (button) */
+    void onInstallDriverClicked();  /* "Install WinUSB driver" (needs-driver state) */
 
     /* DfuInstallSession feeds. */
-    void onAvailability(bool present);
+    void onAvailability(DfuInstallSession::Availability avail);
+    void onDriverInstallFinished(bool ok, const QString &detail);
     void onStageChanged(DfuInstallSession::Stage s, const QString &detail);
     void onProgress(qint64 done, qint64 total);
     void onLogLine(const QString &line);
@@ -100,13 +102,16 @@ private:
     QPushButton    *m_browseBootBtn = nullptr;
     QPushButton    *m_browseAppBtn = nullptr;
     QPushButton    *m_detectBtn = nullptr;
+    QPushButton    *m_driverBtn = nullptr;     /* "Install WinUSB driver"; shown only when needed */
     QPushButton    *m_rebootBtn = nullptr;
     QPushButton    *m_installBtn = nullptr;
     QPushButton    *m_closeBtn = nullptr;
 
     QTimer *m_detectTimer = nullptr;  /* periodic re-probe so plugging in is noticed */
-    bool    m_devicePresent = false;
+    bool    m_devicePresent = false;  /* probe reported Ready (WinUSB-bound, flashable) */
+    bool    m_driverNeeded = false;   /* probe reported NeedsDriver (present, not bound) */
     bool    m_installing = false;
+    bool    m_bindingDriver = false;  /* an installDriver() run is in flight */
     /* Latches true after a successful install so the Install button stays
      * disabled -- the board is no longer in a fresh DFU state, and running
      * the write again over the just-finished session misbehaves. Cleared only

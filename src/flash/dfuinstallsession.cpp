@@ -68,12 +68,13 @@ void DfuInstallSession::probe(bool verbose)
     }
     const QString helper = helperPath();
     if (helper.isEmpty()) {
-        emit availability(false);
+        emit availability(Availability::Absent);
         return;
     }
 
     m_probing = true;
     m_probeVerbose = verbose;
+    m_binding = false;
     m_sawError = false;
     m_stdoutBuf.clear();
     m_stderrBuf.clear();
@@ -95,6 +96,43 @@ void DfuInstallSession::probe(bool verbose)
     m_proc->start(helper, probeArgs);
 }
 
+void DfuInstallSession::installDriver()
+{
+    /* Coalesce against any in-flight probe/install/bind. */
+    if (m_proc && m_proc->state() != QProcess::NotRunning) {
+        return;
+    }
+    const QString helper = helperPath();
+    if (helper.isEmpty()) {
+        emit driverInstallFinished(false,
+            tr("Install helper (freejoyx-flash) is missing from the "
+               "application folder."));
+        return;
+    }
+
+    m_probing = false;
+    m_probeVerbose = false;
+    m_binding = true;
+    m_sawError = false;
+    m_lastErrorDetail.clear();
+    m_stdoutBuf.clear();
+    m_stderrBuf.clear();
+
+    m_proc = new QProcess(this);
+    m_proc->setProcessChannelMode(QProcess::SeparateChannels);
+    connect(m_proc, &QProcess::readyReadStandardOutput,
+            this, &DfuInstallSession::onReadyReadStdout);
+    connect(m_proc, &QProcess::readyReadStandardError,
+            this, &DfuInstallSession::onReadyReadStderr);
+    connect(m_proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, &DfuInstallSession::onProcessFinished);
+    connect(m_proc, &QProcess::errorOccurred,
+            this, &DfuInstallSession::onProcessErrorOccurred);
+
+    m_proc->start(helper, { QStringLiteral("bind"),
+                            QStringLiteral("--board"), QStringLiteral("f411") });
+}
+
 bool DfuInstallSession::start(const Params &p)
 {
     if (m_proc && m_proc->state() != QProcess::NotRunning) {
@@ -114,6 +152,7 @@ bool DfuInstallSession::start(const Params &p)
 
     m_probing = false;
     m_probeVerbose = false;
+    m_binding = false;
     m_sawError = false;
     m_lastErrorDetail.clear();
     m_stdoutBuf.clear();
@@ -219,8 +258,16 @@ void DfuInstallSession::onProcessFinished(int exitCode, QProcess::ExitStatus sta
     const bool crashed = (status == QProcess::CrashExit);
 
     if (m_probing) {
-        const bool present = (!crashed && exitCode == 0
-                              && m_lastErrorDetail == QStringLiteral("present"));
+        /* Map the stashed PROBE token to the tri-state verdict. A crash or
+         * non-zero exit is treated as Absent (the helper couldn't report). */
+        Availability avail = Availability::Absent;
+        if (!crashed && exitCode == 0) {
+            if (m_lastErrorDetail == QStringLiteral("present")) {
+                avail = Availability::Ready;
+            } else if (m_lastErrorDetail == QStringLiteral("needs-driver")) {
+                avail = Availability::NeedsDriver;
+            }
+        }
         /* A user-driven re-check gets a closing line in the log so it never
          * looks like nothing happened -- and so a non-zero exit / crash (helper
          * couldn't run) is distinguishable from a clean "no board". */
@@ -230,9 +277,15 @@ void DfuInstallSession::onProcessFinished(int exitCode, QProcess::ExitStatus sta
             } else if (exitCode != 0) {
                 emit logLine(tr("Re-check: helper exited with code %1.").arg(exitCode));
             } else {
-                emit logLine(present
-                    ? tr("Re-check: board present in DFU mode.")
-                    : tr("Re-check: no board in DFU mode."));
+                switch (avail) {
+                case Availability::Ready:
+                    emit logLine(tr("Re-check: board present in DFU mode.")); break;
+                case Availability::NeedsDriver:
+                    emit logLine(tr("Re-check: board found, but its USB driver "
+                                    "needs installing.")); break;
+                case Availability::Absent:
+                    emit logLine(tr("Re-check: no board in DFU mode.")); break;
+                }
             }
         }
         m_lastErrorDetail.clear();
@@ -240,7 +293,23 @@ void DfuInstallSession::onProcessFinished(int exitCode, QProcess::ExitStatus sta
         m_probeVerbose = false;
         m_proc->deleteLater();
         m_proc = nullptr;
-        emit availability(present);
+        emit availability(avail);
+        return;
+    }
+
+    if (m_binding) {
+        const bool ok = (!crashed && exitCode == 0);
+        if (!ok && !m_sawError) {
+            m_lastErrorDetail = crashed
+                ? tr("The driver install stopped unexpectedly.")
+                : tr("The driver install exited with code %1.").arg(exitCode);
+        }
+        const QString detail = ok ? tr("WinUSB driver step completed.")
+                                  : m_lastErrorDetail;
+        m_binding = false;
+        m_proc->deleteLater();
+        m_proc = nullptr;
+        emit driverInstallFinished(ok, detail);
         return;
     }
 
@@ -286,7 +355,17 @@ void DfuInstallSession::onProcessErrorOccurred(QProcess::ProcessError error)
             m_probing = false;
             m_probeVerbose = false;
             if (m_proc) { m_proc->deleteLater(); m_proc = nullptr; }
-            emit availability(false);
+            emit availability(Availability::Absent);
+            return;
+        }
+        if (m_binding) {
+            emit logLine(tr("Couldn't launch the install helper (%1): %2")
+                             .arg(helperPath(),
+                                  m_proc ? m_proc->errorString() : tr("unknown error")));
+            m_binding = false;
+            if (m_proc) { m_proc->deleteLater(); m_proc = nullptr; }
+            emit driverInstallFinished(false,
+                tr("Couldn't launch the install helper (freejoyx-flash)."));
             return;
         }
         m_lastErrorDetail = tr("Couldn't launch the install helper (freejoyx-flash).");
