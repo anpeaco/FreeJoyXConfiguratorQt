@@ -108,6 +108,7 @@ private:
     QPushButton    *m_closeBtn = nullptr;
 
     QTimer *m_detectTimer = nullptr;  /* periodic re-probe so plugging in is noticed */
+    int     m_detectTick = 0;         /* counts background polls; throttles the driver-layer check */
     bool    m_devicePresent = false;  /* probe reported Ready (WinUSB-bound, flashable) */
     bool    m_driverNeeded = false;   /* probe reported NeedsDriver (present, not bound) */
     bool    m_installing = false;

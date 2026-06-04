@@ -42,3 +42,107 @@ jobs:
           path: src/FreeJoyXConfiguratorQt
           if-no-files-found: error
           retention-days: 30
+
+  # Windows build published as a downloadable CI artifact (NOT a release) so a
+  # branch/PR can be smoke-tested on Windows without tagging. Mirrors the
+  # release.yml Windows build + manual Qt deploy, but deliberately omits the
+  # release publish and the *pinned* freejoyx-flash helper bundling: when you're
+  # testing a branch that also changes the helper, the pinned release helper
+  # would be the wrong (old) one. Drop the matching freejoyx-flash.exe (from the
+  # Rust repo's Release-flash run on the same branch) next to the exe before
+  # testing -- see DROP-IN-HELPER.txt in the artifact.
+  build-windows:
+    name: Build (Windows, Qt 5.15, artifact)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Qt 5.15.2 (MinGW 8.1.0)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_mingw81'
+          tools: 'tools_mingw,qt.tools.win64_mingw810'
+          cache: true
+
+      - name: Build
+        shell: cmd
+        run: |
+          set PATH=%IQTA_TOOLS%\mingw810_64\bin;%PATH%
+          qmake CONFIG+=release FreeJoyQt.pro
+          mingw32-make -j%NUMBER_OF_PROCESSORS%
+
+      - name: Package (app + Qt runtime)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path dist | Out-Null
+          # qmake's SUBDIRS template Release build lands at src\release\.
+          $exePath = "src\release\FreeJoyXConfiguratorQt.exe"
+          if (-not (Test-Path $exePath)) {
+            Write-Error "FreeJoyXConfiguratorQt.exe not found at $exePath"
+            exit 1
+          }
+          Copy-Item $exePath dist\
+
+          # Manual Qt deploy (windeployqt is unreliable on install-qt-action's
+          # layout). Copy exactly what src.pro uses: Core/Gui/Network/Widgets/
+          # Svg, the windows platform plugin, image-format plugins for SVG/PNG/
+          # JPEG resources, the styles plugin, plus the MinGW runtime.
+          $qtBin = "$env:QT_ROOT_DIR\bin"
+          $qtPlug = "$env:QT_ROOT_DIR\plugins"
+
+          foreach ($dll in 'Qt5Core.dll', 'Qt5Gui.dll', 'Qt5Network.dll', 'Qt5Widgets.dll', 'Qt5Svg.dll') {
+            Copy-Item "$qtBin\$dll" dist\
+          }
+
+          New-Item -ItemType Directory -Path dist\platforms | Out-Null
+          Copy-Item "$qtPlug\platforms\qwindows.dll" dist\platforms\
+
+          New-Item -ItemType Directory -Path dist\imageformats | Out-Null
+          foreach ($plug in 'qsvg.dll', 'qico.dll', 'qjpeg.dll') {
+            if (Test-Path "$qtPlug\imageformats\$plug") {
+              Copy-Item "$qtPlug\imageformats\$plug" dist\imageformats\
+            }
+          }
+
+          New-Item -ItemType Directory -Path dist\styles | Out-Null
+          if (Test-Path "$qtPlug\styles\qwindowsvistastyle.dll") {
+            Copy-Item "$qtPlug\styles\qwindowsvistastyle.dll" dist\styles\
+          }
+
+          $mingwBin = "$env:IQTA_TOOLS\mingw810_64\bin"
+          foreach ($dll in 'libgcc_s_seh-1.dll', 'libstdc++-6.dll', 'libwinpthread-1.dll') {
+            if (Test-Path "$mingwBin\$dll") {
+              Copy-Item "$mingwBin\$dll" dist\
+            }
+          }
+
+          # Note for testers: this CI bundle has no helper on purpose.
+          @"
+          This is a CI test build of FreeJoyXConfiguratorQt (not a release).
+
+          Before flashing, copy the matching helper into this folder as:
+              freejoyx-flash.exe
+          Get it from the Rust repo's "Release freejoyx-flash helper" workflow
+          run on the SAME branch (the freejoyx-flash-windows artifact). The
+          released/pinned helper is intentionally NOT bundled here so a branch
+          that changes both halves is tested as a matched pair.
+
+          To flash firmware too, either let the helper/app find bundled bins or
+          point the Boot/App pickers at freejoyx-f411-boot.bin / -app.bin from
+          the FreeJoyX firmware release.
+          "@ | Out-File -Encoding utf8 dist\DROP-IN-HELPER.txt
+
+          Write-Host "=== dist/ (app + Qt runtime) ==="
+          Get-ChildItem -Recurse dist | Format-Table FullName, Length
+
+      - name: Upload configurator (Windows) artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: FreeJoyXConfiguratorQt-windows
+          path: dist/**
+          if-no-files-found: error
+          retention-days: 30

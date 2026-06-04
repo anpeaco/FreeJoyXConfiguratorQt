@@ -131,17 +131,23 @@ public:
 
     /* Async availability probe: spawns `freejoyx-flash probe`. The result
      * arrives via availability(Availability): Ready for a WinUSB-bound chip in
-     * ROM-DFU mode, NeedsDriver for one present but not yet WinUSB-bound (only
-     * on a verbose re-check), Absent otherwise. Safe to call repeatedly (e.g.
-     * on a device-list refresh); a probe in flight is coalesced (the later
-     * call is ignored).
+     * ROM-DFU mode, NeedsDriver for one present but not yet WinUSB-bound,
+     * Absent otherwise. Safe to call repeatedly (e.g. on a device-list
+     * refresh); a probe in flight is coalesced (the later call is ignored).
      *
      * When verbose is true the helper is passed `--verbose`, making it narrate
      * the USB enumeration (every device ID it saw, whether 0483:df11 is among
      * them, the bound driver) via logLine() so an "absent" verdict is
      * diagnosable. Pass it only for a user-driven re-check, never the
-     * background poll, or the log fills with per-second noise. */
-    void probe(bool verbose = false);
+     * background poll, or the log fills with per-second noise.
+     *
+     * When checkDriver is true (and verbose is false) the helper is passed
+     * `--check-driver`: it consults the WinUSB driver layer so a board in DFU
+     * that isn't WinUSB-bound yet reports NeedsDriver instead of Absent --
+     * quietly, without the verbose enumeration logging. The libwdi check is
+     * heavier than the plain nusb poll, so pass it on a slow cadence (not every
+     * background tick). verbose implies checkDriver. */
+    void probe(bool verbose = false, bool checkDriver = false);
 
     /* Install/repair the WinUSB binding for the ROM DFU device on its own, by
      * running `freejoyx-flash bind` (the same step install() does first). Use
