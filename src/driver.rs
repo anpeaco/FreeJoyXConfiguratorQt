@@ -270,6 +270,15 @@ fn bind_winusb_inner() -> Result<(), String> {
         }
     }
 
+    // We're about to generate + publish a fresh freejoyx_df11.inf package.
+    // libwdi's prepare_driver mints a new one (new temp dir + self-signed cat)
+    // every call and never removes the old, so the DriverStore otherwise grows
+    // one package per (re)bind (issue #31). We only reach here in a non-WinUSB
+    // state, so any freejoyx_df11.inf packages already in the store are orphans
+    // (not bound to this device) -- prune them first so the store keeps exactly
+    // one. Best-effort; never blocks the bind.
+    prune_stale_winusb_packages();
+
     // Elevated here, so prepare_driver can generate + sign the .cat.
     let dir = std::env::temp_dir().join("freejoyx-winusb");
     let path = dir.to_string_lossy().into_owned();
@@ -293,6 +302,68 @@ fn bind_winusb_inner() -> Result<(), String> {
     }
 
     Ok(())
+}
+
+/// Remove `freejoyx_df11.inf` WinUSB packages that previous binds left in the
+/// driver store, so it doesn't accumulate one package per flash (#31). Called
+/// from the elevated bind path while the device is NOT WinUSB-bound, so every
+/// such package is an orphan. Uses `pnputil /delete-driver` WITHOUT `/force`, so
+/// a package still bound to a present device is refused as a backstop. Entirely
+/// best-effort: any `pnputil`/parse failure is logged-via-count and ignored.
+#[cfg(all(windows, feature = "winusb-autobind"))]
+fn prune_stale_winusb_packages() {
+    use std::process::Command;
+
+    let out = match Command::new("pnputil").arg("/enum-drivers").output() {
+        Ok(o) if o.status.success() => String::from_utf8_lossy(&o.stdout).into_owned(),
+        _ => return,
+    };
+    // pnputil prints one block per package separated by a blank line. Normalise
+    // line endings so the split is robust, then match blocks by the INF's own
+    // file name (locale-independent -- the column labels are localized, the
+    // file name and the oemNN.inf published name are not).
+    let normalised = out.replace("\r\n", "\n");
+    let mut pruned = 0usize;
+    for block in normalised.split("\n\n") {
+        if !block.contains("freejoyx_df11.inf") {
+            continue;
+        }
+        let Some(oem) = published_oem_inf(block) else {
+            continue;
+        };
+        if let Ok(s) = Command::new("pnputil")
+            .args(["/delete-driver", &oem])
+            .output()
+        {
+            if s.status.success() {
+                pruned += 1;
+            }
+        }
+    }
+    if pruned > 0 {
+        crate::proto::log(&format!(
+            "pruned {pruned} stale WinUSB package(s) from previous binds"
+        ));
+    }
+}
+
+/// The published `oemNN.inf` name in a `pnputil /enum-drivers` block. Found by
+/// shape (`oem` + digits + `.inf`) rather than the localized "Published Name"
+/// label, so it works on non-English Windows.
+#[cfg(all(windows, feature = "winusb-autobind"))]
+fn published_oem_inf(block: &str) -> Option<String> {
+    block
+        .split(|c: char| c.is_whitespace())
+        .map(str::trim)
+        .find(|t| {
+            t.len() > "oem.inf".len()
+                && t.starts_with("oem")
+                && t.ends_with(".inf")
+                && t["oem".len()..t.len() - ".inf".len()]
+                    .chars()
+                    .all(|c| c.is_ascii_digit())
+        })
+        .map(str::to_string)
 }
 
 /// Force-install the prepared WinUSB `.inf` onto the device matching
