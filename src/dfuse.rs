@@ -224,10 +224,94 @@ const STATE_ERROR: u8 = 10;
 
 const CTRL_TIMEOUT: Duration = Duration::from_secs(5);
 
-/// Bounds the status-poll loop so a misbehaving device can't hang the helper
-/// forever. Each iteration sleeps at least the device's bwPollTimeout, so for
-/// a slow 128 KB sector erase (poll ~1-2 s) this still allows ample time.
-const MAX_POLLS: u32 = 600;
+/// Read a millisecond/count tunable from the environment, falling back to
+/// `default`. Every timing knob below can be overridden at runtime so a slow or
+/// clone bootloader can be coaxed through without a rebuild — handy when
+/// diagnosing a specific board remotely (just ask the user to set the env var
+/// and re-run). A missing or unparseable value silently uses the default.
+fn env_u64(name: &str, default: u64) -> u64 {
+    std::env::var(name)
+        .ok()
+        .and_then(|v| v.trim().parse::<u64>().ok())
+        .unwrap_or(default)
+}
+
+/// All the timing/retry knobs the flasher uses, resolved once from defaults +
+/// environment overrides when a `Dfu` is opened. Defaults are tuned to be safe
+/// on genuine ST silicon while leaving generous margin for slower clones; the
+/// env overrides exist so a misbehaving board can be nursed through (or the
+/// margins tightened) without recompiling.
+#[derive(Clone, Copy)]
+struct Timings {
+    /// Floor applied to the device-reported bwPollTimeout between status polls.
+    /// Clones frequently report 0 ms for a normal block write even though the
+    /// flash controller is still busy; without a floor we'd hot-spin and risk
+    /// issuing the next request before the write truly lands.
+    /// `FREEJOYX_FLASH_POLL_FLOOR_MS` (default 5).
+    poll_floor_ms: u64,
+    /// Pause after a data DNLOAD before the first GETSTATUS, so a slow device
+    /// has actually begun programming and can't answer with a *stale* idle from
+    /// the previous block (the race that STALLs the next DNLOAD).
+    /// `FREEJOYX_FLASH_PRE_STATUS_MS` (default 2).
+    pre_status_settle_ms: u64,
+    /// Unconditional settle after the device reports a block/erase complete,
+    /// before the next operation — belt-and-braces margin for clone flash that
+    /// signals done a touch early. `FREEJOYX_FLASH_SETTLE_MS` (default 8).
+    post_op_settle_ms: u64,
+    /// Base back-off after a transient (device-busy) STALL; scaled by the retry
+    /// attempt number so a struggling device gets progressively more breathing
+    /// room. `FREEJOYX_FLASH_RETRY_BACKOFF_MS` (default 25).
+    retry_backoff_ms: u64,
+    /// How many times to recover-and-retry a single block that STALLs while the
+    /// device is merely still busy. `FREEJOYX_FLASH_BLOCK_RETRIES` (default 4).
+    block_retries: u32,
+    /// Bounds the status-poll loop so a misbehaving device can't hang the
+    /// helper forever. Each iteration sleeps at least `poll_floor_ms` (or the
+    /// device's larger reported poll), so this still allows ample time for a
+    /// slow 128 KB sector erase. `FREEJOYX_FLASH_MAX_POLLS` (default 1000).
+    max_polls: u32,
+}
+
+impl Timings {
+    fn from_env() -> Timings {
+        Timings {
+            poll_floor_ms: env_u64("FREEJOYX_FLASH_POLL_FLOOR_MS", 5),
+            pre_status_settle_ms: env_u64("FREEJOYX_FLASH_PRE_STATUS_MS", 2),
+            post_op_settle_ms: env_u64("FREEJOYX_FLASH_SETTLE_MS", 8),
+            retry_backoff_ms: env_u64("FREEJOYX_FLASH_RETRY_BACKOFF_MS", 25),
+            block_retries: env_u64("FREEJOYX_FLASH_BLOCK_RETRIES", 4) as u32,
+            max_polls: env_u64("FREEJOYX_FLASH_MAX_POLLS", 1000) as u32,
+        }
+    }
+}
+
+/// Why a single block download didn't complete, so the caller can decide
+/// whether to retry. A `Transient` failure is the device-busy timing race
+/// (STALL with status still OK, or a settle timeout) which a recover-and-retry
+/// almost always clears; a `Fatal` failure is a genuine refusal the device
+/// latched (errWRITE/errPROG/errADDRESS...) where retrying is pointless.
+enum BlockError {
+    Transient(String),
+    Fatal(String),
+}
+
+/// Outcome of polling GETSTATUS to completion, richer than a flat string so the
+/// block writer can classify a poll failure as transient vs fatal.
+enum WaitError {
+    /// The device latched a DFU status/state we treat as an error.
+    DfuStatus { status: u8, state: u8 },
+    /// We exhausted `max_polls` without the device returning to idle.
+    Timeout,
+    /// A control transfer (the GETSTATUS itself) failed.
+    Io(String),
+}
+
+/// A DNLOAD rejection (or post-write poll failure) is the transient timing race
+/// — worth retrying — precisely when the device has *not* latched an error
+/// status. A non-zero bStatus is a genuine refusal we must surface instead.
+fn dnload_failure_is_transient(status: u8) -> bool {
+    status == 0
+}
 
 /// F411 flash sector base addresses (non-uniform layout):
 /// S0..S3 = 16 KB, S4 = 64 KB, S5..S7 = 128 KB.
@@ -345,6 +429,8 @@ pub struct Dfu {
     /// Block size for download/upload, taken from the device's DFU functional
     /// descriptor (wTransferSize) so the address arithmetic matches the device.
     xfer: usize,
+    /// Timing/retry knobs (defaults + env overrides), resolved at `open`.
+    t: Timings,
 }
 
 impl Dfu {
@@ -392,7 +478,18 @@ impl Dfu {
                 "dfu: WARNING device does not advertise download capability — writes may be refused",
             );
         }
-        Ok(Dfu { iface, xfer })
+        let t = Timings::from_env();
+        crate::proto::log(&format!(
+            "dfu: timings poll_floor={}ms pre_status={}ms settle={}ms \
+             retry_backoff={}ms block_retries={} max_polls={}",
+            t.poll_floor_ms,
+            t.pre_status_settle_ms,
+            t.post_op_settle_ms,
+            t.retry_backoff_ms,
+            t.block_retries,
+            t.max_polls,
+        ));
+        Ok(Dfu { iface, xfer, t })
     }
 
     fn ctrl(request: u8, value: u16) -> Control {
@@ -471,27 +568,61 @@ impl Dfu {
     }
 
     /// Poll GETSTATUS until the device leaves the busy/sync states, honouring
-    /// the device-reported bwPollTimeout between polls.
-    fn wait_idle(&self) -> Result<(), String> {
-        for _ in 0..MAX_POLLS {
-            let (status, poll, state) = self.get_status()?;
+    /// the device-reported bwPollTimeout (floored by `poll_floor_ms`) between
+    /// polls. Returns a typed error so callers can tell a transient timeout
+    /// from a latched DFU error.
+    fn poll_until_idle(&self) -> Result<(), WaitError> {
+        for _ in 0..self.t.max_polls {
+            let (status, poll, state) = self.get_status().map_err(WaitError::Io)?;
             if status != 0 {
-                return Err(format!(
-                    "DFU status error {} (0x{status:02x}) in state {} (0x{state:02x})",
-                    dfu_status_name(status),
-                    dfu_state_name(state),
-                ));
+                return Err(WaitError::DfuStatus { status, state });
             }
             match state {
                 STATE_DNBUSY | STATE_DNLOAD_SYNC | STATE_MANIFEST_SYNC => {
-                    std::thread::sleep(Duration::from_millis(poll.max(1) as u64));
+                    self.sleep_ms((poll as u64).max(self.t.poll_floor_ms));
                 }
                 STATE_DNLOAD_IDLE | STATE_DFU_IDLE => return Ok(()),
-                STATE_ERROR => return Err("device entered DFU error state".into()),
-                _ => std::thread::sleep(Duration::from_millis(poll.max(1) as u64)),
+                STATE_ERROR => return Err(WaitError::DfuStatus { status, state }),
+                _ => self.sleep_ms((poll as u64).max(self.t.poll_floor_ms)),
             }
         }
-        Err("timed out waiting for DFU device".into())
+        Err(WaitError::Timeout)
+    }
+
+    /// Convenience wrapper for callers (set-address, erase, leave) that only
+    /// need a flat error string and treat any non-idle outcome as fatal.
+    fn wait_idle(&self) -> Result<(), String> {
+        self.poll_until_idle().map_err(|e| match e {
+            WaitError::Io(s) => s,
+            WaitError::Timeout => "timed out waiting for DFU device".into(),
+            WaitError::DfuStatus { status, state } => format!(
+                "DFU status error {} (0x{status:02x}) in state {} (0x{state:02x})",
+                dfu_status_name(status),
+                dfu_state_name(state),
+            ),
+        })
+    }
+
+    fn sleep_ms(&self, ms: u64) {
+        if ms > 0 {
+            std::thread::sleep(Duration::from_millis(ms));
+        }
+    }
+
+    /// Best-effort drive back to a clean idle after a block STALL/upset, ready
+    /// for a retry. First let any in-flight programming finish (the device
+    /// returns to dfuDNLOAD-IDLE on its own once the page write lands), then
+    /// clear a latched error or abort a half-open download.
+    fn recover_to_idle(&self) {
+        let _ = self.poll_until_idle();
+        match self.get_status() {
+            Ok((status, _, state)) if status != 0 || state == STATE_ERROR => self.clear_status(),
+            Ok((_, _, state)) if state != STATE_DFU_IDLE && state != STATE_DNLOAD_IDLE => {
+                self.abort()
+            }
+            _ => {}
+        }
+        let _ = self.poll_until_idle();
     }
 
     fn set_address(&self, addr: u32) -> Result<(), String> {
@@ -515,6 +646,9 @@ impl Dfu {
         for sbase in overlapping_sectors(base, len) {
             crate::proto::log(&format!("dfu: erasing sector at 0x{sbase:08x}"));
             self.erase_sector(sbase)?;
+            // Give the flash controller a beat after a sector erase before the
+            // next operation — cheap margin for clones that signal done early.
+            self.sleep_ms(self.t.post_op_settle_ms);
         }
         Ok(())
     }
@@ -539,28 +673,127 @@ impl Dfu {
             let block = 2u16
                 .checked_add(i as u16)
                 .ok_or_else(|| "image too large for DfuSe block numbering".to_string())?;
-            if let Err(e) = self.dnload(block, chunk) {
-                // Ask the device why it rejected the write. A control STALL is
-                // auto-cleared by this next SETUP, so GETSTATUS still returns the
-                // latched DFU error — which separates a protected/unwritable
-                // target (errWRITE/errPROG/errADDRESS) from a plain transfer-size
-                // STALL, so we can diagnose it without ST-Link.
-                if let Ok((status, _, state)) = self.get_status() {
-                    crate::proto::log(&format!(
-                        "dfu: write of block {block} (addr 0x{:08x}) rejected; \
-                         device reports status={} (0x{status:02x}), state={} (0x{state:02x})",
-                        base + (i * self.xfer) as u32,
-                        dfu_status_name(status),
-                        dfu_state_name(state),
-                    ));
-                }
-                return Err(e);
-            }
-            self.wait_idle()?;
+            let addr = base + (i * self.xfer) as u32;
+            self.write_block_with_retry(base, block, addr, chunk)?;
             done += chunk.len() as u64;
             on_progress(done, total);
         }
         Ok(())
+    }
+
+    /// Write one block, recovering and retrying when it STALLs only because the
+    /// device was still busy programming the previous block (the timing race
+    /// behind intermittent "DNLOAD failed: endpoint STALL" mid-flash). Each
+    /// retry drains the device back to idle, backs off a little longer, and
+    /// re-arms the DfuSe address pointer so the block number still maps to the
+    /// right flash address. A genuine refusal (latched error status) is not
+    /// retried — it's surfaced immediately.
+    fn write_block_with_retry(
+        &self,
+        base: u32,
+        block: u16,
+        addr: u32,
+        chunk: &[u8],
+    ) -> Result<(), String> {
+        let mut attempt = 0u32;
+        loop {
+            match self.try_download_block(block, addr, chunk) {
+                Ok(()) => return Ok(()),
+                Err(BlockError::Fatal(msg)) => return Err(msg),
+                Err(BlockError::Transient(msg)) => {
+                    if attempt >= self.t.block_retries {
+                        return Err(format!(
+                            "{msg}; gave up after {} retries",
+                            self.t.block_retries
+                        ));
+                    }
+                    attempt += 1;
+                    crate::proto::log(&format!(
+                        "dfu: block {block} (addr 0x{addr:08x}) stalled while device busy — \
+                         recovering and retrying ({attempt}/{})",
+                        self.t.block_retries,
+                    ));
+                    self.recover_to_idle();
+                    // Escalating back-off gives a struggling device more time.
+                    self.sleep_ms(self.t.retry_backoff_ms.saturating_mul(attempt as u64));
+                    // Re-establish the address pointer: after an abort/clear the
+                    // safe assumption is that block numbering must be re-based.
+                    // Pointer = base, so block (=2+i) still targets base+i*xfer.
+                    if let Err(e) = self.set_address(base) {
+                        return Err(format!(
+                            "failed to re-arm address pointer for block {block} retry: {e}"
+                        ));
+                    }
+                }
+            }
+        }
+    }
+
+    /// One attempt at downloading a block: send the data, let the device begin
+    /// programming, then poll to completion. Classifies any failure as
+    /// transient (retryable) or fatal for `write_block_with_retry`.
+    fn try_download_block(&self, block: u16, addr: u32, chunk: &[u8]) -> Result<(), BlockError> {
+        if let Err(e) = self.dnload(block, chunk) {
+            // The DNLOAD was refused — commonly an EP0 STALL. The STALL is
+            // auto-cleared by this next SETUP, so GETSTATUS still reports the
+            // device's view: status=OK means it merely STALLed because it was
+            // still busy (dfuDNBUSY) with the previous block — the retryable
+            // race. A latched error (errWRITE/errPROG/errADDRESS) is fatal.
+            return Err(self.classify_dnload_failure(block, addr, e));
+        }
+        // Let a slow/clone device actually begin programming before the first
+        // GETSTATUS, so it can't answer with a stale idle from the previous
+        // block (which would race the next DNLOAD into a busy flash).
+        self.sleep_ms(self.t.pre_status_settle_ms);
+        match self.poll_until_idle() {
+            Ok(()) => {
+                // Unconditional settle even once it claims idle, for clone
+                // flash that signals done a touch early.
+                self.sleep_ms(self.t.post_op_settle_ms);
+                Ok(())
+            }
+            Err(WaitError::Timeout) => Err(BlockError::Transient(format!(
+                "block {block} (addr 0x{addr:08x}) did not settle within the poll budget"
+            ))),
+            Err(WaitError::Io(s)) => Err(BlockError::Transient(s)),
+            Err(WaitError::DfuStatus { status, state }) => {
+                let msg = format!(
+                    "block {block} (addr 0x{addr:08x}) failed: device reports \
+                     status={} (0x{status:02x}), state={} (0x{state:02x})",
+                    dfu_status_name(status),
+                    dfu_state_name(state),
+                );
+                crate::proto::log(&format!("dfu: {msg}"));
+                if dnload_failure_is_transient(status) {
+                    Err(BlockError::Transient(msg))
+                } else {
+                    Err(BlockError::Fatal(msg))
+                }
+            }
+        }
+    }
+
+    /// Inspect GETSTATUS after a refused DNLOAD to decide if it's the retryable
+    /// device-busy race or a genuine refusal, logging the device's own verdict.
+    fn classify_dnload_failure(&self, block: u16, addr: u32, e: String) -> BlockError {
+        match self.get_status() {
+            Ok((status, _, state)) => {
+                crate::proto::log(&format!(
+                    "dfu: write of block {block} (addr 0x{addr:08x}) rejected; \
+                     device reports status={} (0x{status:02x}), state={} (0x{state:02x})",
+                    dfu_status_name(status),
+                    dfu_state_name(state),
+                ));
+                if dnload_failure_is_transient(status) {
+                    BlockError::Transient(e)
+                } else {
+                    BlockError::Fatal(e)
+                }
+            }
+            // Couldn't even read status — assume transient and let the retry
+            // path try to recover rather than failing the whole install.
+            Err(_) => BlockError::Transient(e),
+        }
     }
 
     /// Read flash back via DFU_UPLOAD and compare to `data`. Best-effort: a
@@ -671,6 +904,25 @@ mod tests {
         // Wrong descriptor type, or too short, parses as None.
         assert!(parse_dfu_func(&[0x09, 0x20, 0, 0, 0, 0, 0, 0, 0]).is_none());
         assert!(parse_dfu_func(&[0x21, 0x21]).is_none());
+    }
+
+    #[test]
+    fn only_status_ok_dnload_failures_are_retried() {
+        // A STALL with the device still reporting OK is the device-busy race we
+        // recover-and-retry...
+        assert!(dnload_failure_is_transient(0x00));
+        // ...but any latched error status is a genuine refusal: don't retry,
+        // surface it (errWRITE, errPROG, errADDRESS, errVERIFY...).
+        assert!(!dnload_failure_is_transient(0x03)); // errWRITE
+        assert!(!dnload_failure_is_transient(0x06)); // errPROG
+        assert!(!dnload_failure_is_transient(0x08)); // errADDRESS
+    }
+
+    #[test]
+    fn env_tunables_fall_back_to_defaults_when_unset() {
+        // An unset / unparseable variable yields the supplied default rather
+        // than panicking, so a fresh environment uses the tuned defaults.
+        assert_eq!(env_u64("FREEJOYX_FLASH_NONEXISTENT_KNOB_XYZ", 42), 42);
     }
 
     #[test]
