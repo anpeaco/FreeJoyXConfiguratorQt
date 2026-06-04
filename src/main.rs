@@ -2,10 +2,18 @@
 //! `DfuInstallSession`):
 //!
 //! ```text
-//! freejoyx-flash probe   --board f411
+//! freejoyx-flash probe   --board f411 [--check-driver] [--verbose]
 //! freejoyx-flash install --board f411 --boot <bootBin> --app <appBin>
 //! freejoyx-flash bind    --board f411
 //! ```
+//!
+//! `probe` reports `present` / `needs-driver` / `absent`. The bare form is the
+//! cheap nusb-only check (the configurator's every-tick poll). `--check-driver`
+//! additionally consults the WinUSB driver layer so a board that's in DFU but
+//! not yet WinUSB-bound reports `needs-driver` instead of `absent`, *without*
+//! the verbose logging — the configurator asks for it on a slow cadence so the
+//! "Install WinUSB driver" action can appear on its own. `--verbose` implies
+//! `--check-driver` and also narrates the enumeration (for a manual re-check).
 //!
 //! `bind` installs/repairs the WinUSB binding for the ROM DFU device on its
 //! own (the same step `install` runs first). The configurator calls it when a
@@ -78,18 +86,26 @@ fn cmd_probe(args: &[String]) -> i32 {
     // driver). The configurator passes it only for a manual re-check, never the
     // background poll, so the log doesn't fill with noise.
     let verbose = has_flag(args, "--verbose");
+    // `--check-driver` consults the WinUSB driver layer (libwdi) to tell a
+    // present-but-unbound ROM DFU (`needs-driver`) from a truly absent board —
+    // WITHOUT the verbose per-device enumeration logging. This is deliberately
+    // decoupled from `--verbose`: the background poll needs the `needs-driver`
+    // verdict to surface the "Install WinUSB driver" action on its own, but it
+    // must not spam the log every tick. `--verbose` still implies the check
+    // (and adds the narration) for a manual re-check. The libwdi enumeration is
+    // heavier than nusb's, so the configurator only asks for it on a slow
+    // cadence, not every poll.
+    let check_driver = verbose || has_flag(args, "--check-driver");
     if verbose {
         dfuse::probe_verbose();
     }
     // `present` = nusb can enumerate (and so open) the WinUSB-bound ROM DFU.
     // When it can't, the device may still be physically present but not yet
-    // WinUSB-bound — nusb is blind to that, but libwdi isn't. Only consult the
-    // driver layer on a manual re-check (`--verbose`): it enumerates every USB
-    // device, which is too heavy for the background poll. A `needs-driver`
+    // WinUSB-bound — nusb is blind to that, but libwdi isn't. A `needs-driver`
     // verdict lets the configurator offer to install the binding.
     let result = if dfuse::device_present() {
         proto::Probe::Present
-    } else if verbose && driver::driver_layer_present() {
+    } else if check_driver && driver::driver_layer_present() {
         proto::Probe::NeedsDriver
     } else {
         proto::Probe::Absent
