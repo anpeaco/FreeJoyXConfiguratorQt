@@ -101,20 +101,6 @@ Flasher::Flasher(QWidget *parent)
     refreshSourceList();
     m_library->fetchReleases();
 
-    /* Refresh the binary info card whenever the user changes the source
-     * dropdown. Uses the untyped overload because the connect-PMF form
-     * is ambiguous for currentIndexChanged in Qt 5.15. */
-    connect(ui->comboBox_FlashSource,
-            QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this,
-            [this](int) {
-                refreshFirmwareInfoCard(QString());
-                /* Enable the Flash button whenever a real source is
-                 * selected (data is non-empty). */
-                const QVariant d = ui->comboBox_FlashSource->currentData();
-                ui->pushButton_FlashConsolidated->setEnabled(d.isValid());
-            });
-
     /* The legacy two-button flow (Enter Flasher Mode + Flash Firmware +
      * Abort Flasher Mode) is subsumed by the single Flash button. Hide
      * the three legacy buttons in place rather than removing them from
@@ -125,6 +111,18 @@ Flasher::Flasher(QWidget *parent)
     /* progressBar_Flash is also unused -- FlashProgressDialog renders
      * progress now. Hide it to free vertical space. */
     ui->progressBar_Flash->setVisible(false);
+
+    /* Tier 2: the firmware picker (source dropdown + Browse + info card) now
+     * lives inside the FlashConfirmationDialog. Hide the inline widgets and
+     * turn the former "Flash" button into the dialog's entry point. The hidden
+     * comboBox_FlashSource is still kept populated by refreshSourceList -- it's
+     * the cache the dialog reads via buildSourceItems(). */
+    ui->label_FlashSource->setVisible(false);
+    ui->comboBox_FlashSource->setVisible(false);
+    ui->pushButton_BrowseFirmware->setVisible(false);
+    ui->groupBox_FirmwareInfo->setVisible(false);
+    ui->pushButton_FlashConsolidated->setText(tr("Install / Update Firmware…"));
+    ui->pushButton_FlashConsolidated->setEnabled(true);
 }
 
 Flasher::~Flasher()
@@ -188,72 +186,53 @@ void Flasher::onReleasesUpdated()
     refreshSourceList();
 }
 
-void Flasher::refreshSourceList()
+QVector<QPair<QString, QVariant>> Flasher::buildSourceItems()
 {
-    /* Capture the current selection so we can preserve it across the
-     * rebuild if the same source is still available. */
-    const QVariant prevData = ui->comboBox_FlashSource->currentData();
+    QVector<QPair<QString, QVariant>> items;
 
-    QSignalBlocker bl(ui->comboBox_FlashSource);
-    ui->comboBox_FlashSource->clear();
-
-    /* Browse is a separate action button now (pushButton_BrowseFirmware);
-     * the dropdown only lists actual firmware sources. */
-
-    /* Remote releases first -- newest builds bubble to the top of the
-     * dropdown via FirmwareLibrary's sort. */
+    /* Remote releases first -- newest builds bubble to the top via
+     * FirmwareLibrary's sort. Label "[FreeJoyX v0.2.0] FreeJoy.bin" cached,
+     * "... (download)" when not yet on disk. */
     const QList<FirmwareLibrary::Release> rels = m_library->releases();
     for (const auto &rel : rels) {
         for (const auto &asset : rel.assets) {
             const QString localPath = m_library->localPathFor(rel, asset);
             const bool cached = QFile::exists(localPath);
 
-            /* Display label format: "[FreeJoyX v0.2.0] FreeJoy.bin"
-             * for cached / "[Upstream v1.7.3b0] FreeJoy.bin (download)"
-             * for not-yet-cached. Strip "FreeJoy-Team/" / "anpeaco/" to
-             * a friendlier owner tag. */
             QString ownerTag = rel.repo;
             if (ownerTag.startsWith(QStringLiteral("FreeJoy-Team/"))) {
                 ownerTag = QStringLiteral("Upstream");
             } else if (ownerTag.startsWith(QStringLiteral("anpeaco/"))) {
                 ownerTag = QStringLiteral("FreeJoyX");
             }
-
             QString label = QStringLiteral("[%1 %2] %3")
                                 .arg(ownerTag, rel.tag, asset.name);
             if (!cached) {
                 label += tr(" (download)");
             }
-
             QVariantMap data;
-            data[kKeyKind] = kKindRemote;
-            data[kKeyRepo] = rel.repo;
-            data[kKeyTag] = rel.tag;
-            data[kKeyName] = asset.name;
-            data[kKeyUrl] = asset.downloadUrl;
+            data[kKeyKind]  = kKindRemote;
+            data[kKeyRepo]  = rel.repo;
+            data[kKeyTag]   = rel.tag;
+            data[kKeyName]  = asset.name;
+            data[kKeyUrl]   = asset.downloadUrl;
             data[kKeyLocal] = localPath;
-            ui->comboBox_FlashSource->addItem(label, data);
+            items.append({label, data});
         }
     }
 
-    /* User-browsed files persisted across runs (QSettings). Listed
-     * before Build/Recovery so the most-recently-flashed file is one
-     * click away. Stale entries (file deleted, drive unmounted) get
-     * filtered out by loadBrowsedPaths(). */
+    /* User-browsed files persisted across runs (QSettings), MRU-ordered;
+     * stale entries filtered out by loadBrowsedPaths(). */
     const QStringList browsed = loadBrowsedPaths();
     for (const QString &browsedPath : browsed) {
         const QFileInfo fi(browsedPath);
         QVariantMap data;
-        data[kKeyKind] = kKindBrowsed;
+        data[kKeyKind]  = kKindBrowsed;
         data[kKeyLocal] = browsedPath;
-        ui->comboBox_FlashSource->addItem(
-            tr("[Browsed] %1").arg(fi.fileName()), data);
+        items.append({tr("[Browsed] %1").arg(fi.fileName()), data});
     }
 
-    /* Build-output folder (<exe>/firmware/): fresh dev builds the user
-     * has dropped here. Listed before recovery/ so they bubble to the
-     * top of local entries. Tagged "[Build]" to distinguish from
-     * recovery fallbacks. */
+    /* Build-output folder (<exe>/firmware/): fresh dev builds. */
     QDir firmwareDir(m_library->firmwareDir());
     if (!firmwareDir.exists()) {
         firmwareDir.mkpath(".");
@@ -261,17 +240,13 @@ void Flasher::refreshSourceList()
     const QStringList builds = firmwareDir.entryList(
         QStringList() << "*.bin", QDir::Files, QDir::Time | QDir::Reversed);
     for (const QString &name : builds) {
-        const QString fullPath = firmwareDir.absoluteFilePath(name);
         QVariantMap data;
-        data[kKeyKind] = kKindLocal;
-        data[kKeyLocal] = fullPath;
-        ui->comboBox_FlashSource->addItem(tr("[Build] %1").arg(name), data);
+        data[kKeyKind]  = kKindLocal;
+        data[kKeyLocal] = firmwareDir.absoluteFilePath(name);
+        items.append({tr("[Build] %1").arg(name), data});
     }
 
-    /* Local .bin files in recovery/ that aren't auto-downloaded asset
-     * mirrors. We skip files matching the auto-download naming scheme
-     * (prefix "FreeJoy-Team_" or "anpeaco_") because they show up in
-     * the remote section already. */
+    /* Local .bin files in recovery/ that aren't auto-downloaded mirrors. */
     QDir recoveryDir(m_library->recoveryDir());
     if (!recoveryDir.exists()) {
         recoveryDir.mkpath(".");
@@ -283,17 +258,25 @@ void Flasher::refreshSourceList()
             name.startsWith(QStringLiteral("anpeaco_"))) {
             continue;
         }
-        const QString fullPath = recoveryDir.absoluteFilePath(name);
-
         QVariantMap data;
-        data[kKeyKind] = kKindLocal;
-        data[kKeyLocal] = fullPath;
-        ui->comboBox_FlashSource->addItem(tr("[Local] %1").arg(name), data);
+        data[kKeyKind]  = kKindLocal;
+        data[kKeyLocal] = recoveryDir.absoluteFilePath(name);
+        items.append({tr("[Local] %1").arg(name), data});
     }
 
-    /* Restore selection if the previously-selected entry still exists.
-     * Compare by local path (works for both local and remote-cached
-     * entries) or URL (for not-yet-cached remote entries). */
+    return items;
+}
+
+void Flasher::refreshSourceList()
+{
+    /* Keep the now-hidden cache combo in sync (the dialog reads
+     * buildSourceItems() directly). Preserve the current selection. */
+    const QVariant prevData = ui->comboBox_FlashSource->currentData();
+    QSignalBlocker bl(ui->comboBox_FlashSource);
+    ui->comboBox_FlashSource->clear();
+    for (const auto &it : buildSourceItems()) {
+        ui->comboBox_FlashSource->addItem(it.first, it.second);
+    }
     if (prevData.isValid()) {
         const QVariantMap prev = prevData.toMap();
         const QString prevLocal = prev.value(kKeyLocal).toString();
@@ -385,10 +368,115 @@ void Flasher::on_toolButton_OpenRecoveryDir_clicked()
 
 void Flasher::on_pushButton_BrowseFirmware_clicked()
 {
-    /* Default the file picker to firmware/ if it has any .bin files
-     * (most likely place for fresh dev builds), then recovery/, then
-     * applicationDirPath() (next to the exe). Filter is permissive:
-     * .bin first, then All files for builds named differently. */
+    /* Tier 2: the inline Browse button is hidden -- browsing now happens inside
+     * the FlashConfirmationDialog (its Browse... -> onDialogBrowseRequested). */
+}
+
+void Flasher::on_pushButton_FlashConsolidated_clicked()
+{
+    /* Tier 2: this is now the "Install / Update Firmware..." entry point. The
+     * FlashConfirmationDialog owns the firmware picker; we drive it (resolve /
+     * download / browse) off its signals and flash on accept. */
+    QString deviceName   = m_lastDeviceName;
+    QString deviceSerial = m_lastDeviceSerial;
+    int boardId = 0;
+    uint16_t fwVer = 0;
+    if (gEnv.pDeviceConfig) {
+        fwVer   = gEnv.pDeviceConfig->paramsReport.firmware_version;
+        boardId = gEnv.pDeviceConfig->paramsReport.board_id;
+    }
+
+    FlashConfirmationDialog dlg(deviceName, deviceSerial, boardId, fwVer,
+                                m_inFlasherMode, this);
+    m_flashDlg = &dlg;
+    m_dlgResolvedPath.clear();
+    m_pendingDownloadPath.clear();
+
+    connect(&dlg, &FlashConfirmationDialog::sourceSelected,
+            this, &Flasher::onDialogSourceSelected);
+    connect(&dlg, &FlashConfirmationDialog::browseRequested,
+            this, &Flasher::onDialogBrowseRequested);
+
+    dlg.setSources(buildSourceItems());
+    onDialogSourceSelected(dlg.currentSourceData());   /* resolve initial pick */
+
+    const int rc = dlg.exec();
+    m_flashDlg = nullptr;
+    m_pendingDownloadPath.clear();
+    if (rc != QDialog::Accepted || m_dlgResolvedPath.isEmpty()) {
+        return;
+    }
+    emit consolidatedFlashRequested(m_dlgResolvedPath);
+}
+
+void Flasher::onAssetDownloaded(const QString &localPath, bool success)
+{
+    /* Stray download (e.g. a background refresh) -- ignore. */
+    if (m_pendingDownloadPath.isEmpty() || localPath != m_pendingDownloadPath) {
+        return;
+    }
+    m_pendingDownloadPath.clear();
+    if (!m_flashDlg) {
+        return;   /* dialog already closed */
+    }
+    if (!success) {
+        m_dlgResolvedPath.clear();
+        m_flashDlg->clearTarget(
+            tr("Couldn't download the firmware from GitHub. Check your "
+               "connection and try again, or pick another source."));
+        return;
+    }
+    showResolvedInDialog(localPath);
+}
+
+void Flasher::onDialogSourceSelected(const QVariant &data)
+{
+    if (!m_flashDlg) {
+        return;
+    }
+    m_pendingDownloadPath.clear();
+
+    /* Resolve the dropdown entry to a local path. Map with kKindLocal/Browsed:
+     * a file on disk. Map with kKindRemote: a GitHub asset, maybe not cached. */
+    QString localPath;
+    bool isRemote = false;
+    FirmwareLibrary::Release rel;
+    FirmwareLibrary::Asset asset;
+    if (data.type() == QVariant::String) {
+        localPath = data.toString();
+    } else if (data.type() == QVariant::Map) {
+        const QVariantMap m = data.toMap();
+        localPath = m.value(kKeyLocal).toString();
+        if (m.value(kKeyKind).toString() == kKindRemote) {
+            isRemote = true;
+            rel.repo = m.value(kKeyRepo).toString();
+            rel.tag  = m.value(kKeyTag).toString();
+            asset.name = m.value(kKeyName).toString();
+            asset.downloadUrl = m.value(kKeyUrl).toString();
+        }
+    }
+
+    if (!localPath.isEmpty() && QFile::exists(localPath)) {
+        showResolvedInDialog(localPath);
+        return;
+    }
+    if (isRemote && !asset.downloadUrl.isEmpty()) {
+        m_dlgResolvedPath.clear();
+        m_flashDlg->setBusy(tr("Downloading %1…").arg(asset.name));
+        m_pendingDownloadPath = m_library->downloadAsset(rel, asset);
+        return;
+    }
+    m_dlgResolvedPath.clear();
+    m_flashDlg->clearTarget(
+        tr("This firmware source couldn't be resolved. Pick another, or "
+           "Browse for a .bin."));
+}
+
+void Flasher::onDialogBrowseRequested()
+{
+    if (!m_flashDlg) {
+        return;
+    }
     QString defaultPath = QCoreApplication::applicationDirPath();
     QDir firmwareDir(m_library->firmwareDir());
     QDir recoveryDir(m_library->recoveryDir());
@@ -401,158 +489,51 @@ void Flasher::on_pushButton_BrowseFirmware_clicked()
     }
 
     const QString filePath = QFileDialog::getOpenFileName(
-        this, tr("Choose firmware binary"),
-        defaultPath,
+        m_flashDlg, tr("Choose firmware binary"), defaultPath,
         tr("Firmware (*.bin);;All files (*)"));
     if (filePath.isEmpty()) {
-        qDebug() << "User cancelled file picker";
         return;
     }
 
-    /* Persist into the [Browsed] section of the Source dropdown so the
-     * user can flash this file again without re-browsing. MRU-ordered;
-     * deduped; capped at kBrowsedCap entries. */
+    /* Persist into the [Browsed] MRU so it's one click away next time. */
     QStringList browsed = loadBrowsedPaths();
-    browsed.removeAll(filePath);            // dedupe
-    browsed.prepend(filePath);              // newest first
+    browsed.removeAll(filePath);
+    browsed.prepend(filePath);
     while (browsed.size() > kBrowsedCap) {
         browsed.removeLast();
     }
     saveBrowsedPaths(browsed);
     refreshSourceList();
-    /* Select the just-added [Browsed] entry in the dropdown so the user
-     * has visible confirmation of what they're about to flash. */
-    for (int i = 0; i < ui->comboBox_FlashSource->count(); ++i) {
-        const QVariantMap d = ui->comboBox_FlashSource->itemData(i).toMap();
+
+    /* Re-populate the dialog and select the just-browsed file. */
+    const QVector<QPair<QString, QVariant>> items = buildSourceItems();
+    int sel = 0;
+    for (int i = 0; i < items.size(); ++i) {
+        const QVariantMap d = items[i].second.toMap();
         if (d.value(kKeyKind).toString() == kKindBrowsed &&
             d.value(kKeyLocal).toString() == filePath) {
-            ui->comboBox_FlashSource->setCurrentIndex(i);
+            sel = i;
             break;
         }
     }
-
-    requestConsolidatedFlash(filePath);
+    m_flashDlg->setSources(items, sel);
+    onDialogSourceSelected(m_flashDlg->currentSourceData());
 }
 
-void Flasher::on_pushButton_FlashConsolidated_clicked()
+void Flasher::showResolvedInDialog(const QString &localPath)
 {
-    const QVariant currentData = ui->comboBox_FlashSource->currentData();
-    if (!currentData.isValid()) {
-        QMessageBox::information(this, tr("Pick a firmware source"),
-            tr("Select a firmware build from the Source dropdown, or "
-               "click <b>Browse...</b> to pick a .bin from disk."));
+    if (!m_flashDlg) {
         return;
     }
-
-    /* Resolve the dropdown entry to a local path. Three kinds:
-     *   - String:  legacy local-path entry.
-     *   - Map with kKindLocal: build / recovery folder entry.
-     *   - Map with kKindRemote: GitHub asset, may or may not be cached. */
-    QString localPath;
-    bool isRemote = false;
-    FirmwareLibrary::Release rel;
-    FirmwareLibrary::Asset asset;
-    if (currentData.type() == QVariant::String) {
-        localPath = currentData.toString();
-    } else if (currentData.type() == QVariant::Map) {
-        const QVariantMap data = currentData.toMap();
-        localPath = data.value(kKeyLocal).toString();
-        if (data.value(kKeyKind).toString() == kKindRemote) {
-            isRemote = true;
-            rel.repo = data.value(kKeyRepo).toString();
-            rel.tag  = data.value(kKeyTag).toString();
-            asset.name = data.value(kKeyName).toString();
-            asset.downloadUrl = data.value(kKeyUrl).toString();
-        }
-    }
-
-    /* Already on disk -> straight to confirmation + flash. */
-    if (!localPath.isEmpty() && QFile::exists(localPath)) {
-        requestConsolidatedFlash(localPath);
-        return;
-    }
-
-    /* Remote-not-cached -> ask, then download, then flash on the
-     * onAssetDownloaded callback. */
-    if (isRemote && !asset.downloadUrl.isEmpty()) {
-        const QMessageBox::StandardButton rc = QMessageBox::question(this,
-            tr("Download and flash this firmware?"),
-            tr("<p>The selected firmware isn't downloaded yet.</p>"
-               "<p>Source: <b>%1</b><br>"
-               "Tag: <b>%2</b><br>"
-               "Asset: <b>%3</b></p>"
-               "<p>Continue?</p>").arg(rel.repo, rel.tag, asset.name),
-            QMessageBox::Yes | QMessageBox::Cancel,
-            QMessageBox::Cancel);
-        if (rc != QMessageBox::Yes) {
-            qDebug() << "User cancelled remote-asset download";
-            return;
-        }
-        ui->pushButton_FlashConsolidated->setEnabled(false);
-        ui->pushButton_FlashConsolidated->setText(tr("Downloading..."));
-        m_pendingDownloadPath = m_library->downloadAsset(rel, asset);
-        return;
-    }
-
-    QMessageBox::warning(this, tr("Firmware unavailable"),
-        tr("The selected firmware source couldn't be resolved to a file. "
-           "Try refreshing the source list or pick a different entry."));
-}
-
-void Flasher::onAssetDownloaded(const QString &localPath, bool success)
-{
-    /* Stray downloads (user-initiated refresh on a different entry, or a
-     * download that overlapped a previous click) -- just refresh the
-     * dropdown so the cached state surfaces. */
-    if (m_pendingDownloadPath.isEmpty() || localPath != m_pendingDownloadPath) {
-        refreshSourceList();
-        return;
-    }
-    m_pendingDownloadPath.clear();
-    ui->pushButton_FlashConsolidated->setText(tr("Flash"));
-    ui->pushButton_FlashConsolidated->setEnabled(true);
-
-    if (!success) {
-        QMessageBox::warning(this, tr("Download failed"),
-            tr("Couldn't download the selected firmware from GitHub. "
-               "Check your internet connection and try again."));
-        return;
-    }
-    refreshSourceList();   /* dropdown now shows the entry as cached */
-    requestConsolidatedFlash(localPath);
-}
-
-void Flasher::requestConsolidatedFlash(const QString &filePath)
-{
-    /* Open the FlashConfirmationDialog so the user sees board + version
-     * + verdict before committing. The dialog classifies the flash as
-     * Recovery vs normal based on m_inFlasherMode, so its warnings match
-     * the device's actual state. */
     FirmwareImage image;
-    if (!image.loadFromFile(filePath)) {
-        QMessageBox::warning(this, tr("Couldn't open firmware"),
-            tr("Couldn't read the firmware file:\n%1\n\n"
-               "Check that the file exists and the configurator has "
-               "permission to read it.").arg(filePath));
+    if (!image.loadFromFile(localPath)) {
+        m_dlgResolvedPath.clear();
+        m_flashDlg->clearTarget(
+            tr("Couldn't read the firmware file:\n%1").arg(localPath));
         return;
     }
-    FlashConfirmationDialog::Inputs in;
-    if (gEnv.pDeviceConfig) {
-        in.deviceFwVersion = gEnv.pDeviceConfig->paramsReport.firmware_version;
-        in.deviceBoardId = gEnv.pDeviceConfig->paramsReport.board_id;
-    }
-    in.deviceInRecoveryMode = m_inFlasherMode;
-    in.deviceName = m_lastDeviceName;
-    in.deviceSerial = m_lastDeviceSerial;
-    in.image = &image;
-    FlashConfirmationDialog dlg(in, this);
-    if (dlg.exec() != QDialog::Accepted) {
-        return;
-    }
-    /* MainWindow's onConsolidatedFlashRequested detects the device's
-     * current mode (app vs BL) and dispatches FlashSession with the
-     * right (runBackup, triggerBootloader, autoRestore) parameters. */
-    emit consolidatedFlashRequested(filePath);
+    m_dlgResolvedPath = localPath;
+    m_flashDlg->setResolvedTarget(image);
 }
 
 /* --- Device sidebar (issue anpeaco/FreeJoyXConfiguratorQt#17) --------- */

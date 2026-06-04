@@ -4,6 +4,8 @@
 #include <QList>
 #include <QPair>
 #include <QString>
+#include <QVariant>
+#include <QVector>
 #include <QWidget>
 
 namespace Ui {
@@ -11,6 +13,7 @@ class Flasher;
 }
 
 class FirmwareLibrary;
+class FlashConfirmationDialog;
 
 class Flasher : public QWidget
 {
@@ -87,14 +90,27 @@ private slots:
     void onAssetDownloaded(const QString &localPath, bool success);
 
 private:
-    /* Open the confirmation dialog with the given firmware path and, on
-     * accept, emit consolidatedFlashRequested. Shared by Browse and the
-     * Flash button's local + post-download paths. */
-    void requestConsolidatedFlash(const QString &filePath);
+    /* Tier 2 -- the firmware picker lives in the FlashConfirmationDialog now.
+     * on_pushButton_FlashConsolidated_clicked() opens it; these drive it:
+     *  - buildSourceItems()      : the (label, data) list for the dialog combo
+     *                              (same content the old inline dropdown built).
+     *  - onDialogSourceSelected(): resolve a pick to a local file (downloading a
+     *                              remote asset if needed) and push it back.
+     *  - onDialogBrowseRequested : file-pick + add to MRU + re-populate sources.
+     *  - showResolvedInDialog()  : load the .bin and call setResolvedTarget. */
+    QVector<QPair<QString, QVariant>> buildSourceItems();
+    void onDialogSourceSelected(const QVariant &data);
+    void onDialogBrowseRequested();
+    void showResolvedInDialog(const QString &localPath);
 
-    /* Path of the asset we kicked off a download for (set when the user
-     * clicks Flash on a not-yet-cached remote entry). Cleared by
-     * onAssetDownloaded. Non-empty -> a download is in flight. */
+    /* The open FlashConfirmationDialog (valid only during its exec()), and the
+     * file path currently resolved into it -- emitted on accept. */
+    FlashConfirmationDialog *m_flashDlg = nullptr;
+    QString m_dlgResolvedPath;
+
+    /* Path of the asset we kicked off a download for (set when a not-yet-cached
+     * remote entry is selected in the dialog). Cleared by onAssetDownloaded.
+     * Non-empty -> a download is in flight. */
     QString m_pendingDownloadPath;
 
     Ui::Flasher *ui;
