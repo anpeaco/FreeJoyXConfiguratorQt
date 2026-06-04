@@ -23,16 +23,6 @@
    <property name="rightMargin"><number>14</number></property>
    <property name="bottomMargin"><number>14</number></property>
    <item>
-    <widget class="QLabel" name="label_Headline">
-     <property name="text">
-      <string>Confirm flash</string>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">font-size:14pt; font-weight:600;</string>
-     </property>
-    </widget>
-   </item>
-   <item>
     <widget class="QGroupBox" name="groupBox_Device">
      <property name="title">
       <string>Device</string>
@@ -113,18 +103,6 @@
      <property name="styleSheet">
       <string notr="true">padding:8px; border-radius:4px; font-weight:600;</string>
      </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="label_StepsHeading">
-     <property name="text"><string>The configurator will:</string></property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="label_Steps">
-     <property name="text"><string notr="true"/></property>
-     <property name="wordWrap"><bool>true</bool></property>
-     <property name="textFormat"><enum>Qt::RichText</enum></property>
     </widget>
    </item>
    <item>

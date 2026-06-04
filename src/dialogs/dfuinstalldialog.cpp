@@ -54,7 +54,7 @@ DfuInstallDialog::DfuInstallDialog(QWidget *parent)
     : QDialog(parent)
     , m_session(new DfuInstallSession(this))
 {
-    setWindowTitle(tr("Install / Reinstall Firmware (USB DFU)"));
+    setWindowTitle(tr("Install Firmware"));
     setModal(true);
     /* Drop the title-bar "?" context-help button (Windows adds it to dialogs
      * by default) -- there's no per-widget "What's This" help here. */
@@ -118,8 +118,8 @@ void DfuInstallDialog::buildUi()
     intro->setWordWrap(true);
     intro->setText(tr(
         "Writes the FreeJoyX <b>bootloader and application</b> to an "
-        "<b>F411 (Black Pill)</b> over the chip's built-in USB DFU — no "
-        "ST-Link or STM32CubeProgrammer. Works on a blank, configured, or "
+        "<b>F411 (Black Pill)</b> over the chip's built-in USB DFU. "
+        "Works on a blank, configured, or "
         "bricked board."));
     root->addWidget(intro);
 
@@ -155,13 +155,12 @@ void DfuInstallDialog::buildUi()
     m_instructions->setTextFormat(Qt::RichText);
     m_instructions->setWordWrap(true);
     m_instructions->setText(tr(
-        "<b>To enter DFU manually:</b>"
         "<ol style='margin-left:-20px;'>"
         "<li>Hold <b>BOOT0</b>.</li>"
         "<li>Tap <b>NRST</b> (reset), then release it.</li>"
         "<li>Release <b>BOOT0</b>.</li>"
         "</ol>"
-        "(Or hold BOOT0 while plugging in USB.) The board then re-appears as "
+        "The board then re-appears as "
         "<i>STM32&nbsp;BOOTLOADER</i>."));
     dfuLay->addWidget(m_instructions);
 
@@ -186,7 +185,7 @@ void DfuInstallDialog::buildUi()
     root->addWidget(dfuBox);
 
     /* --- Step 2: binaries to write ---------------------------------- */
-    auto *binBox = new QGroupBox(tr("2.  Firmware to write (F411)"), this);
+    auto *binBox = new QGroupBox(tr("2.  Firmware to write"), this);
     auto *binForm = new QFormLayout(binBox);
 
     auto makePathRow = [this](QLineEdit *&edit, QPushButton *&btn,
