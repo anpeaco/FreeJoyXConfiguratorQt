@@ -51,6 +51,9 @@ jobs:
 
       - name: Build
         run: |
+          # App version shown in-app = the release tag minus "v" (see src/src.pro).
+          export FREEJOYX_APP_VERSION="$(echo '${{ github.ref_name }}' | sed 's/^v//')"
+          echo "Configurator app version: $FREEJOYX_APP_VERSION"
           qmake CONFIG+=release FreeJoyQt.pro
           make -j$(nproc)
 
@@ -113,6 +116,10 @@ jobs:
         shell: cmd
         run: |
           set PATH=%IQTA_TOOLS%\mingw810_64\bin;%PATH%
+          rem App version shown in-app = the release tag minus "v" (see src/src.pro).
+          set FREEJOYX_APP_VERSION=${{ github.ref_name }}
+          set FREEJOYX_APP_VERSION=%FREEJOYX_APP_VERSION:v=%
+          echo Configurator app version: %FREEJOYX_APP_VERSION%
           qmake CONFIG+=release FreeJoyQt.pro
           mingw32-make -j%NUMBER_OF_PROCESSORS%
 

@@ -11,6 +11,25 @@ RC_ICONS = Images/icon.ico
 
 TARGET = FreeJoyXConfiguratorQt
 
+# --- Configurator app version (window title / App card / .exe properties) ---
+# CI (release.yml) exports FREEJOYX_APP_VERSION = the release tag minus "v"
+# (e.g. "0.1.8") before qmake, so the app states the exact version downloaded.
+# Absent on local/dev builds, version.h falls back to FREEJOYX_VERSION "-dev".
+# Intentionally decoupled from the firmware/wire FREEJOYX_VERSION (synced across
+# repos, reported by the device) -- see memory project_version_display_sync.
+APP_VER = $$(FREEJOYX_APP_VERSION)
+!isEmpty(APP_VER) {
+    APP_VER_PARTS = $$split(APP_VER, .)
+    APP_VER_DEFINES = \
+        FREEJOYX_APP_VERSION=\\\"$$APP_VER\\\" \
+        FREEJOYX_APP_VER_MAJOR=$$member(APP_VER_PARTS, 0) \
+        FREEJOYX_APP_VER_MINOR=$$member(APP_VER_PARTS, 1) \
+        FREEJOYX_APP_VER_PATCH=$$member(APP_VER_PARTS, 2)
+    DEFINES += $$APP_VER_DEFINES
+    RC_DEFINES += $$APP_VER_DEFINES
+    message("FreeJoyX configurator app version: $$APP_VER")
+}
+
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
 # depend on your compiler). Please consult the documentation of the
