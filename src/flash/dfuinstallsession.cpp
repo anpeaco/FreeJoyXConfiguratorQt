@@ -58,7 +58,7 @@ QString DfuInstallSession::helperPath()
     return QFileInfo::exists(path) ? path : QString();
 }
 
-void DfuInstallSession::probe(bool verbose)
+void DfuInstallSession::probe(bool verbose, bool checkDriver)
 {
     /* Coalesce: if a probe (or an install) is already running, skip. The
      * caller polls availability via the signal, so a missed probe just
@@ -92,7 +92,10 @@ void DfuInstallSession::probe(bool verbose)
 
     QStringList probeArgs{ QStringLiteral("probe"),
                            QStringLiteral("--board"), QStringLiteral("f411") };
+    /* --verbose already implies the driver-layer check (and narrates); only add
+     * --check-driver for the quiet background escalation case. */
     if (verbose) probeArgs << QStringLiteral("--verbose");
+    else if (checkDriver) probeArgs << QStringLiteral("--check-driver");
     m_proc->start(helper, probeArgs);
 }
 

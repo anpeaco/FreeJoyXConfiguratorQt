@@ -33,6 +33,15 @@ namespace {
  * `freejoyx-flash probe` and is coalesced if one is already running. */
 constexpr int kDetectIntervalMs = 1500;
 
+/* How often the background poll also consults the WinUSB driver layer
+ * (`--check-driver`) so a board that's in DFU but not yet WinUSB-bound surfaces
+ * as NeedsDriver -- and the "Install WinUSB driver" button appears -- without a
+ * manual Re-check. That check is heavier than the plain nusb poll, so it runs
+ * only every Nth tick (here every 4 -> ~6 s at 1.5 s/tick) rather than every
+ * time; once a driver is known to be needed we check every tick so the flip to
+ * Ready after binding is picked up promptly. */
+constexpr int kDriverCheckEveryNPolls = 4;
+
 /* Bundled binary basenames the build/release step drops next to the exe
  * (firmware naming convention, see feedback_firmware_naming_convention). */
 const char *kBootBinName = "freejoyx-f411-boot.bin";
@@ -331,7 +340,15 @@ void DfuInstallDialog::onRefreshDetect()
 {
     if (m_installing) return;            /* don't probe over a live write */
     if (!DfuInstallSession::helperAvailable()) return;
-    m_session->probe(/*verbose=*/false); /* background poll -- stays quiet */
+    /* Most ticks are the cheap nusb-only probe. Periodically -- and every tick
+     * while we already believe a driver is needed -- also consult the driver
+     * layer so a present-but-unbound board reports NeedsDriver on its own (the
+     * "Install WinUSB driver" button then appears without a manual Re-check).
+     * Stays quiet: --check-driver carries no enumeration logging. */
+    const bool checkDriver =
+        m_driverNeeded || (m_detectTick % kDriverCheckEveryNPolls == 0);
+    ++m_detectTick;
+    m_session->probe(/*verbose=*/false, /*checkDriver=*/checkDriver);
 }
 
 void DfuInstallDialog::onManualRecheck()
