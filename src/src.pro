@@ -20,13 +20,18 @@ TARGET = FreeJoyXConfiguratorQt
 APP_VER = $$(FREEJOYX_APP_VERSION)
 !isEmpty(APP_VER) {
     APP_VER_PARTS = $$split(APP_VER, .)
-    APP_VER_DEFINES = \
-        FREEJOYX_APP_VERSION=\\\"$$APP_VER\\\" \
+    # Numeric components are safe for BOTH the C++ compiler and windres.
+    APP_VER_NUM_DEFINES = \
         FREEJOYX_APP_VER_MAJOR=$$member(APP_VER_PARTS, 0) \
         FREEJOYX_APP_VER_MINOR=$$member(APP_VER_PARTS, 1) \
         FREEJOYX_APP_VER_PATCH=$$member(APP_VER_PARTS, 2)
-    DEFINES += $$APP_VER_DEFINES
-    RC_DEFINES += $$APP_VER_DEFINES
+    DEFINES += $$APP_VER_NUM_DEFINES
+    RC_DEFINES += $$APP_VER_NUM_DEFINES
+    # The quoted-string define goes ONLY to the C++ compiler -- windres can't
+    # parse a quoted-string -D (it breaks the resource preprocessor's command
+    # line); winapp.rc builds its version string from the numerics instead
+    # (FREEJOYX_APP_VERSION_NUM in version.h).
+    DEFINES += FREEJOYX_APP_VERSION=\\\"$$APP_VER\\\"
     message("FreeJoyX configurator app version: $$APP_VER")
 }
 
