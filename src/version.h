@@ -16,9 +16,34 @@
 
 #define FORK_NAME    "FreeJoyX"
 
-/* APP_VERSION kept as an alias for FREEJOYX_VERSION so the .rc file
- * and any third-party reference still compile. Prefer FREEJOYX_VERSION
- * in new code. */
-#define APP_VERSION  FREEJOYX_VERSION
+/* FREEJOYX_APP_VERSION is the *configurator's own* release version -- what's
+ * shown in the window title, the App info card, and the .exe file properties.
+ * CI (release.yml) injects it from the git release tag, e.g.
+ * -DFREEJOYX_APP_VERSION=\"0.1.8\", so the app always states the version the
+ * user downloaded. Local/dev builds fall back to the firmware-gen
+ * FREEJOYX_VERSION with a "-dev" suffix (honestly "not a tagged release").
+ *
+ * This is deliberately DECOUPLED from FREEJOYX_VERSION (the firmware/wire
+ * version, synced across both repos by header-sync CI and reported by the
+ * device): the configurator releases on its own cadence -- see the memory note
+ * project_version_display_sync and issue anpeaco/FreeJoyX#18. The numeric
+ * components feed winapp.rc's FILEVERSION; CI passes them too, else they fall
+ * back to FREEJOYX_VERSION_*. */
+#ifndef FREEJOYX_APP_VERSION
+#  define FREEJOYX_APP_VERSION  FREEJOYX_VERSION "-dev"
+#endif
+#ifndef FREEJOYX_APP_VER_MAJOR
+#  define FREEJOYX_APP_VER_MAJOR  FREEJOYX_VERSION_MAJOR
+#endif
+#ifndef FREEJOYX_APP_VER_MINOR
+#  define FREEJOYX_APP_VER_MINOR  FREEJOYX_VERSION_MINOR
+#endif
+#ifndef FREEJOYX_APP_VER_PATCH
+#  define FREEJOYX_APP_VER_PATCH  FREEJOYX_VERSION_PATCH
+#endif
+
+/* APP_VERSION kept as an alias for the app version so any third-party
+ * reference still compiles. Prefer FREEJOYX_APP_VERSION in new code. */
+#define APP_VERSION  FREEJOYX_APP_VERSION
 
 #endif // VERSION_H

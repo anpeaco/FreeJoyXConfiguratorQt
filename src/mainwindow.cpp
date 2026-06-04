@@ -107,18 +107,17 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::updatePendingChangesBadge);
     m_dirtyCheckTimer->start();
 
-    // window title -- single user-facing version. FORK_NAME stays in
-    // version.h as the USB manufacturer-string filter; it isn't versioned.
+    // window title -- the configurator's OWN release version (the git tag the
+    // user downloaded), injected at build time; see FREEJOYX_APP_VERSION in
+    // version.h. FORK_NAME is the USB manufacturer-string filter, not versioned.
     setWindowTitle(tr("%1 Configurator %2")
-                       .arg(FORK_NAME, QStringLiteral(FREEJOYX_VERSION)));
+                       .arg(FORK_NAME, QStringLiteral(FREEJOYX_APP_VERSION)));
 
-    // App-group info card: shows the configurator's own user-facing
-    // semver. Pre-issue#18 this used FIRMWARE_VERSION-derived "v1.7.8b0"
-    // formatting; now decoupled -- FREEJOYX_VERSION is the single
-    // "what version are you running?" answer. The device-info card's
-    // Firmware row continues to show the wire-format hex from the
-    // device for compat diagnostics.
-    ui->label_AppFirmwareVal->setText(QStringLiteral(FREEJOYX_VERSION));
+    // App-group info card: the configurator's own release version, matching the
+    // download/title. This is DISTINCT from the device-info card's Firmware row
+    // (which shows the connected board's reported version) -- the configurator
+    // can legitimately be newer than the firmware it bundles or the board runs.
+    ui->label_AppFirmwareVal->setText(QStringLiteral(FREEJOYX_APP_VERSION));
 
     // load application config
     loadAppConfig();
