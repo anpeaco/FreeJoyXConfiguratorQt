@@ -42,6 +42,16 @@
 #  define FREEJOYX_APP_VER_PATCH  FREEJOYX_VERSION_PATCH
 #endif
 
+/* String form of the app version built from the NUMERIC components. windres
+ * can't ingest the injected FREEJOYX_APP_VERSION quoted-string -D (it breaks the
+ * resource preprocessor's command line), so winapp.rc uses this instead -- the
+ * same stringize trick FREEJOYX_VERSION uses, which the .rc has always handled.
+ * C++ keeps using FREEJOYX_APP_VERSION directly (it carries any tag suffix). */
+#define FREEJOYX_APP_VERSION_NUM \
+    FREEJOYX_VER_STR(FREEJOYX_APP_VER_MAJOR) "." \
+    FREEJOYX_VER_STR(FREEJOYX_APP_VER_MINOR) "." \
+    FREEJOYX_VER_STR(FREEJOYX_APP_VER_PATCH)
+
 /* APP_VERSION kept as an alias for the app version so any third-party
  * reference still compiles. Prefer FREEJOYX_APP_VERSION in new code. */
 #define APP_VERSION  FREEJOYX_APP_VERSION

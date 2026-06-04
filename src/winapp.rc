@@ -11,8 +11,8 @@ BEGIN
     BEGIN
         BLOCK "000004B0"
         BEGIN
-            VALUE "FileVersion",      FREEJOYX_APP_VERSION
-            VALUE "ProductVersion",   FREEJOYX_APP_VERSION
+            VALUE "FileVersion",      FREEJOYX_APP_VERSION_NUM
+            VALUE "ProductVersion",   FREEJOYX_APP_VERSION_NUM
             VALUE "FileDescription",  "FreeJoyX Configurator"
             VALUE "ProductName",      "FreeJoyX Configurator"
             VALUE "InternalName",     "FreeJoyX Configurator"
