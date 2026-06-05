@@ -66,6 +66,8 @@ private slots:
     void onBrowseBoot();
     void onBrowseApp();
     void onInstallClicked();
+    void onQuickTestClicked();      /* "Quick test" -- short non-destructive flash self-test */
+    void onFullTestClicked();       /* "Full test" -- whole-scratch-sector self-test */
     void onRefreshDetect();    /* silent background poll (timer) */
     void onManualRecheck();    /* user-driven verbose re-check (button) */
     void onInstallDriverClicked();  /* "Install WinUSB driver" (needs-driver state) */
@@ -84,6 +86,7 @@ private:
     void refreshInstallEnabled();
     void appendLog(const QString &line);
     void setControlsLocked(bool locked);     /* lock inputs while a write is in flight */
+    void startSelfTest(const QString &level); /* shared by the Quick/Full test buttons */
 
     /* Maps a stage + byte fraction to a coarse weighted overall percentage. */
     static int weightedProgress(DfuInstallSession::Stage s, qint64 done, qint64 total);
@@ -104,6 +107,8 @@ private:
     QPushButton    *m_detectBtn = nullptr;
     QPushButton    *m_driverBtn = nullptr;     /* "Install WinUSB driver"; shown only when needed */
     QPushButton    *m_rebootBtn = nullptr;
+    QPushButton    *m_quickTestBtn = nullptr;  /* short flash self-test */
+    QPushButton    *m_fullTestBtn = nullptr;   /* full-sector flash self-test */
     QPushButton    *m_installBtn = nullptr;
     QPushButton    *m_closeBtn = nullptr;
 
@@ -112,6 +117,7 @@ private:
     bool    m_devicePresent = false;  /* probe reported Ready (WinUSB-bound, flashable) */
     bool    m_driverNeeded = false;   /* probe reported NeedsDriver (present, not bound) */
     bool    m_installing = false;
+    bool    m_testing = false;        /* a flash self-test run is in flight */
     bool    m_bindingDriver = false;  /* an installDriver() run is in flight */
     /* Latches true after a successful install so the Install button stays
      * disabled -- the board is no longer in a fresh DFU state, and running
