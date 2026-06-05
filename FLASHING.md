@@ -43,9 +43,52 @@ upgrade a bootloader on a deployed board.
 A full reinstall **erases the chip** — the device returns to factory
 defaults, so reload your saved config afterward.
 
+The install **reads both images back and verifies them** before reporting
+success, and automatically retries the whole write from a fresh DFU session
+if a transfer wobbles. If a board accepts the write but refuses read-back
+(some bootloaders do), the dialog says so explicitly rather than claiming an
+unverified success.
+
 > Note: this path is implemented by a bundled `freejoyx-flash` helper and
 > requires firmware support for the jumper-free "reboot to DFU" trigger
 > (a future convenience); until that lands, use the manual BOOT0 step above.
+
+### Test the USB link first (no flashing)
+
+The DFU dialog has **Quick test** and **Full test** buttons. They write a
+known pattern to the chip's *config scratch sector* and read it back — the
+bootloader and app are **never touched**, and the board is left at
+factory-default config exactly as a fresh install would. Use them to tell a
+**flaky USB cable / port / power** apart from a firmware problem before
+committing to an install:
+
+- **Quick test** — a few KB; a fast "is the link sane?" check.
+- **Full test** — the whole 64 KB sector; stresses the write path about as
+  hard as a real bootloader + app install.
+
+A clean pass with no retries means the board flashes reliably. A pass that
+*needed retries*, or an outright **fail** (read-back mismatch), points at the
+USB link or power, not the software — see the troubleshooting note below.
+
+### If a DFU install keeps stalling ("endpoint STALL", random blocks)
+
+Repeated `endpoint STALL` / `device busy` failures at *different* blocks,
+especially on a bare BlackPill powered only from USB, are almost always a
+**power or USB signal-integrity** problem — the chip browns out mid-write —
+not a bad chip. In rough order of effect:
+
+1. Use a different, **short, known-good USB *data* cable** (many are thin or
+   charge-only).
+2. Plug **directly into a rear USB 2.0 port** on the PC — no hub, no
+   front-panel header, no KVM.
+3. Try a **different PC** to rule out the host USB controller.
+4. As a last resort, the helper's write timings can be loosened via
+   environment variables (e.g. `FREEJOYX_FLASH_SETTLE_MS`,
+   `FREEJOYX_FLASH_BLOCK_RETRIES`, `FREEJOYX_FLASH_INSTALL_ATTEMPTS`); set
+   them before launching the configurator.
+
+If USB DFU still won't take cleanly, the **ST-Link / STM32CubeProgrammer**
+path below is the deterministic fallback.
 
 ---
 

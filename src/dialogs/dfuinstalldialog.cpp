@@ -183,6 +183,31 @@ void DfuInstallDialog::buildUi()
     detectRow->addWidget(m_detectBtn, 0);
     dfuLay->addLayout(detectRow);
 
+    /* Diagnostics: a non-destructive flash self-test. Writes a known pattern to
+     * the config scratch sector and reads it back -- it never touches the
+     * bootloader or app, so it's safe to run on a board you don't want to
+     * reflash. It's the quickest way to tell a flaky USB cable/port/power
+     * (random write stalls) from a software problem before committing to an
+     * install. Quick = a few KB sanity check; Full = the whole 64 KB sector,
+     * which stresses the write path about as hard as a real install. */
+    auto *testRow = new QHBoxLayout();
+    auto *testHint = new QLabel(tr("Test the USB link without flashing:"), dfuBox);
+    testHint->setWordWrap(true);
+    m_quickTestBtn = new QPushButton(tr("Quick test"), dfuBox);
+    m_quickTestBtn->setToolTip(tr("Write and read back a few KB on the scratch "
+                                  "sector — a fast check that the board flashes "
+                                  "cleanly. Does not touch the bootloader or app."));
+    m_fullTestBtn = new QPushButton(tr("Full test"), dfuBox);
+    m_fullTestBtn->setToolTip(tr("Write and read back the whole 64 KB scratch "
+                                 "sector — stresses the write path like a real "
+                                 "install. Does not touch the bootloader or app."));
+    connect(m_quickTestBtn, &QPushButton::clicked, this, &DfuInstallDialog::onQuickTestClicked);
+    connect(m_fullTestBtn, &QPushButton::clicked, this, &DfuInstallDialog::onFullTestClicked);
+    testRow->addWidget(testHint, 1);
+    testRow->addWidget(m_quickTestBtn, 0);
+    testRow->addWidget(m_fullTestBtn, 0);
+    dfuLay->addLayout(testRow);
+
     root->addWidget(dfuBox);
 
     /* --- Step 2: binaries to write ---------------------------------- */
@@ -252,8 +277,8 @@ void DfuInstallDialog::buildUi()
     connect(m_installBtn, &QPushButton::clicked, this, &DfuInstallDialog::onInstallClicked);
     m_closeBtn = new QPushButton(tr("Close"), this);
     connect(m_closeBtn, &QPushButton::clicked, this, [this]() {
-        if (m_installing) {
-            m_session->cancel();      /* becomes "Cancel" while a write is live */
+        if (m_installing || m_testing) {
+            m_session->cancel();      /* becomes "Cancel" while a write/test is live */
         } else {
             reject();
         }
@@ -272,9 +297,11 @@ void DfuInstallDialog::buildUi()
         m_installBtn->setEnabled(false);
         m_detectBtn->setEnabled(false);
         m_rebootBtn->setEnabled(false);
+        m_quickTestBtn->setEnabled(false);
+        m_fullTestBtn->setEnabled(false);
     }
 
-    resize(580, 540);
+    resize(580, 560);
 }
 
 void DfuInstallDialog::prefillBundledBinaries()
@@ -338,7 +365,7 @@ void DfuInstallDialog::onRebootToDfu()
 
 void DfuInstallDialog::onRefreshDetect()
 {
-    if (m_installing) return;            /* don't probe over a live write */
+    if (m_installing || m_testing) return; /* don't probe over a live write/test */
     if (!DfuInstallSession::helperAvailable()) return;
     /* Most ticks are the cheap nusb-only probe. Periodically -- and every tick
      * while we already believe a driver is needed -- also consult the driver
@@ -353,7 +380,7 @@ void DfuInstallDialog::onRefreshDetect()
 
 void DfuInstallDialog::onManualRecheck()
 {
-    if (m_installing) return;            /* don't probe over a live write */
+    if (m_installing || m_testing) return; /* don't probe over a live write/test */
     /* The user pressed Re-check, so always give visible feedback -- the old
      * behaviour (a silent probe that only flipped a label) was reported as
      * "nothing happens". A missing helper is itself a result worth showing. */
@@ -471,6 +498,37 @@ void DfuInstallDialog::onInstallClicked()
     appendLog(tr("Starting install…"));
 }
 
+void DfuInstallDialog::onQuickTestClicked() { startSelfTest(QStringLiteral("quick")); }
+void DfuInstallDialog::onFullTestClicked()  { startSelfTest(QStringLiteral("full")); }
+
+void DfuInstallDialog::startSelfTest(const QString &level)
+{
+    if (m_installing || m_testing || m_bindingDriver) return;
+    if (!m_devicePresent) {
+        QMessageBox::warning(this, tr("No board"),
+            tr("Put a board in DFU mode first (step 1 above), then run the test."));
+        return;
+    }
+    if (!m_session->startSelfTest(level)) {
+        QMessageBox::critical(this, tr("Couldn't start"),
+            m_session->lastErrorDetail().isEmpty()
+                ? tr("The flash self-test couldn't be started.")
+                : m_session->lastErrorDetail());
+        return;
+    }
+
+    m_testing = true;
+    m_detectTimer->stop();
+    setControlsLocked(true);
+    m_log->clear();
+    m_progress->setValue(0);
+    appendLog(level == QStringLiteral("full")
+                  ? tr("Starting full flash self-test (whole scratch sector)…")
+                  : tr("Starting quick flash self-test…"));
+    appendLog(tr("This writes only the config scratch sector — the bootloader "
+                 "and app are not touched."));
+}
+
 void DfuInstallDialog::onStageChanged(DfuInstallSession::Stage s, const QString &detail)
 {
     QString label;
@@ -479,7 +537,9 @@ void DfuInstallDialog::onStageChanged(DfuInstallSession::Stage s, const QString 
     case DfuInstallSession::Stage::Erasing:           label = tr("Erasing…"); break;
     case DfuInstallSession::Stage::WritingBootloader: label = tr("Writing bootloader…"); break;
     case DfuInstallSession::Stage::WritingApp:        label = tr("Writing application…"); break;
-    case DfuInstallSession::Stage::Verifying:         label = tr("Verifying…"); break;
+    case DfuInstallSession::Stage::Verifying:         label = m_testing ? tr("Reading back…")
+                                                                        : tr("Verifying…"); break;
+    case DfuInstallSession::Stage::Testing:           label = tr("Testing flash…"); break;
     case DfuInstallSession::Stage::Done:              label = tr("Done."); break;
     case DfuInstallSession::Stage::Failed:            label = tr("Failed."); break;
     case DfuInstallSession::Stage::Idle:              label = tr("Idle."); break;
@@ -487,12 +547,23 @@ void DfuInstallDialog::onStageChanged(DfuInstallSession::Stage s, const QString 
     m_stageLabel->setText(label);
     m_stageLabel->setStyleSheet(QString());   // terminal colouring is set in onFinished
     if (!detail.isEmpty()) appendLog(detail);
+    /* During a self-test the bar is driven straight off the byte fraction
+     * (write sweep, then read-back sweep) in onProgress; don't snap it to the
+     * install-weighted stage values. */
+    if (m_testing) return;
     const int p = weightedProgress(s, 0, 0);
     if (p >= 0) m_progress->setValue(p);    /* <0 == "leave the bar where it is" */
 }
 
 void DfuInstallDialog::onProgress(qint64 done, qint64 total)
 {
+    if (m_testing) {
+        /* Raw fraction: the self-test sweeps the bar once while writing the
+         * pattern and again while reading it back. */
+        const int pct = (total > 0) ? int(done * 100 / total) : 0;
+        m_progress->setValue(pct);
+        return;
+    }
     m_progress->setValue(weightedProgress(m_session->stage(), done, total));
 }
 
@@ -503,6 +574,34 @@ void DfuInstallDialog::onLogLine(const QString &line)
 
 void DfuInstallDialog::onFinished(bool success, const QString &detail)
 {
+    /* A self-test shares the finished() signal but is never an "install": it
+     * doesn't latch m_installed (the board can still be flashed), and it always
+     * re-enables detection so the user can go straight on to install. */
+    if (m_testing) {
+        m_testing = false;
+        setControlsLocked(false);
+        appendLog(detail);
+        if (success) {
+            m_progress->setValue(100);
+            m_stageLabel->setText(tr("Self-test passed."));
+            m_stageLabel->setStyleSheet(QStringLiteral("color: #27ae60; font-weight: bold;"));
+            QMessageBox::information(this, tr("Flash self-test passed"),
+                tr("The board wrote and read back the test pattern correctly — "
+                   "it should flash cleanly. See the log for retry details."));
+        } else {
+            m_stageLabel->setText(tr("Self-test failed."));
+            m_stageLabel->setStyleSheet(QStringLiteral("color: #c0392b; font-weight: bold;"));
+            QMessageBox::warning(this, tr("Flash self-test failed"),
+                detail.isEmpty()
+                    ? tr("The flash self-test did not pass — see the log. This "
+                         "usually means a flaky USB cable/port or insufficient "
+                         "power to the board.")
+                    : detail);
+        }
+        m_detectTimer->start();
+        return;
+    }
+
     m_installing = false;
     if (success) m_installed = true;   // latch BEFORE setControlsLocked so Install stays off
     setControlsLocked(false);
@@ -539,19 +638,30 @@ void DfuInstallDialog::setControlsLocked(bool locked)
     m_installBtn->setEnabled(!locked && !m_installed && m_devicePresent
                              && !m_bootEdit->text().isEmpty()
                              && !m_appEdit->text().isEmpty());
-    /* Close doubles as Cancel during a write. */
+    /* The self-test only needs a board in DFU (no binaries), and doesn't care
+     * whether an install already happened — it's safe to run any time a board
+     * is present and nothing else is in flight. */
+    const bool canTest = !locked && m_devicePresent
+                         && DfuInstallSession::helperAvailable();
+    m_quickTestBtn->setEnabled(canTest);
+    m_fullTestBtn->setEnabled(canTest);
+    /* Close doubles as Cancel during a write/test. */
     m_closeBtn->setText(locked ? tr("Cancel") : tr("Close"));
 }
 
 void DfuInstallDialog::refreshInstallEnabled()
 {
-    if (m_installing) return;            /* setControlsLocked owns the state then */
+    if (m_installing || m_testing) return; /* setControlsLocked owns the state then */
     const bool ready = !m_installed
                        && m_devicePresent
                        && DfuInstallSession::helperAvailable()
                        && !m_bootEdit->text().isEmpty()
                        && !m_appEdit->text().isEmpty();
     m_installBtn->setEnabled(ready);
+    /* The test buttons track device presence too, but need no binaries. */
+    const bool canTest = m_devicePresent && DfuInstallSession::helperAvailable();
+    if (m_quickTestBtn) m_quickTestBtn->setEnabled(canTest);
+    if (m_fullTestBtn)  m_fullTestBtn->setEnabled(canTest);
 }
 
 void DfuInstallDialog::appendLog(const QString &line)
@@ -576,6 +686,9 @@ int DfuInstallDialog::weightedProgress(DfuInstallSession::Stage s, qint64 done, 
     case DfuInstallSession::Stage::WritingBootloader: return span(10, 50);
     case DfuInstallSession::Stage::WritingApp:        return span(50, 90);
     case DfuInstallSession::Stage::Verifying:         return 95;
+    /* The self-test drives the bar directly off the byte fraction (see
+     * onProgress); weighting it by stage isn't used. */
+    case DfuInstallSession::Stage::Testing:           return span(0, 100);
     case DfuInstallSession::Stage::Done:              return 100;
     case DfuInstallSession::Stage::Failed:            return -1;   /* leave the bar as-is */
     }

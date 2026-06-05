@@ -75,6 +75,7 @@ void DfuInstallSession::probe(bool verbose, bool checkDriver)
     m_probing = true;
     m_probeVerbose = verbose;
     m_binding = false;
+    m_testing = false;
     m_sawError = false;
     m_stdoutBuf.clear();
     m_stderrBuf.clear();
@@ -116,6 +117,7 @@ void DfuInstallSession::installDriver()
     m_probing = false;
     m_probeVerbose = false;
     m_binding = true;
+    m_testing = false;
     m_sawError = false;
     m_lastErrorDetail.clear();
     m_stdoutBuf.clear();
@@ -156,6 +158,7 @@ bool DfuInstallSession::start(const Params &p)
     m_probing = false;
     m_probeVerbose = false;
     m_binding = false;
+    m_testing = false;
     m_sawError = false;
     m_lastErrorDetail.clear();
     m_stdoutBuf.clear();
@@ -177,6 +180,46 @@ bool DfuInstallSession::start(const Params &p)
                             QStringLiteral("--board"), p.board,
                             QStringLiteral("--boot"), p.bootBinPath,
                             QStringLiteral("--app"),  p.appBinPath });
+    return true;
+}
+
+bool DfuInstallSession::startSelfTest(const QString &level, const QString &board)
+{
+    if (m_proc && m_proc->state() != QProcess::NotRunning) {
+        qWarning() << "DfuInstallSession::startSelfTest ignored -- already active";
+        return false;
+    }
+    const QString helper = helperPath();
+    if (helper.isEmpty()) {
+        m_lastErrorDetail = tr("Install helper (freejoyx-flash) is missing "
+                               "from the application folder.");
+        return false;
+    }
+
+    m_probing = false;
+    m_probeVerbose = false;
+    m_binding = false;
+    m_testing = true;
+    m_sawError = false;
+    m_lastErrorDetail.clear();
+    m_stdoutBuf.clear();
+    m_stderrBuf.clear();
+    setStage(Stage::Testing, tr("Starting flash self-test…"));
+
+    m_proc = new QProcess(this);
+    m_proc->setProcessChannelMode(QProcess::SeparateChannels);
+    connect(m_proc, &QProcess::readyReadStandardOutput,
+            this, &DfuInstallSession::onReadyReadStdout);
+    connect(m_proc, &QProcess::readyReadStandardError,
+            this, &DfuInstallSession::onReadyReadStderr);
+    connect(m_proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, &DfuInstallSession::onProcessFinished);
+    connect(m_proc, &QProcess::errorOccurred,
+            this, &DfuInstallSession::onProcessErrorOccurred);
+
+    m_proc->start(helper, { QStringLiteral("selftest"),
+                            QStringLiteral("--board"), board,
+                            QStringLiteral("--level"), level });
     return true;
 }
 
@@ -316,6 +359,28 @@ void DfuInstallSession::onProcessFinished(int exitCode, QProcess::ExitStatus sta
         return;
     }
 
+    if (m_testing) {
+        /* Self-test verdict is purely the exit code: 0 = pass (the helper has
+         * already streamed the PASS/FAIL detail through LOG lines), non-zero =
+         * fail. */
+        const bool ok = (!crashed && exitCode == 0);
+        if (!ok && !m_sawError) {
+            m_lastErrorDetail = crashed
+                ? tr("The flash self-test stopped unexpectedly.")
+                : tr("The flash self-test exited with code %1.").arg(exitCode);
+        }
+        const QString detail = ok
+            ? tr("Flash self-test passed — the board writes and reads back cleanly.")
+            : (m_lastErrorDetail.isEmpty()
+                   ? tr("Flash self-test failed.") : m_lastErrorDetail);
+        m_testing = false;
+        setStage(ok ? Stage::Done : Stage::Failed, detail);
+        m_proc->deleteLater();
+        m_proc = nullptr;
+        emit finished(ok, detail);
+        return;
+    }
+
     const bool success = (!crashed && exitCode == 0 && m_stage == Stage::Verifying)
                          || (!crashed && exitCode == 0 && m_stage == Stage::Done);
     m_proc->deleteLater();
@@ -373,6 +438,7 @@ void DfuInstallSession::onProcessErrorOccurred(QProcess::ProcessError error)
         }
         m_lastErrorDetail = tr("Couldn't launch the install helper (freejoyx-flash).");
         m_sawError = true;
+        m_testing = false;
         if (m_proc) { m_proc->deleteLater(); m_proc = nullptr; }
         setStage(Stage::Failed, m_lastErrorDetail);
         emit finished(false, m_lastErrorDetail);
@@ -386,6 +452,7 @@ DfuInstallSession::Stage DfuInstallSession::stageFromToken(const QString &token)
     if (token == QStringLiteral("write-boot"))  return Stage::WritingBootloader;
     if (token == QStringLiteral("write-app"))   return Stage::WritingApp;
     if (token == QStringLiteral("verify"))      return Stage::Verifying;
+    if (token == QStringLiteral("test"))        return Stage::Testing;
     if (token == QStringLiteral("done"))        return Stage::Done;
     return Stage::Idle;     /* unknown -> no transition of substance */
 }

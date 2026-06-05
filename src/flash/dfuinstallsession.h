@@ -56,9 +56,17 @@
   *     freejoyx-flash bind --board f411
   *   One UAC prompt on Windows; no-op elsewhere. exit 0 on success.
   *
+  * Non-destructive flash self-test (write+read-back a scratch sector):
+  *     freejoyx-flash selftest --board f411 [--level quick|full]
+  *   Erases the config scratch sector, writes a known pattern, reads it back,
+  *   and re-erases it -- never touching the bootloader or app. Streams the same
+  *   STAGE/PROGRESS/LOG records as install (with STAGE test for the write
+  *   phase) and exits 0 on pass. A pass means the board flashes cleanly over
+  *   USB; a fail points at a marginal cable / port / power.
+  *
   * --- Helper stdout protocol (one record per line, space-delimited) ---
   *
-  *   STAGE <bind-driver|erase|write-boot|write-app|verify|done>
+  *   STAGE <bind-driver|erase|write-boot|write-app|verify|test|done>
   *   PROGRESS <bytesDone> <bytesTotal>     // during write-boot / write-app
   *   LOG <free-form text...>               // appended verbatim to the log view
   *   ERROR <code> <free-form message...>   // a single terminal failure line
@@ -92,6 +100,7 @@ public:
         WritingBootloader,  /* DfuSe download of boot.bin -> 0x08000000 */
         WritingApp,         /* DfuSe download of app.bin  -> 0x08020000 */
         Verifying,          /* CRC/read-back verify */
+        Testing,            /* non-destructive flash self-test (selftest helper) */
         Done,
         Failed,
     };
@@ -163,6 +172,19 @@ public:
      * first and for the device already being in ROM DFU. */
     bool start(const Params &p);
 
+    /* Run a non-destructive flash self-test (`freejoyx-flash selftest`): erase
+     * the config scratch sector, write a known pattern, read it back, then
+     * re-erase it -- the bootloader and app are never touched, and the board is
+     * left in the same factory-default-config state a fresh install leaves.
+     * `level` is "quick" (a few KB, fast sanity check) or "full" (the whole
+     * 64 KB sector, stresses the write path like a real install). Streams the
+     * same STAGE/PROGRESS/LOG records as install and ends with finished(); a
+     * pass means the board flashes cleanly over USB, a fail points at a marginal
+     * cable / port / power. Returns false (without starting) if a session is
+     * already active or the helper is missing. */
+    bool startSelfTest(const QString &level = QStringLiteral("quick"),
+                       const QString &board = QStringLiteral("f411"));
+
     /* Best-effort abort. Terminates the helper; the device may be left in
      * DFU mode (partially written) -- the user can simply re-run the
      * install, since DfuSe always erases before writing. */
@@ -202,6 +224,7 @@ private:
     bool      m_probing = false;    /* true while a probe() process is in flight */
     bool      m_probeVerbose = false; /* the in-flight probe was asked to narrate */
     bool      m_binding = false;    /* true while an installDriver() process is in flight */
+    bool      m_testing = false;    /* true while a startSelfTest() process is in flight */
     bool      m_sawError = false;   /* an ERROR line was emitted -> don't synthesise another */
     Stage     m_stage = Stage::Idle;
     QString   m_lastErrorDetail;
