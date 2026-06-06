@@ -12,12 +12,14 @@ namespace {
 // Marks a section-header row in the pin-role popup (see addType / the delegate).
 constexpr int kPinHeaderRole = Qt::UserRole + 1;
 
-// Popup-list delegate for the pin-role dropdown. Distinguishes three row kinds
-// so headers and the hovered/selected row never look alike:
-//   - section header  -> bold, full-contrast (palette text) label over a faint band
-//   - hovered/selected -> filled with the row's own function colour (its
-//                         ForegroundRole), label auto-contrasted light/dark
-//   - normal / disabled -> function-coloured (or greyed+struck) label on the base
+// Popup-list delegate for the pin-role dropdown. Makes the section grouping
+// obvious without a loud selection:
+//   - section header  -> UPPERCASE bold full-contrast label, a thin separator
+//                         line above it, sitting flush-left
+//   - role rows        -> indented under their header (so the hierarchy reads),
+//                         function-coloured (or greyed+struck if disabled) label
+//   - hovered/selected -> a subtle neutral wash only; the function-coloured text
+//                         stays, so selection is clear but not in-your-face
 class PinRoleDelegate : public QStyledItemDelegate
 {
 public:
@@ -31,9 +33,12 @@ public:
 
         const bool header  = index.data(kPinHeaderRole).toBool();
         const bool enabled = index.flags().testFlag(Qt::ItemIsEnabled);
-        const bool active  = opt.state.testFlag(QStyle::State_Selected)
-                             || opt.state.testFlag(QStyle::State_MouseOver);
+        const bool active  = (opt.state.testFlag(QStyle::State_Selected)
+                              || opt.state.testFlag(QStyle::State_MouseOver))
+                             && enabled && !header;
         const QColor role  = qvariant_cast<QColor>(index.data(Qt::ForegroundRole));
+        const QColor base  = opt.palette.color(QPalette::Base);
+        const bool darkUi  = base.lightness() < 128;
 
         QFont f = qvariant_cast<QFont>(index.data(Qt::FontRole));
         if (f.family().isEmpty()) {
@@ -41,30 +46,34 @@ public:
         }
 
         p->save();
-        p->fillRect(opt.rect, opt.palette.color(QPalette::Base));
+        p->fillRect(opt.rect, base);
+
+        int leftPad = 22;          // role rows indented beneath their header
         QColor fg;
+        QString text = index.data(Qt::DisplayRole).toString();
         if (header) {
-            p->fillRect(opt.rect, QColor(128, 128, 128, 55));   // faint section band
-            fg = opt.palette.color(QPalette::Text);             // full contrast (white on dark)
+            leftPad = 8;           // headers flush-left so the indent reads
+            p->setPen(opt.palette.color(QPalette::Mid));   // thin divider above the header
+            p->drawLine(opt.rect.left() + 6, opt.rect.top(),
+                        opt.rect.right() - 6, opt.rect.top());
+            fg = opt.palette.color(QPalette::Text);        // full contrast (white on dark)
             f.setBold(true);
-        } else if (active && enabled && role.isValid()) {
-            p->fillRect(opt.rect, role);                        // the row's own function colour
-            const int lum = (role.red() * 299 + role.green() * 587 + role.blue() * 114) / 1000;
-            fg = (lum < 140) ? QColor(255, 255, 255) : QColor(25, 25, 25);  // readable on any hue
-        } else if (active && enabled) {
-            p->fillRect(opt.rect, opt.palette.color(QPalette::Highlight));   // "Not Used" etc.
-            fg = opt.palette.color(QPalette::HighlightedText);
-        } else if (!enabled) {
-            fg = opt.palette.color(QPalette::Disabled, QPalette::Text);      // greyed (font carries strike-out)
+            text = text.toUpper();
         } else {
-            fg = role.isValid() ? role : opt.palette.color(QPalette::Text);
+            if (active) {
+                // subtle neutral hover/selection -- not the loud function-colour fill
+                p->fillRect(opt.rect, darkUi ? QColor(255, 255, 255, 28)
+                                             : QColor(0, 0, 0, 22));
+            }
+            fg = !enabled ? opt.palette.color(QPalette::Disabled, QPalette::Text)
+                          : (role.isValid() ? role : opt.palette.color(QPalette::Text));
         }
+
         p->setPen(fg);
         p->setFont(f);
-        const QRect tr = opt.rect.adjusted(8, 0, -8, 0);
+        const QRect tr = opt.rect.adjusted(leftPad, 0, -8, 0);
         p->drawText(tr, Qt::AlignVCenter | Qt::AlignLeft,
-                    opt.fontMetrics.elidedText(index.data(Qt::DisplayRole).toString(),
-                                               Qt::ElideRight, tr.width()));
+                    opt.fontMetrics.elidedText(text, Qt::ElideRight, tr.width()));
         p->restore();
     }
 };
@@ -383,16 +392,20 @@ void PinComboBox::initializationPins(uint pin)      // pin_number_ - 1 -- not gr
             const int hdr = ui->comboBox_PinsType->count();
             ui->comboBox_PinsType->addItem(title);
             ui->comboBox_PinsType->setItemData(hdr, 0, Qt::UserRole - 1);   // non-selectable
-            // Mark as a section header; PinRoleDelegate paints it (bold,
-            // full-contrast label + faint band) so it never looks like a row.
+            // Mark as a section header; PinRoleDelegate paints it (UPPERCASE
+            // bold + a divider line, flush-left) so it never looks like a row.
             ui->comboBox_PinsType->setItemData(hdr, true, kPinHeaderRole);
             m_pinTypesIndex.push_back(-1);   // sentinel: header row, no backing type
             m_enumIndex.push_back(-1);
         }
         ui->comboBox_PinsType->addItem(m_pinTypes[i].guiName);
-        // dropdown tooltip explaining the device + how its pins bind
-        ui->comboBox_PinsType->setItemData(ui->comboBox_PinsType->count() - 1,
-                                           m_pinTypes[i].description, Qt::ToolTipRole);
+        // Dropdown tooltip explaining the device + how its pins bind. Wrapped in
+        // <qt> (escaped) so Qt treats it as rich text and word-wraps the long
+        // descriptions instead of showing one very wide line.
+        ui->comboBox_PinsType->setItemData(
+            ui->comboBox_PinsType->count() - 1,
+            QStringLiteral("<qt>%1</qt>").arg(m_pinTypes[i].description.toHtmlEscaped()),
+            Qt::ToolTipRole);
         m_pinTypesIndex.push_back(i);
         m_enumIndex.push_back(m_pinTypes[i].deviceEnumIndex);
         lastGroup = group;
