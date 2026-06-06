@@ -72,91 +72,81 @@
         <translation>Sprachen</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.ui" line="358"/>
-        <source>Restart for full changes</source>
-        <translation>Neustart für vollständige Änderungen</translation>
-    </message>
-    <message>
-        <location filename="widgets/adv-settings/advancedsettings.ui" line="361"/>
-        <source>Restart</source>
-        <translation>Neustart</translation>
-    </message>
-    <message>
-        <location filename="widgets/adv-settings/advancedsettings.ui" line="457"/>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="446"/>
         <source>Other settings</source>
         <translation>Andere Einstellungen</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.ui" line="478"/>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="467"/>
         <source>About</source>
         <translation>Über </translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.ui" line="544"/>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="533"/>
         <source>Font size</source>
         <translation>Schriftgröße</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.ui" line="588"/>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="551"/>
         <source>Default save directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.ui" line="602"/>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="565"/>
         <source>Configs save here. Pre-flash device backups go to &lt;path&gt;/backups/.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.ui" line="618"/>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="581"/>
         <source>Browse…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.ui" line="623"/>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="586"/>
         <source>Open folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.ui" line="628"/>
+        <location filename="widgets/adv-settings/advancedsettings.ui" line="591"/>
         <source>Reset to default</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="109"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="111"/>
         <source>Show all connected devices</source>
         <translation>Alle verbundenen Geräte anzeigen</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="110"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="112"/>
         <source>Dump every detected FreeJoy device&apos;s USB identity (VID:PID, name, serial). Useful for diagnosing phantom PID conflicts.</source>
         <translation>Gibt die USB-Identität jedes erkannten FreeJoy-Geräts aus (VID:PID, Name, Seriennummer). Nützlich zum Diagnostizieren von Phantom-PID-Konflikten.</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="138"/>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="193"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="140"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="195"/>
         <source>Auto-read config from device on connect</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="139"/>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="194"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="141"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="196"/>
         <source>When a compatible device connects, automatically read its stored configuration into the configurator. If you have unsaved changes you&apos;ll be asked first. Turn off to manage reads manually.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="163"/>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="200"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="165"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="202"/>
         <source>Write log to file</source>
         <translation type="unfinished">Protokoll in eine Datei schreiben</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="164"/>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="201"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="166"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="203"/>
         <source>Append the debug log to a dated file under Documents/FreeJoy/log/. Useful for capturing a bench session to review later.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="273"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="269"/>
         <source>&lt;br&gt;Built with Qt %1 (%2)&lt;br&gt;Fork source on &lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot;
                                 href=&quot;https://github.com/anpeaco/FreeJoyXConfiguratorQt&quot;&gt;GitHub&lt;/a&gt;;
                                 upstream &lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot;
@@ -165,24 +155,24 @@
         <translation>&lt;br&gt;Erstellt mit Qt %1 (%2)&lt;br&gt;Fork-Quelle auf &lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot; href=&quot;https://github.com/anpeaco/FreeJoyXConfiguratorQt&quot;&gt;GitHub&lt;/a&gt;; Upstream &lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot; href=&quot;https://github.com/FreeJoy-Team/FreeJoyConfiguratorQt&quot;&gt;FreeJoyConfiguratorQt&lt;/a&gt;.&lt;br&gt;Veröffentlicht unter GPLv3.&lt;br&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="281"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="277"/>
         <source>&lt;br&gt;See the upstream &lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot;
                             href=&quot;https://github.com/FreeJoy-Team/FreeJoyWiki&quot;&gt;FreeJoy wiki&lt;/a&gt;
                             for detailed wiring and sensor instructions.</source>
         <translation>&lt;br&gt;Siehe das Upstream-&lt;a style=&quot;color: #03A9F4; text-decoration:none;&quot; href=&quot;https://github.com/FreeJoy-Team/FreeJoyWiki&quot;&gt;FreeJoy-Wiki&lt;/a&gt; für ausführliche Verdrahtungs- und Sensoranweisungen.</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="284"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="280"/>
         <source>About %1 Configurator</source>
         <translation>Über %1 Configurator</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="361"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="389"/>
         <source>(unnamed)</source>
         <translation>(unbenannt)</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/advancedsettings.cpp" line="372"/>
+        <location filename="widgets/adv-settings/advancedsettings.cpp" line="400"/>
         <source>This VID:PID is already used by: &lt;b&gt;%1&lt;/b&gt;. Pick a unique PID to avoid Windows OEMName cache collisions and DirectInput confusion.</source>
         <translation>Diese VID:PID wird bereits verwendet von: &lt;b&gt;%1&lt;/b&gt;. Wählen Sie eine eindeutige PID, um Kollisionen im Windows-OEMName-Cache und DirectInput-Verwechslungen zu vermeiden.</translation>
     </message>
@@ -195,88 +185,83 @@
         <translation>Gruppenbox</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.ui" line="135"/>
+        <location filename="widgets/axes/axes.ui" line="129"/>
         <source>Toggle prescaler, resolution, and axes-to-buttons sliders for this axis</source>
         <translation>Vorteiler, Auflösung und Achsen-zu-Tasten-Schieberegler für diese Achse ein-/ausblenden</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.ui" line="138"/>
-        <source>Show extended settings</source>
-        <translation>Erweiterte Einstellungen anzeigen</translation>
-    </message>
-    <message>
-        <location filename="widgets/axes/axes.ui" line="170"/>
+        <location filename="widgets/axes/axes.ui" line="163"/>
         <location filename="widgets/axes/axes.h" line="189"/>
         <source>Calibrate</source>
         <translation>Kalibrieren</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.ui" line="187"/>
+        <location filename="widgets/axes/axes.ui" line="180"/>
         <source>Reset calibration (Min / Center / Max back to factory defaults)</source>
         <translation>Kalibrierung zurücksetzen (Min / Mitte / Max auf Werkseinstellungen)</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.ui" line="245"/>
+        <location filename="widgets/axes/axes.ui" line="238"/>
         <source>Center</source>
         <translation>Zentrum</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.ui" line="582"/>
+        <location filename="widgets/axes/axes.ui" line="575"/>
         <source>Axes &gt; Buttons</source>
         <translation>Achsen &gt; Tasten</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.ui" line="633"/>
+        <location filename="widgets/axes/axes.ui" line="626"/>
         <source>Clear all buttons-from-axes for this axis</source>
         <translation>Alle Tasten-aus-Achsen für diese Achse löschen</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.ui" line="654"/>
+        <location filename="widgets/axes/axes.ui" line="647"/>
         <source>Source</source>
         <translation>Quelle</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.ui" line="701"/>
+        <location filename="widgets/axes/axes.ui" line="694"/>
         <source>Click then rotate any connected axis to set its source pin as this axis&apos;s source. Click again to cancel. Only works for pins already bound to some axis -- the firmware reports raw values per-axis, not per-pin.</source>
         <translation>Klicken Sie und drehen Sie dann eine beliebige verbundene Achse, um deren Quell-Pin als Quelle dieser Achse festzulegen. Erneut klicken zum Abbrechen. Funktioniert nur für Pins, die bereits einer Achse zugewiesen sind – die Firmware meldet Rohwerte pro Achse, nicht pro Pin.</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.ui" line="209"/>
+        <location filename="widgets/axes/axes.ui" line="202"/>
         <source>Minimum</source>
         <translation>Minimum</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.ui" line="256"/>
+        <location filename="widgets/axes/axes.ui" line="249"/>
         <source>Override the natural midpoint between Min and Max with a custom center value</source>
         <translation>Den natürlichen Mittelpunkt zwischen Min und Max durch einen benutzerdefinierten Mittelwert überschreiben</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.ui" line="270"/>
+        <location filename="widgets/axes/axes.ui" line="263"/>
         <source>Capture the current axis value as the new Center</source>
         <translation>Aktuellen Achsenwert als neue Mitte übernehmen</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.ui" line="308"/>
+        <location filename="widgets/axes/axes.ui" line="301"/>
         <source>Maximum</source>
         <translation>Maximum</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.ui" line="369"/>
+        <location filename="widgets/axes/axes.ui" line="362"/>
         <source>Raw</source>
         <translation>Raw</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.ui" line="391"/>
+        <location filename="widgets/axes/axes.ui" line="384"/>
         <source>Out</source>
         <translation>Out</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.ui" line="533"/>
+        <location filename="widgets/axes/axes.ui" line="526"/>
         <source>Inverted</source>
         <translation>Umgekehrt</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.ui" line="555"/>
+        <location filename="widgets/axes/axes.ui" line="548"/>
         <source>Output</source>
         <translation>Ausgang</translation>
     </message>
@@ -291,39 +276,44 @@
         <translation>Schieberegler 2</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.cpp" line="307"/>
+        <location filename="widgets/axes/axes.cpp" line="59"/>
+        <source>Extended Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/axes/axes.cpp" line="322"/>
         <source>Auto-sequence -- rotate any axis to assign its source, then the next axis arms automatically. Single-click, Esc, or click elsewhere to stop.</source>
         <translation>Auto-Sequenz – drehen Sie eine beliebige Achse, um deren Quelle zuzuweisen; die nächste Achse wird automatisch aktiviert. Einfachklick, Esc oder klicken Sie woanders zum Beenden.</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.cpp" line="308"/>
+        <location filename="widgets/axes/axes.cpp" line="323"/>
         <source>Armed -- rotate any connected axis to assign its source. Click again to cancel.</source>
         <translation>Aktiviert – drehen Sie eine beliebige verbundene Achse, um deren Quelle zuzuweisen. Erneut klicken zum Abbrechen.</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.cpp" line="309"/>
+        <location filename="widgets/axes/axes.cpp" line="324"/>
         <source>Click then rotate any connected axis to set its source pin as this axis&apos;s source. Double-click to auto-sequence down the axes. Only works for pins already bound to some axis -- the firmware reports raw values per-axis, not per-pin.</source>
         <translation>Klicken Sie und drehen Sie dann eine beliebige verbundene Achse, um deren Quell-Pin als Quelle dieser Achse festzulegen. Doppelklick für Auto-Sequenz durch die Achsen. Funktioniert nur für Pins, die bereits einer Achse zugewiesen sind – die Firmware meldet Rohwerte pro Achse, nicht pro Pin.</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.cpp" line="374"/>
+        <location filename="widgets/axes/axes.cpp" line="389"/>
         <source>Encoder %1</source>
         <translation>Encoder %1</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.cpp" line="470"/>
+        <location filename="widgets/axes/axes.cpp" line="485"/>
         <source>Also bound to %1</source>
         <translation>Auch gebunden an %1</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.cpp" line="473"/>
+        <location filename="widgets/axes/axes.cpp" line="488"/>
         <source>This source is also bound to: %1.
 Two axes reading the same input will move together.</source>
         <translation>Diese Quelle ist auch gebunden an: %1.
 Zwei Achsen, die denselben Eingang lesen, bewegen sich gemeinsam.</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axes.cpp" line="498"/>
+        <location filename="widgets/axes/axes.cpp" line="513"/>
         <source>No input source assigned. Select a Main Source above to enable HID output for this axis.</source>
         <translation>Keine Eingangsquelle zugewiesen. Wählen Sie oben eine Hauptquelle, um die HID-Ausgabe für diese Achse zu aktivieren.</translation>
     </message>
@@ -417,12 +407,12 @@ Zwei Achsen, die denselben Eingang lesen, bewegen sich gemeinsam.</translation>
         <translation>Kurvenprofile</translation>
     </message>
     <message>
-        <location filename="widgets/axes-curves/axescurvesconfig.ui" line="82"/>
+        <location filename="widgets/axes-curves/axescurvesconfig.ui" line="79"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Curve profiles are saved in the application configuration.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Set &lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;-&lt;/span&gt; sets profile to the current value of the curve.&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/icons/lucide/rotate-ccw.svg&quot; height=&quot;16&quot;/&gt; - resets profile value.&lt;/p&gt;&lt;p&gt;Use &lt;span style=&quot; font-weight:600;&quot;&gt;CTRL&lt;/span&gt; for multiple selection.&lt;/p&gt;&lt;p&gt;You can &lt;span style=&quot; font-weight:600;&quot;&gt;drag&lt;/span&gt; curves with the &lt;span style=&quot; font-weight:600;&quot;&gt;mouse.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Kurvenprofile werden in der Anwendungskonfiguration gespeichert.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Setzen &lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;-&lt;/span&gt; setzt das Profil auf den aktuellen Wert der Kurve.&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;:/Images/icons/lucide/rotate-ccw.svg&quot; height=&quot;16&quot;/&gt; - setzt den Profilwert zurück.&lt;/p&gt;&lt;p&gt;Verwenden Sie &lt;span style=&quot; font-weight:600;&quot;&gt;STRG&lt;/span&gt; für die Mehrfachauswahl.&lt;/p&gt;&lt;p&gt;Sie können Kurven mit der &lt;span style=&quot; font-weight:600;&quot;&gt;Maus&lt;/span&gt; &lt;span style=&quot; font-weight:600;&quot;&gt;ziehen.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="widgets/axes-curves/axescurvesconfig.ui" line="98"/>
+        <location filename="widgets/axes-curves/axescurvesconfig.ui" line="95"/>
         <source>Toggle multi-select mode (same as holding Ctrl on the curve list)</source>
         <translation>Mehrfachauswahlmodus umschalten (entspricht dem Halten von Strg in der Kurvenliste)</translation>
     </message>
@@ -445,47 +435,47 @@ Zwei Achsen, die denselben Eingang lesen, bewegen sich gemeinsam.</translation>
         <translation>Ausgewähltes Profil auf seine Standardkurve zurücksetzen</translation>
     </message>
     <message>
-        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="13"/>
+        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="14"/>
         <source>Set current axis curve to this preset</source>
         <translation>Aktuelle Achsenkurve auf diese Voreinstellung setzen</translation>
     </message>
     <message>
-        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="77"/>
+        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="80"/>
         <source>Reset to Linear</source>
         <translation>Zurücksetzen auf Linear</translation>
     </message>
     <message>
-        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="95"/>
+        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="98"/>
         <source>Reset to Linear Invert</source>
         <translation>Zurücksetzen auf Linear Invertieren</translation>
     </message>
     <message>
-        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="124"/>
+        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="127"/>
         <source>Reset to Exponent</source>
         <translation>Auf Exponent zurücksetzen</translation>
     </message>
     <message>
-        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="153"/>
+        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="156"/>
         <source>Reset to Exponent Invert</source>
         <translation>Zurücksetzen auf Exponent Invertieren</translation>
     </message>
     <message>
-        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="161"/>
+        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="164"/>
         <source>Reset to Shape</source>
         <translation>Auf Form zurücksetzen</translation>
     </message>
     <message>
-        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="169"/>
+        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="172"/>
         <source>Reset to Shape2</source>
         <translation>Auf Form zurücksetzen2</translation>
     </message>
     <message>
-        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="177"/>
+        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="180"/>
         <source>Reset to Pulse</source>
         <translation>Zurücksetzen auf Impuls</translation>
     </message>
     <message>
-        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="185"/>
+        <location filename="widgets/axes-curves/axescurvesprofiles.cpp" line="188"/>
         <source>Reset to no Pulse</source>
         <translation>Zurücksetzen auf keinen Impuls</translation>
     </message>
@@ -558,12 +548,17 @@ Zwei Achsen, die denselben Eingang lesen, bewegen sich gemeinsam.</translation>
         <translation>Offset</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axesextended.ui" line="470"/>
+        <location filename="widgets/axes/axesextended.ui" line="441"/>
+        <source>Input smoothing: 0 = off, higher = more filtering (smoother but slower response).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/axes/axesextended.ui" line="473"/>
         <source>Deadband</source>
         <translation>Totzone</translation>
     </message>
     <message>
-        <location filename="widgets/axes/axesextended.ui" line="480"/>
+        <location filename="widgets/axes/axesextended.ui" line="483"/>
         <source>Dynamic deadband</source>
         <translation>Dynamische Totzone</translation>
     </message>
@@ -695,18 +690,18 @@ Zwei Achsen, die denselben Eingang lesen, bewegen sich gemeinsam.</translation>
         <translation>Pin-Neuzuweisung bestätigen</translation>
     </message>
     <message>
-        <location filename="dialogs/busremapconfirmationdialog.ui" line="44"/>
+        <location filename="dialogs/busremapconfirmationdialog.ui" line="35"/>
         <source>These pins will be reassigned:</source>
         <translation>Diese Pins werden neu zugewiesen:</translation>
     </message>
     <message>
-        <location filename="dialogs/busremapconfirmationdialog.cpp" line="25"/>
+        <location filename="dialogs/busremapconfirmationdialog.cpp" line="27"/>
         <source>Enable %1?</source>
         <oldsource>Enable %1 bus?</oldsource>
         <translation>%1 aktivieren?</translation>
     </message>
     <message numerus="yes">
-        <location filename="dialogs/busremapconfirmationdialog.cpp" line="28"/>
+        <location filename="dialogs/busremapconfirmationdialog.cpp" line="30"/>
         <source>Enabling %1 will reassign %n pin(s) that are already mapped. Their current functions will be cleared.</source>
         <oldsource>Enabling the %1 bus will reassign %n pin(s) that are already mapped. Their current functions will be cleared.</oldsource>
         <translation>
@@ -715,7 +710,7 @@ Zwei Achsen, die denselben Eingang lesen, bewegen sich gemeinsam.</translation>
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="dialogs/busremapconfirmationdialog.cpp" line="59"/>
+        <location filename="dialogs/busremapconfirmationdialog.cpp" line="64"/>
         <source>This will also clear logical button(s) %1, which reference these inputs. Reassign them before saving.</source>
         <translation>
             <numerusform>Dadurch wird auch der logische Button %1 gelöscht, der diese Eingänge referenziert. Weisen Sie ihn vor dem Speichern neu zu.</numerusform>
@@ -723,7 +718,7 @@ Zwei Achsen, die denselben Eingang lesen, bewegen sich gemeinsam.</translation>
         </translation>
     </message>
     <message>
-        <location filename="dialogs/busremapconfirmationdialog.cpp" line="67"/>
+        <location filename="dialogs/busremapconfirmationdialog.cpp" line="72"/>
         <source>Remap &amp;&amp; enable</source>
         <translation>Neu zuweisen &amp;&amp; aktivieren</translation>
     </message>
@@ -792,12 +787,12 @@ Zwei Achsen, die denselben Eingang lesen, bewegen sich gemeinsam.</translation>
         <translation>Physische Tasten</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.cpp" line="236"/>
+        <location filename="widgets/buttons/buttonconfig.cpp" line="237"/>
         <source>Clear All Logical Buttons</source>
         <translation>Alle logischen Tasten löschen</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.cpp" line="237"/>
+        <location filename="widgets/buttons/buttonconfig.cpp" line="238"/>
         <source>Reset every logical button slot back to defaults?
 
 Function returns to Normal, physical button assignments, Source B, shift modifier, operator and per-row timers are all cleared. Pin Config, Axes, Shift Registers and the global Timer values are NOT affected.
@@ -810,47 +805,47 @@ Die Funktion kehrt zu Normal zurück; Zuweisungen physischer Tasten, Quelle B, S
 Dies kann nur durch erneutes Einlesen der Konfiguration vom Gerät rückgängig gemacht werden.</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.cpp" line="275"/>
+        <location filename="widgets/buttons/buttonconfig.cpp" line="276"/>
         <source>Matrix</source>
         <translation>Matrix</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.cpp" line="285"/>
+        <location filename="widgets/buttons/buttonconfig.cpp" line="286"/>
         <source>Shift register %1</source>
         <translation>Schieberegister %1</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.cpp" line="289"/>
+        <location filename="widgets/buttons/buttonconfig.cpp" line="290"/>
         <source>Shift registers</source>
         <translation>Schieberegister</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.cpp" line="299"/>
+        <location filename="widgets/buttons/buttonconfig.cpp" line="300"/>
         <source>Axis %1 to buttons</source>
         <translation>Achse %1 zu Tasten</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.cpp" line="303"/>
+        <location filename="widgets/buttons/buttonconfig.cpp" line="304"/>
         <source>Axis-to-buttons</source>
         <translation>Achse-zu-Tasten</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.cpp" line="306"/>
+        <location filename="widgets/buttons/buttonconfig.cpp" line="307"/>
         <source>Direct</source>
         <translation>Direkt</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.cpp" line="417"/>
+        <location filename="widgets/buttons/buttonconfig.cpp" line="420"/>
         <source>Other</source>
         <translation>Sonstige</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.cpp" line="918"/>
+        <location filename="widgets/buttons/buttonconfig.cpp" line="921"/>
         <source>Logical Buttons Cleared</source>
         <translation>Logische Tasten gelöscht</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonconfig.cpp" line="919"/>
+        <location filename="widgets/buttons/buttonconfig.cpp" line="922"/>
         <source>The connection change removed the input(s) referenced by logical button(s) %1. Their physical button / Source B have been cleared. Please reassign before saving.</source>
         <translation>Die Verbindungsänderung hat die von logischer/n Taste(n) %1 referenzierten Eingänge entfernt. Deren physische Taste / Quelle B wurden gelöscht. Bitte vor dem Speichern neu zuweisen.</translation>
     </message>
@@ -1155,12 +1150,12 @@ Dies kann nur durch erneutes Einlesen der Konfiguration vom Gerät rückgängig 
         <translation>Sequentieller Taster</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonlogical.cpp" line="414"/>
+        <location filename="widgets/buttons/buttonlogical.cpp" line="421"/>
         <source>Disabled: gesture-managed slots are driven by the global tap and double-tap windows.</source>
         <translation>Deaktiviert: gestengesteuerte Slots werden durch die globalen Tipp- und Doppeltipp-Fenster gesteuert.</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonlogical.cpp" line="421"/>
+        <location filename="widgets/buttons/buttonlogical.cpp" line="428"/>
         <source>Minimum-hold floor: guarantees the host sees the logical button high for at least this duration after the gesture fires. Minimum 20 ms.</source>
         <translation>Mindesthaltezeit: garantiert, dass der Host die logische Taste nach dem Auslösen der Geste mindestens für diese Dauer als aktiv sieht. Minimum 20 ms.</translation>
     </message>
@@ -1191,17 +1186,17 @@ Dies kann nur durch erneutes Einlesen der Konfiguration vom Gerät rückgängig 
 <context>
     <name>ConfigToFile</name>
     <message>
-        <location filename="configtofile.cpp" line="374"/>
+        <location filename="configtofile.cpp" line="407"/>
         <source>Firmware version in config file doesn&apos;t match configurator version. Check settings before writing config.</source>
         <translation>Die Firmware-Version in der Konfigurationsdatei stimmt nicht mit der Configurator-Version überein. Prüfen Sie die Einstellungen, bevor Sie die Konfiguration schreiben.</translation>
     </message>
     <message>
-        <location filename="configtofile.cpp" line="375"/>
+        <location filename="configtofile.cpp" line="408"/>
         <source>Pins B8, B9 reset! In this version I2C moved from pins B8, B9 to B10, B11. Check it!</source>
         <translation>Pins B8, B9 zurückgesetzt! In dieser Version wurde I2C von den Pins B8, B9 auf B10, B11 verlegt. Prüfen Sie das!</translation>
     </message>
     <message>
-        <location filename="configtofile.cpp" line="376"/>
+        <location filename="configtofile.cpp" line="409"/>
         <source>Firmware version!</source>
         <translation>Firmware-Version!</translation>
     </message>
@@ -1290,265 +1285,354 @@ Dies kann nur durch erneutes Einlesen der Konfiguration vom Gerät rückgängig 
 <context>
     <name>DfuInstallDialog</name>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="47"/>
-        <source>Install / Reinstall Firmware (USB DFU)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="158"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="187"/>
         <source>Looking for a board in DFU mode…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="160"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="181"/>
         <source>Re-check</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="180"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="205"/>
         <source>Browse…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="190"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="215"/>
         <source>Bootloader (0x08000000):</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="193"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="218"/>
         <source>Application (0x08020000):</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="394"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="660"/>
         <source>Idle.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="233"/>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="450"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="303"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="749"/>
         <source>Close</source>
         <translation type="unfinished">Schließen</translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="249"/>
-        <source>The install helper (freejoyx-flash) is missing from the application folder.</source>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="67"/>
+        <source>Install firmware</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="287"/>
-        <source>Choose bootloader binary</source>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="126"/>
+        <source>Device DFU mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="290"/>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="300"/>
-        <source>Firmware (*.bin);;All files (*)</source>
-        <translation type="unfinished">Firmware (*.bin);;Alle Dateien (*)</translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="297"/>
-        <source>Choose application binary</source>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="156"/>
+        <source>&lt;ol style=&apos;margin-left:-20px;&apos;&gt;&lt;li&gt;Hold &lt;b&gt;BOOT0&lt;/b&gt;.&lt;/li&gt;&lt;li&gt;Tap &lt;b&gt;NRST&lt;/b&gt; (reset), then release it.&lt;/li&gt;&lt;li&gt;Release &lt;b&gt;BOOT0&lt;/b&gt;.&lt;/li&gt;&lt;/ol&gt;The board then re-appears as &lt;i&gt;STM32&amp;nbsp;BOOTLOADER&lt;/i&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="310"/>
-        <source>Sent reboot-to-DFU command; waiting for the board to re-enumerate in DFU mode…</source>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="178"/>
+        <source>Install WinUSB driver</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="192"/>
+        <source>Firmware</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="231"/>
+        <source>Extended Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="240"/>
+        <source>Baseline</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="240"/>
+        <source>Loose</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="240"/>
+        <source>Lax</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="240"/>
+        <source>Custom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="241"/>
+        <source>Baseline = fast/tight (good USB); Loose / Lax add margins for flaky cables or hubs; Custom unlocks the boxes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="244"/>
+        <source>Timing preset:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="253"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="254"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="255"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="257"/>
+        <source> ms</source>
+        <translation type="unfinished">ms</translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="258"/>
+        <source>Inter-block delay:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="259"/>
+        <source>Poll / erase timeout:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="260"/>
+        <source>Transfer timeout:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="261"/>
+        <source>Retries:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="262"/>
+        <source>Post-flash settle:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="293"/>
+        <source>Installing erases the board and restores factory defaults — its current configuration is lost.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="dialogs/dfuinstalldialog.cpp" line="313"/>
+        <source>The install helper (freejoyx-flash) is missing from the application folder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="337"/>
+        <source>Installing firmware</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="350"/>
+        <source>Preparing…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="365"/>
+        <source>Status:</source>
+        <translation type="unfinished">Status:</translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="436"/>
+        <source>Choose bootloader binary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="439"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="449"/>
+        <source>Firmware (*.bin);;All files (*)</source>
+        <translation type="unfinished">Firmware (*.bin);;Alle Dateien (*)</translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="446"/>
+        <source>Choose application binary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="459"/>
+        <source>Sent reboot-to-DFU command; waiting for the board to re-enumerate in DFU mode…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="462"/>
         <source>Rebooting into DFU… if nothing happens, use the BOOT0 method above.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="347"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="489"/>
+        <source>The install helper (freejoyx-flash) is missing from the application folder — cannot re-check.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="493"/>
+        <source>Re-checking for a board in DFU mode…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="509"/>
+        <source>Board found, but its USB driver isn&apos;t installed — click &quot;Install WinUSB driver&quot;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="513"/>
+        <source>No board in DFU mode yet — follow the steps above.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="533"/>
+        <source>Installing the WinUSB driver… approve the Windows prompt if it appears.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="535"/>
+        <source>Installing the WinUSB driver for the DFU device…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="545"/>
+        <source>Driver install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="546"/>
+        <source>The WinUSB driver couldn&apos;t be installed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="549"/>
+        <source>Re-checking for the board now that the driver is installed…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="592"/>
         <source>Missing firmware</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="348"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="593"/>
         <source>Both a bootloader and an application .bin are required, and both files must exist.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="354"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="599"/>
         <source>Erase and reinstall?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="355"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="600"/>
         <source>&lt;p&gt;This erases the chip and writes a fresh bootloader and application over USB DFU.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Any existing configuration on the board will be lost&lt;/b&gt; (the device returns to factory defaults).&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="369"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="621"/>
         <source>Couldn&apos;t start</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="371"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="623"/>
         <source>The install couldn&apos;t be started.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="380"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="636"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="639"/>
         <source>Starting install…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="387"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="653"/>
         <source>Preparing USB driver…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="388"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="654"/>
         <source>Erasing…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="389"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="655"/>
         <source>Writing bootloader…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="390"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="656"/>
         <source>Writing application…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="391"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="657"/>
         <source>Verifying…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="392"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="658"/>
         <source>Done.</source>
         <translation type="unfinished">Fertig.</translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="393"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="659"/>
         <source>Failed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="347"/>
-        <source>Missing firmware</source>
-        <oldsource>✅ Firmware installed.</oldsource>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="89"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="111"/>
         <source>F411 (Black Pill)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="91"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="113"/>
         <source>Connected: &lt;b&gt;%1&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="107"/>
-        <source>Writes the FreeJoyX &lt;b&gt;bootloader and application&lt;/b&gt; to an &lt;b&gt;F411 (Black Pill)&lt;/b&gt; over the chip&apos;s built-in USB DFU — no ST-Link or STM32CubeProgrammer. Works on a blank, configured, or bricked board.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="115"/>
-        <source>1.  Put the board in DFU mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="131"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="142"/>
         <source>Reboot it straight into DFU:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="133"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="144"/>
         <source>Reboot into DFU</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="145"/>
-        <source>&lt;b&gt;To enter DFU manually:&lt;/b&gt;&lt;ol style=&apos;margin-left:-20px;&apos;&gt;&lt;li&gt;Hold &lt;b&gt;BOOT0&lt;/b&gt;.&lt;/li&gt;&lt;li&gt;Tap &lt;b&gt;NRST&lt;/b&gt; (reset), then release it.&lt;/li&gt;&lt;li&gt;Release &lt;b&gt;BOOT0&lt;/b&gt;.&lt;/li&gt;&lt;/ol&gt;(Or hold BOOT0 while plugging in USB.) The board then re-appears as &lt;i&gt;STM32&amp;nbsp;BOOTLOADER&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="169"/>
-        <source>2.  Firmware to write (F411)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="179"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="204"/>
         <source>Browse for a .bin…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="199"/>
-        <source>Ready.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="207"/>
-        <source>Log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="223"/>
-        <source>⚠  Installing erases the board and restores factory defaults — its current configuration is lost.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="230"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="299"/>
         <source>Install</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="331"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="506"/>
         <source>Board detected in DFU mode — ready to write.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="334"/>
-        <source>No board in DFU mode yet — follow step 1 above.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="422"/>
-        <source>Firmware installed.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="424"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="712"/>
         <source>Install complete. Unplug/replug to use the board; reopen this dialog to install again.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="427"/>
-        <source>Done</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="428"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="707"/>
         <source>Firmware installed. Unplug and replug the board to start using it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="431"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="715"/>
         <source>Install failed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="433"/>
-        <source>Install failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="434"/>
-        <source>The install did not complete.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="dialogs/dfuinstalldialog.cpp" line="450"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="638"/>
+        <location filename="dialogs/dfuinstalldialog.cpp" line="749"/>
         <source>Cancel</source>
         <translation type="unfinished">Abbrechen</translation>
     </message>
@@ -1556,42 +1640,126 @@ Dies kann nur durch erneutes Einlesen der Konfiguration vom Gerät rückgängig 
 <context>
     <name>DfuInstallSession</name>
     <message>
-        <location filename="flash/dfuinstallsession.cpp" line="100"/>
+        <location filename="flash/dfuinstallsession.cpp" line="119"/>
+        <location filename="flash/dfuinstallsession.cpp" line="155"/>
         <source>Install helper (freejoyx-flash) is missing from the application folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="flash/dfuinstallsession.cpp" line="105"/>
+        <location filename="flash/dfuinstallsession.cpp" line="160"/>
         <source>Bootloader and application binaries are both required.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="flash/dfuinstallsession.cpp" line="113"/>
+        <location filename="flash/dfuinstallsession.cpp" line="173"/>
         <source>Preparing USB driver...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="flash/dfuinstallsession.cpp" line="207"/>
+        <location filename="flash/dfuinstallsession.cpp" line="281"/>
+        <source>Verify: %1 region read-back matches.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/dfuinstallsession.cpp" line="283"/>
+        <source>Verify: %1 region read-back MISMATCH.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/dfuinstallsession.cpp" line="321"/>
+        <source>Re-check: helper crashed before reporting.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/dfuinstallsession.cpp" line="323"/>
+        <source>Re-check: helper exited with code %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/dfuinstallsession.cpp" line="327"/>
+        <source>Re-check: board present in DFU mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/dfuinstallsession.cpp" line="329"/>
+        <source>Re-check: board found, but its USB driver needs installing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/dfuinstallsession.cpp" line="332"/>
+        <source>Re-check: no board in DFU mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/dfuinstallsession.cpp" line="349"/>
+        <source>The driver install stopped unexpectedly.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/dfuinstallsession.cpp" line="350"/>
+        <source>The driver install exited with code %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/dfuinstallsession.cpp" line="352"/>
+        <source>WinUSB driver step completed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/dfuinstallsession.cpp" line="371"/>
+        <source>bootloader</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/dfuinstallsession.cpp" line="372"/>
+        <source>application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/dfuinstallsession.cpp" line="373"/>
+        <source>Write completed but read-back verification failed for the %1 region. The flash may be corrupt -- re-run the install.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/dfuinstallsession.cpp" line="376"/>
+        <source> and </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/dfuinstallsession.cpp" line="384"/>
         <source>Firmware installed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="flash/dfuinstallsession.cpp" line="208"/>
+        <location filename="flash/dfuinstallsession.cpp" line="385"/>
         <source>Bootloader and application written successfully. Unplug and replug the board to start using it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="flash/dfuinstallsession.cpp" line="217"/>
+        <location filename="flash/dfuinstallsession.cpp" line="394"/>
         <source>The install helper stopped unexpectedly.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="flash/dfuinstallsession.cpp" line="218"/>
+        <location filename="flash/dfuinstallsession.cpp" line="395"/>
         <source>The install helper exited with code %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="flash/dfuinstallsession.cpp" line="236"/>
+        <location filename="flash/dfuinstallsession.cpp" line="414"/>
+        <location filename="flash/dfuinstallsession.cpp" line="424"/>
+        <source>Couldn&apos;t launch the install helper (%1): %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/dfuinstallsession.cpp" line="416"/>
+        <location filename="flash/dfuinstallsession.cpp" line="426"/>
+        <source>unknown error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="flash/dfuinstallsession.cpp" line="430"/>
+        <location filename="flash/dfuinstallsession.cpp" line="433"/>
         <source>Couldn&apos;t launch the install helper (freejoyx-flash).</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1650,7 +1818,7 @@ Dies kann nur durch erneutes Einlesen der Konfiguration vom Gerät rückgängig 
         <translation>Schnelle Encoder</translation>
     </message>
     <message>
-        <location filename="widgets/encoders/encodersconfig.ui" line="92"/>
+        <location filename="widgets/encoders/encodersconfig.ui" line="89"/>
         <source>Slow encoders</source>
         <translation>Langsame Drehgeber</translation>
     </message>
@@ -1709,150 +1877,174 @@ Dies kann nur durch erneutes Einlesen der Konfiguration vom Gerät rückgängig 
     <name>FlashConfirmationDialog</name>
     <message>
         <location filename="dialogs/flashconfirmationdialog.ui" line="14"/>
-        <location filename="dialogs/flashconfirmationdialog.ui" line="28"/>
-        <source>Confirm flash</source>
-        <translation>Flashen bestätigen</translation>
+        <source>Upgrade firmware</source>
+        <translation type="unfinished">Firmware aktualisieren</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.ui" line="38"/>
+        <location filename="dialogs/flashconfirmationdialog.ui" line="28"/>
         <source>Device</source>
         <translation>Gerät</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.ui" line="43"/>
+        <location filename="dialogs/flashconfirmationdialog.ui" line="33"/>
         <source>Name:</source>
         <translation>Name:</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.ui" line="51"/>
+        <location filename="dialogs/flashconfirmationdialog.ui" line="41"/>
         <source>Serial:</source>
         <translation>Seriennummer:</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.ui" line="59"/>
-        <location filename="dialogs/flashconfirmationdialog.ui" line="92"/>
+        <location filename="dialogs/flashconfirmationdialog.ui" line="49"/>
+        <location filename="dialogs/flashconfirmationdialog.ui" line="111"/>
         <source>Board:</source>
         <translation>Platine:</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.ui" line="67"/>
-        <source>Current firmware:</source>
-        <translation>Aktuelle Firmware:</translation>
+        <location filename="dialogs/flashconfirmationdialog.ui" line="57"/>
+        <source>Firmware:</source>
+        <translation type="unfinished">Firmware</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.ui" line="79"/>
-        <source>Target firmware</source>
-        <translation>Ziel-Firmware</translation>
+        <location filename="dialogs/flashconfirmationdialog.ui" line="69"/>
+        <source>Firmware</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.ui" line="84"/>
+        <location filename="dialogs/flashconfirmationdialog.ui" line="94"/>
+        <source>Browse…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/flashconfirmationdialog.ui" line="103"/>
         <source>File:</source>
         <translation>Datei:</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.ui" line="100"/>
+        <location filename="dialogs/flashconfirmationdialog.ui" line="119"/>
         <source>Version:</source>
         <translation>Version:</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.ui" line="120"/>
-        <source>The configurator will:</source>
-        <translation>Der Configurator wird:</translation>
-    </message>
-    <message>
-        <location filename="dialogs/flashconfirmationdialog.ui" line="133"/>
-        <source>Approximately 30 seconds. Do not unplug the device during this process.</source>
-        <translation>Etwa 30 Sekunden. Trennen Sie das Gerät während dieses Vorgangs nicht.</translation>
-    </message>
-    <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="48"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="87"/>
         <source>Flash</source>
         <translation>Flashen</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="151"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="104"/>
+        <source>Choose a firmware source above (or Browse for a .bin).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="227"/>
+        <source>F103 (Blue Pill)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="228"/>
+        <source>F411 (Black Pill)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="229"/>
+        <source>Other</source>
+        <translation type="unfinished">Sonstige</translation>
+    </message>
+    <message>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="278"/>
+        <source> (in bootloader)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="280"/>
         <source>(in bootloader -- version unknown)</source>
         <translation>(im Bootloader – Version unbekannt)</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="160"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="374"/>
+        <source>&lt;b&gt;Switching from FreeJoy to FreeJoyX.&lt;/b&gt; This is a different firmware project, not an update of FreeJoy -- the version number will look like it goes backwards (e.g. v1.7.x to 0.1.x), which is expected, not a downgrade. Your existing button/axis mappings carry forward where the wire format matches; review your configuration after flashing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="421"/>
         <source>Legacy binary (no metadata)</source>
         <translation>Legacy-Binärdatei (keine Metadaten)</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="172"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="440"/>
         <source>Same generation -- your configuration will be preserved.</source>
         <translation>Gleiche Generation – Ihre Konfiguration bleibt erhalten.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="176"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="444"/>
         <source>Upgrade -- your configuration will be migrated to the new wire format.</source>
         <translation>Upgrade – Ihre Konfiguration wird in das neue Wire-Format migriert.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="180"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="448"/>
         <source>Upgrade -- no migrator available for your current firmware. Your configuration will be saved to disk but the device will factory-reset.</source>
         <translation>Upgrade – für Ihre aktuelle Firmware ist kein Migrator verfügbar. Ihre Konfiguration wird auf der Festplatte gespeichert, das Gerät wird jedoch auf Werkseinstellungen zurückgesetzt.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="186"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="454"/>
         <source>Downgrade -- the target firmware is older than the current. Your configuration will be saved to disk but cannot be auto-restored; the device will factory-reset.</source>
         <translation>Downgrade – die Ziel-Firmware ist älter als die aktuelle. Ihre Konfiguration wird auf der Festplatte gespeichert, kann aber nicht automatisch wiederhergestellt werden; das Gerät wird auf Werkseinstellungen zurückgesetzt.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="192"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="460"/>
         <source>Recovery flash -- the device is in bootloader mode. No backup is possible; the device will factory-reset.</source>
         <translation>Wiederherstellungs-Flash – das Gerät befindet sich im Bootloader-Modus. Kein Backup möglich; das Gerät wird auf Werkseinstellungen zurückgesetzt.</translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="197"/>
-        <source>Incompatible -- the selected firmware does not match this device&apos;s board type. Flash refused.</source>
-        <translation>Inkompatibel – die ausgewählte Firmware passt nicht zum Platinentyp dieses Geräts. Flashen abgelehnt.</translation>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="465"/>
+        <source>Incompatible -- firmware is for a different board. Flash refused.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="213"/>
-        <source>%1. Save a backup of the current configuration to disk.</source>
-        <translation>%1. Ein Backup der aktuellen Konfiguration auf der Festplatte speichern.</translation>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="502"/>
+        <source>Save a backup of the current configuration to disk.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="216"/>
-        <source>%1. Reboot the device into bootloader mode.</source>
-        <translation>%1. Gerät in den Bootloader-Modus neu starten.</translation>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="504"/>
+        <source>Reboot the device into bootloader mode.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="217"/>
-        <source>%1. Transfer the new firmware (~%2 bytes).</source>
-        <translation>%1. Die neue Firmware übertragen (~%2 Bytes).</translation>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="505"/>
+        <source>Transfer the new firmware (~%1 bytes).</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="219"/>
-        <source>%1. Wait for the device to restart and re-enumerate.</source>
-        <translation>%1. Warten, bis das Gerät neu startet und sich neu anmeldet.</translation>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="507"/>
+        <source>Wait for the device to restart and re-enumerate.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="222"/>
-        <source>%1. Write the (migrated) configuration back to the device.</source>
-        <translation>%1. Die (migrierte) Konfiguration zurück auf das Gerät schreiben.</translation>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="509"/>
+        <source>Write the (migrated) configuration back to the device.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="224"/>
-        <source>%1. Leave the device factory-reset -- restore the backup manually from the saved file if needed.</source>
-        <translation>%1. Gerät auf Werkseinstellungen belassen – stellen Sie das Backup bei Bedarf manuell aus der gespeicherten Datei wieder her.</translation>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="511"/>
+        <source>Leave the device factory-reset -- restore the backup manually from the saved file if needed.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="228"/>
-        <source>Pick a firmware binary that matches the device&apos;s board, then try again.</source>
-        <translation>Wählen Sie eine Firmware-Binärdatei, die zur Platine des Geräts passt, und versuchen Sie es erneut.</translation>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="523"/>
+        <source>Upgrade process:</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="248"/>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="525"/>
+        <source>Approximately 30 seconds -- do not unplug the device during this process.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="dialogs/flashconfirmationdialog.cpp" line="282"/>
         <source>(unknown)</source>
         <translation>(unbekannt)</translation>
-    </message>
-    <message>
-        <location filename="dialogs/flashconfirmationdialog.cpp" line="264"/>
-        <source>Unknown</source>
-        <translation>Unbekannt</translation>
     </message>
 </context>
 <context>
@@ -2145,7 +2337,6 @@ Stecken Sie das Gerät ab und wieder an und wiederholen Sie das Flashen. Wenn si
     </message>
     <message>
         <location filename="widgets/adv-settings/flasher.ui" line="216"/>
-        <location filename="widgets/adv-settings/flasher.cpp" line="512"/>
         <source>Flash</source>
         <translation>Flashen</translation>
     </message>
@@ -2190,154 +2381,99 @@ Stecken Sie das Gerät ab und wieder an und wiederholen Sie das Flashen. Wenn si
         <translation>Abbrechen</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="180"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="228"/>
         <source>Connected flasher: </source>
         <translation>Verbundener Flasher: </translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="225"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="261"/>
         <source> (download)</source>
         <translation> (herunterladen)</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="250"/>
-        <source>[Browsed] %1</source>
-        <translation>[Durchsucht] %1</translation>
-    </message>
-    <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="268"/>
-        <source>[Build] %1</source>
-        <translation>[Build] %1</translation>
-    </message>
-    <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="291"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="314"/>
         <source>[Local] %1</source>
         <translation>[Lokal] %1</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="347"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="414"/>
         <source>Open firmware (build outputs) folder</source>
         <translation>Firmware-Ordner (Build-Ausgaben) öffnen</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="349"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="416"/>
         <source>Open recovery (fallback builds) folder</source>
         <translation>Recovery-Ordner (Fallback-Builds) öffnen</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="352"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="419"/>
         <source>Refresh from GitHub</source>
         <translation>Von GitHub aktualisieren</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="357"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="424"/>
         <source>Clear [Browsed] firmware history</source>
         <translation>[Durchsucht]-Firmware-Verlauf löschen</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="404"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="528"/>
+        <source>Couldn&apos;t download the firmware from GitHub. Check your connection and try again, or pick another source.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/adv-settings/flasher.cpp" line="568"/>
+        <source>Downloading %1…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/adv-settings/flasher.cpp" line="574"/>
+        <source>This firmware source couldn&apos;t be resolved. Pick another, or Browse for a .bin.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/adv-settings/flasher.cpp" line="595"/>
         <source>Choose firmware binary</source>
         <translation>Firmware-Binärdatei auswählen</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="406"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="596"/>
         <source>Firmware (*.bin);;All files (*)</source>
         <translation>Firmware (*.bin);;Alle Dateien (*)</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="441"/>
-        <source>Pick a firmware source</source>
-        <translation>Firmware-Quelle auswählen</translation>
-    </message>
-    <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="442"/>
-        <source>Select a firmware build from the Source dropdown, or click &lt;b&gt;Browse...&lt;/b&gt; to pick a .bin from disk.</source>
-        <translation>Wählen Sie einen Firmware-Build aus dem Quell-Dropdown oder klicken Sie auf &lt;b&gt;Durchsuchen...&lt;/b&gt;, um eine .bin von der Festplatte zu wählen.</translation>
-    </message>
-    <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="479"/>
-        <source>Download and flash this firmware?</source>
-        <translation>Diese Firmware herunterladen und flashen?</translation>
-    </message>
-    <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="480"/>
-        <source>&lt;p&gt;The selected firmware isn&apos;t downloaded yet.&lt;/p&gt;&lt;p&gt;Source: &lt;b&gt;%1&lt;/b&gt;&lt;br&gt;Tag: &lt;b&gt;%2&lt;/b&gt;&lt;br&gt;Asset: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Die ausgewählte Firmware ist noch nicht heruntergeladen.&lt;/p&gt;&lt;p&gt;Quelle: &lt;b&gt;%1&lt;/b&gt;&lt;br&gt;Tag: &lt;b&gt;%2&lt;/b&gt;&lt;br&gt;Asset: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Fortfahren?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="492"/>
-        <source>Downloading...</source>
-        <translation>Wird heruntergeladen...</translation>
-    </message>
-    <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="497"/>
-        <source>Firmware unavailable</source>
-        <translation>Firmware nicht verfügbar</translation>
-    </message>
-    <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="498"/>
-        <source>The selected firmware source couldn&apos;t be resolved to a file. Try refreshing the source list or pick a different entry.</source>
-        <translation>Die ausgewählte Firmware-Quelle konnte keiner Datei zugeordnet werden. Aktualisieren Sie die Quellliste oder wählen Sie einen anderen Eintrag.</translation>
-    </message>
-    <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="516"/>
-        <source>Download failed</source>
-        <translation>Download fehlgeschlagen</translation>
-    </message>
-    <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="517"/>
-        <source>Couldn&apos;t download the selected firmware from GitHub. Check your internet connection and try again.</source>
-        <translation>Die ausgewählte Firmware konnte nicht von GitHub heruntergeladen werden. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.</translation>
-    </message>
-    <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="533"/>
-        <source>Couldn&apos;t open firmware</source>
-        <translation>Firmware konnte nicht geöffnet werden</translation>
-    </message>
-    <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="534"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="635"/>
         <source>Couldn&apos;t read the firmware file:
-%1
-
-Check that the file exists and the configurator has permission to read it.</source>
-        <translation>Die Firmware-Datei konnte nicht gelesen werden:
-%1
-
-Prüfen Sie, ob die Datei existiert und der Configurator die Leseberechtigung hat.</translation>
+%1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="571"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="655"/>
         <source>[RECOVERY] %1</source>
         <translation>[RECOVERY] %1</translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="682"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="766"/>
         <source>(detected)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="688"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="772"/>
         <source>Legacy binary</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="701"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="785"/>
         <source>This firmware is for a different board than the connected device.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/adv-settings/flasher.cpp" line="671"/>
+        <location filename="widgets/adv-settings/flasher.cpp" line="755"/>
         <source>Unknown</source>
         <translation>Unbekannt</translation>
     </message>
 </context>
 <context>
     <name>LED</name>
-    <message>
-        <location filename="widgets/led/led.ui" line="90"/>
-        <source>External</source>
-        <translation>Extern</translation>
-    </message>
     <message>
         <location filename="widgets/led/led.h" line="54"/>
         <source>Normal</source>
@@ -2372,6 +2508,11 @@ Prüfen Sie, ob die Datei existiert und der Configurator die Leseberechtigung ha
         <location filename="widgets/led/led.h" line="64"/>
         <source>Timer 4</source>
         <translation type="unfinished">Timer 4</translation>
+    </message>
+    <message>
+        <location filename="widgets/led/led.ui" line="90"/>
+        <source>LED controlled by host software (e.g. SimHub) instead of a button.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2411,52 +2552,52 @@ Prüfen Sie, ob die Datei existiert und der Configurator die Leseberechtigung ha
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/led/ledconfig.ui" line="423"/>
-        <source>Source</source>
-        <translation>Steuerung</translation>
-    </message>
-    <message>
-        <location filename="widgets/led/ledconfig.ui" line="445"/>
+        <location filename="widgets/led/ledconfig.ui" line="448"/>
         <source>Input #</source>
         <translation>Eingang #</translation>
     </message>
     <message>
-        <location filename="widgets/led/ledconfig.ui" line="465"/>
+        <location filename="widgets/led/ledconfig.ui" line="468"/>
         <source>Timer</source>
         <translation>Timer</translation>
     </message>
     <message>
-        <location filename="widgets/led/ledconfig.ui" line="583"/>
-        <location filename="widgets/led/ledconfig.ui" line="668"/>
-        <location filename="widgets/led/ledconfig.ui" line="753"/>
-        <location filename="widgets/led/ledconfig.ui" line="838"/>
+        <location filename="widgets/led/ledconfig.ui" line="520"/>
+        <source>Timers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/led/ledconfig.ui" line="584"/>
+        <location filename="widgets/led/ledconfig.ui" line="663"/>
+        <location filename="widgets/led/ledconfig.ui" line="742"/>
+        <location filename="widgets/led/ledconfig.ui" line="821"/>
         <source> ms</source>
         <translation type="unfinished">ms</translation>
     </message>
     <message>
-        <location filename="widgets/led/ledconfig.ui" line="593"/>
+        <location filename="widgets/led/ledconfig.ui" line="594"/>
         <source>Timer 1</source>
         <translation type="unfinished">Timer 1</translation>
     </message>
     <message>
-        <location filename="widgets/led/ledconfig.ui" line="678"/>
+        <location filename="widgets/led/ledconfig.ui" line="673"/>
         <source>Timer 2</source>
         <translation type="unfinished">Timer 2</translation>
     </message>
     <message>
-        <location filename="widgets/led/ledconfig.ui" line="763"/>
+        <location filename="widgets/led/ledconfig.ui" line="752"/>
         <source>Timer 3</source>
         <translation type="unfinished">Timer 3</translation>
     </message>
     <message>
-        <location filename="widgets/led/ledconfig.ui" line="848"/>
+        <location filename="widgets/led/ledconfig.ui" line="831"/>
         <source>Timer 4</source>
         <translation type="unfinished">Timer 4</translation>
     </message>
     <message>
-        <location filename="widgets/led/ledconfig.ui" line="879"/>
-        <source>RGB LEDs - pin A10</source>
-        <translation>RGB-LEDs – Pin A10</translation>
+        <location filename="widgets/led/ledconfig.ui" line="863"/>
+        <source>RGB LEDs</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="widgets/led/ledconfig.ui" line="159"/>
@@ -2469,7 +2610,17 @@ Prüfen Sie, ob die Datei existiert und der Configurator die Leseberechtigung ha
         <translation>Pin PB4</translation>
     </message>
     <message>
-        <location filename="widgets/led/ledconfig.ui" line="455"/>
+        <location filename="widgets/led/ledconfig.ui" line="423"/>
+        <source>Host = LED driven by host software (e.g. SimHub). Unchecked = driven by the button below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/led/ledconfig.ui" line="426"/>
+        <source>Host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/led/ledconfig.ui" line="458"/>
         <source>Function</source>
         <translation>Funktion</translation>
     </message>
@@ -2491,6 +2642,11 @@ Prüfen Sie, ob die Datei existiert und der Configurator die Leseberechtigung ha
         <source>Logical button #</source>
         <oldsource>Logical button №</oldsource>
         <translation>Logische Taste #</translation>
+    </message>
+    <message>
+        <location filename="widgets/led_rgb/ledfunction.ui" line="64"/>
+        <source>Logical button whose state drives this LED.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2617,8 +2773,9 @@ Prüfen Sie, ob die Datei existiert und der Configurator die Leseberechtigung ha
     </message>
     <message>
         <location filename="mainwindow.ui" line="317"/>
-        <source>Version</source>
-        <translation>Version</translation>
+        <source>Version:</source>
+        <oldsource>Version</oldsource>
+        <translation type="unfinished">Version</translation>
     </message>
     <message>
         <location filename="mainwindow.ui" line="317"/>
@@ -2633,17 +2790,20 @@ Prüfen Sie, ob die Datei existiert und der Configurator die Leseberechtigung ha
     </message>
     <message>
         <location filename="mainwindow.ui" line="321"/>
-        <source>Serial</source>
-        <translation>Seriennr.</translation>
+        <source>Serial:</source>
+        <oldsource>Serial</oldsource>
+        <translation type="unfinished">Seriennr.</translation>
     </message>
     <message>
         <location filename="mainwindow.ui" line="323"/>
-        <source>Board</source>
-        <translation>Platine</translation>
+        <source>Board:</source>
+        <oldsource>Board</oldsource>
+        <translation type="unfinished">Platine</translation>
     </message>
     <message>
         <location filename="mainwindow.ui" line="325"/>
-        <source>Packets</source>
+        <source>Packets:</source>
+        <oldsource>Packets</oldsource>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2654,7 +2814,8 @@ Prüfen Sie, ob die Datei existiert und der Configurator die Leseberechtigung ha
     </message>
     <message>
         <location filename="mainwindow.ui" line="327"/>
-        <source>Rate</source>
+        <source>Rate:</source>
+        <oldsource>Rate</oldsource>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2699,6 +2860,16 @@ Prüfen Sie, ob die Datei existiert und der Configurator die Leseberechtigung ha
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="mainwindow.ui" line="433"/>
+        <source>Theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.ui" line="448"/>
+        <source>Toggle light/dark theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="mainwindow.ui" line="336"/>
         <source>Read config from Device</source>
         <translation>Konfiguration vom Gerät lesen</translation>
@@ -2720,49 +2891,51 @@ Prüfen Sie, ob die Datei existiert und der Configurator die Leseberechtigung ha
     </message>
     <message>
         <location filename="mainwindow.ui" line="411"/>
-        <source>Firmware</source>
-        <translation>Firmware</translation>
+        <source>Firmware:</source>
+        <oldsource>Firmware</oldsource>
+        <translation type="unfinished">Firmware</translation>
     </message>
     <message>
         <location filename="mainwindow.ui" line="419"/>
-        <location filename="mainwindow.cpp" line="2707"/>
+        <location filename="mainwindow.cpp" line="2757"/>
         <source>Show debug</source>
         <translation>Fehlersuche anzeigen</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="473"/>
+        <location filename="mainwindow.cpp" line="97"/>
+        <location filename="mainwindow.cpp" line="491"/>
         <source>Disconnected</source>
         <translation>Getrennt</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="496"/>
-        <location filename="mainwindow.cpp" line="785"/>
-        <location filename="mainwindow.cpp" line="1659"/>
+        <location filename="mainwindow.cpp" line="514"/>
+        <location filename="mainwindow.cpp" line="807"/>
+        <location filename="mainwindow.cpp" line="1737"/>
         <source>Connected</source>
         <translation>Verbunden</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="777"/>
+        <location filename="mainwindow.cpp" line="799"/>
         <source>Incompatible Firmware</source>
         <translation>Inkompatible Firmware</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="112"/>
+        <location filename="mainwindow.cpp" line="130"/>
         <source>%1 Configurator %2</source>
         <translation>%1 Configurator %2</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="207"/>
+        <location filename="mainwindow.cpp" line="223"/>
         <source>— select device —</source>
         <translation>— Gerät auswählen —</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="273"/>
+        <location filename="mainwindow.cpp" line="289"/>
         <source>Pins reassigned</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="274"/>
+        <location filename="mainwindow.cpp" line="290"/>
         <source>Adding that device took over pins that already had roles:
 
 %1
@@ -2771,809 +2944,794 @@ Those inputs are no longer mapped where they were — check your wiring and re-a
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="470"/>
+        <location filename="mainwindow.cpp" line="488"/>
         <source>Restarting...</source>
         <translation>Neustart...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="634"/>
-        <source>Unknown (%1)</source>
-        <translation>Unbekannt (%1)</translation>
-    </message>
-    <message>
-        <location filename="mainwindow.cpp" line="713"/>
+        <location filename="mainwindow.cpp" line="728"/>
         <source>LEDs are not yet supported on Black Pill (F411). Coming in a future update.</source>
         <translation>LEDs werden auf dem Black Pill (F411) noch nicht unterstützt. Kommt in einem zukünftigen Update.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="772"/>
+        <location filename="mainwindow.cpp" line="794"/>
         <source>Legacy</source>
         <translation>Legacy</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="875"/>
+        <location filename="mainwindow.cpp" line="897"/>
         <source>No device detected</source>
         <translation>Kein Gerät erkannt</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="876"/>
+        <location filename="mainwindow.cpp" line="898"/>
         <source>Connect a FreeJoy device before using the Flash button. If the device is stuck in DFU mode without enumerating, recover via STM32 Cube Programmer + ST-Link.</source>
         <translation>Verbinden Sie ein FreeJoy-Gerät, bevor Sie die Flash-Schaltfläche verwenden. Wenn das Gerät im DFU-Modus feststeckt und sich nicht anmeldet, stellen Sie es über STM32 Cube Programmer + ST-Link wieder her.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1100"/>
+        <location filename="mainwindow.cpp" line="1122"/>
         <source>WARNING: device reports firmware v0x%1 but the flashed binary&apos;s footer says v0x%2. Re-flash recommended.</source>
         <translation>WARNUNG: Das Gerät meldet Firmware v0x%1, aber der Footer der geflashten Binärdatei gibt v0x%2 an. Erneutes Flashen empfohlen.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1115"/>
+        <location filename="mainwindow.cpp" line="1137"/>
         <source>Backup saved to %1</source>
         <translation>Backup gespeichert unter %1</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1392"/>
+        <location filename="mainwindow.cpp" line="1427"/>
         <source>Pending changes. The device still runs its previously-flashed config; the live press preview reflects that, not your edits. Click to write.</source>
         <translation>Ausstehende Änderungen. Das Gerät führt noch seine zuvor geflashte Konfiguration aus; die Live-Tastenvorschau spiegelt diese wider, nicht Ihre Änderungen. Zum Schreiben klicken.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1430"/>
+        <location filename="mainwindow.cpp" line="1468"/>
         <source>Load device config?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1431"/>
+        <location filename="mainwindow.cpp" line="1469"/>
         <source>This device has its own saved configuration.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1432"/>
+        <location filename="mainwindow.cpp" line="1470"/>
         <source>You have unsaved changes in the configurator. Load the device&apos;s configuration (discarding your changes), or keep your current edits?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1436"/>
+        <location filename="mainwindow.cpp" line="1474"/>
         <source>Load device config</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1437"/>
+        <location filename="mainwindow.cpp" line="1475"/>
         <source>Keep my edits</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1461"/>
+        <location filename="mainwindow.cpp" line="1499"/>
         <source>Select a config…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1533"/>
-        <source>&lt;p&gt;This device is running upstream FreeJoy firmware (%1).&lt;/p&gt;&lt;p&gt;The configurator has read its config and translated it into the current shape. Your existing pin assignments, axes, buttons, shift registers, encoders and LED settings are preserved. New-since-then features (logical buttons, gestures, RGB) carry default values.&lt;/p&gt;&lt;p&gt;To finish upgrading the device:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Review the imported config in the tabs above. &lt;b&gt;Save it to a file&lt;/b&gt; as a backup.&lt;/li&gt;&lt;li&gt;Flash %2 firmware via &lt;i&gt;Advanced Settings &amp;rarr; Firmware flasher&lt;/i&gt;.&lt;/li&gt;&lt;li&gt;After the device reconnects, click &lt;b&gt;Write config to device&lt;/b&gt; to push the migrated config.&lt;/li&gt;&lt;/ol&gt;</source>
-        <translation>&lt;p&gt;Dieses Gerät führt die Upstream-FreeJoy-Firmware (%1) aus.&lt;/p&gt;&lt;p&gt;Der Configurator hat dessen Konfiguration gelesen und in die aktuelle Form übersetzt. Ihre vorhandenen Pin-Zuordnungen, Achsen, Tasten, Schieberegister, Encoder und LED-Einstellungen bleiben erhalten. Seither neue Funktionen (logische Tasten, Gesten, RGB) erhalten Standardwerte.&lt;/p&gt;&lt;p&gt;So schließen Sie das Upgrade des Geräts ab:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Überprüfen Sie die importierte Konfiguration in den Tabs oben. &lt;b&gt;Speichern Sie sie als Datei&lt;/b&gt; als Backup.&lt;/li&gt;&lt;li&gt;Flashen Sie die %2-Firmware über &lt;i&gt;Erweiterte Einstellungen &amp;rarr; Firmware-Flasher&lt;/i&gt;.&lt;/li&gt;&lt;li&gt;Klicken Sie nach dem erneuten Verbinden des Geräts auf &lt;b&gt;Konfiguration auf Gerät schreiben&lt;/b&gt;, um die migrierte Konfiguration zu übertragen.&lt;/li&gt;&lt;/ol&gt;</translation>
+        <location filename="mainwindow.cpp" line="1571"/>
+        <source>&lt;p&gt;This device is running upstream FreeJoy firmware (%1).&lt;/p&gt;&lt;p&gt;The configurator has read its config and translated it into the current %2 shape. Your existing pin assignments, axes, buttons, shift registers, encoders and LED settings are preserved. Newer features (logical buttons, gestures, RGB) carry default values.&lt;/p&gt;&lt;p&gt;To finish upgrading the device:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Optionally click &lt;b&gt;Save config to file&lt;/b&gt; to keep a backup of the imported config.&lt;/li&gt;&lt;li&gt;Click &lt;b&gt;Upgrade Firmware&lt;/b&gt; on the device panel and pick the latest %2 firmware. The upgrade backs up the device, flashes, and writes your migrated config back automatically.&lt;/li&gt;&lt;/ol&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1550"/>
+        <location filename="mainwindow.cpp" line="1592"/>
         <source>Legacy config imported</source>
         <translation>Legacy-Konfiguration importiert</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1583"/>
+        <location filename="mainwindow.cpp" line="1661"/>
         <source>Backup failed</source>
         <translation>Sicherung fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1584"/>
+        <location filename="mainwindow.cpp" line="1662"/>
         <source>&lt;p&gt;Could not read the device&apos;s current config. Proceeding without a backup means a failed flash could leave the device with default settings (you&apos;d lose your current mappings).&lt;/p&gt;&lt;p&gt;Continue with flash anyway?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Die aktuelle Konfiguration des Geräts konnte nicht gelesen werden. Ohne Backup fortzufahren bedeutet, dass ein fehlgeschlagenes Flashen das Gerät mit Standardeinstellungen zurücklassen könnte (Sie würden Ihre aktuellen Zuordnungen verlieren).&lt;/p&gt;&lt;p&gt;Trotzdem mit dem Flashen fortfahren?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1609"/>
+        <location filename="mainwindow.cpp" line="1687"/>
         <source>Backup OK, writing...</source>
         <translation>Backup OK, wird geschrieben...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1612"/>
+        <location filename="mainwindow.cpp" line="1690"/>
         <source>Pre-write backup failed</source>
         <translation>Backup vor dem Schreiben fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1613"/>
+        <location filename="mainwindow.cpp" line="1691"/>
         <source>&lt;p&gt;Could not read the device&apos;s current config to back it up before writing.&lt;/p&gt;&lt;p&gt;Continue with the write anyway? If the new config has issues, you&apos;ll have no automatic rollback path -- only configs you previously saved manually.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Die aktuelle Konfiguration des Geräts konnte vor dem Schreiben nicht zur Sicherung gelesen werden.&lt;/p&gt;&lt;p&gt;Trotzdem mit dem Schreiben fortfahren? Wenn die neue Konfiguration Probleme hat, gibt es keinen automatischen Rückweg – nur zuvor manuell gespeicherte Konfigurationen.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1661"/>
+        <location filename="mainwindow.cpp" line="1739"/>
         <source>Received</source>
         <translation>Empfangen</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1671"/>
-        <location filename="mainwindow.cpp" line="1713"/>
+        <location filename="mainwindow.cpp" line="1749"/>
+        <location filename="mainwindow.cpp" line="1791"/>
         <source>Error</source>
         <translation>Fehler</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1702"/>
+        <location filename="mainwindow.cpp" line="1780"/>
         <source>Sent</source>
         <translation>Gesendet</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1768"/>
+        <location filename="mainwindow.cpp" line="1846"/>
         <source> ms</source>
         <translation type="unfinished">ms</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1827"/>
+        <location filename="mainwindow.cpp" line="1905"/>
         <source>Disabled because the connected device runs an unsupported firmware version. Flash a known-good build via Advanced Settings → Firmware flasher to regain access.</source>
         <translation>Deaktiviert, weil das verbundene Gerät eine nicht unterstützte Firmware-Version ausführt. Flashen Sie über Erweiterte Einstellungen → Firmware-Flasher einen bekannten funktionierenden Build, um den Zugriff wiederzuerlangen.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1890"/>
-        <location filename="mainwindow.cpp" line="2699"/>
+        <location filename="mainwindow.cpp" line="1968"/>
+        <location filename="mainwindow.cpp" line="2749"/>
         <source>Hide debug</source>
         <translation>Debug ausblenden</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2001"/>
+        <location filename="mainwindow.cpp" line="2086"/>
         <source>Reset all settings to defaults?</source>
         <translation>Alle Einstellungen auf Standardwerte zurücksetzen?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2002"/>
+        <location filename="mainwindow.cpp" line="2087"/>
         <source>&lt;p&gt;This resets every setting in the configurator -- pins, axes, buttons, encoders, sensors, USB identity, gestures, logic, LEDs, shifts &amp;amp; timers -- to factory defaults.&lt;/p&gt;&lt;p&gt;The change is &lt;b&gt;in-memory only&lt;/b&gt;. The connected device keeps its current settings until you click &lt;b&gt;Write Config&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Dies setzt jede Einstellung im Configurator – Pins, Achsen, Tasten, Encoder, Sensoren, USB-Identität, Gesten, Logik, LEDs, Shifts &amp;amp; Timer – auf die Werkseinstellungen zurück.&lt;/p&gt;&lt;p&gt;Die Änderung erfolgt &lt;b&gt;nur im Arbeitsspeicher&lt;/b&gt;. Das verbundene Gerät behält seine aktuellen Einstellungen, bis Sie auf &lt;b&gt;Konfiguration schreiben&lt;/b&gt; klicken.&lt;/p&gt;&lt;p&gt;Fortfahren?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2044"/>
+        <location filename="mainwindow.cpp" line="2133"/>
         <source>Incomplete Logic Configuration</source>
         <translation>Unvollständige Logikkonfiguration</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2045"/>
+        <location filename="mainwindow.cpp" line="2134"/>
         <source>Logical button %1 has Function = Logic but is missing an operator or Source B. Pick an operator (and Source B for binary operators) before saving.</source>
         <translation>Logische Taste %1 hat Funktion = Logik, aber es fehlt ein Operator oder Quelle B. Wählen Sie vor dem Speichern einen Operator (und Quelle B für binäre Operatoren).</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2086"/>
+        <location filename="mainwindow.cpp" line="2175"/>
         <source>Backing up...</source>
         <translation>Sicherung läuft...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2199"/>
+        <location filename="mainwindow.cpp" line="2292"/>
         <source>No device connected</source>
         <translation>Kein Gerät verbunden</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2200"/>
+        <location filename="mainwindow.cpp" line="2293"/>
         <source>Connect a device before starting an upgrade.</source>
         <translation>Verbinden Sie ein Gerät, bevor Sie ein Upgrade starten.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2218"/>
-        <source>No firmware available</source>
-        <translation>Keine Firmware verfügbar</translation>
-    </message>
-    <message>
-        <location filename="mainwindow.cpp" line="2219"/>
-        <source>Couldn&apos;t find a matching firmware binary in the configurator&apos;s firmware/ folder. Use Advanced Settings -&gt; Firmware flasher to flash manually.</source>
-        <translation>Im firmware/-Ordner des Configurators wurde keine passende Firmware-Binärdatei gefunden. Verwenden Sie Erweiterte Einstellungen -&gt; Firmware-Flasher, um manuell zu flashen.</translation>
-    </message>
-    <message>
-        <location filename="mainwindow.cpp" line="2249"/>
-        <source>Upgrade firmware?</source>
-        <translation>Firmware aktualisieren?</translation>
-    </message>
-    <message>
-        <location filename="mainwindow.cpp" line="2250"/>
-        <source>&lt;p&gt;This will:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Read your current config and save a backup file&lt;/li&gt;&lt;li&gt;Flash &lt;b&gt;%1&lt;/b&gt; to the device&lt;/li&gt;&lt;li&gt;Write your migrated config back after the device reconnects&lt;/li&gt;&lt;/ol&gt;&lt;p&gt;Current firmware: &lt;b&gt;%2&lt;/b&gt;&lt;br&gt;Target firmware: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;%4&lt;p&gt;If anything fails mid-flight the device may be left in DFU mode -- recover via STM32 Cube Programmer + ST-Link.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Dies wird:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;Ihre aktuelle Konfiguration lesen und eine Backup-Datei speichern&lt;/li&gt;&lt;li&gt;&lt;b&gt;%1&lt;/b&gt; auf das Gerät flashen&lt;/li&gt;&lt;li&gt;Ihre migrierte Konfiguration nach dem erneuten Verbinden des Geräts zurückschreiben&lt;/li&gt;&lt;/ol&gt;&lt;p&gt;Aktuelle Firmware: &lt;b&gt;%2&lt;/b&gt;&lt;br&gt;Ziel-Firmware: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;%4&lt;p&gt;Wenn unterwegs etwas fehlschlägt, kann das Gerät im DFU-Modus zurückbleiben – stellen Sie es über STM32 Cube Programmer + ST-Link wieder her.&lt;/p&gt;&lt;p&gt;Fortfahren?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <location filename="mainwindow.cpp" line="2301"/>
-        <location filename="mainwindow.cpp" line="2453"/>
+        <location filename="mainwindow.cpp" line="2351"/>
+        <location filename="mainwindow.cpp" line="2503"/>
         <source>(unnamed)</source>
         <translation>(unbenannt)</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2312"/>
+        <location filename="mainwindow.cpp" line="2362"/>
         <source>VID:PID already in use</source>
         <translation>VID:PID bereits in Verwendung</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2313"/>
+        <location filename="mainwindow.cpp" line="2363"/>
         <source>&lt;p&gt;VID &lt;b&gt;%1&lt;/b&gt;:PID &lt;b&gt;%2&lt;/b&gt; is currently used by: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Writing this config will give two devices the same USB identity. Windows&apos; OEMName cache is keyed by VID+PID -- both devices will share one OEM name -- and games using DirectInput may pick a random one or conflate them.&lt;/p&gt;&lt;p&gt;Continue with the write anyway?&lt;/p&gt;</source>
         <translation>&lt;p&gt;VID &lt;b&gt;%1&lt;/b&gt;:PID &lt;b&gt;%2&lt;/b&gt; wird derzeit verwendet von: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Das Schreiben dieser Konfiguration gibt zwei Geräten dieselbe USB-Identität. Der OEMName-Cache von Windows wird über VID+PID indexiert – beide Geräte teilen sich einen OEM-Namen – und Spiele, die DirectInput verwenden, wählen möglicherweise ein zufälliges aus oder verwechseln sie.&lt;/p&gt;&lt;p&gt;Trotzdem mit dem Schreiben fortfahren?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2350"/>
+        <location filename="mainwindow.cpp" line="2400"/>
         <source>Cannot write to this firmware version</source>
         <translation>Auf diese Firmware-Version kann nicht geschrieben werden</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2351"/>
+        <location filename="mainwindow.cpp" line="2401"/>
         <source>&lt;p&gt;The connected device runs &lt;b&gt;%1&lt;/b&gt;, which this configurator doesn&apos;t have a reverse migrator for.&lt;/p&gt;&lt;p&gt;To write a config, flash a current FreeJoyX firmware first (Advanced Settings -&gt; Firmware flasher).&lt;/p&gt;</source>
         <translation>&lt;p&gt;Das verbundene Gerät führt &lt;b&gt;%1&lt;/b&gt; aus, für das dieser Configurator keinen Rückwärts-Migrator hat.&lt;/p&gt;&lt;p&gt;Um eine Konfiguration zu schreiben, flashen Sie zuerst eine aktuelle FreeJoyX-Firmware (Erweiterte Einstellungen -&gt; Firmware-Flasher).&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2364"/>
+        <location filename="mainwindow.cpp" line="2414"/>
         <source>Reverse migration failed</source>
         <translation>Rückwärtsmigration fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2365"/>
+        <location filename="mainwindow.cpp" line="2415"/>
         <source>&lt;p&gt;Couldn&apos;t pack the current config into the %1 wire format. The device wasn&apos;t written to.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Die aktuelle Konfiguration konnte nicht in das %1-Wire-Format gepackt werden. Auf das Gerät wurde nicht geschrieben.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2378"/>
+        <location filename="mainwindow.cpp" line="2428"/>
         <source>Write to %1 firmware?</source>
         <translation>Auf %1-Firmware schreiben?</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2379"/>
+        <location filename="mainwindow.cpp" line="2429"/>
         <source>&lt;p&gt;Writing to %1 firmware will lose the following:&lt;/p&gt;%2&lt;p&gt;The configurator will keep its in-memory copy unchanged -- only the device will see the reduced config. Continue?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Das Schreiben auf die %1-Firmware verliert Folgendes:&lt;/p&gt;%2&lt;p&gt;Der Configurator behält seine Kopie im Arbeitsspeicher unverändert – nur das Gerät sieht die reduzierte Konfiguration. Fortfahren?&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2444"/>
+        <location filename="mainwindow.cpp" line="2494"/>
         <source>No FreeJoy devices detected.</source>
         <translation>Keine FreeJoy-Geräte erkannt.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2459"/>
+        <location filename="mainwindow.cpp" line="2509"/>
         <source>&amp;#9658; marks the device currently selected in the dropdown.</source>
         <translation>&amp;#9658; markiert das aktuell im Dropdown ausgewählte Gerät.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2463"/>
+        <location filename="mainwindow.cpp" line="2513"/>
         <source>Connected FreeJoy devices</source>
         <translation>Verbundene FreeJoy-Geräte</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2552"/>
+        <location filename="mainwindow.cpp" line="2602"/>
         <source>Fast Encoder %1</source>
         <translation>Schneller Encoder %1</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2564"/>
+        <location filename="mainwindow.cpp" line="2614"/>
         <source>Fast Encoder %1 unavailable</source>
         <translation>Schneller Encoder %1 nicht verfügbar</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2565"/>
+        <location filename="mainwindow.cpp" line="2615"/>
         <source>This board doesn&apos;t expose FAST_ENCODER as a legal role on at least one of the required pins. The encoder wasn&apos;t enabled.</source>
         <translation>Diese Platine bietet FAST_ENCODER auf mindestens einem der erforderlichen Pins nicht als gültige Rolle an. Der Encoder wurde nicht aktiviert.</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2606"/>
+        <location filename="mainwindow.cpp" line="2656"/>
         <source>Open Config</source>
         <translation>Konfiguration öffnen</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2606"/>
-        <location filename="mainwindow.cpp" line="2634"/>
+        <location filename="mainwindow.cpp" line="2656"/>
+        <location filename="mainwindow.cpp" line="2684"/>
         <source>Config Files (*.cfg)</source>
         <translation>Konfig-Dateien (*.cfg)</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="2632"/>
+        <location filename="mainwindow.cpp" line="2682"/>
         <source>Save Config</source>
         <translation>Konfiguration speichern</translation>
+    </message>
+    <message>
+        <location filename="mainwindow_style.cpp" line="171"/>
+        <source>Switch to light theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow_style.cpp" line="171"/>
+        <source>Switch to dark theme</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>PinComboBox</name>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="202"/>
+        <location filename="widgets/pins/pincombobox.h" line="214"/>
         <source>Pin A0</source>
         <translation>Pin A0</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="203"/>
+        <location filename="widgets/pins/pincombobox.h" line="215"/>
         <source>Pin A1</source>
         <translation>Pin A1</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="204"/>
+        <location filename="widgets/pins/pincombobox.h" line="216"/>
         <source>Pin A2</source>
         <translation>Pin A2</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="205"/>
+        <location filename="widgets/pins/pincombobox.h" line="217"/>
         <source>Pin A3</source>
         <translation>Pin A3</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="206"/>
+        <location filename="widgets/pins/pincombobox.h" line="218"/>
         <source>Pin A4</source>
         <translation>Pin A4</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="207"/>
+        <location filename="widgets/pins/pincombobox.h" line="219"/>
         <source>Pin A5</source>
         <translation>Pin A5</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="208"/>
+        <location filename="widgets/pins/pincombobox.h" line="220"/>
         <source>Pin A6</source>
         <translation>Pin A6</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="209"/>
+        <location filename="widgets/pins/pincombobox.h" line="221"/>
         <source>Pin A7</source>
         <translation>Pin A7</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="210"/>
+        <location filename="widgets/pins/pincombobox.h" line="222"/>
         <source>Pin A8</source>
         <translation>Pin A8</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="211"/>
+        <location filename="widgets/pins/pincombobox.h" line="223"/>
         <source>Pin A9</source>
         <translation>Pin A9</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="212"/>
+        <location filename="widgets/pins/pincombobox.h" line="224"/>
         <source>Pin A10</source>
         <translation>Pin A10</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="213"/>
+        <location filename="widgets/pins/pincombobox.h" line="225"/>
         <source>Pin A15</source>
         <translation>Pin A15</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="214"/>
+        <location filename="widgets/pins/pincombobox.h" line="226"/>
         <source>Pin B0</source>
         <translation>Pin B0</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="215"/>
+        <location filename="widgets/pins/pincombobox.h" line="227"/>
         <source>Pin B1</source>
         <translation>Pin B1</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="216"/>
+        <location filename="widgets/pins/pincombobox.h" line="228"/>
         <source>Pin B3</source>
         <translation>Pin B3</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="217"/>
+        <location filename="widgets/pins/pincombobox.h" line="229"/>
         <source>Pin B4</source>
         <translation>Pin B4</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="218"/>
+        <location filename="widgets/pins/pincombobox.h" line="230"/>
         <source>Pin B5</source>
         <translation>Pin B5</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="219"/>
+        <location filename="widgets/pins/pincombobox.h" line="231"/>
         <source>Pin B6</source>
         <translation>Pin B6</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="220"/>
+        <location filename="widgets/pins/pincombobox.h" line="232"/>
         <source>Pin B7</source>
         <translation>Pin B7</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="221"/>
+        <location filename="widgets/pins/pincombobox.h" line="233"/>
         <source>Pin B8</source>
         <translation>Pin B8</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="222"/>
+        <location filename="widgets/pins/pincombobox.h" line="234"/>
         <source>Pin B9</source>
         <translation>Pin B9</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="223"/>
+        <location filename="widgets/pins/pincombobox.h" line="235"/>
         <source>Pin B10</source>
         <translation>Pin B10</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="224"/>
+        <location filename="widgets/pins/pincombobox.h" line="236"/>
         <source>Pin B11</source>
         <translation>Pin B11</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="225"/>
+        <location filename="widgets/pins/pincombobox.h" line="237"/>
         <source>Pin B12</source>
         <translation>Pin B12</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="226"/>
+        <location filename="widgets/pins/pincombobox.h" line="238"/>
         <source>Pin B13</source>
         <translation>Pin B13</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="227"/>
+        <location filename="widgets/pins/pincombobox.h" line="239"/>
         <source>Pin B14</source>
         <translation>Pin B14</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="228"/>
+        <location filename="widgets/pins/pincombobox.h" line="240"/>
         <source>Pin B15</source>
         <translation>Pin B15</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="229"/>
+        <location filename="widgets/pins/pincombobox.h" line="241"/>
         <source>Pin C13</source>
         <translation>Pin C13</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="230"/>
+        <location filename="widgets/pins/pincombobox.h" line="242"/>
         <source>Pin C14</source>
         <translation>Pin C14</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="231"/>
+        <location filename="widgets/pins/pincombobox.h" line="243"/>
         <source>Pin C15</source>
         <translation>Pin C15</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="236"/>
+        <location filename="widgets/pins/pincombobox.h" line="248"/>
         <source>Not Used</source>
         <translation>Nicht benutzt</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="237"/>
+        <location filename="widgets/pins/pincombobox.h" line="249"/>
         <source>Pin is unused.</source>
         <translation>Pin wird nicht verwendet.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="243"/>
+        <location filename="widgets/pins/pincombobox.h" line="255"/>
         <source>Button to Gnd</source>
         <translation>Taste an GND</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="244"/>
+        <location filename="widgets/pins/pincombobox.h" line="256"/>
         <source>Momentary button or switch wired between this pin and GND. Maps to a button slot in the Buttons tab.</source>
         <translation>Taster oder Schalter zwischen diesem Pin und GND. Wird im Tab „Tasten“ einem Tastenplatz zugeordnet.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="250"/>
+        <location filename="widgets/pins/pincombobox.h" line="262"/>
         <source>Button to Vcc</source>
         <translation>Taste an Vcc</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="251"/>
+        <location filename="widgets/pins/pincombobox.h" line="263"/>
         <source>Momentary button or switch wired between this pin and 3.3V. Maps to a button slot in the Buttons tab.</source>
         <translation>Taster oder Schalter zwischen diesem Pin und 3,3 V. Wird im Tab „Tasten“ einem Tastenplatz zugeordnet.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="258"/>
+        <location filename="widgets/pins/pincombobox.h" line="270"/>
         <source>Row line of a scanned button matrix. Combine with Button Column pins; set the matrix size in the Buttons tab.</source>
         <translation>Zeilenleitung einer abgetasteten Tastenmatrix. Mit Tastenspalten-Pins kombinieren; Matrixgröße im Tab „Tasten“ einstellen.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="265"/>
+        <location filename="widgets/pins/pincombobox.h" line="277"/>
         <source>Column line of a scanned button matrix. Combine with Button Row pins; set the matrix size in the Buttons tab.</source>
         <translation>Spaltenleitung einer abgetasteten Tastenmatrix. Mit Tastenzeilen-Pins kombinieren; Matrixgröße im Tab „Tasten“ einstellen.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="272"/>
+        <location filename="widgets/pins/pincombobox.h" line="284"/>
         <source>74HC165 / CD4021 shift-register LATCH (SH/LD). Can be shared across all chains. Set chain length in the Shift Registers tab.</source>
         <translation>74HC165 / CD4021 Schieberegister-LATCH (SH/LD). Kann von allen Ketten gemeinsam genutzt werden. Kettenlänge im Tab „Schieberegister“ einstellen.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="279"/>
+        <location filename="widgets/pins/pincombobox.h" line="291"/>
         <source>74HC165 / CD4021 shift-register DATA out (Qh / Q8). One per chain. Set chain length in the Shift Registers tab.</source>
         <translation>74HC165 / CD4021 Schieberegister-DATEN-Ausgang (Qh / Q8). Einer pro Kette. Kettenlänge im Tab „Schieberegister“ einstellen.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="286"/>
+        <location filename="widgets/pins/pincombobox.h" line="298"/>
         <source>74HC165 / CD4021 shift-register CLOCK. Can be shared across all chains. Set chain length in the Shift Registers tab.</source>
         <translation>74HC165 / CD4021 Schieberegister-TAKT. Kann von allen Ketten gemeinsam genutzt werden. Kettenlänge im Tab „Schieberegister“ einstellen.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="292"/>
+        <location filename="widgets/pins/pincombobox.h" line="304"/>
         <source>TLE5011 Hall</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="293"/>
+        <location filename="widgets/pins/pincombobox.h" line="305"/>
         <source>Chip-select for an Infineon TLE5011 magnetic angle (Hall) sensor on SPI. Selecting this auto-assigns the shared SPI SCK/MOSI lines and a TLE clock pin; the angle reads out as an axis.</source>
         <translation>Chip-Select für einen Infineon TLE5011 magnetischen Winkelsensor (Hall) über SPI. Bei Auswahl werden automatisch die gemeinsamen SPI-SCK/MOSI-Leitungen und ein TLE-Taktpin zugewiesen; der Winkel wird als Achse ausgelesen.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="299"/>
+        <location filename="widgets/pins/pincombobox.h" line="311"/>
         <source>TLE5012B Hall</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="300"/>
+        <location filename="widgets/pins/pincombobox.h" line="312"/>
         <source>Chip-select for an Infineon TLE5012B magnetic angle (Hall) sensor on SPI. Auto-assigns the shared SPI SCK/MOSI lines and a TLE clock pin; the angle reads out as an axis.</source>
         <translation>Chip-Select für einen Infineon TLE5012B magnetischen Winkelsensor (Hall) über SPI. Weist automatisch die gemeinsamen SPI-SCK/MOSI-Leitungen und einen TLE-Taktpin zu; der Winkel wird als Achse ausgelesen.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="306"/>
+        <location filename="widgets/pins/pincombobox.h" line="318"/>
         <source>MCP3201 ADC (1ch)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="307"/>
+        <location filename="widgets/pins/pincombobox.h" line="319"/>
         <source>Chip-select for an MCP3201 single-channel 12-bit SPI ADC. Auto-assigns the shared SPI SCK/MISO/MOSI lines; the channel maps to an axis in the Axes tab.</source>
         <translation>Chip-Select für einen MCP3201 1-Kanal-12-Bit-SPI-ADC. Weist automatisch die gemeinsamen SPI-SCK/MISO/MOSI-Leitungen zu; der Kanal wird im Tab „Achsen“ einer Achse zugeordnet.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="313"/>
+        <location filename="widgets/pins/pincombobox.h" line="325"/>
         <source>MCP3202 ADC (2ch)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="314"/>
+        <location filename="widgets/pins/pincombobox.h" line="326"/>
         <source>Chip-select for an MCP3202 2-channel 12-bit SPI ADC. Auto-assigns the shared SPI SCK/MISO/MOSI lines; each channel maps to an axis in the Axes tab.</source>
         <translation>Chip-Select für einen MCP3202 2-Kanal-12-Bit-SPI-ADC. Weist automatisch die gemeinsamen SPI-SCK/MISO/MOSI-Leitungen zu; jeder Kanal wird im Tab „Achsen“ einer Achse zugeordnet.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="320"/>
+        <location filename="widgets/pins/pincombobox.h" line="332"/>
         <source>MCP3204 ADC (4ch)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="321"/>
+        <location filename="widgets/pins/pincombobox.h" line="333"/>
         <source>Chip-select for an MCP3204 4-channel 12-bit SPI ADC. Auto-assigns the shared SPI SCK/MISO/MOSI lines; each channel maps to an axis in the Axes tab.</source>
         <translation>Chip-Select für einen MCP3204 4-Kanal-12-Bit-SPI-ADC. Weist automatisch die gemeinsamen SPI-SCK/MISO/MOSI-Leitungen zu; jeder Kanal wird im Tab „Achsen“ einer Achse zugeordnet.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="327"/>
+        <location filename="widgets/pins/pincombobox.h" line="339"/>
         <source>MCP3208 ADC (8ch)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="328"/>
+        <location filename="widgets/pins/pincombobox.h" line="340"/>
         <source>Chip-select for an MCP3208 8-channel 12-bit SPI ADC. Auto-assigns the shared SPI SCK/MISO/MOSI lines; each channel maps to an axis in the Axes tab.</source>
         <translation>Chip-Select für einen MCP3208 8-Kanal-12-Bit-SPI-ADC. Weist automatisch die gemeinsamen SPI-SCK/MISO/MOSI-Leitungen zu; jeder Kanal wird im Tab „Achsen“ einer Achse zugeordnet.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="334"/>
+        <location filename="widgets/pins/pincombobox.h" line="346"/>
         <source>MLX90393 Hall</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="335"/>
+        <location filename="widgets/pins/pincombobox.h" line="347"/>
         <source>Chip-select for an MLX90393 3-axis magnetometer (Hall) on SPI. Auto-assigns the shared SPI SCK/MISO/MOSI lines; output maps to axes in the Axes tab.</source>
         <translation>Chip-Select für ein MLX90393 3-Achsen-Magnetometer (Hall) über SPI. Weist automatisch die gemeinsamen SPI-SCK/MISO/MOSI-Leitungen zu; die Ausgabe wird im Tab „Achsen“ Achsen zugeordnet.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="341"/>
+        <location filename="widgets/pins/pincombobox.h" line="353"/>
         <source>MLX90363 Hall</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="342"/>
+        <location filename="widgets/pins/pincombobox.h" line="354"/>
         <source>Chip-select for an MLX90363 magnetic angle sensor on SPI. Auto-assigns the shared SPI SCK/MISO/MOSI lines; the angle reads out as an axis.</source>
         <translation>Chip-Select für einen MLX90363 magnetischen Winkelsensor über SPI. Weist automatisch die gemeinsamen SPI-SCK/MISO/MOSI-Leitungen zu; der Winkel wird als Achse ausgelesen.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="348"/>
+        <location filename="widgets/pins/pincombobox.h" line="360"/>
         <source>AS5048A encoder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="349"/>
+        <location filename="widgets/pins/pincombobox.h" line="361"/>
         <source>Chip-select for an AMS AS5048A 14-bit magnetic rotary encoder on SPI. Auto-assigns the shared SPI SCK/MISO/MOSI lines; the angle reads out as an axis.</source>
         <translation>Chip-Select für einen AMS AS5048A 14-Bit-magnetischen Drehgeber über SPI. Weist automatisch die gemeinsamen SPI-SCK/MISO/MOSI-Leitungen zu; der Winkel wird als Achse ausgelesen.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="356"/>
+        <location filename="widgets/pins/pincombobox.h" line="368"/>
         <source>Single LED driven by a button state (max ~20mA). Configure in the LED/PWM tab.</source>
         <translation>Einzelne LED, gesteuert durch einen Tastenzustand (max. ~20 mA). Im Tab „LED/PWM“ konfigurieren.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="363"/>
+        <location filename="widgets/pins/pincombobox.h" line="375"/>
         <source>Row line of an LED matrix. Combine with LED Column pins; configure in the LED/PWM tab.</source>
         <translation>Zeilenleitung einer LED-Matrix. Mit LED-Spalten-Pins kombinieren; im Tab „LED/PWM“ konfigurieren.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="370"/>
+        <location filename="widgets/pins/pincombobox.h" line="382"/>
         <source>Column line of an LED matrix. Combine with LED Row pins; configure in the LED/PWM tab.</source>
         <translation>Spaltenleitung einer LED-Matrix. Mit LED-Zeilen-Pins kombinieren; im Tab „LED/PWM“ konfigurieren.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="377"/>
+        <location filename="widgets/pins/pincombobox.h" line="389"/>
         <source>Single LED with hardware brightness control (PWM, max ~20mA). Only PA8 / PB0 / PB1 / PB4. Configure in the LED/PWM tab.</source>
         <translation>Einzelne LED mit Hardware-Helligkeitssteuerung (PWM, max. ~20 mA). Nur PA8 / PB0 / PB1 / PB4. Im Tab „LED/PWM“ konfigurieren.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="384"/>
+        <location filename="widgets/pins/pincombobox.h" line="396"/>
         <source>Addressable WS2812B LED data line (DIN). PA10 only. Configure colors / effects in the LED/PWM tab.</source>
         <translation>Adressierbare WS2812B-LED-Datenleitung (DIN). Nur PA10. Farben / Effekte im Tab „LED/PWM“ konfigurieren.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="391"/>
+        <location filename="widgets/pins/pincombobox.h" line="403"/>
         <source>Addressable PL9823 LED data line (DIN). PA10 only. Configure colors / effects in the LED/PWM tab.</source>
         <translation>Adressierbare PL9823-LED-Datenleitung (DIN). Nur PA10. Farben / Effekte im Tab „LED/PWM“ konfigurieren.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="398"/>
+        <location filename="widgets/pins/pincombobox.h" line="410"/>
         <source>Direct analog input (potentiometer or Hall sensor) read by the ADC. Configure range / curve in the Axes tab.</source>
         <translation>Direkter Analogeingang (Potentiometer oder Hall-Sensor), gelesen vom ADC. Bereich / Kennlinie im Tab „Achsen“ konfigurieren.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="405"/>
+        <location filename="widgets/pins/pincombobox.h" line="417"/>
         <source>One channel (A or B) of a hardware-quadrature incremental encoder. Pin pairs: PA8+PA9 (Encoder 1), PB6+PB7 (Encoder 2). Used as an axis source.</source>
         <translation>Ein Kanal (A oder B) eines Hardware-Quadratur-Inkrementalgebers. Pin-Paare: PA8+PA9 (Encoder 1), PB6+PB7 (Encoder 2). Wird als Achsenquelle verwendet.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="412"/>
+        <location filename="widgets/pins/pincombobox.h" line="424"/>
         <source>Shared SPI clock line. Auto-assigned when you pick an SPI sensor&apos;s chip-select -- you don&apos;t normally set this directly.</source>
         <translation>Gemeinsame SPI-Taktleitung. Wird automatisch zugewiesen, wenn Sie den Chip-Select eines SPI-Sensors auswählen – normalerweise nicht direkt einstellen.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="419"/>
+        <location filename="widgets/pins/pincombobox.h" line="431"/>
         <source>Shared SPI data-out line. Auto-assigned when you pick an SPI sensor&apos;s chip-select -- you don&apos;t normally set this directly.</source>
         <translation>Gemeinsame SPI-Datenausgangsleitung. Wird automatisch zugewiesen, wenn Sie den Chip-Select eines SPI-Sensors auswählen – normalerweise nicht direkt einstellen.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="426"/>
+        <location filename="widgets/pins/pincombobox.h" line="438"/>
         <source>Shared SPI data-in line. Auto-assigned when you pick an SPI sensor&apos;s chip-select -- you don&apos;t normally set this directly.</source>
         <translation>Gemeinsame SPI-Dateneingangsleitung. Wird automatisch zugewiesen, wenn Sie den Chip-Select eines SPI-Sensors auswählen – normalerweise nicht direkt einstellen.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="432"/>
+        <location filename="widgets/pins/pincombobox.h" line="444"/>
         <source>TLE5xxx GEN</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="433"/>
+        <location filename="widgets/pins/pincombobox.h" line="445"/>
         <source>TLE5011/5012B clock-generator output (PB6, TIM4). Auto-assigned with a TLE sensor. Conflicts with Encoder 2 (also TIM4).</source>
         <translation>TLE5011/5012B-Taktgenerator-Ausgang (PB6, TIM4). Wird automatisch mit einem TLE-Sensor zugewiesen. Konflikt mit Encoder 2 (ebenfalls TIM4).</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="448"/>
+        <location filename="widgets/pins/pincombobox.h" line="460"/>
         <source>I2C clock line for an AS5600 (1x) or ADS1115 (up to 4x) sensor. Pair with I2C SDA. Outputs map to axes; 8-axis total limit.</source>
         <translation>I2C-Taktleitung für einen AS5600- (1x) oder ADS1115-Sensor (bis zu 4x). Mit I2C-SDA paaren. Ausgänge werden Achsen zugeordnet; max. 8 Achsen insgesamt.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="455"/>
+        <location filename="widgets/pins/pincombobox.h" line="467"/>
         <source>I2C data line for an AS5600 (1x) or ADS1115 (up to 4x) sensor. Pair with I2C SCL. Outputs map to axes; 8-axis total limit.</source>
         <translation>I2C-Datenleitung für einen AS5600- (1x) oder ADS1115-Sensor (bis zu 4x). Mit I2C-SCL paaren. Ausgänge werden Achsen zugeordnet; max. 8 Achsen insgesamt.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="466"/>
+        <location filename="widgets/pins/pincombobox.h" line="478"/>
         <source>UART TX</source>
         <translation>UART TX</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="467"/>
+        <location filename="widgets/pins/pincombobox.h" line="479"/>
         <source>Serial joystick output (PA9, 115200 baud, every 10 ms) -- e.g. to an ESP32 for a Bluetooth joystick.</source>
         <translation>Serielle Joystick-Ausgabe (PA9, 115200 Baud, alle 10 ms) – z. B. an einen ESP32 für einen Bluetooth-Joystick.</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="257"/>
+        <location filename="widgets/pins/pincombobox.h" line="269"/>
         <source>Button Row</source>
         <translation>Taster Reihe</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="264"/>
+        <location filename="widgets/pins/pincombobox.h" line="276"/>
         <source>Button Column</source>
         <translation>Taster Spalte</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="271"/>
+        <location filename="widgets/pins/pincombobox.h" line="283"/>
         <source>ShiftReg LATCH</source>
         <translation>ShiftReg LATCH</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="278"/>
+        <location filename="widgets/pins/pincombobox.h" line="290"/>
         <source>ShiftReg DATA</source>
         <translation>ShiftReg DATA</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="285"/>
+        <location filename="widgets/pins/pincombobox.h" line="297"/>
         <source>ShiftReg CLK</source>
         <translation>ShiftReg CLK</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="355"/>
+        <location filename="widgets/pins/pincombobox.h" line="367"/>
         <source>LED Single</source>
         <translation>LED Single</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="362"/>
+        <location filename="widgets/pins/pincombobox.h" line="374"/>
         <source>LED Row</source>
         <translation>LED Reihe</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="369"/>
+        <location filename="widgets/pins/pincombobox.h" line="381"/>
         <source>LED Column</source>
         <translation>LED Spalte</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="376"/>
+        <location filename="widgets/pins/pincombobox.h" line="388"/>
         <source>LED PWM</source>
         <translation>LED PWM</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="383"/>
+        <location filename="widgets/pins/pincombobox.h" line="395"/>
         <source>LED WS2812b</source>
         <translation>LED WS2812b</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="390"/>
+        <location filename="widgets/pins/pincombobox.h" line="402"/>
         <source>LED PL9823</source>
         <translation>LED PL9823</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="397"/>
+        <location filename="widgets/pins/pincombobox.h" line="409"/>
         <source>Axis Analog</source>
         <translation>Axis Analog</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="404"/>
+        <location filename="widgets/pins/pincombobox.h" line="416"/>
         <source>Fast Encoder</source>
         <translation>Fast Encoder</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="411"/>
+        <location filename="widgets/pins/pincombobox.h" line="423"/>
         <source>SPI SCK</source>
         <translation>SPI SCK</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="418"/>
+        <location filename="widgets/pins/pincombobox.h" line="430"/>
         <source>SPI MOSI</source>
         <translation>SPI MOSI</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="425"/>
+        <location filename="widgets/pins/pincombobox.h" line="437"/>
         <source>SPI MISO</source>
         <translation>SPI MISO</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="447"/>
+        <location filename="widgets/pins/pincombobox.h" line="459"/>
         <source>I2C SCL</source>
         <translation>I2C SCL</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.h" line="454"/>
+        <location filename="widgets/pins/pincombobox.h" line="466"/>
         <source>I2C SDA</source>
         <translation>I2C SDA</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="254"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="290"/>
         <source>Buttons</source>
         <translation>Tasten</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="255"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="291"/>
         <source>Shift Registers</source>
         <translation>Schieberegister</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="256"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="292"/>
         <source>SPI Devices</source>
         <translation>SPI-Geräte</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="257"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="293"/>
         <source>LEDs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="258"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="294"/>
         <source>Analog Axis</source>
         <translation>Analogachse</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="259"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="295"/>
         <source>Encoder</source>
         <translation type="unfinished">Drehgeber</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="260"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="296"/>
         <source>I2C Devices</source>
         <translation>I2C-Geräte</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="261"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="297"/>
         <source>Serial Output</source>
         <translation>Serielle Ausgabe</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pincombobox.cpp" line="262"/>
+        <location filename="widgets/pins/pincombobox.cpp" line="298"/>
         <source>SPI Bus (auto-assigned)</source>
         <translation>SPI-Bus (automatisch zugewiesen)</translation>
     </message>
@@ -3591,12 +3749,12 @@ Those inputs are no longer mapped where they were — check your wiring and re-a
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/pins/pinconfig.cpp" line="866"/>
+        <location filename="widgets/pins/pinconfig.cpp" line="863"/>
         <source>I2C bus</source>
         <translation>I2C-Bus</translation>
     </message>
     <message>
-        <location filename="widgets/pins/pinconfig.cpp" line="866"/>
+        <location filename="widgets/pins/pinconfig.cpp" line="863"/>
         <source>SPI bus</source>
         <translation>SPI-Bus</translation>
     </message>
@@ -3605,8 +3763,9 @@ Those inputs are no longer mapped where they were — check your wiring and re-a
     <name>PinTypeHelper</name>
     <message>
         <location filename="widgets/pins/pintypehelper.ui" line="82"/>
-        <source>Pin Info</source>
-        <translation>Pin-Info</translation>
+        <source>Pin info</source>
+        <oldsource>Pin Info</oldsource>
+        <translation type="unfinished">Pin-Info</translation>
     </message>
     <message>
         <location filename="widgets/pins/pintypehelper.ui" line="103"/>
@@ -3746,22 +3905,22 @@ Those inputs are no longer mapped where they were — check your wiring and re-a
 <context>
     <name>QObject</name>
     <message>
-        <location filename="configtofile.cpp" line="295"/>
+        <location filename="configtofile.cpp" line="302"/>
         <source>I2C is configured on slots 21/22 (B10 SCL + B11 SDA on Blue Pill). B2 on Black Pill isn&apos;t bonded for I2C on the F411 UFQFPN48 package, so the I2C pair will be cleared during conversion.</source>
         <translation>I2C ist auf den Slots 21/22 konfiguriert (B10 SCL + B11 SDA auf dem Blue Pill). B2 auf dem Black Pill ist im F411-UFQFPN48-Gehäuse nicht für I2C herausgeführt, daher wird das I2C-Paar bei der Konvertierung gelöscht.</translation>
     </message>
     <message>
-        <location filename="configtofile.cpp" line="300"/>
+        <location filename="configtofile.cpp" line="307"/>
         <source> %1 axis(es) sourced from I2C will also be reset to &quot;unused&quot; since the bus is being torn down.</source>
         <translation> %1 von I2C bezogene Achse(n) werden ebenfalls auf „unbenutzt“ zurückgesetzt, da der Bus abgebaut wird.</translation>
     </message>
     <message>
-        <location filename="configtofile.cpp" line="307"/>
+        <location filename="configtofile.cpp" line="314"/>
         <source>Slot 22 is in use. After conversion this slot routes to %1 instead of %2 -- verify your physical wiring matches the slot index, not the original pin name.</source>
         <translation>Slot 22 ist belegt. Nach der Konvertierung führt dieser Slot zu %1 statt zu %2 – prüfen Sie, ob Ihre physische Verdrahtung zum Slot-Index passt, nicht zum ursprünglichen Pin-Namen.</translation>
     </message>
     <message>
-        <location filename="configtofile.cpp" line="316"/>
+        <location filename="configtofile.cpp" line="323"/>
         <source>This config was saved for %1, but the connected device is %2.
 
 29 of the 30 pin slots map identically between the two boards. The exception is slot 22 (PB11 on Blue Pill, PB2 on Black Pill).
@@ -3774,7 +3933,7 @@ Those inputs are no longer mapped where they were — check your wiring and re-a
 </translation>
     </message>
     <message>
-        <location filename="configtofile.cpp" line="324"/>
+        <location filename="configtofile.cpp" line="331"/>
         <source>Convert this config for %1?
 
 Choosing No leaves the loaded config unchanged -- the device will refuse the write until you reconnect the matching board or convert.</source>
@@ -3783,22 +3942,23 @@ Choosing No leaves the loaded config unchanged -- the device will refuse the wri
 Wenn Sie Nein wählen, bleibt die geladene Konfiguration unverändert – das Gerät verweigert das Schreiben, bis Sie die passende Platine wieder anschließen oder konvertieren.</translation>
     </message>
     <message>
-        <location filename="configtofile.cpp" line="332"/>
+        <location filename="configtofile.cpp" line="342"/>
         <source>Cross-board config</source>
         <translation>Plattformübergreifende Konfiguration</translation>
+    </message>
+    <message>
+        <location filename="deviceversion.cpp" line="36"/>
+        <source>Unknown (%1)</source>
+        <translation type="unfinished">Unbekannt (%1)</translation>
     </message>
 </context>
 <context>
     <name>SelectFolder</name>
     <message>
-        <location filename="widgets/selectfolder.ui" line="26"/>
-        <source>Dialog</source>
-        <translation>Dialog</translation>
-    </message>
-    <message>
         <location filename="widgets/selectfolder.ui" line="44"/>
-        <source>Ok</source>
-        <translation>Ok</translation>
+        <source>OK</source>
+        <oldsource>Ok</oldsource>
+        <translation type="unfinished">Ok</translation>
     </message>
     <message>
         <location filename="widgets/selectfolder.ui" line="53"/>
@@ -3806,12 +3966,12 @@ Wenn Sie Nein wählen, bleibt die geladene Konfiguration unverändert – das Ge
         <translation>Aktueller Ordner:</translation>
     </message>
     <message>
-        <location filename="widgets/selectfolder.cpp" line="11"/>
+        <location filename="widgets/selectfolder.cpp" line="12"/>
         <source>Configs folder path</source>
         <translation>Konfigs Ordnerpfad</translation>
     </message>
     <message>
-        <location filename="widgets/selectfolder.cpp" line="44"/>
+        <location filename="widgets/selectfolder.cpp" line="47"/>
         <source>Select configs folder</source>
         <translation>Ordner Konfigs auswählen</translation>
     </message>
@@ -3881,145 +4041,135 @@ Wenn Sie Nein wählen, bleibt die geladene Konfiguration unverändert – das Ge
 <context>
     <name>ShiftsTimersConfig</name>
     <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="35"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="26"/>
         <source>Shifts</source>
         <translation>Shifts</translation>
     </message>
     <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="56"/>
-        <source>Shift 1</source>
-        <translation type="unfinished">Shift 1</translation>
-    </message>
-    <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="71"/>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="109"/>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="147"/>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="185"/>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="223"/>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="261"/>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="299"/>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="337"/>
-        <source>Logical button</source>
-        <translation>Logische Taste</translation>
-    </message>
-    <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="94"/>
-        <source>Shift 2</source>
-        <translation type="unfinished">Shift 2</translation>
-    </message>
-    <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="132"/>
-        <source>Shift 3</source>
-        <translation type="unfinished">Shift 3</translation>
-    </message>
-    <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="170"/>
-        <source>Shift 4</source>
-        <translation type="unfinished">Shift 4</translation>
-    </message>
-    <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="208"/>
-        <source>Shift 5</source>
-        <translation type="unfinished">Shift 5</translation>
-    </message>
-    <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="246"/>
-        <source>Shift 6</source>
-        <translation type="unfinished">Shift 6</translation>
-    </message>
-    <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="284"/>
-        <source>Shift 7</source>
-        <translation type="unfinished">Shift 7</translation>
-    </message>
-    <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="322"/>
-        <source>Shift 8</source>
-        <translation type="unfinished">Shift 8</translation>
-    </message>
-    <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="363"/>
-        <source>Encoder timings</source>
-        <translation>Encoder-Timings</translation>
-    </message>
-    <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="380"/>
-        <source>Encoder press timer</source>
-        <translation>Encoder-Druck-Timer</translation>
-    </message>
-    <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="387"/>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="437"/>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="449"/>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="461"/>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="473"/>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="485"/>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="513"/>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="527"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="248"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="257"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="266"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="296"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="308"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="339"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="348"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="403"/>
         <source> ms</source>
         <translation type="unfinished">ms</translation>
     </message>
     <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="394"/>
-        <source>Encoders polling</source>
-        <translation>Encoder-Abfrage</translation>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="35"/>
+        <source>A shift is held while its assigned logical button is active.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="399"/>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="495"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="61"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="82"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="103"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="124"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="147"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="168"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="189"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="210"/>
+        <source>Logical button that holds this shift active.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="230"/>
+        <source>Button timers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="243"/>
+        <source>Timer 1:</source>
+        <translation type="unfinished">Timer 1:</translation>
+    </message>
+    <message>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="252"/>
+        <source>Timer 2:</source>
+        <translation type="unfinished">Timer 2:</translation>
+    </message>
+    <message>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="261"/>
+        <source>Timer 3:</source>
+        <translation type="unfinished">Timer 3:</translation>
+    </message>
+    <message>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="277"/>
+        <source>Gestures</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="290"/>
+        <source>Tap cutoff:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="293"/>
+        <source>Press shorter than this counts as a tap; longer is a long-press.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="302"/>
+        <source>Double-tap cutoff:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="305"/>
+        <source>Maximum gap between two taps to register a double-tap.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="321"/>
+        <source>Debounce</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="334"/>
+        <source>Buttons:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="343"/>
+        <source>Axes-to-buttons:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="359"/>
+        <source>Polling &amp;&amp; encoder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="372"/>
+        <source>Buttons polling:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="375"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="388"/>
         <source>Polling interval. A low value will not improve the operation of the buttons; on the contrary, increasing it may improve encoder operation.</source>
         <translation>Abfrageintervall. Ein niedriger Wert verbessert die Funktion der Tasten nicht; im Gegenteil, eine Erhöhung kann die Encoder-Funktion verbessern.</translation>
     </message>
     <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="402"/>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="498"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="378"/>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="391"/>
         <source> ns</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="415"/>
-        <source>Button defaults</source>
-        <translation>Tasten-Standardwerte</translation>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="385"/>
+        <source>Encoders polling:</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="431"/>
-        <source>Timer 1</source>
-        <translation type="unfinished">Timer 1</translation>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="397"/>
+        <source>Encoder press:</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="443"/>
-        <source>Timer 2</source>
-        <translation type="unfinished">Timer 2</translation>
-    </message>
-    <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="455"/>
-        <source>Timer 3</source>
-        <translation type="unfinished">Timer 3</translation>
-    </message>
-    <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="467"/>
-        <source>Debounce timer</source>
-        <translation>Entprell-Timer</translation>
-    </message>
-    <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="479"/>
-        <source>Axes-to-buttons debounce</source>
-        <translation>Achse-zu-Tasten-Entprellung</translation>
-    </message>
-    <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="491"/>
-        <source>Buttons polling</source>
-        <translation>Tasten-Abfrage</translation>
-    </message>
-    <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="507"/>
-        <source>Tap cutoff</source>
-        <translation>Tipp-Grenzwert</translation>
-    </message>
-    <message>
-        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="521"/>
-        <source>Double tap cutoff</source>
-        <translation>Doppeltipp-Grenzwert</translation>
+        <location filename="widgets/shifts-timers/shiftstimersconfig.ui" line="400"/>
+        <source>How long an encoder step holds its virtual button pressed.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>
