@@ -318,6 +318,10 @@ void PinComboBox::initializationPins(uint pin)      // pin_number_ - 1 -- not gr
             hf.setBold(true);
             ui->comboBox_PinsType->setItemData(hdr, hf, Qt::FontRole);
             ui->comboBox_PinsType->setItemData(hdr, QBrush(QColor(150, 150, 150)), Qt::ForegroundRole);
+            /* Faint banded background so the section header reads as a divider,
+             * not just bold text. Low alpha so it's theme-neutral (a touch
+             * lighter on dark, a touch darker on light). */
+            ui->comboBox_PinsType->setItemData(hdr, QBrush(QColor(128, 128, 128, 45)), Qt::BackgroundRole);
             m_pinTypesIndex.push_back(-1);   // sentinel: header row, no backing type
             m_enumIndex.push_back(-1);
         }
