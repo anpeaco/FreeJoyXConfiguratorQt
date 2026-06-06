@@ -38,6 +38,11 @@ private slots:
     void contextMenu(const QPoint &pos);
 
 private:
+    /* Single source of truth for which controls each RGB effect enables, so the
+     * four radio handlers don't each hand-maintain the same enable matrix. The
+     * LED list always tracks the colour picker, so they share one flag. */
+    void applyEffectMode(int maxLeds, bool colorAndList, bool delay, bool brightness);
+
     Ui::LedRGBConfig *ui;
 
     QList<LedRGB *> m_rgbPtrList;
