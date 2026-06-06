@@ -32,6 +32,19 @@ public:
      * is already in bootloader mode. */
     bool isInFlasherMode() const { return m_inFlasherMode; }
 
+    /* Open the firmware picker + Upgrade Firmware dialog for the connected
+     * device. `preferredPath` (e.g. the bundled upgrade firmware) is
+     * pre-selected if it matches a source. The device identity triple
+     * (name/serial/versionText) is supplied by the caller so the dialog's
+     * Device pane matches the main device card exactly; when left blank the
+     * dialog falls back to the flasher-mode values it scraped from HID
+     * enumeration (recovery path). Called by the device card's "Upgrade
+     * Firmware" button (MainWindow) and the now-hidden Flasher tab button. */
+    void openFlashDialog(const QString &preferredPath = QString(),
+                         const QString &deviceName = QString(),
+                         const QString &deviceSerial = QString(),
+                         const QString &deviceVersionText = QString());
+
 signals:
     /* Consolidated one-click flash. Emitted by the Flash button after the
      * user accepts the FlashConfirmationDialog. Carries the resolved

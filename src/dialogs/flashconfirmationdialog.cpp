@@ -10,11 +10,19 @@
 
 #include <QComboBox>
 #include <QDebug>
+#include <QFont>
+#include <QIcon>
+#include <QLabel>
 #include <QLayout>
 #include <QPushButton>
 #include <QSignalBlocker>
+#include <QStandardItem>
+#include <QStandardItemModel>
 #include <QStringList>
+#include <QVBoxLayout>
+#include <algorithm>
 
+#include "boarddisplay.h"
 #include "common_defines.h"
 #include "legacy/legacy_migrator.h"
 #include "style_helpers.h"
@@ -22,21 +30,62 @@
 FlashConfirmationDialog::FlashConfirmationDialog(
         const QString &deviceName, const QString &deviceSerial,
         int deviceBoardId, uint16_t deviceFwVersion,
+        const QString &deviceVersionText,
         bool deviceInRecoveryMode, QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::FlashConfirmationDialog)
 {
     ui->setupUi(this);
 
+    /* Drop the title-bar "?" context-help button -- this dialog has no
+     * what's-this help, so the marker is dead weight. */
+    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
+    /* All warning/message banners sit in a dedicated area pinned to the TOP of
+     * the dialog (above the Device/Firmware panes), ordered red -> amber ->
+     * green by restackBanners(). The .ui's label_Verdict / label_Warning are now
+     * just unused anchors -- hide them; banners are built in code into this area. */
+    m_bannerArea = new QVBoxLayout();
+    m_bannerArea->setSpacing(8);
+    m_bannerArea->setContentsMargins(0, 0, 0, 0);
+    ui->layout_Root->insertLayout(0, m_bannerArea);
+    ui->label_Verdict->hide();
+    ui->label_Warning->hide();
+
+    /* Align the value columns of the two form panes (Device + Firmware) so a
+     * row in one lines up horizontally with the row beside it in the other.
+     * Each QFormLayout otherwise sizes its label column to its own widest
+     * label ("Firmware:" vs "File:"), so the value columns drift. Pin every
+     * tag (left-column) label to the widest natural width across both forms --
+     * computed from sizeHint() so it tracks the font / DPI / translation
+     * rather than a hardcoded pixel value. */
+    const QList<QLabel *> tagLabels = {
+        ui->label_DeviceNameTag,  ui->label_DeviceSerialTag,
+        ui->label_DeviceBoardTag, ui->label_DeviceFwTag,
+        ui->label_TargetFileTag,  ui->label_TargetBoardTag,
+        ui->label_TargetFwTag,
+    };
+    int tagWidth = 0;
+    for (QLabel *l : tagLabels) tagWidth = qMax(tagWidth, l->sizeHint().width());
+    for (QLabel *l : tagLabels) l->setMinimumWidth(tagWidth);
+
+    /* The board rows carry an inline CPU icon (rich text), which renders ~2px
+     * higher than the plain-text rows beside them; nudge them down so the board
+     * name sits on the same baseline as Name/Serial/File/Version. */
+    ui->label_DeviceBoard->setContentsMargins(0, 2, 0, 0);
+    ui->label_TargetBoard->setContentsMargins(0, 2, 0, 0);
+
     m_dev.deviceName          = deviceName;
     m_dev.deviceSerial        = deviceSerial;
     m_dev.deviceBoardId       = deviceBoardId;
     m_dev.deviceFwVersion     = deviceFwVersion;
+    m_dev.deviceVersionText   = deviceVersionText;
     m_dev.deviceInRecoveryMode = deviceInRecoveryMode;
 
     /* Flash button on the right of Cancel; disabled until a valid firmware is
      * resolved by the host (setResolvedTarget). */
     m_flashBtn = ui->buttonBox->addButton(tr("Flash"), QDialogButtonBox::AcceptRole);
+    freejoy_style::setRole(m_flashBtn, "role", "primary");
     connect(m_flashBtn, &QPushButton::clicked, this, &QDialog::accept);
     m_flashBtn->setEnabled(false);
 
@@ -77,49 +126,49 @@ bool FlashConfirmationDialog::verdictAllowsAutoRestore(Verdict v)
 FlashConfirmationDialog::Verdict
 FlashConfirmationDialog::computeVerdict(const Inputs &inputs)
 {
-    if (!inputs.image || !inputs.image->isLoaded()) {
-        return Verdict::Incompatible;
+    /* Thin wrapper: map the FirmwareImage + legacy migrator availability into
+     * raw values and defer to the pure, unit-tested classifier. */
+    const bool loaded = inputs.image && inputs.image->isLoaded();
+    int imgBoardId = 0;
+    uint16_t imgFw = 0;
+    if (loaded) {
+        imgBoardId = (inputs.image->board() == FirmwareImage::Board::F103BluePill)
+            ? BOARD_ID_F103_BLUEPILL
+            : (inputs.image->board() == FirmwareImage::Board::F411BlackPill)
+                ? BOARD_ID_F411_BLACKPILL
+                : 0;
+        imgFw = inputs.image->fwVersion();
     }
-    const FirmwareImage &img = *inputs.image;
+    /* Safety default: if the connected device's board is unknown (no params /
+     * board_id 0) and it's NOT in the bootloader, assume the more fragile Blue
+     * Pill (F103) so we refuse a Black Pill (F411) binary. Flashing F411
+     * firmware onto an F103 corrupts it; better to wrongly refuse a genuine-but-
+     * unidentified F411 in app mode than to brick an F103. Recovery flashes keep
+     * board_id 0 (the classifier's Recovery branch) so a real F411 reflash via
+     * the bootloader isn't blocked -- there the user is deliberately recovering
+     * a known board. */
+    const int effectiveDeviceBoard =
+        (inputs.deviceBoardId != 0 || inputs.deviceInRecoveryMode)
+            ? inputs.deviceBoardId
+            : BOARD_ID_F103_BLUEPILL;
+    return classifyFlash(effectiveDeviceBoard, inputs.deviceFwVersion,
+                         inputs.deviceInRecoveryMode, imgBoardId, imgFw, loaded,
+                         legacy::canMigrate(inputs.deviceFwVersion));
+}
 
-    /* Board match is the highest-stakes check -- F103 binary onto F411 (or
-     * vice versa) corrupts the device. Require a positive board match. */
-    const int imgBoardId = (img.board() == FirmwareImage::Board::F103BluePill)
-        ? BOARD_ID_F103_BLUEPILL
-        : (img.board() == FirmwareImage::Board::F411BlackPill)
-            ? BOARD_ID_F411_BLACKPILL
-            : 0;
-    if (imgBoardId == 0) {
-        return Verdict::Incompatible;
+/* CPU glyph tinted to the board's colour: blue = F103 Blue Pill, theme-ink
+ * (near-black on light, light on dark) = F411 Black Pill, muted grey = unknown.
+ * Theme-ink keeps the "Black Pill" icon visible on the dark theme too. */
+static QIcon boardCpuIcon(int boardId)
+{
+    QColor c;
+    switch (boardId) {
+        case BOARD_ID_F103_BLUEPILL:  c = QColor(0x26, 0x82, 0xe2);   break;
+        case BOARD_ID_F411_BLACKPILL: c = freejoy_style::iconInk();   break;
+        default:                      c = QColor(0x90, 0x90, 0x90);   break;
     }
-    if (inputs.deviceBoardId != 0 && inputs.deviceBoardId != imgBoardId) {
-        return Verdict::Incompatible;
-    }
-
-    /* Recovery mode: device is already in bootloader -- no current FW to
-     * compare against, no config backup possible. */
-    if (inputs.deviceInRecoveryMode) {
-        return Verdict::Recovery;
-    }
-    if (inputs.deviceFwVersion == 0) {
-        return Verdict::Recovery;
-    }
-
-    const uint16_t curGen = inputs.deviceFwVersion & 0xFFF0;
-    const uint16_t tgtGen = img.fwVersion() & 0xFFF0;
-
-    if (img.fwVersion() == 0) {
-        return Verdict::SameGeneration;
-    }
-    if (curGen == tgtGen) {
-        return Verdict::SameGeneration;
-    }
-    if (tgtGen > curGen) {
-        return legacy::canMigrate(inputs.deviceFwVersion)
-            ? Verdict::Upgrade
-            : Verdict::UpgradeNoMigrator;
-    }
-    return Verdict::Downgrade;
+    return QIcon(freejoy_style::tintedSvgPixmap(
+        QStringLiteral(":/Images/icons/lucide/cpu.svg"), QSize(16, 16), c));
 }
 
 void FlashConfirmationDialog::setSources(
@@ -129,12 +178,67 @@ void FlashConfirmationDialog::setSources(
      * initial resolve explicitly off currentSourceData() after this call. */
     QSignalBlocker bl(ui->comboBox_Source);
     ui->comboBox_Source->clear();
-    for (const auto &it : items) {
-        ui->comboBox_Source->addItem(it.first, it.second);
+
+    auto *model = qobject_cast<QStandardItemModel *>(ui->comboBox_Source->model());
+    if (!model) {                       /* defensive: plain fallback */
+        for (const auto &it : items) ui->comboBox_Source->addItem(it.first, it.second);
+        if (selectIndex >= 0 && selectIndex < ui->comboBox_Source->count())
+            ui->comboBox_Source->setCurrentIndex(selectIndex);
+        return;
     }
-    if (selectIndex >= 0 && selectIndex < ui->comboBox_Source->count()) {
-        ui->comboBox_Source->setCurrentIndex(selectIndex);
+
+    /* Bucket by board, then order newest-first within each (the host stamped a
+     * recency ts). Group order: Blue Pill, Black Pill, then Other. */
+    struct Entry { QString label; QVariant data; int origIndex; qint64 ts; };
+    QVector<Entry> f103, f411, other;
+    for (int i = 0; i < items.size(); ++i) {
+        const QVariantMap d = items[i].second.toMap();
+        Entry e{ items[i].first, items[i].second, i,
+                 d.value(kSourceTimestampKey).toLongLong() };
+        switch (d.value(kSourceBoardIdKey).toInt()) {
+            case BOARD_ID_F103_BLUEPILL:  f103  << e; break;
+            case BOARD_ID_F411_BLACKPILL: f411  << e; break;
+            default:                      other << e; break;
+        }
     }
+    const auto newestFirst = [](const Entry &a, const Entry &b) { return a.ts > b.ts; };
+    std::stable_sort(f103.begin(),  f103.end(),  newestFirst);
+    std::stable_sort(f411.begin(),  f411.end(),  newestFirst);
+    std::stable_sort(other.begin(), other.end(), newestFirst);
+
+    int rowForSelected = -1;
+    const auto addGroup = [&](const QString &heading, int boardId,
+                              const QVector<Entry> &group) {
+        if (group.isEmpty()) return;
+        auto *hdr = new QStandardItem(heading);          /* non-selectable header */
+        hdr->setFlags(Qt::NoItemFlags);
+        QFont hf = hdr->font();
+        hf.setBold(true);
+        hdr->setData(hf, Qt::FontRole);
+        model->appendRow(hdr);
+        const QIcon icon = boardCpuIcon(boardId);
+        for (const Entry &e : group) {
+            auto *item = new QStandardItem(icon, e.label);
+            item->setData(e.data, Qt::UserRole);
+            model->appendRow(item);
+            if (e.origIndex == selectIndex) rowForSelected = model->rowCount() - 1;
+        }
+    };
+    addGroup(tr("F103 (Blue Pill)"),  BOARD_ID_F103_BLUEPILL,  f103);
+    addGroup(tr("F411 (Black Pill)"), BOARD_ID_F411_BLACKPILL, f411);
+    addGroup(tr("Other"),             0,                       other);
+
+    /* Land selection on a real (non-header) row -- the requested one, else the
+     * first selectable entry. */
+    if (rowForSelected < 0) {
+        for (int r = 0; r < model->rowCount(); ++r) {
+            if (model->item(r)->flags().testFlag(Qt::ItemIsSelectable)) {
+                rowForSelected = r;
+                break;
+            }
+        }
+    }
+    if (rowForSelected >= 0) ui->comboBox_Source->setCurrentIndex(rowForSelected);
 }
 
 QVariant FlashConfirmationDialog::currentSourceData() const
@@ -148,24 +252,34 @@ void FlashConfirmationDialog::renderDevice()
         m_dev.deviceName.isEmpty() ? QStringLiteral("-") : m_dev.deviceName);
     ui->label_DeviceSerial->setText(
         m_dev.deviceSerial.isEmpty() ? QStringLiteral("-") : m_dev.deviceSerial);
-    ui->label_DeviceBoard->setText(boardLabel(m_dev.deviceBoardId));
+    /* Assume Blue Pill when the device's board isn't explicitly Black -- a Black
+     * Pill only ever runs firmware that reports board_id=2, so an unknown
+     * connected device is an F103. Same rule as the sidebar device card; only
+     * the device's own board is assumed (the Firmware/Target board below shows
+     * exactly what the .bin reports). */
+    const int shownDeviceBoard = (m_dev.deviceBoardId == BOARD_ID_F411_BLACKPILL)
+        ? BOARD_ID_F411_BLACKPILL : BOARD_ID_F103_BLUEPILL;
+    ui->label_DeviceBoard->setText(boardLabel(shownDeviceBoard));
 
-    /* Show the reported firmware version whenever we actually have one;
-     * "(in bootloader)" only stands in when there's genuinely no version.
-     * Log the raw state so a stuck/over-eager recovery flag is diagnosable. */
+    /* Firmware version: show the SAME string the main device card paints
+     * (deviceVersionText, from deviceVersionDisplay) so the two never drift.
+     * Empty only when the device was seen purely in flasher mode -- then fall
+     * back to a bootloader placeholder. Log the raw state so a stuck/over-eager
+     * recovery flag is diagnosable. */
     qInfo().nospace() << "FlashConfirmationDialog: inRecoveryMode="
                       << m_dev.deviceInRecoveryMode
                       << " deviceFwVersion=0x"
                       << QString::number(m_dev.deviceFwVersion, 16)
-                      << " boardId=" << m_dev.deviceBoardId;
+                      << " boardId=" << m_dev.deviceBoardId
+                      << " versionText=" << m_dev.deviceVersionText;
     QString fwLabel;
-    if (m_dev.deviceFwVersion != 0) {
-        fwLabel = fwVersionLabel(m_dev.deviceFwVersion);
+    if (!m_dev.deviceVersionText.isEmpty()) {
+        fwLabel = m_dev.deviceVersionText;
         if (m_dev.deviceInRecoveryMode) fwLabel += tr(" (in bootloader)");
     } else if (m_dev.deviceInRecoveryMode) {
         fwLabel = tr("(in bootloader -- version unknown)");
     } else {
-        fwLabel = fwVersionLabel(0);
+        fwLabel = tr("(unknown)");
     }
     ui->label_DeviceFw->setText(fwLabel);
 }
@@ -184,11 +298,11 @@ void FlashConfirmationDialog::setResolvedTarget(const FirmwareImage &image)
 void FlashConfirmationDialog::clearTarget(const QString &hint)
 {
     m_verdict = Verdict::None;
+    setCrossingWarning(false);
     ui->label_TargetFile->setText(QStringLiteral("-"));
     ui->label_TargetBoard->setText(QStringLiteral("-"));
     ui->label_TargetFw->setText(QStringLiteral("-"));
-    ui->label_Verdict->clear();
-    ui->label_Verdict->setVisible(false);
+    hideVerdictBanner();
     setInfoBanner(freejoy_style::accentAmber(), hint);
     m_flashBtn->setEnabled(false);
     ui->comboBox_Source->setEnabled(true);
@@ -197,39 +311,121 @@ void FlashConfirmationDialog::clearTarget(const QString &hint)
 
 void FlashConfirmationDialog::setBusy(const QString &msg)
 {
-    ui->label_Verdict->setVisible(false);
+    setCrossingWarning(false);
+    hideVerdictBanner();
     setInfoBanner(freejoy_style::accentAmber(), msg);
     m_flashBtn->setEnabled(false);
     ui->comboBox_Source->setEnabled(false);
     ui->pushButton_Browse->setEnabled(false);
 }
 
+void FlashConfirmationDialog::restackBanners()
+{
+    /* Re-order the visible banners in the top area: red -> amber -> green. */
+    freejoy_style::restackBanners(m_bannerArea,
+        { m_crossingBanner, m_verdictBanner, m_infoBanner });
+}
+
+void FlashConfirmationDialog::setVerdictBanner(const QColor &accent, const QString &text)
+{
+    /* STATUS banner: the icon is the check/triangle picked by statusPixmap(),
+     * sharing makeAlertBanner's icon/text alignment so the verdict box and the
+     * info box line up identically. Recreated on each change. */
+    if (m_verdictBanner) {
+        m_bannerArea->removeWidget(m_verdictBanner);
+        m_verdictBanner->hide();          /* hide now -- deleteLater is deferred,
+                                             else the old box floats until the
+                                             next event loop tick (overlap bug) */
+        m_verdictBanner->deleteLater();
+    }
+    m_verdictBanner = freejoy_style::makeAlertBanner(accent, text, this,
+                                                     freejoy_style::statusPixmap(accent));
+    /* A child created while the dialog is already visible starts hidden
+     * (isHidden()==true) until shown -- mark it visible so restackBanners()
+     * adds it. */
+    m_verdictBanner->show();
+    restackBanners();
+}
+
+void FlashConfirmationDialog::hideVerdictBanner()
+{
+    if (m_verdictBanner) m_verdictBanner->setVisible(false);
+    restackBanners();
+}
+
 void FlashConfirmationDialog::setInfoBanner(const QColor &accent, const QString &html)
 {
-    /* One persistent banner widget, replaced in place on each state change
-     * (cleaner than mutating the makeAlertBanner internals). */
-    QWidget *old = m_infoBanner ? m_infoBanner
-                                : static_cast<QWidget *>(ui->label_Warning);
-    auto *banner = freejoy_style::makeAlertBanner(accent, html, this);
-    if (QLayout *lay = old->parentWidget()->layout()) {
-        lay->replaceWidget(old, banner);
+    /* One amber info/process banner, recreated on each state change. */
+    if (m_infoBanner) {
+        m_bannerArea->removeWidget(m_infoBanner);
+        m_infoBanner->hide();             /* hide before the deferred delete */
+        m_infoBanner->deleteLater();
     }
-    old->hide();
-    if (m_infoBanner) m_infoBanner->deleteLater();
-    m_infoBanner = banner;
+    m_infoBanner = freejoy_style::makeAlertBanner(accent, html, this);
+    m_infoBanner->show();   /* see setVerdictBanner: visible-on-create for restack */
+    restackBanners();
+}
+
+void FlashConfirmationDialog::setCrossingWarning(bool show)
+{
+    if (show && !m_crossingBanner) {
+        m_crossingBanner = freejoy_style::makeAlertBanner(
+            freejoy_style::accentRed(),
+            tr("<b>Switching from FreeJoy to FreeJoyX.</b> This is a different "
+               "firmware project, not an update of FreeJoy -- the version number "
+               "will look like it goes backwards (e.g. v1.7.x to 0.1.x), which is "
+               "expected, not a downgrade. Your existing button/axis mappings "
+               "carry forward where the wire format matches; review your "
+               "configuration after flashing."),
+            this);
+        m_crossingBanner->show();   /* visible-on-create for restack */
+        restackBanners();
+    } else if (!show && m_crossingBanner) {
+        m_bannerArea->removeWidget(m_crossingBanner);
+        m_crossingBanner->hide();         /* hide before the deferred delete */
+        m_crossingBanner->deleteLater();
+        m_crossingBanner = nullptr;
+    }
 }
 
 void FlashConfirmationDialog::renderTargetAndVerdict(const Inputs &in)
 {
     m_verdict = computeVerdict(in);
 
-    /* --- Target pane --- */
+    /* Prominent red warning when crossing project lines (upstream FreeJoy ->
+     * FreeJoyX). Logic lives in flashverdict.h (unit-tested). */
+    const uint16_t targetFw =
+        (in.image && in.image->isLoaded()) ? in.image->fwVersion() : 0;
+    const bool crossing = isCrossingToFreeJoyX(m_dev.deviceFwVersion, targetFw);
+    setCrossingWarning(crossing);
+
+    /* --- Target pane (formatted like the main device card) --- */
     if (in.image && in.image->isLoaded()) {
         ui->label_TargetFile->setText(in.image->fileName());
-        ui->label_TargetBoard->setText(in.image->boardName());
-        const QString v = in.image->versionLabel();
-        ui->label_TargetFw->setText(
-            v.isEmpty() ? tr("Legacy binary (no metadata)") : v);
+
+        /* Board wording matches the device card: map the image's board enum
+         * through the same boardLabel() used for the Device pane. */
+        int tgtBoardId = 0;
+        if (in.image->board() == FirmwareImage::Board::F103BluePill) {
+            tgtBoardId = BOARD_ID_F103_BLUEPILL;
+        } else if (in.image->board() == FirmwareImage::Board::F411BlackPill) {
+            tgtBoardId = BOARD_ID_F411_BLACKPILL;
+        }
+        ui->label_TargetBoard->setText(boardLabel(tgtBoardId));
+
+        /* Version with the same project prefix the card uses. A FreeJoyX-gen
+         * binary (wire-gen < 0x1000, or a semver-footer-only build) reads
+         * "FreeJoyX a.b.c (bN)"; an upstream build reads "FreeJoy ...". */
+        QString v = in.image->versionLabel();
+        if (v.isEmpty()) {
+            v = tr("Legacy binary (no metadata)");
+        } else {
+            const bool targetIsFreejoyx =
+                (targetFw == 0) || ((targetFw & 0xFFF0) < 0x1000);
+            v = (targetIsFreejoyx ? QStringLiteral("FreeJoyX %1")
+                                  : QStringLiteral("FreeJoy %1")).arg(v);
+        }
+        ui->label_TargetFw->setText(v);
     } else {
         ui->label_TargetFile->setText(QStringLiteral("-"));
         ui->label_TargetBoard->setText(QStringLiteral("-"));
@@ -266,26 +462,38 @@ void FlashConfirmationDialog::renderTargetAndVerdict(const Inputs &in)
             verdictFill = freejoy_style::accentAmber();
             break;
         case Verdict::Incompatible:
-            verdictText = tr("Incompatible -- the selected firmware does not match this "
-                             "device's board type. Flash refused.");
+            verdictText = tr("Incompatible -- firmware is for a different board. Flash refused.");
             verdictFill = freejoy_style::accentRed();
             break;
         case Verdict::None:
             break;
     }
-    ui->label_Verdict->setVisible(true);
-    ui->label_Verdict->setText(verdictText);
-    ui->label_Verdict->setStyleSheet(
-        QStringLiteral("padding:8px; border-radius:4px; font-weight:600; "
-                       "background:%1; color:white;").arg(verdictFill.name()));
+
+    /* On an upstream FreeJoy -> FreeJoyX crossing the raw version math
+     * classifies as Downgrade (0x17xx -> 0x00xx), but it isn't a real
+     * downgrade -- it's a different project. The prominent red crossing banner
+     * already explains the apparent regression, so suppress the contradictory
+     * amber "Downgrade" box here. The verdict itself stays Downgrade so the
+     * post-flash logic still skips auto-restore (the wire gen doesn't match);
+     * see flashverdict.h crossingMasksDowngrade(). */
+    if (crossingMasksDowngrade(m_verdict, crossing) || m_verdict == Verdict::None) {
+        hideVerdictBanner();
+    } else {
+        /* Status banner (check for green, triangle for amber/red) sharing the
+         * info banner's icon/text alignment -- see setVerdictBanner. */
+        setVerdictBanner(verdictFill, verdictText);
+    }
+
+    /* Incompatible needs no second box -- the red verdict already says it.
+     * Hide the info banner so only one box shows. */
+    if (m_verdict == Verdict::Incompatible) {
+        if (m_infoBanner) m_infoBanner->setVisible(false);
+        restackBanners();
+        return;
+    }
 
     /* --- One amber info banner: heading + a single numbered step list + the
      *     don't-unplug note (matches the Install Firmware dialog's banner). --- */
-    if (m_verdict == Verdict::Incompatible) {
-        setInfoBanner(freejoy_style::accentAmber(),
-            tr("Pick a firmware binary that matches the device's board, then try again."));
-        return;
-    }
 
     QStringList steps;
     const bool willRestore =
@@ -304,28 +512,26 @@ void FlashConfirmationDialog::renderTargetAndVerdict(const Inputs &in)
                     "from the saved file if needed.");
     }
 
+    /* Generous vertical breathing room between the three blocks (heading,
+     * numbered steps, closing note): the list gets a 10px top margin off the
+     * heading, and the note sits in its own block 10px below the list. */
     const QString html =
         QStringLiteral("<b>%1</b>"
-                       "<ol style='margin-left:-20px; margin-top:4px; margin-bottom:2px;'>"
-                       "<li>%2</li></ol>%3")
-            .arg(tr("The configurator will:"),
+                       "<ol style='margin-left:-20px; margin-top:10px; margin-bottom:2px;'>"
+                       "<li>%2</li></ol>"
+                       "<div style='margin-top:10px;'>%3</div>")
+            .arg(tr("Upgrade process:"),
                  steps.join(QStringLiteral("</li><li>")),
                  tr("Approximately 30 seconds -- do not unplug the device during this process."));
 
     setInfoBanner(freejoy_style::accentAmber(), html);
 }
 
-QString FlashConfirmationDialog::fwVersionLabel(uint16_t fw)
-{
-    if (fw == 0) return tr("(unknown)");
-    return QStringLiteral("v0x%1").arg(fw, 4, 16, QChar('0'));
-}
-
 QString FlashConfirmationDialog::boardLabel(int boardId)
 {
-    switch (boardId) {
-        case BOARD_ID_F103_BLUEPILL:  return QStringLiteral("F103 BluePill");
-        case BOARD_ID_F411_BLACKPILL: return QStringLiteral("F411 BlackPill");
-        default: return tr("Unknown");
-    }
+    /* CPU icon + "F103 (Blue Pill)" / "F411 (Black Pill)" / em-dash, shared with
+     * the device card via board_display. The label renders it as rich text
+     * (QLabel auto-detects the inline <img>). Modal dialog, so baking the
+     * current theme ink for the F411 colour is fine. */
+    return board_display::html(boardId);
 }

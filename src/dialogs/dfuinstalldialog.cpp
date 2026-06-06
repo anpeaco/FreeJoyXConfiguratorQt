@@ -18,13 +18,23 @@
 #include <QProgressBar>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QToolButton>
+#include <QComboBox>
+#include <QSpinBox>
+#include <QSignalBlocker>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QDialogButtonBox>
 #include <QTimer>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFileInfo>
 #include <QFont>
+#include <QEvent>
+#include <QDateTime>
+
+#include "global.h"
+#include "widgets/debugwindow.h"
 
 namespace {
 
@@ -54,7 +64,7 @@ DfuInstallDialog::DfuInstallDialog(QWidget *parent)
     : QDialog(parent)
     , m_session(new DfuInstallSession(this))
 {
-    setWindowTitle(tr("Install Firmware"));
+    setWindowTitle(tr("Install firmware"));
     setModal(true);
     /* Drop the title-bar "?" context-help button (Windows adds it to dialogs
      * by default) -- there's no per-widget "What's This" help here. */
@@ -112,19 +122,8 @@ void DfuInstallDialog::buildUi()
     auto *root = new QVBoxLayout(this);
     root->setSpacing(10);
 
-    /* --- What this does --------------------------------------------- */
-    auto *intro = new QLabel(this);
-    intro->setTextFormat(Qt::RichText);
-    intro->setWordWrap(true);
-    intro->setText(tr(
-        "Writes the FreeJoyX <b>bootloader and application</b> to an "
-        "<b>F411 (Black Pill)</b> over the chip's built-in USB DFU. "
-        "Works on a blank, configured, or "
-        "bricked board."));
-    root->addWidget(intro);
-
     /* --- Step 1: get the chip into ROM DFU -------------------------- */
-    auto *dfuBox = new QGroupBox(tr("1.  Put the board in DFU mode"), this);
+    auto *dfuBox = new QGroupBox(tr("Device DFU mode"), this);
     auto *dfuLay = new QVBoxLayout(dfuBox);
     dfuLay->setSpacing(8);
 
@@ -164,12 +163,14 @@ void DfuInstallDialog::buildUi()
         "<i>STM32&nbsp;BOOTLOADER</i>."));
     dfuLay->addWidget(m_instructions);
 
-    /* Detection status + manual re-check. */
-    auto *detectRow = new QHBoxLayout();
-    m_detectLabel = new QLabel(tr("Looking for a board in DFU mode…"), dfuBox);
-    m_detectLabel->setWordWrap(true);
-    m_detectBtn = new QPushButton(tr("Re-check"), dfuBox);
-    connect(m_detectBtn, &QPushButton::clicked, this, &DfuInstallDialog::onManualRecheck);
+    /* Detection status as a severity banner (shared makeAlertBanner look),
+     * with the re-check / driver buttons on their own right-aligned row below. */
+    m_detectArea = new QVBoxLayout();
+    m_detectArea->setContentsMargins(0, 0, 0, 0);
+    dfuLay->addLayout(m_detectArea);
+
+    auto *detectBtnRow = new QHBoxLayout();
+    detectBtnRow->addStretch(1);
     /* Shown only when a probe reports NeedsDriver: the board is present but its
      * USB driver isn't installed (typical fresh-Windows state). Hidden until
      * then; on Linux/macOS the needs-driver verdict never arises, so it stays
@@ -177,16 +178,21 @@ void DfuInstallDialog::buildUi()
     m_driverBtn = new QPushButton(tr("Install WinUSB driver"), dfuBox);
     m_driverBtn->setVisible(false);
     connect(m_driverBtn, &QPushButton::clicked, this, &DfuInstallDialog::onInstallDriverClicked);
-    detectRow->addWidget(m_detectLabel, 1);
-    detectRow->addWidget(m_driverBtn, 0);
-    detectRow->addWidget(m_detectBtn, 0);
-    dfuLay->addLayout(detectRow);
+    m_detectBtn = new QPushButton(tr("Re-check"), dfuBox);
+    connect(m_detectBtn, &QPushButton::clicked, this, &DfuInstallDialog::onManualRecheck);
+    detectBtnRow->addWidget(m_driverBtn, 0);
+    detectBtnRow->addWidget(m_detectBtn, 0);
+    dfuLay->addLayout(detectBtnRow);
+
+    setDetectStatus(DetectInfo, tr("Looking for a board in DFU mode…"));
 
     root->addWidget(dfuBox);
 
-    /* --- Step 2: binaries to write ---------------------------------- */
-    auto *binBox = new QGroupBox(tr("2.  Firmware to write"), this);
-    auto *binForm = new QFormLayout(binBox);
+    /* --- Step 2: binaries to write + Advanced timing ---------------- */
+    auto *binBox = new QGroupBox(tr("Firmware"), this);
+    auto *binLay = new QVBoxLayout(binBox);
+    binLay->setSpacing(8);
+    auto *binForm = new QFormLayout();
 
     auto makePathRow = [this](QLineEdit *&edit, QPushButton *&btn,
                               const char *slot) -> QWidget * {
@@ -212,51 +218,90 @@ void DfuInstallDialog::buildUi()
     binForm->addRow(tr("Application (0x08020000):"),
                     makePathRow(m_appEdit, m_browseAppBtn,
                                 SLOT(onBrowseApp())));
+    binLay->addLayout(binForm);
+
+    /* --- Advanced (collapsible): DfuSe flash timing ----------------- */
+    /* A cog + chevron toggle reveals a preset-driven set of timing boxes,
+     * nested inside the Firmware group. Hidden by default; most users never
+     * touch it. Values flow into DfuInstallSession::Params::Timing -> helper
+     * flags (gated until the helper supports them -- see DfuInstallSession::start). */
+    m_advToggle = new QToolButton(binBox);
+    /* Shared "Extended Settings" disclosure look (gear + label + chevron),
+     * identical to the axes Extended Settings toggle. */
+    freejoy_style::configureSectionToggle(m_advToggle, tr("Extended Settings"));
+    binLay->addWidget(m_advToggle, 0, Qt::AlignLeft);
+
+    m_advBox = new QWidget(binBox);
+    m_advBox->setVisible(false);
+    auto *advForm = new QFormLayout(m_advBox);
+    advForm->setContentsMargins(14, 4, 0, 4);          /* indent under the toggle */
+
+    m_presetCombo = new QComboBox(m_advBox);
+    m_presetCombo->addItems({ tr("Baseline"), tr("Loose"), tr("Lax"), tr("Custom") });
+    m_presetCombo->setToolTip(tr("Baseline = fast/tight (good USB); Loose / Lax add "
+                                 "margins for flaky cables or hubs; Custom unlocks "
+                                 "the boxes."));
+    advForm->addRow(tr("Timing preset:"), m_presetCombo);
+
+    auto makeSpin = [this](int lo, int hi, int step, const QString &suffix) {
+        auto *s = new QSpinBox(m_advBox);
+        s->setRange(lo, hi);
+        s->setSingleStep(step);
+        if (!suffix.isEmpty()) s->setSuffix(suffix);
+        return s;
+    };
+    m_spinDelay   = makeSpin(0, 100, 1, tr(" ms"));
+    m_spinPoll    = makeSpin(1000, 30000, 500, tr(" ms"));
+    m_spinXfer    = makeSpin(500, 15000, 250, tr(" ms"));
+    m_spinRetries = makeSpin(0, 10, 1, QString());
+    m_spinSettle  = makeSpin(0, 10000, 250, tr(" ms"));
+    advForm->addRow(tr("Inter-block delay:"),    m_spinDelay);
+    advForm->addRow(tr("Poll / erase timeout:"), m_spinPoll);
+    advForm->addRow(tr("Transfer timeout:"),     m_spinXfer);
+    advForm->addRow(tr("Retries:"),              m_spinRetries);
+    advForm->addRow(tr("Post-flash settle:"),    m_spinSettle);
+    binLay->addWidget(m_advBox);
+
+    connect(m_advToggle, &QToolButton::toggled, this, [this](bool on) {
+        m_advBox->setVisible(on);
+        /* The gear/label/chevron text is kept in sync by configureSectionToggle. */
+        /* Re-fit height for the now-(in)visible Advanced box, preserving width.
+         * Showing/hiding m_advBox posts a *queued* layout invalidation, so we
+         * must activate() the layout to recompute sizeHint() synchronously --
+         * otherwise the collapse path resizes against the stale (still-expanded)
+         * hint and the dialog never shrinks back. Width is held so a bare
+         * adjustSize() can't snap to the content's narrower natural width. */
+        const int keepWidth = width();
+        if (QLayout *l = layout()) l->activate();
+        resize(keepWidth, sizeHint().height());
+    });
+    connect(m_presetCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &DfuInstallDialog::onTimingPresetChanged);
+    onTimingPresetChanged(m_presetCombo->currentIndex());   /* Baseline + lock */
+
     root->addWidget(binBox);
 
-    /* --- Progress + log --------------------------------------------- */
-    m_stageLabel = new QLabel(tr("Ready."), this);
-    root->addWidget(m_stageLabel);
+    /* Progress + log live in a separate window shown on Install. */
+    buildProgressDialog();
 
-    m_progress = new QProgressBar(this);
-    m_progress->setRange(0, 100);
-    m_progress->setValue(0);
-    root->addWidget(m_progress);
-
-    auto *logLabel = new QLabel(tr("Log"), this);
-    logLabel->setStyleSheet(QStringLiteral("color: palette(mid);"));
-    root->addWidget(logLabel);
-
-    m_log = new QPlainTextEdit(this);
-    m_log->setReadOnly(true);
-    m_log->setMaximumBlockCount(500);
-    m_log->setMinimumHeight(110);
-    QFont logFont = m_log->font();
-    logFont.setFamily(QStringLiteral("Consolas"));
-    logFont.setStyleHint(QFont::Monospace);
-    m_log->setFont(logFont);
-    root->addWidget(m_log, 1);
-
-    /* --- Erase warning (always visible) + action buttons ------------ */
+    /* --- Erase warning (always visible) ----------------------------- */
     /* Boxed red "danger" banner: filled + outlined area with a mono Lucide
-     * triangle and legible neutral text, icon + text vertically centred. */
+     * triangle and legible neutral text. Pinned to the TOP of the dialog (the
+     * convention across the app: warning/message areas sit at the top, ordered
+     * red -> amber -> green). */
     auto *warn = freejoy_style::makeAlertBanner(freejoy_style::accentRed(),
         tr("Installing erases the board and restores factory defaults — "
            "its current configuration is lost."), this);
-    root->addWidget(warn);
+    root->insertWidget(0, warn);
 
+    /* --- Action buttons --------------------------------------------- */
     auto *btnRow = new QHBoxLayout();
     m_installBtn = new QPushButton(tr("Install"), this);
+    freejoy_style::setRole(m_installBtn, "role", "primary");
     m_installBtn->setDefault(true);
     connect(m_installBtn, &QPushButton::clicked, this, &DfuInstallDialog::onInstallClicked);
     m_closeBtn = new QPushButton(tr("Close"), this);
-    connect(m_closeBtn, &QPushButton::clicked, this, [this]() {
-        if (m_installing) {
-            m_session->cancel();      /* becomes "Cancel" while a write is live */
-        } else {
-            reject();
-        }
-    });
+    connect(m_closeBtn, &QPushButton::clicked, this, &QDialog::reject);
     btnRow->addStretch(1);
     btnRow->addWidget(m_installBtn);
     btnRow->addWidget(m_closeBtn);
@@ -265,15 +310,100 @@ void DfuInstallDialog::buildUi()
     /* Helper-missing is a hard stop: surface it up front and keep Install
      * disabled rather than failing on first click. */
     if (!DfuInstallSession::helperAvailable()) {
-        m_detectLabel->setText(tr("The install helper (freejoyx-flash) is "
-                                  "missing from the application folder."));
-        m_detectLabel->setStyleSheet(QStringLiteral("color: #c0392b; font-weight: bold;"));
+        setDetectStatus(DetectError, tr("The install helper (freejoyx-flash) is "
+                                        "missing from the application folder."));
         m_installBtn->setEnabled(false);
         m_detectBtn->setEnabled(false);
         m_rebootBtn->setEnabled(false);
     }
 
-    resize(580, 540);
+    /* The setup dialog is now compact (progress/log moved to their own window).
+     * Fit the height to the content; keep a comfortable fixed width. */
+    adjustSize();
+    resize(560, height());
+}
+
+void DfuInstallDialog::buildProgressDialog()
+{
+    /* A separate, application-modal window that carries the live install --
+     * shown on Install. Deliberately the SAME design as the Upgrade-Firmware
+     * FlashProgressDialog (flashprogressdialog.ui): 14px margins, 10px spacing,
+     * a 13pt/600 stage label, a mono byte counter, a centred progress bar, a
+     * bold "Status:" heading, a mono 9pt status log, and a button box whose
+     * Cancel relabels to Close. Plain QDialog (no subclass / no moc); the
+     * window-close (X) is removed via the window flags and also blocked mid-
+     * write by eventFilter. */
+    m_progressDialog = new QDialog(this);
+    m_progressDialog->setWindowTitle(tr("Installing firmware"));
+    m_progressDialog->setModal(true);
+    m_progressDialog->setWindowFlags((m_progressDialog->windowFlags()
+                                      & ~Qt::WindowCloseButtonHint
+                                      & ~Qt::WindowContextHelpButtonHint)
+                                     | Qt::CustomizeWindowHint
+                                     | Qt::WindowTitleHint);
+    m_progressDialog->installEventFilter(this);
+
+    auto *lay = new QVBoxLayout(m_progressDialog);
+    lay->setSpacing(10);
+    lay->setContentsMargins(14, 14, 14, 14);
+
+    m_stageLabel = new QLabel(tr("Preparing…"), m_progressDialog);
+    m_stageLabel->setStyleSheet(QStringLiteral("font-size:13pt; font-weight:600;"));
+    m_stageLabel->setWordWrap(true);
+    lay->addWidget(m_stageLabel);
+
+    m_bytesLabel = new QLabel(m_progressDialog);
+    m_bytesLabel->setStyleSheet(QStringLiteral("font-family:Consolas, monospace; color: palette(mid);"));
+    lay->addWidget(m_bytesLabel);
+
+    m_progress = new QProgressBar(m_progressDialog);
+    m_progress->setRange(0, 100);
+    m_progress->setValue(0);
+    m_progress->setAlignment(Qt::AlignCenter);
+    lay->addWidget(m_progress);
+
+    auto *statusHeading = new QLabel(tr("Status:"), m_progressDialog);
+    statusHeading->setStyleSheet(QStringLiteral("font-weight:600; margin-top:4px;"));
+    lay->addWidget(statusHeading);
+
+    m_log = new QPlainTextEdit(m_progressDialog);
+    m_log->setReadOnly(true);
+    m_log->setMaximumBlockCount(50);
+    m_log->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+    m_log->setStyleSheet(QStringLiteral("font-family:Consolas, monospace; font-size:9pt;"));
+    m_log->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    lay->addWidget(m_log, 1);
+
+    m_progButtons = new QDialogButtonBox(QDialogButtonBox::Cancel, m_progressDialog);
+    m_progCancelBtn = m_progButtons->button(QDialogButtonBox::Cancel);
+    connect(m_progButtons, &QDialogButtonBox::rejected, this, [this]() {
+        if (m_installing) {
+            m_session->cancel();          /* "Cancel" while a write is live */
+            return;
+        }
+        /* "Close" once finished/idle. */
+        m_progressDialog->hide();
+        if (m_installed) {
+            accept();                     /* success -> end the whole flow */
+        } else {
+            /* failure / cancel -> bring the setup dialog back for a retry */
+            show();
+            raise();
+            activateWindow();
+        }
+    });
+    lay->addWidget(m_progButtons);
+
+    m_progressDialog->resize(500, 380);
+}
+
+bool DfuInstallDialog::eventFilter(QObject *obj, QEvent *ev)
+{
+    if (obj == m_progressDialog && ev->type() == QEvent::Close && m_installing) {
+        ev->ignore();                     /* no orphaning the device mid-write */
+        return true;
+    }
+    return QDialog::eventFilter(obj, ev);
 }
 
 void DfuInstallDialog::prefillBundledBinaries()
@@ -329,9 +459,8 @@ void DfuInstallDialog::onRebootToDfu()
     appendLog(tr("Sent reboot-to-DFU command; waiting for the board to "
                  "re-enumerate in DFU mode…"));
     if (!m_installing) {
-        m_detectLabel->setText(tr("Rebooting into DFU… if nothing happens, "
-                                  "use the BOOT0 method above."));
-        m_detectLabel->setStyleSheet(QString());
+        setDetectStatus(DetectInfo, tr("Rebooting into DFU… if nothing happens, "
+                                       "use the BOOT0 method above."));
     }
 }
 
@@ -374,17 +503,14 @@ void DfuInstallDialog::onAvailability(DfuInstallSession::Availability avail)
     if (!m_installing && !m_bindingDriver) {
         switch (avail) {
         case Avail::Ready:
-            m_detectLabel->setText(tr("Board detected in DFU mode — ready to write."));
-            m_detectLabel->setStyleSheet(QStringLiteral("color: #27ae60; font-weight: bold;"));
+            setDetectStatus(DetectReady, tr("Board detected in DFU mode — ready to write."));
             break;
         case Avail::NeedsDriver:
-            m_detectLabel->setText(tr("Board found, but its USB driver isn't installed — "
-                                      "click \"Install WinUSB driver\"."));
-            m_detectLabel->setStyleSheet(QStringLiteral("color: #d68910; font-weight: bold;"));
+            setDetectStatus(DetectWarn, tr("Board found, but its USB driver isn't installed — "
+                                           "click \"Install WinUSB driver\"."));
             break;
         case Avail::Absent:
-            m_detectLabel->setText(tr("No board in DFU mode yet — follow step 1 above."));
-            m_detectLabel->setStyleSheet(QString());
+            setDetectStatus(DetectInfo, tr("No board in DFU mode yet — follow the steps above."));
             break;
         }
     }
@@ -404,9 +530,8 @@ void DfuInstallDialog::onInstallDriverClicked()
     m_bindingDriver = true;
     m_driverBtn->setEnabled(false);
     m_detectBtn->setEnabled(false);
-    m_detectLabel->setText(tr("Installing the WinUSB driver… approve the Windows "
-                              "prompt if it appears."));
-    m_detectLabel->setStyleSheet(QString());
+    setDetectStatus(DetectInfo, tr("Installing the WinUSB driver… approve the Windows "
+                                   "prompt if it appears."));
     appendLog(tr("Installing the WinUSB driver for the DFU device…"));
     m_session->installDriver();
 }
@@ -426,6 +551,36 @@ void DfuInstallDialog::onDriverInstallFinished(bool ok, const QString &detail)
     /* Re-probe (verbose) so the now-bound device is picked up and the label /
      * Install button update for the new state. */
     if (!m_installing) m_session->probe(/*verbose=*/true);
+}
+
+void DfuInstallDialog::onTimingPresetChanged(int index)
+{
+    /* Preset -> spinbox values. Baseline matches the helper's built-in timing;
+     * Loose/Lax add progressively larger margins for flaky USB. Custom (last
+     * entry) leaves the values and unlocks the boxes for manual tuning. */
+    struct Preset { int delay, poll, xfer, retries, settle; };
+    static const Preset presets[] = {
+        {  0,  5000,  3000, 0, 1500 },   // Baseline
+        {  5,  8000,  5000, 2, 3000 },   // Loose
+        { 20, 15000, 10000, 5, 5000 },   // Lax
+    };
+    const int presetCount = int(sizeof(presets) / sizeof(presets[0]));
+    const bool custom = (index >= presetCount);   // last item == Custom
+
+    if (!custom && index >= 0) {
+        const Preset &p = presets[index];
+        const QSignalBlocker b1(m_spinDelay),  b2(m_spinPoll), b3(m_spinXfer),
+                             b4(m_spinRetries), b5(m_spinSettle);
+        m_spinDelay->setValue(p.delay);
+        m_spinPoll->setValue(p.poll);
+        m_spinXfer->setValue(p.xfer);
+        m_spinRetries->setValue(p.retries);
+        m_spinSettle->setValue(p.settle);
+    }
+    /* Boxes are read-only unless Custom is selected. */
+    for (QSpinBox *s : { m_spinDelay, m_spinPoll, m_spinXfer, m_spinRetries, m_spinSettle }) {
+        s->setEnabled(custom);
+    }
 }
 
 void DfuInstallDialog::onInstallClicked()
@@ -454,6 +609,13 @@ void DfuInstallDialog::onInstallClicked()
     p.bootBinPath = boot;
     p.appBinPath  = app;
     p.board = QStringLiteral("f411");
+    /* DfuSe timing from the Advanced section (preset or Custom). Collected
+     * regardless of whether the helper consumes it yet -- see start()'s gate. */
+    p.timing.dnloadDelayMs     = m_spinDelay->value();
+    p.timing.pollTimeoutMs     = m_spinPoll->value();
+    p.timing.transferTimeoutMs = m_spinXfer->value();
+    p.timing.retries           = m_spinRetries->value();
+    p.timing.settleMs          = m_spinSettle->value();
 
     if (!m_session->start(p)) {
         QMessageBox::critical(this, tr("Couldn't start"),
@@ -466,8 +628,22 @@ void DfuInstallDialog::onInstallClicked()
     m_installing = true;
     m_detectTimer->stop();
     setControlsLocked(true);
+
+    /* Bring up the progress window and run the install in it. */
     m_log->clear();
+    m_progress->setValue(0);
+    m_bytesLabel->clear();
+    m_stageLabel->setText(tr("Starting install…"));
+    m_stageLabel->setStyleSheet(QStringLiteral("font-size:13pt; font-weight:600;"));
+    if (m_progCancelBtn) m_progCancelBtn->setText(tr("Cancel"));
     appendLog(tr("Starting install…"));
+    m_progressDialog->show();
+    m_progressDialog->raise();
+    m_progressDialog->activateWindow();
+    /* The setup dialog steps aside once the write starts -- the progress window
+     * takes over. It's only hidden (not closed): on a failure/cancel we bring it
+     * back so the user can retry; on success the whole flow ends. */
+    hide();
 }
 
 void DfuInstallDialog::onStageChanged(DfuInstallSession::Stage s, const QString &detail)
@@ -484,7 +660,13 @@ void DfuInstallDialog::onStageChanged(DfuInstallSession::Stage s, const QString 
     case DfuInstallSession::Stage::Idle:              label = tr("Idle."); break;
     }
     m_stageLabel->setText(label);
-    m_stageLabel->setStyleSheet(QString());   // terminal colouring is set in onFinished
+    /* Base style; terminal colouring is layered on in onFinished. */
+    m_stageLabel->setStyleSheet(QStringLiteral("font-size:13pt; font-weight:600;"));
+    /* Byte counter only means something while bytes are streaming. */
+    if (s != DfuInstallSession::Stage::WritingBootloader
+        && s != DfuInstallSession::Stage::WritingApp) {
+        m_bytesLabel->clear();
+    }
     if (!detail.isEmpty()) appendLog(detail);
     const int p = weightedProgress(s, 0, 0);
     if (p >= 0) m_progress->setValue(p);    /* <0 == "leave the bar where it is" */
@@ -492,7 +674,16 @@ void DfuInstallDialog::onStageChanged(DfuInstallSession::Stage s, const QString 
 
 void DfuInstallDialog::onProgress(qint64 done, qint64 total)
 {
-    m_progress->setValue(weightedProgress(m_session->stage(), done, total));
+    const DfuInstallSession::Stage s = m_session->stage();
+    m_progress->setValue(weightedProgress(s, done, total));
+    /* Mirror FlashProgressDialog's "<sent> / <total> bytes" counter during the
+     * write stages. */
+    if ((s == DfuInstallSession::Stage::WritingBootloader
+         || s == DfuInstallSession::Stage::WritingApp) && total > 0) {
+        m_bytesLabel->setText(QStringLiteral("%1 / %2 bytes").arg(done).arg(total));
+    } else {
+        m_bytesLabel->clear();
+    }
 }
 
 void DfuInstallDialog::onLogLine(const QString &line)
@@ -507,21 +698,24 @@ void DfuInstallDialog::onFinished(bool success, const QString &detail)
     setControlsLocked(false);
     appendLog(detail);
 
+    /* Result is shown in the progress window itself (stage label + log), and
+     * its button flips back to "Close" via setControlsLocked above. No stacked
+     * message box -- mirrors the Upgrade-Firmware progress flow. */
+    m_bytesLabel->clear();
     if (success) {
         m_progress->setValue(100);
-        m_stageLabel->setText(tr("Firmware installed."));
-        m_stageLabel->setStyleSheet(QStringLiteral("color: #27ae60; font-weight: bold;"));
-        m_detectLabel->setText(tr("Install complete. Unplug/replug to use the "
-                                  "board; reopen this dialog to install again."));
-        m_detectLabel->setStyleSheet(QString());
-        QMessageBox::information(this, tr("Done"),
-            tr("Firmware installed. Unplug and replug the board to start "
-               "using it."));
+        m_stageLabel->setText(tr("Firmware installed. Unplug and replug the "
+                                 "board to start using it."));
+        m_stageLabel->setStyleSheet(QStringLiteral("font-size:13pt; font-weight:600; color:%1;")
+                                        .arg(freejoy_style::hexStr(freejoy_style::accentGreen())));
+        m_stageLabel->setWordWrap(true);
+        setDetectStatus(DetectReady, tr("Install complete. Unplug/replug to use the "
+                                        "board; reopen this dialog to install again."));
     } else {
-        m_stageLabel->setText(tr("Install failed."));
-        m_stageLabel->setStyleSheet(QStringLiteral("color: #c0392b; font-weight: bold;"));
-        QMessageBox::critical(this, tr("Install failed"),
-            detail.isEmpty() ? tr("The install did not complete.") : detail);
+        m_stageLabel->setText(detail.isEmpty() ? tr("Install failed.") : detail);
+        m_stageLabel->setStyleSheet(QStringLiteral("font-size:13pt; font-weight:600; color:%1;")
+                                        .arg(freejoy_style::hexStr(freejoy_style::accentRed())));
+        m_stageLabel->setWordWrap(true);
         /* Resume detection so the user can retry after re-entering DFU. */
         m_detectTimer->start();
     }
@@ -538,8 +732,21 @@ void DfuInstallDialog::setControlsLocked(bool locked)
     m_installBtn->setEnabled(!locked && !m_installed && m_devicePresent
                              && !m_bootEdit->text().isEmpty()
                              && !m_appEdit->text().isEmpty());
-    /* Close doubles as Cancel during a write. */
-    m_closeBtn->setText(locked ? tr("Cancel") : tr("Close"));
+    /* Advanced timing: frozen while a write is in flight. When unlocking, the
+     * spinboxes only re-enable if the preset is Custom (onTimingPresetChanged
+     * owns their per-box state). */
+    m_advToggle->setEnabled(!locked);
+    m_presetCombo->setEnabled(!locked);
+    if (locked) {
+        for (QSpinBox *s : { m_spinDelay, m_spinPoll, m_spinXfer, m_spinRetries, m_spinSettle })
+            s->setEnabled(false);
+    } else {
+        onTimingPresetChanged(m_presetCombo->currentIndex());   /* restore Custom lock state */
+    }
+    /* The setup dialog's own Close is disabled under the modal progress window. */
+    m_closeBtn->setEnabled(!locked);
+    /* The progress window's button doubles as Cancel during a write. */
+    if (m_progCancelBtn) m_progCancelBtn->setText(locked ? tr("Cancel") : tr("Close"));
 }
 
 void DfuInstallDialog::refreshInstallEnabled()
@@ -553,9 +760,55 @@ void DfuInstallDialog::refreshInstallEnabled()
     m_installBtn->setEnabled(ready);
 }
 
+void DfuInstallDialog::setDetectStatus(DetectKind kind, const QString &text)
+{
+    /* Render the DFU-detection state as a severity banner sharing the app's
+     * makeAlertBanner look: blue info for neutral states (looking / no board /
+     * rebooting / progress notes), green for ready, amber for needs-driver, red
+     * for errors. Replaces the old ad-hoc colour-coded label text. */
+    QColor accent;
+    QPixmap icon;
+    switch (kind) {
+    case DetectReady:
+        accent = freejoy_style::accentGreen();
+        icon = freejoy_style::statusPixmap(accent);          // check
+        break;
+    case DetectWarn:
+        accent = freejoy_style::accentAmber();
+        icon = freejoy_style::statusPixmap(accent);          // triangle
+        break;
+    case DetectError:
+        accent = freejoy_style::accentRed();
+        icon = freejoy_style::statusPixmap(accent);          // triangle
+        break;
+    case DetectInfo:
+    default:
+        accent = freejoy_style::accentBlue(true);
+        icon = freejoy_style::tintedSvgPixmap(
+            QStringLiteral(":/Images/icons/lucide/info.svg"), QSize(18, 18), accent);
+        break;
+    }
+
+    if (m_detectBanner) {
+        m_detectArea->removeWidget(m_detectBanner);
+        m_detectBanner->hide();          // hide now -- deleteLater is deferred
+        m_detectBanner->deleteLater();
+    }
+    m_detectBanner = freejoy_style::makeAlertBanner(accent, text, this, icon);
+    m_detectArea->addWidget(m_detectBanner);
+    m_detectBanner->show();              // child of an already-shown dialog won't auto-show
+}
+
 void DfuInstallDialog::appendLog(const QString &line)
 {
-    if (!line.isEmpty()) m_log->appendPlainText(line);
+    if (line.isEmpty()) return;
+    /* Same format + file sink as FlashProgressDialog::appendStatus: prefix a
+     * [HH:mm:ss] timestamp for the on-screen log, and mirror the same line to
+     * the on-disk log when file logging is enabled. */
+    const QString ts = QDateTime::currentDateTime().toString("HH:mm:ss");
+    const QString stamped = QStringLiteral("[%1] %2").arg(ts, line);
+    m_log->appendPlainText(stamped);
+    if (gEnv.pDebugWindow) gEnv.pDebugWindow->appendProgressLine(stamped);
 }
 
 int DfuInstallDialog::weightedProgress(DfuInstallSession::Stage s, qint64 done, qint64 total)

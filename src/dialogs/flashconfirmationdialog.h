@@ -34,8 +34,10 @@
 #include <cstdint>
 
 #include "firmwareimage.h"
+#include "flashverdict.h"
 
 class QPushButton;
+class QVBoxLayout;
 
 namespace Ui {
 class FlashConfirmationDialog;
@@ -46,20 +48,30 @@ class FlashConfirmationDialog : public QDialog
     Q_OBJECT
 
 public:
-    enum class Verdict {
-        SameGeneration,   /* wire-format identical; config will be preserved */
-        Upgrade,          /* target newer; migrator exists; config will be migrated */
-        UpgradeNoMigrator,/* target newer; no migrator; config will be lost */
-        Downgrade,        /* target older; refuse auto-restore; factory-reset */
-        Recovery,         /* device already in bootloader; no backup possible */
-        Incompatible,     /* board mismatch; Flash disabled */
-        None,             /* no firmware selected yet */
-    };
+    /* The verdict enum + classifier live in flashverdict.h so they can be
+     * unit-tested without the GUI; alias keeps the existing call sites. */
+    using Verdict = FlashVerdict;
+
+    /* Key in a source item's QVariantMap data carrying the target board id
+     * (BOARD_ID_F103_BLUEPILL / _F411_BLACKPILL / 0 unknown). The host
+     * (Flasher) fills it; setSources() groups by it and renders a CPU icon. */
+    static constexpr const char *kSourceBoardIdKey = "boardId";
+    /* Recency key (msecs since epoch) so setSources() can order entries within
+     * each board group most-recent-first. Host fills it (file mtime, or "now"
+     * for a not-yet-downloaded release). */
+    static constexpr const char *kSourceTimestampKey = "ts";
 
     struct Inputs {
         /* Identity of the device the user picked in the sidebar. */
         QString deviceName;     /* product string from HID enumeration */
         QString deviceSerial;   /* device serial (full string) */
+
+        /* Pre-formatted firmware-version string, identical to the main device
+         * card (deviceVersionDisplay): "FreeJoyX a.b.c (bN)" /
+         * "FreeJoy v1.7.1b3" / "Unknown (0xXXXX)". Empty when the device was
+         * only seen in flasher mode (no params) -- renderDevice then falls
+         * back to a bootloader placeholder. */
+        QString deviceVersionText;
 
         /* paramsReport.firmware_version captured before any flasher
          * transitions. Zero means "not known" -- a stuck-in-bootloader
@@ -85,6 +97,7 @@ public:
      * (setResolvedTarget) as the user picks. */
     FlashConfirmationDialog(const QString &deviceName, const QString &deviceSerial,
                             int deviceBoardId, uint16_t deviceFwVersion,
+                            const QString &deviceVersionText,
                             bool deviceInRecoveryMode, QWidget *parent = nullptr);
     ~FlashConfirmationDialog();
 
@@ -126,13 +139,29 @@ private:
 
     Inputs m_dev;                       /* device identity; image set per selection */
     QPushButton *m_flashBtn = nullptr;
-    QWidget *m_infoBanner = nullptr;    /* persistent amber banner (replaced on update) */
+
+    /* All alert/message banners live in this layout, pinned to the TOP of the
+     * dialog (above the Device/Firmware panes). restackBanners() re-orders the
+     * visible ones red -> amber -> green after any change. */
+    QVBoxLayout *m_bannerArea = nullptr;
+    QWidget *m_verdictBanner = nullptr; /* verdict status banner (colour varies by verdict) */
+    QWidget *m_infoBanner = nullptr;    /* amber "Upgrade process" / hint banner */
+    QWidget *m_crossingBanner = nullptr;/* red "FreeJoy -> FreeJoyX" crossing warning */
 
     void renderDevice();                /* device pane -- once, from m_dev */
     void renderTargetAndVerdict(const Inputs &in);  /* target pane + verdict + banner */
+    /* Create/replace the verdict status banner (check/triangle icon + text);
+     * hideVerdictBanner() collapses it (crossing / None). */
+    void setVerdictBanner(const QColor &accent, const QString &text);
+    void hideVerdictBanner();
     void setInfoBanner(const QColor &accent, const QString &html);
+    /* Show/hide the red banner warning that the flash crosses from upstream
+     * FreeJoy to FreeJoyX (a project change, not a downgrade). */
+    void setCrossingWarning(bool show);
+    /* Re-stack the three banners in m_bannerArea, ordered red -> amber -> green,
+     * dropping hidden/null ones. Called after any banner state change. */
+    void restackBanners();
 
-    static QString fwVersionLabel(uint16_t fw);
     static QString boardLabel(int boardId);
 };
 

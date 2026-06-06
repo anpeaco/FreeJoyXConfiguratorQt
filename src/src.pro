@@ -72,6 +72,7 @@ SOURCES += \
     configtofile.cpp \
     converter.cpp \
     deviceconfig.cpp \
+    deviceversion.cpp \
     dialogs/busremapconfirmationdialog.cpp \
     dialogs/dfuinstalldialog.cpp \
     dialogs/flashconfirmationdialog.cpp \
@@ -80,6 +81,7 @@ SOURCES += \
     flash/dfuinstallsession.cpp \
     flash/flashsession.cpp \
     firmwareimage.cpp \
+    flashverdict.cpp \
     firmwareupdater.cpp \
     hiddevice.cpp \
     main.cpp \
@@ -142,6 +144,7 @@ HEADERS += \
     configtofile.h \
     converter.h \
     deviceconfig.h \
+    deviceversion.h \
     devicesync.h \
     dialogs/busremapconfirmationdialog.h \
     dialogs/dfuinstalldialog.h \
@@ -151,6 +154,7 @@ HEADERS += \
     flash/dfuinstallsession.h \
     flash/flashsession.h \
     firmwareimage.h \
+    flashverdict.h \
     firmwareupdater.h \
     global.h \
     hidapi.h \

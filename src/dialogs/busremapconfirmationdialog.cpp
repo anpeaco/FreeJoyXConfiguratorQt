@@ -22,7 +22,9 @@ BusRemapConfirmationDialog::BusRemapConfirmationDialog(const QString &actionName
 {
     ui->setupUi(this);
 
-    ui->label_Headline->setText(tr("Enable %1?").arg(actionName));
+    /* "Enable <bus>?" is the dialog's window-bar title -- the in-body large
+     * headline was removed (that big-heading style isn't used elsewhere). */
+    setWindowTitle(tr("Enable %1?").arg(actionName));
 
     const QString bannerText =
         tr("Enabling %1 will reassign %n pin(s) that are already mapped. "
@@ -68,6 +70,7 @@ BusRemapConfirmationDialog::BusRemapConfirmationDialog(const QString &actionName
      * Cancel stays the default so an accidental Enter doesn't remap. */
     QPushButton *okBtn = ui->buttonBox->addButton(
         tr("Remap && enable"), QDialogButtonBox::AcceptRole);
+    freejoy_style::setRole(okBtn, "role", "primary");
     connect(okBtn, &QPushButton::clicked, this, &QDialog::accept);
 
     QPushButton *cancelBtn = ui->buttonBox->button(QDialogButtonBox::Cancel);

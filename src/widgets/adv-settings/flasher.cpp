@@ -13,7 +13,11 @@
 #include <QAction>
 #include <QCursor>
 
+#include <QDateTime>
+#include <QFile>
 #include <QFileInfo>
+#include <QHash>
+#include <QIcon>
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QLocale>
@@ -76,6 +80,47 @@ void saveBrowsedPaths(const QStringList &paths)
     gEnv.pAppSettings->endGroup();
 }
 
+/* Detect the board a dropdown firmware entry targets, for the chip + suffix.
+ * Parses the local .bin when present (FirmwareImage reads board_id from the
+ * footer); falls back to the filename convention (freejoyx-f103/f411-...) for
+ * remote entries not yet downloaded. Cached by path+mtime so re-opening the
+ * dropdown doesn't re-read every file. Returns BOARD_ID_* or 0 (unknown). */
+int detectFirmwareBoardId(const QVariantMap &data)
+{
+    const QString local = data.value(kKeyLocal).toString();
+    if (!local.isEmpty()) {
+        const QFileInfo fi(local);
+        if (fi.exists()) {
+            static QHash<QString, QPair<qint64, int>> cache;
+            const qint64 mt = fi.lastModified().toMSecsSinceEpoch();
+            const auto it = cache.constFind(local);
+            if (it != cache.constEnd() && it.value().first == mt) {
+                if (it.value().second != 0) return it.value().second;
+            } else {
+                int boardId = 0;
+                FirmwareImage img;
+                if (img.loadFromFile(local)) {
+                    if (img.board() == FirmwareImage::Board::F103BluePill)
+                        boardId = BOARD_ID_F103_BLUEPILL;
+                    else if (img.board() == FirmwareImage::Board::F411BlackPill)
+                        boardId = BOARD_ID_F411_BLACKPILL;
+                }
+                cache.insert(local, qMakePair(mt, boardId));
+                if (boardId != 0) return boardId;
+            }
+            // Parse inconclusive -> fall through to the filename heuristic.
+        }
+    }
+    QString name = data.value(kKeyName).toString();
+    if (name.isEmpty()) name = QFileInfo(local).fileName();
+    const QString n = name.toLower();
+    if (n.contains("f103") || n.contains("bluepill") || n.contains("blue_pill") || n.contains("blue-pill"))
+        return BOARD_ID_F103_BLUEPILL;
+    if (n.contains("f411") || n.contains("blackpill") || n.contains("black_pill") || n.contains("black-pill"))
+        return BOARD_ID_F411_BLACKPILL;
+    return 0;
+}
+
 } // namespace
 
 
@@ -121,8 +166,13 @@ Flasher::Flasher(QWidget *parent)
     ui->comboBox_FlashSource->setVisible(false);
     ui->pushButton_BrowseFirmware->setVisible(false);
     ui->groupBox_FirmwareInfo->setVisible(false);
-    ui->pushButton_FlashConsolidated->setText(tr("Install / Update Firmware…"));
-    ui->pushButton_FlashConsolidated->setEnabled(true);
+
+    /* The HID "Update Firmware..." entry point lives on the device card now
+     * (MainWindow's button -> Flasher::openFlashDialog). Hide the tab's button
+     * and the duplicate device sidebar; the tab keeps the USB-DFU install path
+     * (pushButton_DfuInstall) as the recovery / blank-chip route. */
+    ui->pushButton_FlashConsolidated->setVisible(false);
+    ui->listWidget_Devices->setVisible(false);
 }
 
 Flasher::~Flasher()
@@ -229,7 +279,7 @@ QVector<QPair<QString, QVariant>> Flasher::buildSourceItems()
         QVariantMap data;
         data[kKeyKind]  = kKindBrowsed;
         data[kKeyLocal] = browsedPath;
-        items.append({tr("[Browsed] %1").arg(fi.fileName()), data});
+        items.append({fi.fileName(), data});
     }
 
     /* Build-output folder (<exe>/firmware/): fresh dev builds. */
@@ -243,7 +293,7 @@ QVector<QPair<QString, QVariant>> Flasher::buildSourceItems()
         QVariantMap data;
         data[kKeyKind]  = kKindLocal;
         data[kKeyLocal] = firmwareDir.absoluteFilePath(name);
-        items.append({tr("[Build] %1").arg(name), data});
+        items.append({name, data});
     }
 
     /* Local .bin files in recovery/ that aren't auto-downloaded mirrors. */
@@ -262,6 +312,24 @@ QVector<QPair<QString, QVariant>> Flasher::buildSourceItems()
         data[kKeyKind]  = kKindLocal;
         data[kKeyLocal] = recoveryDir.absoluteFilePath(name);
         items.append({tr("[Local] %1").arg(name), data});
+    }
+
+    /* Tag every entry with its target board + recency so setSources() can group
+     * by board (F103 / F411 / Other), order newest-first within each group, and
+     * draw a CPU icon. The board is conveyed by the group header + icon, so no
+     * per-item suffix. Recency = the file's mtime; a not-yet-downloaded release
+     * has no local file, so treat it as "now" (newest) -- the release list is
+     * already newest-first. */
+    const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+    for (auto &item : items) {
+        QVariantMap data = item.second.toMap();
+        data[FlashConfirmationDialog::kSourceBoardIdKey] = detectFirmwareBoardId(data);
+        const QString local = data.value(kKeyLocal).toString();
+        const QFileInfo fi(local);
+        const qint64 ts = (!local.isEmpty() && fi.exists())
+            ? fi.lastModified().toMSecsSinceEpoch() : nowMs;
+        data[FlashConfirmationDialog::kSourceTimestampKey] = ts;
+        item.second = data;
     }
 
     return items;
@@ -298,6 +366,22 @@ void Flasher::setConnectedDeviceInfo(bool isF411, const QString &name,
     m_connectedIsF411 = isF411;
     m_connectedName   = name;
     m_connectedVidPid = vidPid;
+
+    /* A live app-mode device (non-blank identity, pushed from getParamsPacket
+     * after a real params report) is definitive proof the chip is NOT sitting
+     * in the bootloader -- so clear any stale flasher-mode flag here.
+     *
+     * Why this is needed: HidDevice only emits flasherFound(false) from its
+     * device-count-changed rebuild branch *and* only while m_flasherPath is
+     * still set. The post-flash path clears m_flasherPath (hiddevice.cpp)
+     * before that branch can fire, so the (false) signal can be missed and
+     * m_inFlasherMode sticks true after the device returns to app mode. That
+     * stale flag makes the Upgrade Firmware dialog wrongly classify a normal
+     * device as "in bootloader" -> Recovery flash. Resetting on a confirmed
+     * app-mode connection makes the flag self-correct. */
+    if (!name.isEmpty()) {
+        m_inFlasherMode = false;
+    }
 }
 
 void Flasher::on_pushButton_DfuInstall_clicked()
@@ -374,11 +458,18 @@ void Flasher::on_pushButton_BrowseFirmware_clicked()
 
 void Flasher::on_pushButton_FlashConsolidated_clicked()
 {
-    /* Tier 2: this is now the "Install / Update Firmware..." entry point. The
-     * FlashConfirmationDialog owns the firmware picker; we drive it (resolve /
-     * download / browse) off its signals and flash on accept. */
-    QString deviceName   = m_lastDeviceName;
-    QString deviceSerial = m_lastDeviceSerial;
+    openFlashDialog();
+}
+
+void Flasher::openFlashDialog(const QString &preferredPath,
+                              const QString &deviceName,
+                              const QString &deviceSerial,
+                              const QString &deviceVersionText)
+{
+    /* Tier 2: the FlashConfirmationDialog owns the firmware picker; we drive it
+     * (resolve / download / browse) off its signals and flash on accept. */
+    QString name    = deviceName.isEmpty()   ? m_lastDeviceName   : deviceName;
+    QString serial  = deviceSerial.isEmpty() ? m_lastDeviceSerial : deviceSerial;
     int boardId = 0;
     uint16_t fwVer = 0;
     if (gEnv.pDeviceConfig) {
@@ -386,8 +477,8 @@ void Flasher::on_pushButton_FlashConsolidated_clicked()
         boardId = gEnv.pDeviceConfig->paramsReport.board_id;
     }
 
-    FlashConfirmationDialog dlg(deviceName, deviceSerial, boardId, fwVer,
-                                m_inFlasherMode, this);
+    FlashConfirmationDialog dlg(name, serial, boardId, fwVer,
+                                deviceVersionText, m_inFlasherMode, this);
     m_flashDlg = &dlg;
     m_dlgResolvedPath.clear();
     m_pendingDownloadPath.clear();
@@ -397,7 +488,19 @@ void Flasher::on_pushButton_FlashConsolidated_clicked()
     connect(&dlg, &FlashConfirmationDialog::browseRequested,
             this, &Flasher::onDialogBrowseRequested);
 
-    dlg.setSources(buildSourceItems());
+    /* Pre-select the preferred firmware (e.g. the bundled upgrade bin) when the
+     * card's "Update Firmware..." button passes one and it's in the list. */
+    const QVector<QPair<QString, QVariant>> items = buildSourceItems();
+    int sel = 0;
+    if (!preferredPath.isEmpty()) {
+        for (int i = 0; i < items.size(); ++i) {
+            if (items[i].second.toMap().value(kKeyLocal).toString() == preferredPath) {
+                sel = i;
+                break;
+            }
+        }
+    }
+    dlg.setSources(items, sel);
     onDialogSourceSelected(dlg.currentSourceData());   /* resolve initial pick */
 
     const int rc = dlg.exec();

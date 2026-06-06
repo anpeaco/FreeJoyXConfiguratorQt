@@ -51,6 +51,31 @@
   *   prompt the first time on Windows; no-op on Linux/macOS), erase, write
   *   bootloader -> 0x08000000, write app -> 0x08020000, verify, leave DFU.
   *
+  *   The verify step must READ BACK both written regions from the chip (DfuSe
+  *   upload) and CRC-compare each against its source .bin -- not merely trust
+  *   the per-block download ACKs. It reports a per-region result line for each:
+  *       VERIFY boot <ok|fail>
+  *       VERIFY app  <ok|fail>
+  *   and exits non-zero (after an ERROR line) if either region mismatches.
+  *   NOTE: the VERIFY records do not exist in the helper yet (anpeaco/FreeJoy-
+  *   Configurator#35). Until they do, this class still treats reaching the
+  *   verify stage + exit 0 as success (kHelperEmitsVerifyResults in the .cpp is
+  *   false); flip it on in lockstep with the helper release to require both
+  *   regions to report `ok`.
+  *
+  *   Optional DfuSe timing flags (the Install dialog's Advanced section; from
+  *   the Params::Timing struct). The helper applies them to the transfer; when
+  *   omitted it uses its built-in defaults (which equal the Baseline preset):
+  *     --dnload-delay-ms <n>      pause between download blocks (default 0)
+  *     --poll-timeout-ms <n>      max wait for an erase/program block (5000)
+  *     --transfer-timeout-ms <n>  per USB control transfer (3000)
+  *     --retries <n>              per-block retry on error (0)
+  *     --settle-ms <n>            wait after leave-DFU (1500)
+  *   NOTE: these flags do not exist in the helper yet (anpeaco/FreeJoyX-
+  *   Configurator#35). DfuInstallSession::start only appends them when
+  *   kHelperSupportsTiming (in the .cpp) is flipped on, so the current helper
+  *   is never handed an unknown argument.
+  *
   * Install the WinUSB driver on its own (the same bind step `install` does
   * first), so the driver can be fixed before nusb can see the device:
   *     freejoyx-flash bind --board f411
@@ -61,6 +86,7 @@
   *   STAGE <bind-driver|erase|write-boot|write-app|verify|done>
   *   PROGRESS <bytesDone> <bytesTotal>     // during write-boot / write-app
   *   LOG <free-form text...>               // appended verbatim to the log view
+  *   VERIFY <boot|app> <ok|fail>           // per-region read-back verify result
   *   ERROR <code> <free-form message...>   // a single terminal failure line
   *   PROBE <present|needs-driver|absent>   // probe mode only
   *
@@ -108,10 +134,27 @@ public:
     };
     Q_ENUM(Availability)
 
+    /* DfuSe transfer timing, surfaced in the Install dialog's Advanced section
+     * (preset Baseline/Loose/Lax or Custom). Defaults == the Baseline preset ==
+     * the helper's own built-in behaviour, so a default install is byte-for-byte
+     * what it was before this struct grew these fields. Passed to the helper as
+     * `install` flags (see the CLI contract above) ONLY when the helper is known
+     * to accept them -- see kHelperSupportsTiming in the .cpp; until the Rust
+     * helper (anpeaco/FreeJoyXConfigurator#21) gains these flags, they are NOT
+     * appended, so the current helper isn't handed an unknown argument. */
+    struct Timing {
+        int dnloadDelayMs     = 0;      /* --dnload-delay-ms : pause between download blocks */
+        int pollTimeoutMs     = 5000;   /* --poll-timeout-ms : max wait for an erase/program block */
+        int transferTimeoutMs = 3000;   /* --transfer-timeout-ms : per USB control transfer */
+        int retries           = 0;      /* --retries : per-block retry on error */
+        int settleMs          = 1500;   /* --settle-ms : wait after leave-DFU */
+    };
+
     struct Params {
         QString bootBinPath;            /* required: bootloader .bin */
         QString appBinPath;             /* required: application .bin */
         QString board = QStringLiteral("f411");  /* only f411 today */
+        Timing  timing;                 /* DfuSe timing (Advanced section) */
     };
 
     explicit DfuInstallSession(QObject *parent = nullptr);
@@ -203,6 +246,8 @@ private:
     bool      m_probeVerbose = false; /* the in-flight probe was asked to narrate */
     bool      m_binding = false;    /* true while an installDriver() process is in flight */
     bool      m_sawError = false;   /* an ERROR line was emitted -> don't synthesise another */
+    bool      m_verifiedBoot = false; /* helper reported `VERIFY boot ok` this run */
+    bool      m_verifiedApp  = false; /* helper reported `VERIFY app ok` this run */
     Stage     m_stage = Stage::Idle;
     QString   m_lastErrorDetail;
     QString   m_stdoutBuf;          /* accumulates partial lines across reads */

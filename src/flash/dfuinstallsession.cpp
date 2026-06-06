@@ -29,8 +29,16 @@ const char *kHelperName = "freejoyx-flash";
 const QLatin1String kRecStage("STAGE");
 const QLatin1String kRecProgress("PROGRESS");
 const QLatin1String kRecLog("LOG");
+const QLatin1String kRecVerify("VERIFY");
 const QLatin1String kRecError("ERROR");
 const QLatin1String kRecProbe("PROBE");
+
+/* GATED: the current Rust helper doesn't emit the per-region `VERIFY boot|app
+ * ok|fail` records yet (anpeaco/FreeJoyXConfigurator#35). Until it does,
+ * success stays "reached the verify stage + exit 0". Flip this to true in
+ * lockstep with the helper release that adds the read-back verify; success then
+ * also requires BOTH regions to have reported `ok`. */
+constexpr bool kHelperEmitsVerifyResults = false;
 
 } // namespace
 
@@ -157,6 +165,8 @@ bool DfuInstallSession::start(const Params &p)
     m_probeVerbose = false;
     m_binding = false;
     m_sawError = false;
+    m_verifiedBoot = false;
+    m_verifiedApp = false;
     m_lastErrorDetail.clear();
     m_stdoutBuf.clear();
     m_stderrBuf.clear();
@@ -173,10 +183,28 @@ bool DfuInstallSession::start(const Params &p)
     connect(m_proc, &QProcess::errorOccurred,
             this, &DfuInstallSession::onProcessErrorOccurred);
 
-    m_proc->start(helper, { QStringLiteral("install"),
-                            QStringLiteral("--board"), p.board,
-                            QStringLiteral("--boot"), p.bootBinPath,
-                            QStringLiteral("--app"),  p.appBinPath });
+    QStringList args{ QStringLiteral("install"),
+                      QStringLiteral("--board"), p.board,
+                      QStringLiteral("--boot"), p.bootBinPath,
+                      QStringLiteral("--app"),  p.appBinPath };
+
+    /* DfuSe timing flags from the Advanced section. GATED: the current Rust
+     * helper doesn't know these flags and would reject the whole command, so
+     * they're only appended once the helper (anpeaco/FreeJoyXConfigurator#35)
+     * accepts them. Flip kHelperSupportsTiming to true in lockstep with that
+     * helper release. Until then the values are collected by the UI but not
+     * sent (the helper uses its built-in == Baseline defaults). */
+    constexpr bool kHelperSupportsTiming = false;
+    if (kHelperSupportsTiming) {
+        const Timing &t = p.timing;
+        args << QStringLiteral("--dnload-delay-ms")     << QString::number(t.dnloadDelayMs)
+             << QStringLiteral("--poll-timeout-ms")     << QString::number(t.pollTimeoutMs)
+             << QStringLiteral("--transfer-timeout-ms") << QString::number(t.transferTimeoutMs)
+             << QStringLiteral("--retries")             << QString::number(t.retries)
+             << QStringLiteral("--settle-ms")           << QString::number(t.settleMs);
+    }
+
+    m_proc->start(helper, args);
     return true;
 }
 
@@ -240,6 +268,20 @@ void DfuInstallSession::handleLine(const QString &line)
         }
     } else if (tag == kRecLog) {
         emit logLine(rest);
+    } else if (tag == kRecVerify) {
+        /* `VERIFY <boot|app> <ok|fail>` -- per-region read-back result. Record
+         * the pass flags (consumed by the success check on exit) and surface a
+         * human line in the log either way. */
+        const QStringList parts = rest.split(QLatin1Char(' '), Qt::SkipEmptyParts);
+        const QString region = parts.value(0).toLower();
+        const bool ok = (parts.value(1).toLower() == QStringLiteral("ok"));
+        if (region == QStringLiteral("boot")) m_verifiedBoot = ok;
+        else if (region == QStringLiteral("app")) m_verifiedApp = ok;
+        if (ok) {
+            emit logLine(tr("Verify: %1 region read-back matches.").arg(region));
+        } else {
+            emit logLine(tr("Verify: %1 region read-back MISMATCH.").arg(region));
+        }
     } else if (tag == kRecError) {
         /* `ERROR <code> <message>` -- keep the whole remainder as the detail
          * so the dialog shows the helper's own wording. */
@@ -316,8 +358,25 @@ void DfuInstallSession::onProcessFinished(int exitCode, QProcess::ExitStatus sta
         return;
     }
 
-    const bool success = (!crashed && exitCode == 0 && m_stage == Stage::Verifying)
-                         || (!crashed && exitCode == 0 && m_stage == Stage::Done);
+    bool success = (!crashed && exitCode == 0 && m_stage == Stage::Verifying)
+                   || (!crashed && exitCode == 0 && m_stage == Stage::Done);
+
+    /* Once the helper emits per-region read-back results, a clean exit isn't
+     * enough -- BOTH the bootloader and the app region must have verified ok.
+     * Gated until the helper supports it (see kHelperEmitsVerifyResults). */
+    if (success && kHelperEmitsVerifyResults && !(m_verifiedBoot && m_verifiedApp)) {
+        success = false;
+        if (!m_sawError) {
+            QStringList failed;
+            if (!m_verifiedBoot) failed << tr("bootloader");
+            if (!m_verifiedApp)  failed << tr("application");
+            m_lastErrorDetail = tr("Write completed but read-back verification "
+                                   "failed for the %1 region. The flash may be "
+                                   "corrupt -- re-run the install.")
+                                    .arg(failed.join(tr(" and ")));
+        }
+    }
+
     m_proc->deleteLater();
     m_proc = nullptr;
 
