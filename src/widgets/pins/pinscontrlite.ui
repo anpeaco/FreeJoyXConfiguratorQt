@@ -75,7 +75,7 @@
      <item row="5" column="0">
       <widget class="QLabel" name="text_6">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(251, 176, 59, 200);
+        <string notr="true">background-color: rgba(251, 176, 59, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -89,7 +89,7 @@ color: rgb(0, 0, 0);</string>
      <item row="0" column="9">
       <widget class="QLabel" name="text_19">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -103,7 +103,7 @@ color: rgb(0, 0, 0);</string>
      <item row="2" column="3">
       <widget class="QLabel" name="text_9">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -149,7 +149,7 @@ color: rgb(0, 0, 0);</string>
      <item row="3" column="6">
       <widget class="QLabel" name="text_16">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(140, 98, 57, 200);
+        <string notr="true">background-color: rgba(140, 98, 57, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -163,7 +163,7 @@ color: rgb(0, 0, 0);</string>
      <item row="5" column="9">
       <widget class="QLabel" name="text_24">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -193,7 +193,7 @@ color: rgb(0, 0, 0);</string>
      <item row="5" column="6">
       <widget class="QLabel" name="text_18">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(41, 171, 226, 200);
+        <string notr="true">background-color: rgba(41, 171, 226, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -207,7 +207,7 @@ color: rgb(0, 0, 0);</string>
      <item row="2" column="6">
       <widget class="QLabel" name="text_15">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(34, 181, 115, 200);
+        <string notr="true">background-color: rgba(34, 181, 115, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -221,7 +221,7 @@ color: rgb(0, 0, 0);</string>
      <item row="1" column="12">
       <widget class="QLabel" name="text_26">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -251,7 +251,7 @@ color: rgb(0, 0, 0);</string>
      <item row="3" column="12">
       <widget class="QLabel" name="text_28">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -265,7 +265,7 @@ color: rgb(0, 0, 0);</string>
      <item row="4" column="12">
       <widget class="QLabel" name="text_29">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -279,7 +279,7 @@ color: rgb(0, 0, 0);</string>
      <item row="1" column="6">
       <widget class="QLabel" name="text_14">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -293,7 +293,7 @@ color: rgb(0, 0, 0);</string>
      <item row="1" column="9">
       <widget class="QLabel" name="text_20">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -307,7 +307,7 @@ color: rgb(0, 0, 0);</string>
      <item row="4" column="9">
       <widget class="QLabel" name="text_23">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -321,7 +321,7 @@ color: rgb(0, 0, 0);</string>
      <item row="0" column="6">
       <widget class="QLabel" name="text_13">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -335,7 +335,7 @@ color: rgb(0, 0, 0);</string>
      <item row="2" column="0">
       <widget class="QLabel" name="text_3">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(251, 176, 59, 200);
+        <string notr="true">background-color: rgba(251, 176, 59, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -349,7 +349,7 @@ color: rgb(0, 0, 0);</string>
      <item row="3" column="0">
       <widget class="QLabel" name="text_4">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(251, 176, 59, 200);
+        <string notr="true">background-color: rgba(251, 176, 59, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -369,7 +369,7 @@ color: rgb(0, 0, 0);</string>
         </sizepolicy>
        </property>
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(251, 176, 59, 200);
+        <string notr="true">background-color: rgba(251, 176, 59, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -383,7 +383,7 @@ color: rgb(0, 0, 0);</string>
      <item row="2" column="9">
       <widget class="QLabel" name="text_21">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -397,7 +397,7 @@ color: rgb(0, 0, 0);</string>
      <item row="3" column="3">
       <widget class="QLabel" name="text_10">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -411,7 +411,7 @@ color: rgb(0, 0, 0);</string>
      <item row="0" column="12">
       <widget class="QLabel" name="text_25">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -425,7 +425,7 @@ color: rgb(0, 0, 0);</string>
      <item row="5" column="12">
       <widget class="QLabel" name="text_30">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -439,7 +439,7 @@ color: rgb(0, 0, 0);</string>
      <item row="1" column="0">
       <widget class="QLabel" name="text_2">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(251, 176, 59, 200);
+        <string notr="true">background-color: rgba(251, 176, 59, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -453,7 +453,7 @@ color: rgb(0, 0, 0);</string>
      <item row="4" column="6">
       <widget class="QLabel" name="text_17">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(255, 123, 172, 200);
+        <string notr="true">background-color: rgba(255, 123, 172, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -467,7 +467,7 @@ color: rgb(0, 0, 0);</string>
      <item row="4" column="0">
       <widget class="QLabel" name="text_5">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(251, 176, 59, 200);
+        <string notr="true">background-color: rgba(251, 176, 59, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -481,7 +481,7 @@ color: rgb(0, 0, 0);</string>
      <item row="1" column="3">
       <widget class="QLabel" name="text_8">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(251, 176, 59, 200);
+        <string notr="true">background-color: rgba(251, 176, 59, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -495,7 +495,7 @@ color: rgb(0, 0, 0);</string>
      <item row="5" column="3">
       <widget class="QLabel" name="text_12">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -509,7 +509,7 @@ color: rgb(0, 0, 0);</string>
      <item row="4" column="3">
       <widget class="QLabel" name="text_11">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -523,7 +523,7 @@ color: rgb(0, 0, 0);</string>
      <item row="3" column="9">
       <widget class="QLabel" name="text_22">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -537,7 +537,7 @@ color: rgb(0, 0, 0);</string>
      <item row="0" column="3">
       <widget class="QLabel" name="text_7">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(251, 176, 59, 200);
+        <string notr="true">background-color: rgba(251, 176, 59, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
@@ -551,7 +551,7 @@ color: rgb(0, 0, 0);</string>
      <item row="2" column="12">
       <widget class="QLabel" name="text_27">
        <property name="styleSheet">
-        <string notr="true">background-color: rgba(199, 178, 153, 200);
+        <string notr="true">background-color: rgba(199, 178, 153, 255);
 color: rgb(0, 0, 0);</string>
        </property>
        <property name="text">
