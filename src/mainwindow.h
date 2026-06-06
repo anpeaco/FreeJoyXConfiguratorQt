@@ -20,7 +20,6 @@
 #include "pinconfig.h"
 #include "shiftregistersconfig.h"
 #include "shiftstimersconfig.h"
-#include "switchbutton.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -59,7 +58,8 @@ private slots:
     void configSent(bool success);
     /* Old upstream firmware was read + the bytes translated into the
      * current dev_config_t shape. Surface a message dialog explaining
-     * the migration and the next-step (flash + write). */
+     * the migration and the next step (Upgrade Firmware on the device
+     * panel, which backs up + flashes + writes the migrated config back). */
     void legacyConfigMigrated(uint16_t oldFirmwareVersion);
     void blockWRConfigToDevice(bool block);
 
@@ -190,6 +190,16 @@ private:
     DebugWindow *m_debugWindow = nullptr;
     bool m_debugIsEnable;
 
+    /* Active theme, tracked so the App-card theme toggle (toolButton_ThemeToggle)
+     * can flip to the opposite theme and paint the matching sun/moon glyph.
+     * Updated by themeChanged(). */
+    bool m_darkThemeActive = true;
+
+    /* Board id currently shown on the Device card's Board row (0 = none/unknown).
+     * Cached so themeChanged() can re-render the rich-text board label -- the
+     * F411 CPU-icon ink tracks the theme. */
+    int m_deviceCardBoardId = 0;
+
     /* Packet stats shown in the Device info card (relocated out of the debug
      * pane so they're visible whenever a device is connected). m_packetsReceived
      * counts USB reports since connect; the rate is the mean inter-packet time
@@ -223,6 +233,16 @@ private:
      * just-loaded config, blanking it. Set across the whole
      * reset+load+UiReadFromConfig sequence at every file-load entry point. */
     bool       m_configLoadInProgress = false;
+
+    /* True from the moment a device Read is kicked (on_pushButton_ReadConfig_clicked)
+     * until configReceived() lands. The worker thread fills dev_config_t in place
+     * as fragments arrive, so the 1 Hz dirty poll must not flush the (still-stale)
+     * UI over it or compare against the half-filled struct -- otherwise the
+     * Write-config "pending changes" dot flickers on during the read. Cleared at
+     * the top of configReceived() (which the worker always emits, success or
+     * fail) so it can't stick. Distinct from m_configLoadInProgress, which is a
+     * synchronous RAII guard for file loads. */
+    bool       m_deviceReadInProgress = false;
 
     /* Auto-read-on-connect: when true (default), a compatible device
      * connecting triggers an automatic Read of its stored config into the

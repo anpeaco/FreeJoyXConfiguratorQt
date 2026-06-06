@@ -4,6 +4,11 @@
 #include <QFileDialog>
 #include <QDesktopServices>
 #include <QMessageBox>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QLabel>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QPushButton>
 #include <QSpinBox>
 #include <QCheckBox>
@@ -20,10 +25,12 @@
 #include "selectfolder.h"
 #include "style_helpers.h"
 
+#include "boarddisplay.h"
 #include "common_types.h"
 #include "common_defines.h"
 #include "global.h"
 #include "deviceconfig.h"
+#include "deviceversion.h"
 #include "devicesync.h"
 #include "firmwareimage.h"
 #include "version.h"
@@ -72,13 +79,23 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->setupUi(this);
 
-    /* Hidden for now: the one-click "Upgrade firmware" affordance is parked
-     * while we settle the flash flow. The Advanced Settings -> Firmware
-     * flasher remains the way to flash. The supporting machinery
-     * (refreshUpgradeButtonState / on_pushButton_UpgradeFirmware_clicked /
-     * findUpgradeFirmwarePath) is left intact, so restoring it is just
-     * deleting this line. */
-    ui->pushButton_UpgradeFirmware->hide();
+    /* The device-card "Upgrade Firmware" button is always visible; it starts
+     * disabled and refreshUpgradeButtonState() enables it only when a newer
+     * firmware is available for the connected device. Its click opens the
+     * Flasher's picker dialog (Flasher::openFlashDialog), pre-selecting the
+     * bundled upgrade bin when one is present. (Text comes from the .ui.) */
+    ui->pushButton_UpgradeFirmware->setVisible(true);
+    ui->pushButton_UpgradeFirmware->setEnabled(false);
+
+    /* Read / Write to device are the two primary device actions -- give them the
+     * primary-button emphasis (the role="primary" QSS exists for exactly this). */
+    freejoy_style::setRole(ui->pushButton_ReadConfig,  "role", "primary");
+    freejoy_style::setRole(ui->pushButton_WriteConfig, "role", "primary");
+
+    /* Resting status before the first connect/disconnect event, so the status
+     * pill isn't blank at launch (matches the post-disconnect appearance). */
+    ui->label_DeviceStatus->setText(tr("Disconnected"));
+    freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-disconnected");
 
     /* Cache the buttons' default text BEFORE any code path mutates
      * them. configSent / configReceived restore the button to this
@@ -283,8 +300,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_advSettings, &AdvancedSettings::showAllConnectedDevicesRequested,
             this, &MainWindow::onShowAllConnectedDevicesRequested);
     connect(m_advSettings, &AdvancedSettings::languageChanged, this, &MainWindow::languageChanged);
-    // theme changed
-    connect(m_advSettings, &AdvancedSettings::themeChanged, this, &MainWindow::themeChanged);
+    // theme toggle lives on the App card now (single sun/moon icon button) --
+    // flip to the opposite of the active theme; themeChanged() repaints the glyph.
+    connect(ui->toolButton_ThemeToggle, &QToolButton::clicked,
+            this, [this] { themeChanged(!m_darkThemeActive); });
     // font changed
     connect(m_advSettings, &AdvancedSettings::fontChanged, this, &MainWindow::setFont);
     // auto-read-on-connect toggle (Advanced tab) -> update the cached flag
@@ -516,6 +535,10 @@ void MainWindow::setDeviceInfo(const QString &vidHex, const QString &pidHex, con
 
     // Empty strings = no device / disconnect; reset the card to "—".
     const QString placeholder = QStringLiteral("—");   // em dash
+    m_deviceCardBoardId = 0;   // board row reset until params arrive (getParamsPacket)
+    // Plain "—" needs no icon-row nudge; drop any margin from a prior board so
+    // it stays aligned with the other "—" rows. getParamsPacket re-adds it.
+    ui->label_BoardVal->setContentsMargins(0, 0, 0, 0);
     if (vidHex.isEmpty() && pidHex.isEmpty() && serial.isEmpty()) {
         ui->label_VersionVal->setText(placeholder);
         ui->label_VidPidVal->setText(placeholder);
@@ -614,24 +637,12 @@ void MainWindow::onPostWriteFallback()
 void MainWindow::updateVersionLabel(bool firmwareCompatible)
 {
     if (!gEnv.pDeviceConfig) return;
-    const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
-    if (firmwareCompatible) {
-        const auto &pr = gEnv.pDeviceConfig->paramsReport;
-        /* reserved_layout is the per-build counter (FIRMWARE_BUILD_ID); "(bN)"
-         * lets the user confirm which bin is actually flashed. */
-        ui->label_VersionVal->setText(QStringLiteral("FreeJoyX %1.%2.%3 (b%4)")
-            .arg(pr.freejoyx_version_major)
-            .arg(pr.freejoyx_version_minor)
-            .arg(pr.freejoyx_version_patch)
-            .arg(pr.reserved_layout));
-    } else if (legacy::canMigrate(devVer)) {
-        ui->label_VersionVal->setText(QStringLiteral("FreeJoy %1")
-            .arg(QString::fromLatin1(legacy::describeVersion(devVer))));
-    } else {
-        const QString hex = QStringLiteral("0x") +
-            QString::number(devVer, 16).toUpper().rightJustified(4, QChar('0'));
-        ui->label_VersionVal->setText(tr("Unknown (%1)").arg(hex));
-    }
+    /* deviceVersionDisplay() derives compatibility from the wire-format mask
+     * itself (same `& 0xFFF0` test that produced firmwareCompatible), so the
+     * card and the Upgrade Firmware dialog paint an identical string. */
+    Q_UNUSED(firmwareCompatible);
+    ui->label_VersionVal->setText(
+        deviceVersionDisplay(gEnv.pDeviceConfig->paramsReport));
 }
 
 void MainWindow::getParamsPacket(bool firmwareCompatible)
@@ -672,13 +683,18 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
         // board_id byte can't be trusted.
         if (firmwareCompatible == true) {
             const uint8_t boardId = gEnv.pDeviceConfig->paramsReport.board_id;
-            QString boardName;
-            switch (boardId) {
-                case BOARD_ID_F103_BLUEPILL:  boardName = QStringLiteral("Blue Pill (F103)"); break;
-                case BOARD_ID_F411_BLACKPILL: boardName = QStringLiteral("Black Pill (F411)"); break;
-                default:                      boardName = QStringLiteral("—"); break;
-            }
-            ui->label_BoardVal->setText(boardName);
+            /* A Black Pill (F411) always reports board_id=2; a compatible device
+             * reporting anything else is a Blue Pill (F103) -- F103 builds report
+             * 1, older/upstream builds 0. So "not Black" -> Blue for the card.
+             * (The raw boardId still gates the pin-migration switch below.)
+             * CPU icon + "F103 (Blue Pill)"/"F411 (Black Pill)" via board_display,
+             * shared with the flash dialog. Cache the shown board so a theme
+             * toggle re-renders (the F411 icon ink tracks the theme). */
+            const int shownBoard = (boardId == BOARD_ID_F411_BLACKPILL)
+                ? BOARD_ID_F411_BLACKPILL : BOARD_ID_F103_BLUEPILL;
+            m_deviceCardBoardId = shownBoard;
+            ui->label_BoardVal->setText(board_display::html(shownBoard));
+            ui->label_BoardVal->setContentsMargins(0, 2, 0, 0);  // align inline icon row
             if (boardId != 0) {
                 /* Switching boards here can migrate pins (I2C SDA, per-board
                  * role strips), which shifts the physical-button breakdown and
@@ -725,7 +741,14 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
                 QString::fromLatin1(gEnv.pDeviceConfig->config.device_name).trimmed(),
                 vidPid);
         } else {
-            ui->label_BoardVal->setText(QStringLiteral("—"));
+            /* Unrecognised firmware: the params_report layout may differ, so
+             * board_id can't be trusted to detect a Black Pill. But a Black Pill
+             * only ever runs (recognised) FreeJoyX firmware -- so an unrecognised
+             * connected device is a Blue Pill (F103). Show that rather than a
+             * blank, matching the "not Black -> Blue" rule used elsewhere. */
+            m_deviceCardBoardId = BOARD_ID_F103_BLUEPILL;
+            ui->label_BoardVal->setText(board_display::html(BOARD_ID_F103_BLUEPILL));
+            ui->label_BoardVal->setContentsMargins(0, 2, 0, 0);  // align inline icon row
             /* Unrecognised firmware -> board_id can't be trusted; don't offer
              * the reboot shortcut. */
             m_advSettings->flasher()->setConnectedDeviceInfo(false, QString(), QString());
@@ -1261,6 +1284,15 @@ void MainWindow::UiReadFromConfig()
     // dirty baseline so the "Pending changes" badge stays down until
     // the user makes an actual edit.
     snapshotDeviceConfig();
+
+    /* Re-evaluate the Advanced-tab VID:PID conflict pill now that the load is
+     * complete. The shown config now belongs to the selected device, so clear
+     * any swap-time suppression and refresh: the refreshed "other devices" list
+     * correctly excludes the selected device and the pill reflects reality.
+     * AdvancedSettings::readFromConfig also suppressed the per-keystroke check
+     * during the bulk field-set, so this is the single authoritative eval. */
+    if (m_advSettings) m_advSettings->setPidConflictSuppressed(false);
+    refreshOtherConnectedDevices();
 }
 
 void MainWindow::flushUiToConfig()
@@ -1375,6 +1407,10 @@ void MainWindow::updatePendingChangesBadge()
      * m_configLoadInProgress. The badge re-evaluates on the next tick once
      * the load completes. */
     if (m_configLoadInProgress) return;
+    /* Same reasoning for a device Read in flight: the worker is filling
+     * dev_config_t, so don't flush UI over it or compare against a half-read
+     * struct (would flicker the dot on). configReceived() snapshots + clears. */
+    if (m_deviceReadInProgress) return;
     if (!m_haveDeviceConfigSnapshot || !gEnv.pDeviceConfig) return;
     if (!ui || !ui->pushButton_WriteConfig) return;
 
@@ -1534,26 +1570,66 @@ void MainWindow::legacyConfigMigrated(uint16_t oldFirmwareVersion)
     const QString fromVer = QString::fromLatin1(legacy::describeVersion(oldFirmwareVersion));
     const QString message = tr(
         "<p>This device is running upstream FreeJoy firmware (%1).</p>"
-        "<p>The configurator has read its config and translated it into "
-        "the current shape. Your existing pin assignments, axes, buttons, "
-        "shift registers, encoders and LED settings are preserved. "
-        "New-since-then features (logical buttons, gestures, RGB) carry "
-        "default values.</p>"
+        "<p>The configurator has read its config and translated it into the "
+        "current %2 shape. Your existing pin assignments, axes, buttons, "
+        "shift registers, encoders and LED settings are preserved. Newer "
+        "features (logical buttons, gestures, RGB) carry default values.</p>"
         "<p>To finish upgrading the device:</p>"
         "<ol>"
-        "<li>Review the imported config in the tabs above. "
-        "<b>Save it to a file</b> as a backup.</li>"
-        "<li>Flash %2 firmware via "
-        "<i>Advanced Settings &rarr; Firmware flasher</i>.</li>"
-        "<li>After the device reconnects, click "
-        "<b>Write config to device</b> to push the migrated config.</li>"
+        "<li>Optionally click <b>Save config to file</b> to keep a backup of "
+        "the imported config.</li>"
+        "<li>Click <b>Upgrade Firmware</b> on the device panel and pick the "
+        "latest %2 firmware. The upgrade backs up the device, flashes, and "
+        "writes your migrated config back automatically.</li>"
         "</ol>"
     ).arg(fromVer, FORK_NAME);
-    QMessageBox::information(this, tr("Legacy config imported"), message);
+
+    /* Present it in the app's alert-banner idiom -- a thin Lucide info glyph
+     * (accent blue) top-aligned beside the text, like the Upgrade-process
+     * banner -- but plain (no tinted fill / accent border) since this is a
+     * standalone informational dialog, not an inline warning bar. */
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("Legacy config imported"));
+    dlg.setWindowFlags(dlg.windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
+    auto *root = new QVBoxLayout(&dlg);
+    root->setContentsMargins(16, 16, 16, 12);
+    root->setSpacing(14);
+
+    auto *row = new QHBoxLayout();
+    row->setSpacing(12);
+    auto *icon = new QLabel(&dlg);
+    icon->setFixedSize(20, 20);
+    icon->setScaledContents(true);
+    // White on dark, a muted grey on light (not the near-black text ink).
+    const QColor infoInk = m_darkThemeActive ? QColor(0xFF, 0xFF, 0xFF)
+                                             : QColor(0x90, 0x90, 0x90);
+    icon->setPixmap(freejoy_style::tintedSvgPixmap(
+        QStringLiteral(":/Images/icons/lucide/info.svg"), QSize(20, 20), infoInk));
+    auto *text = new QLabel(message, &dlg);
+    text->setTextFormat(Qt::RichText);
+    text->setWordWrap(true);
+    text->setMaximumWidth(430);   // force the prose to wrap like the banner
+    row->addWidget(icon, 0, Qt::AlignTop);
+    row->addWidget(text, 1);
+    root->addLayout(row);
+
+    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok, &dlg);
+    connect(buttons, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    if (QPushButton *ok = buttons->button(QDialogButtonBox::Ok)) ok->setDefault(true);
+    root->addWidget(buttons);
+
+    dlg.exec();
 }
 
 void MainWindow::configReceived(bool success)
 {
+    /* The read is done (worker emits this on success and failure alike), so the
+     * worker is no longer touching dev_config_t -- re-enable the dirty poll. The
+     * snapshot taken in the success branch below leaves the badge correctly
+     * cleared on the next tick. */
+    m_deviceReadInProgress = false;
+
     /* FlashSession-driven backup Read. We're inside the session's
      * BackingUp state; save the backup file (or surface the failure to
      * the session for the "continue without backup" branch) and let
@@ -1981,6 +2057,13 @@ void MainWindow::saveAppConfig()
 void MainWindow::hidDeviceListChanged(int index)
 {
     m_hidDeviceWorker->setSelectedDevice(index);
+    /* The shown config still belongs to the PREVIOUS device until the new one's
+     * config (auto-)reads, so suppress the conflict banner now -- otherwise the
+     * stale PID self-collides with the just-deselected device (now an "other")
+     * and the banner shows until the read lands. The exclusion list still
+     * refreshes below (keeping it correct for when the banner un-suppresses);
+     * UiReadFromConfig clears the suppression once the new config is in. */
+    if (m_advSettings) m_advSettings->setPidConflictSuppressed(true);
     /* Selection change re-evaluates which siblings are "other" --
      * without this, the conflict pill on Advanced Settings keeps
      * computing exclusion against the previously-selected device's
@@ -2029,6 +2112,10 @@ void MainWindow::on_pushButton_ReadConfig_clicked()
     qDebug()<<"Read config started";
     blockWRConfigToDevice(true);
 
+    /* Gate the dirty poll: the worker fills dev_config_t in place as the read
+     * streams in, so a 1 Hz tick mid-read would flush stale UI over it and flash
+     * the Write-config pending-changes dot. Cleared at configReceived(). */
+    m_deviceReadInProgress = true;
     m_hidDeviceWorker->getConfigFromDevice();
 }
 
@@ -2086,6 +2173,7 @@ void MainWindow::on_pushButton_WriteConfig_clicked()
         m_backupBeforeWritePending = true;
         blockWRConfigToDevice(true);
         ui->pushButton_WriteConfig->setText(tr("Backing up..."));
+        m_deviceReadInProgress = true;   // gate the dirty poll during the read
         m_hidDeviceWorker->getConfigFromDevice();
         return;
     }
@@ -2176,26 +2264,29 @@ void MainWindow::refreshUpgradeButtonState()
         boardId = BOARD_ID_F103_BLUEPILL;
     }
 
-    QString fileVer;
-    const QString path = findUpgradeFirmwarePath(boardId, &fileVer);
-    const bool haveFile = !path.isEmpty();
     const bool haveBoard = (boardId == BOARD_ID_F103_BLUEPILL ||
                             boardId == BOARD_ID_F411_BLACKPILL);
-    /* Don't surface the Upgrade button when the device is already on
-     * the same mask group as the configurator -- there's nothing
-     * meaningful to upgrade to. The user can still reach the manual
-     * Flasher tab if they want to flash the same version (e.g. to
-     * recover a corrupted board), but the headline "one-click upgrade"
-     * affordance should only appear when it actually does something. */
-    const bool needsUpgrade = !versionMatchesCurrent;
-    ui->pushButton_UpgradeFirmware->setDisabled(
-        !(deviceConnected && haveBoard && haveFile && needsUpgrade));
+    /* The "Update Firmware..." button is ALWAYS visible (set in the ctor); here
+     * we just ENABLE it when an upgrade is actually available for the connected
+     * device. "Newer available" = a different wire-gen than the configurator, OR
+     * the same gen but the device's reported FreeJoyX semver is older than the
+     * configurator's (covers point upgrades like 0.1.5 -> 0.1.9). Devices that
+     * don't report a semver (old/upstream, all-zero) read as older, so they're
+     * offered the upgrade too. We deliberately do NOT gate on a bundled .bin
+     * being present -- that only pre-selects it -- so the button works for F103
+     * and F411 alike; the picker dialog opened on click finds / browses /
+     * downloads the firmware. */
+    const auto &pr = gEnv.pDeviceConfig->paramsReport;
+    const bool newerAvailable = firmwareNewerAvailable(
+        pr.freejoyx_version_major, pr.freejoyx_version_minor, pr.freejoyx_version_patch,
+        FREEJOYX_VERSION_MAJOR, FREEJOYX_VERSION_MINOR, FREEJOYX_VERSION_PATCH,
+        versionMatchesCurrent);
+    ui->pushButton_UpgradeFirmware->setEnabled(
+        deviceConnected && haveBoard && newerAvailable);
 }
 
 void MainWindow::on_pushButton_UpgradeFirmware_clicked()
 {
-    qDebug() << "Upgrade Firmware clicked";
-
     if (!gEnv.pDeviceConfig ||
         gEnv.pDeviceConfig->paramsReport.firmware_version == 0) {
         QMessageBox::warning(this, tr("No device connected"),
@@ -2203,10 +2294,8 @@ void MainWindow::on_pushButton_UpgradeFirmware_clicked()
         return;
     }
 
-    /* Same board_id fallback as refreshUpgradeButtonState: legacy
-     * firmware (notably v1.7.7 / 0x1770) didn't report board_id, so
-     * default to F103 when the byte reads as 0 on a non-current
-     * firmware version. */
+    /* Board fallback for legacy firmware (notably v1.7.7 / 0x1770) that didn't
+     * report board_id -- default to F103 on a non-current firmware version. */
     int boardId = gEnv.pDeviceConfig->paramsReport.board_id;
     const uint16_t devVerLocal = gEnv.pDeviceConfig->paramsReport.firmware_version;
     const bool versionMatchesCurrentLocal =
@@ -2214,64 +2303,23 @@ void MainWindow::on_pushButton_UpgradeFirmware_clicked()
     if (boardId == 0 && !versionMatchesCurrentLocal) {
         boardId = BOARD_ID_F103_BLUEPILL;
     }
-    QString targetVer;
-    const QString fwPath = findUpgradeFirmwarePath(boardId, &targetVer);
-    if (fwPath.isEmpty()) {
-        QMessageBox::warning(this, tr("No firmware available"),
-            tr("Couldn't find a matching firmware binary in the "
-               "configurator's firmware/ folder. Use Advanced Settings "
-               "-> Firmware flasher to flash manually."));
-        return;
-    }
 
-    const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
-    const QString devVerText = legacy::describeVersion(devVer);
+    /* Open the firmware picker dialog for this device, pre-selecting the bundled
+     * upgrade bin if present. The dialog owns confirmation + verdict; on accept
+     * it routes through Flasher::consolidatedFlashRequested -> startConsolidatedFlash
+     * (the same entry the Flasher tab uses). */
+    const QString fwPath = findUpgradeFirmwarePath(boardId, nullptr);
 
-    /* If the device's wire-format mask group is in the upstream FreeJoy
-     * range (anything with mask < 0x1770, i.e. v1.7.0/1.7.1/1.7.3) and
-     * we're flashing to FreeJoyX 0.0.0, the version number going
-     * "down" looks like a downgrade -- surface a one-line note so the
-     * user understands they're crossing project lines, not regressing. */
-    const uint16_t devMask = devVer & 0xFFF0;
-    const bool crossingFromUpstream = (devMask == 0x1700 ||
-                                       devMask == 0x1710 ||
-                                       devMask == 0x1730);
-    QString migrationNote;
-    if (crossingFromUpstream) {
-        migrationNote = QStringLiteral(
-            "<p style='color:#996600'><b>Note:</b> moving from upstream "
-            "FreeJoy to FreeJoyX. The version number restarts at 0.0.0 "
-            "because FreeJoyX is a separate project line (not a "
-            "downgrade of FreeJoy 1.7.x). Both share the same wire format "
-            "for older configs, so your existing mappings carry forward.</p>");
-    }
-
-    const QMessageBox::StandardButton rc = QMessageBox::question(
-        this,
-        tr("Upgrade firmware?"),
-        tr("<p>This will:</p>"
-           "<ol>"
-           "<li>Read your current config and save a backup file</li>"
-           "<li>Flash <b>%1</b> to the device</li>"
-           "<li>Write your migrated config back after the device "
-               "reconnects</li>"
-           "</ol>"
-           "<p>Current firmware: <b>%2</b><br>"
-           "Target firmware: <b>%3</b></p>"
-           "%4"
-           "<p>If anything fails mid-flight the device may be left in "
-           "DFU mode -- recover via STM32 Cube Programmer + ST-Link.</p>"
-           "<p>Continue?</p>")
-            .arg(QFileInfo(fwPath).fileName(), devVerText, targetVer, migrationNote),
-        QMessageBox::Yes | QMessageBox::Cancel,
-        QMessageBox::Cancel);
-    if (rc != QMessageBox::Yes) return;
-
-    /* Slice 4: route the toolbar Upgrade button through the same
-     * FlashSession entry point the Flasher tab uses. Identity capture,
-     * verdict computation, dialog open, and orchestration all live
-     * inside startConsolidatedFlash. */
-    startConsolidatedFlash(fwPath);
+    /* Hand the dialog the SAME identity the device card shows -- product name
+     * (toolbar combo), serial (m_currentDeviceSerial), and the shared version
+     * string -- so its Device pane matches the card instead of the stale
+     * bootloader-side values the Flasher tab used to scrape. */
+    const QString deviceName   = ui->comboBox_HidDeviceList->currentText();
+    const QString deviceSerial = m_currentDeviceSerial;
+    const QString deviceVer    =
+        deviceVersionDisplay(gEnv.pDeviceConfig->paramsReport);
+    m_advSettings->flasher()->openFlashDialog(fwPath, deviceName,
+                                              deviceSerial, deviceVer);
 }
 
 void MainWindow::doActualWriteToDevice()
