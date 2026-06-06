@@ -1,71 +1,17 @@
 /* FreeJoy Configurator — light theme overrides.
  *
- * Appended after common.qss when MainWindow::themeChanged(false) runs.
- * The QPalette set in themeChanged() handles 80% of colours; this file
- * only specifies overrides where palette references are not enough.
+ * INTENTIONALLY EMPTY. All theme colour now comes from the QPalette set in
+ * MainWindow::themeChanged(); every QSS rule lives in common.qss and is either
+ * palette()-driven or uses a theme-independent accent/icon. This is what lets
+ * the stylesheet be applied ONCE and a theme swap be a cheap palette change
+ * instead of a multi-second full-tree QSS repolish.
+ *
+ * DO NOT add theme-specific rules here: themeChanged applies the sheet only
+ * once, so anything added here would not take effect on a later toggle. If you
+ * genuinely need a colour the palette can't express, drive it from the palette
+ * or a theme-independent token in common.qss, or draw it in code at paint time.
+ *
+ * (The old light-theme group-box border override is gone: the light palette's
+ * Mid role is already #cccccc, which common.qss's `border: 1px solid
+ * palette(mid)` picks up.)
  */
-
-/* Off-state for the physical-button indicator on light backgrounds:
- * outlined ring, transparent fill, muted text. Drops the historical
- * "soft red" off-colour because red on every unpressed button reads
- * as an error state. Shape and the transparent-base reset live in
- * common.qss; this only sets the theme-tuned colours. */
-
-QLabel[buttonState="off"] {
-    border-color: #cccccc;
-    color: #888888;
-}
-
-/* Primary button hover/pressed for light theme. */
-
-QPushButton[role="primary"]:hover {
-    background-color: #1f78e0;
-    border-color: #1f78e0;
-}
-
-QPushButton[role="primary"]:pressed {
-    background-color: #0a4f9e;
-    border-color: #0a4f9e;
-}
-
-/* Group-box borders are nearly invisible on a light background with the
- * default mid colour, so nudge them slightly. */
-
-QGroupBox {
-    border-color: #cccccc;
-}
-
-/* Spinbox / combobox chevrons — dark strokes for light palette.
- * Qt's QSvgRenderer doesn't resolve SVG currentColor from QSS, so the
- * stroke colour is baked into each variant SVG. */
-
-QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
-    image: url(:/Images/icons/lucide/chevron-up-light.svg);
-}
-
-QSpinBox::down-arrow, QDoubleSpinBox::down-arrow,
-QComboBox::down-arrow {
-    image: url(:/Images/icons/lucide/chevron-down-light.svg);
-}
-
-QCheckBox::indicator:checked {
-    image: url(:/Images/icons/lucide/check-light.svg);
-}
-
-/* "Show extended settings" toggle: render as a chevron rather than a
- * checkbox so the affordance reads as "expand/collapse" instead of
- * "yes/no". chevron-down when collapsed; chevron-up when expanded. */
-QCheckBox#checkBox_ShowExtend::indicator {
-    border: none;
-    background: transparent;
-    width: 14px;
-    height: 14px;
-    image: url(:/Images/icons/lucide/chevron-down-light.svg);
-}
-QCheckBox#checkBox_ShowExtend::indicator:hover {
-    border: none;
-    background: transparent;
-}
-QCheckBox#checkBox_ShowExtend::indicator:checked {
-    image: url(:/Images/icons/lucide/chevron-up-light.svg);
-}

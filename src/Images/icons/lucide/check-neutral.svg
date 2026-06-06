@@ -1,0 +1,19 @@
+<!-- @license lucide-static v1.14.0 - ISC -->
+<!-- Theme-independent check: a blue glyph (matches the highlight-blue border a
+     checked box already draws) that reads clearly on both the light (#fff) and
+     dark (#2f3034) indicator backgrounds, so the stylesheet no longer has to be
+     re-applied on a theme swap. See styles/common.qss. -->
+<svg
+  class="lucide lucide-check"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#2682e2"
+  stroke-width="3"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M20 6 9 17l-5-5" />
+</svg>
