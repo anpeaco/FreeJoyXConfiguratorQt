@@ -53,14 +53,12 @@ public:
         QString text = index.data(Qt::DisplayRole).toString();
         if (header) {
             leftPad = 8;           // headers flush-left so the indent reads
-            p->setPen(opt.palette.color(QPalette::Mid));   // thin divider above the header
-            p->drawLine(opt.rect.left() + 6, opt.rect.top(),
-                        opt.rect.right() - 6, opt.rect.top());
-            // Sentence case (matches the app convention) + a light weight; the
-            // divider + indent do the grouping, so the label stays quiet. On a
-            // dark theme nudge to brighter-than-palette text so it still reads.
-            fg = darkUi ? QColor(238, 238, 238) : opt.palette.color(QPalette::Text);
-            f.setWeight(QFont::Light);
+            // Banded header: a darker grey on dark themes, a very light grey on
+            // light themes, with matching-contrast text. Bold + the band + the
+            // extra row padding (see sizeHint) make the section dividers clear.
+            p->fillRect(opt.rect, base.darker(darkUi ? 140 : 108));
+            fg = darkUi ? QColor(238, 238, 238) : QColor(45, 45, 45);
+            f.setBold(true);
         } else {
             if (active) {
                 // subtle neutral hover/selection -- not the loud function-colour fill
@@ -77,6 +75,16 @@ public:
         p->drawText(tr, Qt::AlignVCenter | Qt::AlignLeft,
                     opt.fontMetrics.elidedText(text, Qt::ElideRight, tr.width()));
         p->restore();
+    }
+
+    QSize sizeHint(const QStyleOptionViewItem &option,
+                   const QModelIndex &index) const override
+    {
+        QSize s = QStyledItemDelegate::sizeHint(option, index);
+        if (index.data(kPinHeaderRole).toBool()) {
+            s.setHeight(s.height() + 2);   // +1px top + 1px bottom padding on headers
+        }
+        return s;
     }
 };
 
