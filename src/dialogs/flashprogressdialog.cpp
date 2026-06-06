@@ -8,11 +8,9 @@
 #include "flashprogressdialog.h"
 #include "ui_flashprogressdialog.h"
 
-#include <QDateTime>
 #include <QPushButton>
 
-#include "global.h"
-#include "widgets/debugwindow.h"
+#include "progresslog.h"
 
 FlashProgressDialog::FlashProgressDialog(bool recoveryFlash, QWidget *parent)
     : QDialog(parent)
@@ -72,13 +70,9 @@ void FlashProgressDialog::setFlashBytes(int bytesSent, int bytesTotal)
 
 void FlashProgressDialog::appendStatus(const QString &line)
 {
-    if (line.isEmpty()) return;
-    const QString ts = QDateTime::currentDateTime().toString("HH:mm:ss");
-    const QString stamped = QStringLiteral("[%1] %2").arg(ts, line);
-    ui->plainTextEdit_Status->appendPlainText(stamped);
-    /* Mirror to the on-disk log when file logging is enabled (same sink as the
-     * app log + the DFU install progress dialog). */
-    if (gEnv.pDebugWindow) gEnv.pDebugWindow->appendProgressLine(stamped);
+    /* Shared timestamp + on-disk-log sink (also used by the DFU install
+     * progress window) -- see dialogs/progresslog.h. */
+    progresslog::append(ui->plainTextEdit_Status, line);
 }
 
 void FlashProgressDialog::onCancelOrCloseClicked()

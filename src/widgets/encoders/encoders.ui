@@ -19,7 +19,7 @@
   <property name="windowTitle">
    <string notr="true">Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout" rowstretch="3,3,0" columnstretch="3,10,10,10,15">
+  <layout class="QGridLayout" name="gridLayout" rowstretch="3,3,0" columnstretch="3,10,10,10,4">
    <property name="leftMargin">
     <number>0</number>
    </property>

@@ -31,10 +31,10 @@
 #include <QFileInfo>
 #include <QFont>
 #include <QEvent>
-#include <QDateTime>
 
 #include "global.h"
 #include "widgets/debugwindow.h"
+#include "progresslog.h"
 
 namespace {
 
@@ -801,14 +801,9 @@ void DfuInstallDialog::setDetectStatus(DetectKind kind, const QString &text)
 
 void DfuInstallDialog::appendLog(const QString &line)
 {
-    if (line.isEmpty()) return;
-    /* Same format + file sink as FlashProgressDialog::appendStatus: prefix a
-     * [HH:mm:ss] timestamp for the on-screen log, and mirror the same line to
-     * the on-disk log when file logging is enabled. */
-    const QString ts = QDateTime::currentDateTime().toString("HH:mm:ss");
-    const QString stamped = QStringLiteral("[%1] %2").arg(ts, line);
-    m_log->appendPlainText(stamped);
-    if (gEnv.pDebugWindow) gEnv.pDebugWindow->appendProgressLine(stamped);
+    /* Shared timestamp + on-disk-log sink (also used by FlashProgressDialog) --
+     * see dialogs/progresslog.h. */
+    progresslog::append(m_log, line);
 }
 
 int DfuInstallDialog::weightedProgress(DfuInstallSession::Stage s, qint64 done, qint64 total)
