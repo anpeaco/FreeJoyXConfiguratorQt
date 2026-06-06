@@ -56,9 +56,11 @@ public:
             p->setPen(opt.palette.color(QPalette::Mid));   // thin divider above the header
             p->drawLine(opt.rect.left() + 6, opt.rect.top(),
                         opt.rect.right() - 6, opt.rect.top());
-            fg = opt.palette.color(QPalette::Text);        // full contrast (white on dark)
-            f.setBold(true);
-            text = text.toUpper();
+            // Sentence case (matches the app convention) + a light weight; the
+            // divider + indent do the grouping, so the label stays quiet. On a
+            // dark theme nudge to brighter-than-palette text so it still reads.
+            fg = darkUi ? QColor(238, 238, 238) : opt.palette.color(QPalette::Text);
+            f.setWeight(QFont::Light);
         } else {
             if (active) {
                 // subtle neutral hover/selection -- not the loud function-colour fill
