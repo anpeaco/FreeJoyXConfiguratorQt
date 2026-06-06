@@ -38,9 +38,6 @@ signals:
     void setClicked();
     void resetClicked();
 
-protected:
-    bool eventFilter(QObject *obj, QEvent *event) override;
-
 private slots:
     void CurveClicked();
 
@@ -51,8 +48,6 @@ private:
     Ui::AxesCurvesProfiles *ui;
     //void (AxesCurvesProfiles::*m_pPresetFunc)();
     std::function<void(AxesCurvesProfiles*)> m_pPresetFunc;
-    void updateColor();
-    QIcon pixmapToIcon(QPixmap pixmap, const QColor &color);
 };
 
 #endif // AXESCURVESPROFILES_H

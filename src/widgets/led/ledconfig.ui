@@ -419,8 +419,11 @@
         </item>
         <item>
          <widget class="QLabel" name="text_source">
+          <property name="toolTip">
+           <string>Host = LED driven by host software (e.g. SimHub). Unchecked = driven by the button below.</string>
+          </property>
           <property name="text">
-           <string>Source</string>
+           <string>Host</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -876,7 +879,7 @@
    <item row="1" column="0" colspan="2">
     <widget class="QGroupBox" name="groupBox_3">
      <property name="title">
-      <string>RGB LEDs - pin A10</string>
+      <string>RGB LEDs</string>
      </property>
      <layout class="QHBoxLayout" name="layoutH_RGB">
       <property name="leftMargin">

@@ -112,10 +112,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="checkBox_ShowExtend">
-          <property name="cursor">
-           <cursorShape>PointingHandCursor</cursorShape>
-          </property>
+         <widget class="QToolButton" name="toolButton_ShowExtend">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
             <horstretch>0</horstretch>
@@ -128,15 +125,11 @@
             <height>17</height>
            </size>
           </property>
-          <property name="layoutDirection">
-           <enum>Qt::RightToLeft</enum>
-          </property>
           <property name="toolTip">
            <string>Toggle prescaler, resolution, and axes-to-buttons sliders for this axis</string>
           </property>
-          <property name="text">
-           <string>Show extended settings</string>
-          </property>
+          <!-- Look (gear + "Extended Settings" + chevron) is applied in code via
+               freejoy_style::configureSectionToggle so it matches the DFU dialog. -->
          </widget>
         </item>
        </layout>

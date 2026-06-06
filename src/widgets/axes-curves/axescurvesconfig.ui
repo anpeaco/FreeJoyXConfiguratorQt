@@ -34,9 +34,6 @@
      <property name="title">
       <string>Curve profiles</string>
      </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
      <layout class="QHBoxLayout" name="layoutH_Profiles">
       <property name="leftMargin">
        <number>6</number>

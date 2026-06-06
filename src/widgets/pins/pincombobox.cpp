@@ -29,6 +29,14 @@ PinComboBox::PinComboBox(uint pinNumber, QWidget *parent) : // pin handling was 
 
     connect(ui->comboBox_PinsType, SIGNAL(currentIndexChanged(int)),
                 this, SLOT(indexChanged(int)));
+
+    // After the user commits a selection the combobox retains keyboard focus, so
+    // the :focus blue border lingers on every configured pin (a column of blue
+    // outlines). Drop focus once a choice is made -- the focus ring still shows
+    // while the dropdown is open/being navigated, just not after. activated() is
+    // user-interaction only, so programmatic loads (Read / auto-read) don't trip it.
+    connect(ui->comboBox_PinsType, QOverload<int>::of(&QComboBox::activated),
+            this, [this]() { ui->comboBox_PinsType->clearFocus(); });
 }
 
 PinComboBox::~PinComboBox()
@@ -194,6 +202,34 @@ void PinComboBox::applyTextColor(const QColor &color)
 void PinComboBox::reapplyRoleColor()
 {
     applyTextColor(m_roleColor);
+}
+
+QColor PinComboBox::colorForRole(int deviceEnum) const
+{
+    for (const cBox &c : m_pinTypes) {
+        if (c.deviceEnumIndex == deviceEnum) {
+            return c.color;
+        }
+    }
+    return QColor();
+}
+
+void PinComboBox::setHoverOutline(const QColor &border)
+{
+    /* Inline stylesheet on the inner combobox: a thicker coloured border in the
+     * hovered role's group colour, with padding trimmed 1px to absorb the extra
+     * border so the control doesn't shift. Clearing removes the stylesheet. The
+     * setStyleSheet polish wipes the palette-driven role text colour, so restore
+     * it via reapplyRoleColor() afterwards (same reason flashAutoAssignedPin /
+     * highlightPins do). border-radius matches the global QComboBox rule. */
+    if (border.isValid()) {
+        ui->comboBox_PinsType->setStyleSheet(
+            QStringLiteral("QComboBox { border: 2px solid %1; border-radius: 4px; "
+                           "padding: 1px 5px; }").arg(border.name()));
+    } else {
+        ui->comboBox_PinsType->setStyleSheet(QString());
+    }
+    reapplyRoleColor();
 }
 
 void PinComboBox::setIndex_iteraction(int index, int senderIndex)

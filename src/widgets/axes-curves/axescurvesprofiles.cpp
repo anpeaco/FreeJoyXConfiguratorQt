@@ -3,6 +3,7 @@
 #include <QPainter>
 #include <QStyleOption>
 #include <cmath>
+#include "style_helpers.h"
 
 AxesCurvesProfiles::AxesCurvesProfiles(QWidget *parent) :
     QWidget(parent),
@@ -21,8 +22,10 @@ AxesCurvesProfiles::AxesCurvesProfiles(QWidget *parent) :
 
     connect(ui->widget_Curve, &AxesCurvesButton::clicked, this, &AxesCurvesProfiles::CurveClicked);
 
-    updateColor();
-    installEventFilter(this);
+    // Themed Reset icon via the shared registry -- auto re-tints on theme flip
+    // (replaces the local pixmapToIcon + PaletteChange eventFilter).
+    freejoy_style::setThemedIcon(ui->toolButton_Reset,
+                                 QStringLiteral(":/Images/icons/lucide/rotate-ccw.svg"));
 }
 
 AxesCurvesProfiles::~AxesCurvesProfiles()
@@ -207,33 +210,3 @@ void AxesCurvesProfiles::on_toolButton_Reset_clicked()
 }
 
 
-//! QPixmap gray-scale image (an alpha map) to colored QIcon
-QIcon AxesCurvesProfiles::pixmapToIcon(QPixmap pixmap, const QColor &color)
-{
-    // initialize painter to draw on a pixmap and set composition mode
-    QPainter painter(&pixmap);
-    painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
-    // set color
-    painter.setBrush(color);
-    painter.setPen(color);
-    // paint rect
-    painter.drawRect(pixmap.rect());
-    // here is our new colored icon
-    return QIcon(pixmap);
-}
-
-void AxesCurvesProfiles::updateColor()
-{
-    QColor col = QApplication::palette().color(QPalette::Text);
-    ui->toolButton_Reset->setIcon(pixmapToIcon(QPixmap(":/Images/icons/lucide/rotate-ccw.svg"), col));
-}
-
-bool AxesCurvesProfiles::eventFilter(QObject *object, QEvent *event)
-{
-    Q_UNUSED(object)
-    if (event->type() == QEvent::PaletteChange) {
-        updateColor();
-        return false;
-    }
-    return false;
-}

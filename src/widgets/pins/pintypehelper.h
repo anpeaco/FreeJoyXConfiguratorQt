@@ -35,9 +35,17 @@ signals:
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
+    //! Re-theme the info icons when the palette flips (light/dark) so they stay
+    //! white on dark / grey on light.
+    void changeEvent(QEvent *event) override;
 
 private:
     Ui::PinTypeHelper *ui;
+
+    //! Rebuild each Pin Info row's HTML with a theme-tinted info icon (the .ui
+    //! ships a fixed-colour SVG that's invisible on dark). Re-applied on palette
+    //! change; the row's "info" link is preserved so the tooltip still works.
+    void applyThemedInfoIcons();
 
     /* Each Pin Info row's wiring-detail HTML, moved out of the widget tooltip
      * so it only pops when the row's info icon (an <a> link) is hovered, not

@@ -64,9 +64,6 @@
          <property name="title">
           <string>Fast encoders</string>
          </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
          <layout class="QVBoxLayout" name="layoutV_FastEncoders">
           <property name="leftMargin">
            <number>0</number>
@@ -90,9 +87,6 @@
          </property>
          <property name="title">
           <string>Slow encoders</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
          </property>
          <layout class="QVBoxLayout" name="layoutV_Encoders">
           <property name="leftMargin">

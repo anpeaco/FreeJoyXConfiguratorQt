@@ -252,7 +252,9 @@ void ButtonLogical::setButtonState(bool state)
 
         if (state) {
             QPalette pal(window()->palette());
-            pal.setColor(QPalette::Window, QColor(0, 128, 0));
+            // Canonical "active" green (single source of truth), matching the
+            // buttonState="on" / shiftActive highlights.
+            pal.setColor(QPalette::Window, freejoy_style::accentGreen());
             setPalette(pal);
 
             m_lastAct.start();

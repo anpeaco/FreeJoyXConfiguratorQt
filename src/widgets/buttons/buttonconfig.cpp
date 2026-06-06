@@ -360,7 +360,7 @@ void ButtonConfig::physButtonsCreator(int count)
                                     .arg(group_end), this);
         // padding-top separates the header from the group above; padding-bottom
         // opens a gap between the header and its own row of button circles.
-        header->setStyleSheet("font-weight: bold; padding-top: 6px; padding-bottom: 6px;");
+        header->setStyleSheet("font-weight: 600; padding-top: 6px; padding-bottom: 6px;");
         ui->layoutG_PhysicalButton->addWidget(header, row, 0, 1, kCols);
         row++;
 

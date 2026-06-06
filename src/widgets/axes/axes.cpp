@@ -54,6 +54,10 @@ Axes::Axes(int axisNumber, QWidget *parent)
     // through the armed / sequence states as the user interacts.
     freejoy_style::setThemedIcon(ui->pushButton_DetectSource, QStringLiteral(":/Images/icons/lucide/target.svg"));
 
+    // "Extended Settings" disclosure: gear + label + chevron, shared with the
+    // DFU Install dialog's toggle via configureSectionToggle so the two match.
+    freejoy_style::configureSectionToggle(ui->toolButton_ShowExtend, tr("Extended Settings"));
+
     // Clear buttons-from-axes for this axis: set the count to 0.
     connect(ui->pushButton_ClearA2b, &QPushButton::clicked, this, [this]() {
         ui->spinBox_A2bCount->setValue(0);
@@ -633,10 +637,10 @@ void Axes::a2bSpinBoxChanged(int count)
     }
 }
 
-void Axes::on_checkBox_ShowExtend_stateChanged(int state)
+void Axes::on_toolButton_ShowExtend_toggled(bool checked)
 {
     // QTimer::singleShot(10 - antiblink
-    if (state == 2) { // 2 = true
+    if (checked) {
         m_axesExtend->setMinimumHeight(115);
         QTimer::singleShot(10, this, [this] {
             m_axesExtend->setVisible(true);
