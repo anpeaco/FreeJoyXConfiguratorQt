@@ -93,6 +93,7 @@ SOURCES += \
     widgets/color/colorpicker.cpp \
     widgets/color/colorvalueslider.cpp \
     widgets/color/colorwheel.cpp \
+    widgets/groupedcombo.cpp \
     widgets/infolabel.cpp \
     widgets/led_rgb/ledfunction.cpp \
     widgets/led_rgb/ledrgb.cpp \
@@ -167,6 +168,7 @@ HEADERS += \
     widgets/color/colorpicker.h \
     widgets/color/colorvalueslider.h \
     widgets/color/colorwheel.h \
+    widgets/groupedcombo.h \
     widgets/infolabel.h \
     widgets/led_rgb/ledfunction.h \
     widgets/led_rgb/ledrgb.h \

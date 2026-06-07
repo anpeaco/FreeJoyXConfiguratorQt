@@ -87,10 +87,13 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButton_UpgradeFirmware->setVisible(true);
     ui->pushButton_UpgradeFirmware->setEnabled(false);
 
-    /* Read / Write to device are the two primary device actions -- give them the
-     * primary-button emphasis (the role="primary" QSS exists for exactly this). */
-    freejoy_style::setRole(ui->pushButton_ReadConfig,  "role", "primary");
-    freejoy_style::setRole(ui->pushButton_WriteConfig, "role", "primary");
+    /* Neither Read nor Write is permanently "primary":
+     *  - Read auto-fires on connect (m_autoReadOnConnect), so a glowing Read
+     *    button would imply a manual read is required when it isn't -- keep it
+     *    a normal button.
+     *  - Write only matters when there are unsaved edits, so its primary accent
+     *    is applied/cleared dynamically by updatePendingChangesBadge() to track
+     *    the dirty state (same signal as the pending-changes dot). */
 
     /* Resting status before the first connect/disconnect event, so the status
      * pill isn't blank at launch (matches the post-disconnect appearance). */
@@ -1427,12 +1430,16 @@ void MainWindow::updatePendingChangesBadge()
             tr("Pending changes. The device still runs its previously-flashed "
                "config; the live press preview reflects that, not your edits. "
                "Click to write."));
+        // Raise Write to the primary accent only while there's something to
+        // write -- the accent now means "you have changes to push".
+        freejoy_style::setRole(ui->pushButton_WriteConfig, "role", "primary");
     } else {
         // Drop the themed-icon tag too, so a later theme change doesn't
         // re-tint (and thus resurrect) the cleared dot.
         freejoy_style::clearThemedIcon(ui->pushButton_WriteConfig);
         ui->pushButton_WriteConfig->setIcon(QIcon());
         ui->pushButton_WriteConfig->setToolTip(QString());
+        freejoy_style::clearRole(ui->pushButton_WriteConfig, "role");
     }
 }
 
@@ -2081,19 +2088,26 @@ void MainWindow::hidDeviceListChanged(int index)
 // because there's no built-in undo.
 void MainWindow::on_pushButton_ResetAllPins_clicked()
 {
-    const QMessageBox::StandardButton rc = QMessageBox::question(
-        this,
-        tr("Reset all settings to defaults?"),
-        tr("<p>This resets every setting in the configurator -- pins, "
-           "axes, buttons, encoders, sensors, USB identity, gestures, "
-           "logic, LEDs, shifts &amp; timers -- to factory defaults.</p>"
-           "<p>The change is <b>in-memory only</b>. The connected "
-           "device keeps its current settings until you click "
-           "<b>Write Config</b>.</p>"
-           "<p>Continue?</p>"),
-        QMessageBox::Yes | QMessageBox::Cancel,
-        QMessageBox::Cancel);
-    if (rc != QMessageBox::Yes) return;
+    // Themed confirmation (amber caution triangle + primary confirm button) so
+    // this matches the app's dialog style rather than the native question box.
+    QMessageBox box(this);
+    box.setWindowTitle(tr("Reset all settings to defaults?"));
+    box.setTextFormat(Qt::RichText);
+    box.setText(tr("<p>This resets every setting in the configurator -- pins, "
+                   "axes, buttons, encoders, sensors, USB identity, gestures, "
+                   "logic, LEDs, shifts &amp; timers -- to factory defaults.</p>"
+                   "<p>The change is <b>in-memory only</b>. The connected "
+                   "device keeps its current settings until you click "
+                   "<b>Write Config</b>.</p>"
+                   "<p>Continue?</p>"));
+    box.setIconPixmap(freejoy_style::tintedTrianglePixmap(freejoy_style::accentAmber(), 40));
+    QPushButton *resetBtn  = box.addButton(tr("Reset to defaults"), QMessageBox::AcceptRole);
+    QPushButton *cancelBtn = box.addButton(tr("Cancel"), QMessageBox::RejectRole);
+    freejoy_style::setRole(resetBtn, "role", "primary");
+    box.setDefaultButton(cancelBtn);   // safe default: don't reset on a stray Enter
+    box.setEscapeButton(cancelBtn);
+    box.exec();
+    if (box.clickedButton() != resetBtn) return;
 
     qDebug() << "Reset all started";
     gEnv.pDeviceConfig->resetConfig();

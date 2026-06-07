@@ -2,6 +2,7 @@
 #include "ui_buttonlogical.h"
 
 #include "widgets/debugwindow.h"
+#include "widgets/groupedcombo.h"
 #include "converter.h"
 #include "style_helpers.h"
 #include "timer_label.h"
@@ -18,6 +19,37 @@
 int ButtonLogical::m_currentFocus = -1;
 int ButtonLogical::m_currentFocusSrcB = -1;
 bool ButtonLogical::m_autoPhysButEnabled = false;
+
+namespace {
+
+// Section grouping for the Function dropdown. The list in buttonlogical.h is
+// already authored in this order, so a group change marks a header boundary.
+enum FuncGroup { FG_BASIC, FG_TOGGLE, FG_POV, FG_ENCODER, FG_RADIO, FG_SEQ, FG_OTHER };
+
+FuncGroup funcGroup(int type)
+{
+    switch (type) {
+    case BUTTON_NORMAL: case DOUBLE_TAP: case TAP: case LOGIC:
+        return FG_BASIC;
+    case BUTTON_TOGGLE: case TOGGLE_SWITCH: case TOGGLE_SWITCH_ON: case TOGGLE_SWITCH_OFF:
+        return FG_TOGGLE;
+    case POV1_UP: case POV1_RIGHT: case POV1_DOWN: case POV1_LEFT: case POV1_CENTER:
+    case POV2_UP: case POV2_RIGHT: case POV2_DOWN: case POV2_LEFT: case POV2_CENTER:
+    case POV3_UP: case POV3_RIGHT: case POV3_DOWN: case POV3_LEFT: case POV3_CENTER:
+    case POV4_UP: case POV4_RIGHT: case POV4_DOWN: case POV4_LEFT: case POV4_CENTER:
+        return FG_POV;
+    case ENCODER_INPUT_A: case ENCODER_INPUT_B:
+        return FG_ENCODER;
+    case RADIO_BUTTON1: case RADIO_BUTTON2: case RADIO_BUTTON3: case RADIO_BUTTON4:
+        return FG_RADIO;
+    case SEQUENTIAL_TOGGLE: case SEQUENTIAL_BUTTON:
+        return FG_SEQ;
+    default:
+        return FG_OTHER;
+    }
+}
+
+} // namespace
 
 ButtonLogical::ButtonLogical(int buttonIndex, QWidget *parent)
     : QWidget(parent)
@@ -70,8 +102,13 @@ void ButtonLogical::retranslateUi()
 
 void ButtonLogical::initialization()
 {
-    // add gui text
-    m_logicFunc_enumIndex.reserve(m_logicFunctionList.size());
+    // add gui text. The Function dropdown is grouped with bold banded section
+    // headers (GroupedComboDelegate); the long POV-hat group is collapsible and
+    // starts folded (enableGroupCollapse, below). m_logicFunc_enumIndex stays
+    // aligned 1:1 with combo rows -- a -1 sentinel is pushed for each header.
+    freejoy_ui::installGroupedDelegate(ui->comboBox_ButtonFunction);
+    m_logicFunc_enumIndex.reserve(m_logicFunctionList.size() + 6);
+    int lastGroup = -1;
     for (int i = 0; i < m_logicFunctionList.size(); i++) {
 //        // Encoder only for first 30 buttons  // if uncomment DONT FORGET EDIT MainWindow::oldConfigHandler() !!!!!!!!
 //        if (m_buttonNumber > 29 &&
@@ -79,8 +116,43 @@ void ButtonLogical::initialization()
 //                 m_logicFunctionList[i].deviceEnumIndex == ENCODER_INPUT_B)) {
 //            continue;
 //        }
+        const FuncGroup g = funcGroup(m_logicFunctionList[i].deviceEnumIndex);
+        if (g != lastGroup) {
+            QString title;
+            switch (g) {
+            case FG_BASIC:   title = tr("Basic");      break;
+            case FG_TOGGLE:  title = tr("Toggle");     break;
+            case FG_POV:     title = tr("POV hats");   break;
+            case FG_ENCODER: title = tr("Encoder");    break;
+            case FG_RADIO:   title = tr("Radio");      break;
+            case FG_SEQ:     title = tr("Sequential"); break;
+            default:                                   break;
+            }
+            if (!title.isEmpty()) {
+                freejoy_ui::addGroupHeader(ui->comboBox_ButtonFunction, title,
+                                           /*collapsible=*/ g == FG_POV);
+                m_logicFunc_enumIndex.push_back(-1);   // sentinel: header row
+            }
+            lastGroup = g;
+        }
         ui->comboBox_ButtonFunction->addItem(m_logicFunctionList[i].guiName);
         m_logicFunc_enumIndex.push_back(m_logicFunctionList[i].deviceEnumIndex);
+        // Small gap before each POV cluster (POV2/POV3/POV4) so the four hats
+        // read as separate blocks within the one collapsible POV-hats group.
+        const int t = m_logicFunctionList[i].deviceEnumIndex;
+        if (t == POV2_UP || t == POV3_UP || t == POV4_UP) {
+            ui->comboBox_ButtonFunction->setItemData(
+                ui->comboBox_ButtonFunction->count() - 1, true,
+                freejoy_ui::kGroupSubGapRole);
+        }
+    }
+    // Row 0 is now the "Basic" header (non-selectable); default to the first
+    // real row (Normal) so the closed combo never shows a header label.
+    for (int r = 0; r < m_logicFunc_enumIndex.size(); ++r) {
+        if (m_logicFunc_enumIndex[r] >= 0) {
+            ui->comboBox_ButtonFunction->setCurrentIndex(r);
+            break;
+        }
     }
     for (int i = 0; i < SHIFT_COUNT; i++) {
         ui->comboBox_ShiftIndex->addItem(m_shiftList[i].guiName);
@@ -110,6 +182,12 @@ void ButtonLogical::initialization()
             this, SLOT(logicOpIndexChanged(int)));
     connect(ui->spinBox_PhysicalButtonNumber, SIGNAL(valueChanged(int)),
             this, SLOT(editingOnOff(int)));
+
+    // Click-to-collapse on the POV-hats group. Folds it by default and keeps
+    // whichever group holds the current selection expanded (so a chosen POV
+    // direction is always visible when the popup reopens). Installed after the
+    // connects so its own selection hook coexists with functionIndexChanged.
+    freejoy_ui::enableGroupCollapse(ui->comboBox_ButtonFunction);
 }
 
 void ButtonLogical::setMaxPhysButtons(int maxPhysButtons)
@@ -131,10 +209,13 @@ void ButtonLogical::functionIndexChanged(int index)
     /* setCurrentIndex(-1) (combobox deselection) fires this slot with
      * index=-1. Happens when readFromConfig calls setCurrentIndex with
      * EnumToIndex(button->type, ...) that returned -1 for an unknown
-     * button type. m_logicFunctionList[-1] would QList-ASSERT-crash --
-     * guard and bail. */
-    if (index < 0 || index >= m_logicFunctionList.size()) return;
-    int type = m_logicFunctionList[index].deviceEnumIndex;
+     * button type. m_logicFunc_enumIndex[-1] would QList-ASSERT-crash --
+     * guard and bail. m_logicFunc_enumIndex (not m_logicFunctionList) is the
+     * row-aligned vector: it carries a -1 sentinel for each grouped section
+     * header, so combo row -> enum stays correct once headers are inserted. */
+    if (index < 0 || index >= m_logicFunc_enumIndex.size()) return;
+    int type = m_logicFunc_enumIndex[index];
+    if (type < 0) return;   // section-header row -- not a selectable type
 
     // Any function change clears the LOGIC-only fields back to their
     // "-" sentinels:

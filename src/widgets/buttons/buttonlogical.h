@@ -211,14 +211,14 @@ private:
         // Most-used first (these typically own the per-physical coexistence
         // rule -- see ButtonConfig::physicalConflictFilter).
         {BUTTON_NORMAL,        tr("Normal")},
-        {DOUBLE_TAP,           tr("Double tap")},
         {TAP,                  tr("Tap")},
+        {DOUBLE_TAP,           tr("Double tap")},
         {LOGIC,                tr("Logic")},
         // Toggle family
         {BUTTON_TOGGLE,        tr("Toggle")},
-        {TOGGLE_SWITCH,        tr("Toggle switch ON/OFF")},
-        {TOGGLE_SWITCH_ON,     tr("Toggle switch ON")},
-        {TOGGLE_SWITCH_OFF,    tr("Toggle switch OFF")},
+        {TOGGLE_SWITCH,        tr("Toggle ON/OFF")},
+        {TOGGLE_SWITCH_ON,     tr("Toggle ON")},
+        {TOGGLE_SWITCH_OFF,    tr("Toggle OFF")},
         // POVs
         {POV1_UP,              tr("POV1 Up")},
         {POV1_RIGHT,           tr("POV1 Right")},

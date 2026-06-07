@@ -1,94 +1,10 @@
 #include "pincombobox.h"
 #include "ui_pincombobox.h"
 
+#include "groupedcombo.h"
+
 #include <QFont>
 #include <QSignalBlocker>
-#include <QStyledItemDelegate>
-#include <QPainter>
-#include <QStyleOptionViewItem>
-
-namespace {
-
-// Marks a section-header row in the pin-role popup (see addType / the delegate).
-constexpr int kPinHeaderRole = Qt::UserRole + 1;
-
-// Popup-list delegate for the pin-role dropdown. Makes the section grouping
-// obvious without a loud selection:
-//   - section header  -> UPPERCASE bold full-contrast label, a thin separator
-//                         line above it, sitting flush-left
-//   - role rows        -> indented under their header (so the hierarchy reads),
-//                         function-coloured (or greyed+struck if disabled) label
-//   - hovered/selected -> a subtle neutral wash only; the function-coloured text
-//                         stays, so selection is clear but not in-your-face
-class PinRoleDelegate : public QStyledItemDelegate
-{
-public:
-    using QStyledItemDelegate::QStyledItemDelegate;
-
-    void paint(QPainter *p, const QStyleOptionViewItem &option,
-               const QModelIndex &index) const override
-    {
-        QStyleOptionViewItem opt(option);
-        initStyleOption(&opt, index);
-
-        const bool header  = index.data(kPinHeaderRole).toBool();
-        const bool enabled = index.flags().testFlag(Qt::ItemIsEnabled);
-        const bool active  = (opt.state.testFlag(QStyle::State_Selected)
-                              || opt.state.testFlag(QStyle::State_MouseOver))
-                             && enabled && !header;
-        const QColor role  = qvariant_cast<QColor>(index.data(Qt::ForegroundRole));
-        const QColor base  = opt.palette.color(QPalette::Base);
-        const bool darkUi  = base.lightness() < 128;
-
-        QFont f = qvariant_cast<QFont>(index.data(Qt::FontRole));
-        if (f.family().isEmpty()) {
-            f = opt.font;
-        }
-
-        p->save();
-        p->fillRect(opt.rect, base);
-
-        int leftPad = 22;          // role rows indented beneath their header
-        QColor fg;
-        QString text = index.data(Qt::DisplayRole).toString();
-        if (header) {
-            leftPad = 8;           // headers flush-left so the indent reads
-            // Banded header: a darker grey on dark themes, a very light grey on
-            // light themes, with matching-contrast text. Bold + the band + the
-            // extra row padding (see sizeHint) make the section dividers clear.
-            p->fillRect(opt.rect, base.darker(darkUi ? 140 : 108));
-            fg = darkUi ? QColor(238, 238, 238) : QColor(45, 45, 45);
-            f.setBold(true);
-        } else {
-            if (active) {
-                // subtle neutral hover/selection -- not the loud function-colour fill
-                p->fillRect(opt.rect, darkUi ? QColor(255, 255, 255, 28)
-                                             : QColor(0, 0, 0, 22));
-            }
-            fg = !enabled ? opt.palette.color(QPalette::Disabled, QPalette::Text)
-                          : (role.isValid() ? role : opt.palette.color(QPalette::Text));
-        }
-
-        p->setPen(fg);
-        p->setFont(f);
-        const QRect tr = opt.rect.adjusted(leftPad, 0, -8, 0);
-        p->drawText(tr, Qt::AlignVCenter | Qt::AlignLeft,
-                    opt.fontMetrics.elidedText(text, Qt::ElideRight, tr.width()));
-        p->restore();
-    }
-
-    QSize sizeHint(const QStyleOptionViewItem &option,
-                   const QModelIndex &index) const override
-    {
-        QSize s = QStyledItemDelegate::sizeHint(option, index);
-        if (index.data(kPinHeaderRole).toBool()) {
-            s.setHeight(s.height() + 2);   // +1px top + 1px bottom padding on headers
-        }
-        return s;
-    }
-};
-
-} // namespace
 
 //! pinNumber cannot be less 1 and more than PINS_COUNT
 PinComboBox::PinComboBox(uint pinNumber, QWidget *parent) : // pin handling was the first thing I coded in the configurator, and in hindsight
@@ -97,7 +13,7 @@ PinComboBox::PinComboBox(uint pinNumber, QWidget *parent) : // pin handling was 
 {
     ui->setupUi(this);
     // Custom popup rendering: section headers vs. function-coloured hover/select.
-    ui->comboBox_PinsType->setItemDelegate(new PinRoleDelegate(ui->comboBox_PinsType));
+    freejoy_ui::installGroupedDelegate(ui->comboBox_PinsType);
     // minimum pinNumber = enum PA_0 = 1
     if (pinNumber < 1 || pinNumber > PINS_COUNT) {
         qFatal("(pinNumber < 1 || pinNumber > PINS_COUNT) in pincombobox.cpp");
@@ -399,12 +315,9 @@ void PinComboBox::initializationPins(uint pin)      // pin_number_ - 1 -- not gr
         const int group = m_pinTypes[i].group;
         const QString title = sectionTitle(group);
         if (lastGroup != -1 && group != lastGroup && !title.isEmpty()) {
-            const int hdr = ui->comboBox_PinsType->count();
-            ui->comboBox_PinsType->addItem(title);
-            ui->comboBox_PinsType->setItemData(hdr, 0, Qt::UserRole - 1);   // non-selectable
-            // Mark as a section header; PinRoleDelegate paints it (UPPERCASE
-            // bold + a divider line, flush-left) so it never looks like a row.
-            ui->comboBox_PinsType->setItemData(hdr, true, kPinHeaderRole);
+            // Non-selectable bold banded header (GroupedComboDelegate). Pin-role
+            // groups are short, so these are static (non-collapsible).
+            freejoy_ui::addGroupHeader(ui->comboBox_PinsType, title, /*collapsible=*/false);
             m_pinTypesIndex.push_back(-1);   // sentinel: header row, no backing type
             m_enumIndex.push_back(-1);
         }

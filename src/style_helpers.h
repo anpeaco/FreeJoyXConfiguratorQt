@@ -492,11 +492,20 @@ inline void setThemedIcon(QAbstractButton *btn, const QString &svgPath)
     btn->setIcon(tintedSvgIcon(svgPath, sz, iconInk()));
 }
 
+// Forward declaration: the QLabel overload of setThemedIcon is defined below,
+// but configureSectionToggle (which tints its chevron QLabel) needs it visible.
+inline void setThemedIcon(QLabel *label, const QString &svgPath, const QSize &size);
+
 // Configure a QToolButton as a collapsible-section toggle with the app-standard
-// look: a themed gear icon, the section label, and a trailing chevron that flips
-// right (collapsed) -> down (expanded). Used so every "Extended Settings"-style
-// disclosure looks identical (gear, label, arrow). The caller wires the actual
-// show/hide to the button's toggled(bool); this only keeps the glyphs in sync.
+// look: a themed gear icon, the section label, and a trailing lucide chevron
+// that flips chevron-right (collapsed) -> chevron-down (expanded). Used so every
+// "Extended Settings"-style disclosure looks identical (gear, label, chevron)
+// and matches the combo drop-arrows. The caller wires the actual show/hide to
+// the button's toggled(bool); this only keeps the icon in sync.
+//
+// QToolButton has a single icon slot (the gear), so the trailing chevron is a
+// small right-aligned QLabel overlay added via a layout on the button. The
+// label text carries trailing spaces to reserve room beneath the chevron.
 inline void configureSectionToggle(QToolButton *btn, const QString &label)
 {
     if (btn == nullptr) {
@@ -507,12 +516,28 @@ inline void configureSectionToggle(QToolButton *btn, const QString &label)
     btn->setCursor(Qt::PointingHandCursor);
     btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     btn->setIconSize(QSize(16, 16));
-    setThemedIcon(btn, QStringLiteral(":/Images/icons/lucide/settings.svg"));
-    btn->setText(label + (btn->isChecked() ? QStringLiteral("  ▾")     // down
-                                            : QStringLiteral("  ▸")));  // right
-    QObject::connect(btn, &QToolButton::toggled, btn, [btn, label](bool on) {
-        btn->setText(label + (on ? QStringLiteral("  ▾")
-                                 : QStringLiteral("  ▸")));
+    setThemedIcon(btn, QStringLiteral(":/Images/icons/lucide/settings.svg"));   // leading gear
+    btn->setText(label + QStringLiteral("      "));   // reserve room for the chevron
+
+    QLabel *chevron = btn->findChild<QLabel *>(QStringLiteral("fjSectionChevron"));
+    if (chevron == nullptr) {
+        auto *lay = new QHBoxLayout(btn);
+        lay->setContentsMargins(0, 0, 8, 0);
+        lay->addStretch(1);
+        chevron = new QLabel(btn);
+        chevron->setObjectName(QStringLiteral("fjSectionChevron"));
+        chevron->setAttribute(Qt::WA_TransparentForMouseEvents);
+        lay->addWidget(chevron, 0, Qt::AlignVCenter);
+    }
+    auto applyChevron = [chevron](bool on) {
+        setThemedIcon(chevron,
+                      on ? QStringLiteral(":/Images/icons/lucide/chevron-down-neutral.svg")
+                         : QStringLiteral(":/Images/icons/lucide/chevron-right-neutral.svg"),
+                      QSize(16, 16));
+    };
+    applyChevron(btn->isChecked());
+    QObject::connect(btn, &QToolButton::toggled, btn, [applyChevron](bool on) {
+        applyChevron(on);
     });
 }
 
