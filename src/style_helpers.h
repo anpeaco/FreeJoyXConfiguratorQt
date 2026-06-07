@@ -40,6 +40,15 @@ namespace freejoy_style {
 // QPalette::Highlight per theme.
 inline QColor accentGreen()       { return QColor(0x22, 0xc5, 0x5e); } // active / success / connected
 inline QColor accentGreenBorder() { return QColor(0x16, 0xa3, 0x4a); }
+// Subtle "active row" wash. accentGreen at ~18% alpha — composites over the
+// row's window colour as a faint mint (light) / green-grey (dark) tint. This is
+// the same translucency the app's alert banners use (alertBannerQss), so the
+// active row reads at the app's standard accent weight. Painted on
+// QPalette::Window with autoFillBackground so it shows only in the gutters
+// between the row's child widgets: a peripheral "this row" cue that pairs with
+// the crisp buttonState pip on the row-number label. Far quieter than the
+// full-saturation flood it replaces.
+inline QColor accentGreenWash()   { return QColor(0x22, 0xc5, 0x5e, 46); }
 inline QColor accentRed()         { return QColor(0xef, 0x44, 0x44); } // error / disconnected
 inline QColor accentRedBorder()   { return QColor(0xdc, 0x26, 0x26); }
 inline QColor accentAmber()       { return QColor(0xf5, 0x9e, 0x0b); } // warning *fill* (white ink on top)

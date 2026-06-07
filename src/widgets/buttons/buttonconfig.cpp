@@ -1183,8 +1183,18 @@ void ButtonConfig::seqAssignTick()
     // Source B captures are always single-shot.
     if (field == ButtonLogical::ListenPhysical) {
         m_seqLastAssignedSlot = target;
-        if (m_seqActive && target + 1 < m_logicButtonPtrList.size()) {
-            onListenRequested(target + 1, ButtonLogical::ListenPhysical, true);
+        if (m_seqActive) {
+            // Advance to the next NON-disabled slot -- a locked slot can't
+            // receive an assignment, so the walk steps over it. If the rest of
+            // the list is disabled, the walk simply ends (nothing armed).
+            int next = target + 1;
+            while (next < m_logicButtonPtrList.size()
+                   && m_logicButtonPtrList[next]->isSlotDisabled()) {
+                ++next;
+            }
+            if (next < m_logicButtonPtrList.size()) {
+                onListenRequested(next, ButtonLogical::ListenPhysical, true);
+            }
         }
     }
 }
@@ -1228,6 +1238,13 @@ void ButtonConfig::setPulseTarget(int slot, int field)
 void ButtonConfig::onListenRequested(int slot, int field, bool armed)
 {
     if (armed) {
+        // Never arm a disabled (locked) slot -- it can't receive an assignment.
+        // Manual arming is already blocked (the row's listen button is disabled
+        // by setSlotDisabled); this guards the programmatic auto-sequence path.
+        if (slot >= 0 && slot < m_logicButtonPtrList.size()
+            && m_logicButtonPtrList[slot]->isSlotDisabled()) {
+            return;
+        }
         // Disarm any previously armed row/field first -- single-armed
         // invariant across the whole tab.
         if (m_listenArmedSlot >= 0

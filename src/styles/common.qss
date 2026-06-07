@@ -571,14 +571,17 @@ QLabel[role="status-error"] {
 
 /* ----- Physical-button indicator on Button Config tab --------------- */
 
-/* 26x26 chip per slot in the 128-button grid. Outlined-when-off,
- * filled-when-on so the inactive grid stays visually quiet and only
- * pressed buttons pop. Shape lives here; off-state colour tuning is
- * per-theme in dark.qss / light.qss because the ring + muted text
+/* Rounded-rect status badge per slot. Used by the 128-button grid chips and
+ * the Logical-buttons row-number column. Outlined-when-off, filled-when-on so
+ * the inactive list/grid stays visually quiet and only pressed slots pop. A
+ * 6px-radius badge (rather than a full 13px circle) keeps the rounded look but
+ * gives 3-digit slot numbers (100-128) their full horizontal room instead of
+ * squeezing them into a circle's corners. Shape lives here; off-state colour
+ * tuning is per-theme in dark.qss / light.qss because the ring + muted text
  * need theme-specific contrast. */
 
 QLabel[buttonState="off"], QLabel[buttonState="on"] {
-    border-radius: 13px;
+    border-radius: 6px;
     min-height: 26px;
     min-width: 26px;
     border: 1px solid transparent;

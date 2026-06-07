@@ -87,6 +87,11 @@ public:
     // Mirrors what writeToConfig() pushes into button->physical_num.
     int currentPhysicalNum() const;
 
+    // True while this slot is disabled (eye/disable box checked) -- the row is
+    // locked + ghosted. ButtonConfig's Sequential Assign walk uses this to skip
+    // locked slots (a disabled slot can't receive an assignment).
+    bool isSlotDisabled() const { return m_slotDisabled; }
+
     void retranslateUi();
 
     /* Re-renders the Delay/Press timer dropdown items as
@@ -148,16 +153,35 @@ private slots:
 private:
     void updateLogicWidgetsEnabled();	// enable/disable Op + SourceB based on type / op
     void startRowDrag();				// begin QDrag carrying m_buttonIndex
+    void applyRowWash();				// paint the subtle active-row green wash (palette-based)
+    void clearRowWash();				// remove the wash, restoring the pristine transparent row
+    // Lock + ghost the whole row when the slot is disabled (eye/disable
+    // checkbox stays live so it can be re-enabled). m_slotDisabled is the master
+    // override checked by every enable-granting path so no later recompute
+    // (e.g. ButtonConfig's coexistence filter) can resurrect a locked cell.
+    void setSlotDisabled(bool disabled);
+    // Apply/remove the 0.20 opacity "faded" look on an icon-only listen button.
+    // Qt's default disabled styling barely dims icon-only buttons, so both the
+    // Source B button (updateLogicWidgetsEnabled) and the whole-row disable
+    // (setSlotDisabled) use this to make "not usable here" read at a glance.
+    void setListenButtonFaded(QWidget *btn, bool faded);
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
+    // The theme swap unpolish/polishes every widget, wiping the palette-based
+    // wash on an active row; re-assert it on PaletteChange (mirrors LED /
+    // PinTypeHelper / AxesCurvesConfig). The QSS-driven pip survives on its own.
+    void changeEvent(QEvent *event) override;
 
 private:
     Ui::ButtonLogical *ui;
     int m_functionPrevType;
     bool m_currentState;
     bool m_debugState;
+    bool m_inWashUpdate = false;		// guards changeEvent against our own setPalette re-entrancy
+    bool m_slotDisabled = false;		// true while the slot's eye/disable box is checked (row locked + ghosted)
+    bool m_spinBoxEnabledByMax = true;	// last setSpinBoxOnOff() state, so re-enable restores the spinbox correctly
     int m_buttonIndex;
     static int m_currentFocus;			// row whose phys-num spinBox has focus, or -1
     static int m_currentFocusSrcB;		// row whose Source B spinBox has focus, or -1
