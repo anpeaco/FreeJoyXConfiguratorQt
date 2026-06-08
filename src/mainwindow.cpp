@@ -315,7 +315,7 @@ MainWindow::MainWindow(QWidget *parent)
     // #57: warn when a sensor's auto-assign overwrote user-assigned pin roles.
     connect(m_pinConfig, &PinConfig::pinRolesAutoDisplaced, this,
             [this](const QStringList &lines) {
-        QMessageBox::warning(this, tr("Pins reassigned"),
+        freejoy_style::alertBox(this, freejoy_style::accentAmber(), tr("Pins reassigned"),
             tr("Adding that device took over pins that already had roles:\n\n%1\n\n"
                "Those inputs are no longer mapped where they were — check your "
                "wiring and re-assign them elsewhere if needed.")
@@ -931,7 +931,7 @@ void MainWindow::startConsolidatedFlash(const QString &filePath)
     const bool deviceInApp = gEnv.pDeviceConfig
         && gEnv.pDeviceConfig->paramsReport.firmware_version != 0;
     if (!deviceInBootloader && !deviceInApp) {
-        QMessageBox::warning(this, tr("No device detected"),
+        freejoy_style::alertBox(this, freejoy_style::accentAmber(), tr("No device detected"),
             tr("Connect a FreeJoy device before using the Flash button. "
                "If the device is stuck in DFU mode without enumerating, "
                "recover via STM32 Cube Programmer + ST-Link."));
@@ -1539,7 +1539,7 @@ void MainWindow::maybeAutoReadOnConnect(bool firmwareCompatible,
      * user edit here (re-checking uiHasUnsavedDeviceEdits() now would). */
     if (hadUnsavedEdits) {
         QMessageBox box(this);
-        box.setIcon(QMessageBox::Question);
+        box.setIconPixmap(freejoy_style::statusPixmap(freejoy_style::accentAmber(), 40));
         box.setWindowTitle(tr("Load device config?"));
         box.setText(tr("This device has its own saved configuration."));
         box.setInformativeText(tr(
@@ -1735,7 +1735,8 @@ void MainWindow::configReceived(bool success)
             /* Ask the user whether to proceed without a backup. Their
              * decision feeds into FlashSession::onUserAcceptedNoBackup
              * which either advances to TriggeringBootloader or fails. */
-            const QMessageBox::StandardButton rc = QMessageBox::warning(this,
+            const QMessageBox::StandardButton rc = freejoy_style::alertBox(this,
+                freejoy_style::accentAmber(),
                 tr("Backup failed"),
                 tr("<p>Could not read the device's current config. "
                    "Proceeding without a backup means a failed flash could "
@@ -1764,7 +1765,8 @@ void MainWindow::configReceived(bool success)
             qInfo() << "Pre-write device-config backup saved to" << path;
             ui->pushButton_WriteConfig->setText(tr("Backup OK, writing..."));
         } else {
-            const QMessageBox::StandardButton rc = QMessageBox::warning(this,
+            const QMessageBox::StandardButton rc = freejoy_style::alertBox(this,
+                freejoy_style::accentAmber(),
                 tr("Pre-write backup failed"),
                 tr("<p>Could not read the device's current config to "
                    "back it up before writing.</p>"
@@ -2218,8 +2220,8 @@ bool MainWindow::confirmLogicConfigComplete()
 {
     const int slot = m_buttonConfig->firstIncompleteLogicSlot();
     if (slot < 0) return true;
-    QMessageBox::warning(
-        this,
+    freejoy_style::alertBox(
+        this, freejoy_style::accentAmber(),
         tr("Incomplete Logic Configuration"),
         tr("Logical button %1 has Function = Logic but is missing an "
            "operator or Source B. Pick an operator (and Source B for "
@@ -2380,7 +2382,7 @@ void MainWindow::on_pushButton_UpgradeFirmware_clicked()
 {
     if (!gEnv.pDeviceConfig ||
         gEnv.pDeviceConfig->paramsReport.firmware_version == 0) {
-        QMessageBox::warning(this, tr("No device connected"),
+        freejoy_style::alertBox(this, freejoy_style::accentAmber(), tr("No device connected"),
             tr("Connect a device before starting an upgrade."));
         return;
     }
@@ -2448,8 +2450,8 @@ void MainWindow::doActualWriteToDevice()
         }
         if (!conflictNames.isEmpty()) {
             const QString joined = conflictNames.join(QStringLiteral(", "));
-            const QMessageBox::StandardButton rc = QMessageBox::question(
-                this,
+            const QMessageBox::StandardButton rc = freejoy_style::alertBox(
+                this, freejoy_style::accentAmber(),
                 tr("VID:PID already in use"),
                 tr("<p>VID <b>%1</b>:PID <b>%2</b> is currently used by: "
                    "<b>%3</b>.</p>"
@@ -2486,8 +2488,8 @@ void MainWindow::doActualWriteToDevice()
         ((devVer & 0xFFF0) == (FIRMWARE_VERSION & 0xFFF0));
     if (!versionMatches && devVer != 0) {
         if (!legacy::canReverseMigrate(devVer)) {
-            QMessageBox::warning(
-                this,
+            freejoy_style::alertBox(
+                this, freejoy_style::accentRed(),
                 tr("Cannot write to this firmware version"),
                 tr("<p>The connected device runs <b>%1</b>, which this "
                    "configurator doesn't have a reverse migrator for.</p>"
@@ -2500,8 +2502,8 @@ void MainWindow::doActualWriteToDevice()
         }
         legacy::ReverseResult r = legacy::reverseMigrate(gEnv.pDeviceConfig->config, devVer);
         if (!r.ok()) {
-            QMessageBox::warning(
-                this,
+            freejoy_style::alertBox(
+                this, freejoy_style::accentRed(),
                 tr("Reverse migration failed"),
                 tr("<p>Couldn't pack the current config into the %1 wire "
                    "format. The device wasn't written to.</p>")
@@ -2514,8 +2516,8 @@ void MainWindow::doActualWriteToDevice()
             QString detail = QStringLiteral("<ul><li>")
                 + r.dropped.join(QStringLiteral("</li><li>"))
                 + QStringLiteral("</li></ul>");
-            const QMessageBox::StandardButton rc = QMessageBox::question(
-                this,
+            const QMessageBox::StandardButton rc = freejoy_style::alertBox(
+                this, freejoy_style::accentAmber(),
                 tr("Write to %1 firmware?").arg(legacy::describeVersion(devVer)),
                 tr("<p>Writing to %1 firmware will lose the following:</p>"
                    "%2"
@@ -2700,8 +2702,8 @@ void MainWindow::onFastEncoderEnableToggleRequested(int slotIndex, bool desiredE
          * verify and warn separately. */
         if (m_pinConfig->pinRole(pinA) != FAST_ENCODER
             || m_pinConfig->pinRole(pinB) != FAST_ENCODER) {
-            QMessageBox::warning(
-                this,
+            freejoy_style::alertBox(
+                this, freejoy_style::accentAmber(),
                 tr("Fast Encoder %1 unavailable").arg(slotIndex + 1),
                 tr("This board doesn't expose FAST_ENCODER as a legal role "
                    "on at least one of the required pins. The encoder "

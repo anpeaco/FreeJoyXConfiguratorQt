@@ -406,7 +406,7 @@ void ConfigToFile::oldConfigHandler(QWidget *parent, dev_config_t &devC)
             if (devC.pins[19] == I2C_SCL || devC.pins[20] == I2C_SDA) {
                 QString warning(tr("Firmware version in config file doesn't match configurator version. Check settings before writing config."));
                 QString differences(tr("Pins B8, B9 reset! In this version I2C moved from pins B8, B9 to B10, B11. Check it!"));
-                QMessageBox::warning(parent, tr("Firmware version!"), warning + " " + differences);
+                freejoy_style::alertBox(parent, freejoy_style::accentAmber(), tr("Firmware version!"), warning + " " + differences);
                 devC.pins[19] = devC.pins[20] = NOT_USED;
             } else {
                 //QMessageBox::information(this, tr("Firmware version!"), warning);

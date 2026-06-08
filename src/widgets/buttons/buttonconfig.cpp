@@ -36,7 +36,7 @@ ButtonConfig::ButtonConfig(QWidget *parent)
     const QSize headerIconSize(16, 16);
     freejoy_style::setThemedIcon(ui->label_7, QStringLiteral(":/Images/icons/lucide/eye-off.svg"), headerIconSize);
     freejoy_style::setThemedIcon(ui->label_6, QStringLiteral(":/Images/icons/lucide/arrow-down-up.svg"), headerIconSize);
-    freejoy_style::setThemedIcon(ui->pushButton_ClearAllLogical, QStringLiteral(":/Images/icons/lucide/rotate-ccw.svg"));
+    freejoy_style::setThemedIcon(ui->pushButton_ClearAllLogical, QStringLiteral(":/Images/icons/lucide/trash-2.svg"));
 
     // dynamic creation with scroll
 #ifdef DYNAMIC_CREATION
@@ -257,8 +257,8 @@ void ButtonConfig::setPhysicButton(int /*buttonIndex*/)
 
 void ButtonConfig::on_pushButton_ClearAllLogical_clicked()
 {
-    const QMessageBox::StandardButton reply = QMessageBox::question(
-        this,
+    const QMessageBox::StandardButton reply = freejoy_style::alertBox(
+        this, freejoy_style::accentAmber(),
         tr("Clear All Logical Buttons"),
         tr("Reset every logical button slot back to defaults?\n\n"
            "Function returns to Normal, physical button assignments, "
@@ -1007,8 +1007,8 @@ void ButtonConfig::remapBreakdown(const PhysBreakdown &oldB,
     if (!brokenSlots.isEmpty() && m_remapWarningSuppressDepth == 0) {
         QStringList slotStrs;
         for (int s : brokenSlots) slotStrs << QString::number(s + 1);
-        QMessageBox::warning(
-            this,
+        freejoy_style::alertBox(
+            this, freejoy_style::accentAmber(),
             tr("Logical Buttons Cleared"),
             tr("The connection change removed the input(s) referenced by "
                "logical button(s) %1. Their physical button / Source B "

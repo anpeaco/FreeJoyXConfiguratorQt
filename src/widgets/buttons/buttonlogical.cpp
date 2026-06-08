@@ -88,7 +88,7 @@ ButtonLogical::ButtonLogical(int buttonIndex, QWidget *parent)
     freejoy_style::setThemedIcon(ui->pushButton_Listen,  QStringLiteral(":/Images/icons/lucide/target.svg"));
     freejoy_style::setThemedIcon(ui->pushButton_ListenB, QStringLiteral(":/Images/icons/lucide/target.svg"));
     // Clear-row (reset to defaults) button at the row's right edge.
-    freejoy_style::setThemedIcon(ui->pushButton_ClearRow, QStringLiteral(":/Images/icons/lucide/rotate-ccw.svg"));
+    freejoy_style::setThemedIcon(ui->pushButton_ClearRow, QStringLiteral(":/Images/icons/lucide/trash-2.svg"));
     connect(ui->pushButton_ClearRow, &QPushButton::clicked, this, &ButtonLogical::clearRow);
     updateClearButtonVisibility();   // fresh row is unbound -> hidden until bound
     m_listenClickTimer = new QTimer(this);

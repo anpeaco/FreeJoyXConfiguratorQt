@@ -578,7 +578,7 @@ void DfuInstallDialog::onDriverInstallFinished(bool ok, const QString &detail)
     if (!detail.isEmpty()) appendLog(detail);
     m_detectBtn->setEnabled(DfuInstallSession::helperAvailable());
     if (!ok) {
-        QMessageBox::warning(this, tr("Driver install"),
+        freejoy_style::alertBox(this, freejoy_style::accentAmber(), tr("Driver install"),
             detail.isEmpty() ? tr("The WinUSB driver couldn't be installed.")
                              : detail);
     } else {
@@ -607,7 +607,7 @@ void DfuInstallDialog::onLeaveFinished(bool ok, const QString &detail)
     m_leaving = false;
     if (!detail.isEmpty()) appendLog(detail);
     if (!ok) {
-        QMessageBox::warning(this, tr("Exit DFU mode"),
+        freejoy_style::alertBox(this, freejoy_style::accentAmber(), tr("Exit DFU mode"),
             detail.isEmpty() ? tr("Couldn't take the board out of DFU mode. If you "
                                   "entered DFU with the BOOT0 jumper, release it and "
                                   "power-cycle the board.")
@@ -661,7 +661,7 @@ void DfuInstallDialog::onInstallClicked()
     const QString app  = m_appEdit->text();
     if (boot.isEmpty() || app.isEmpty()
         || !QFileInfo::exists(boot) || !QFileInfo::exists(app)) {
-        QMessageBox::warning(this, tr("Missing firmware"),
+        freejoy_style::alertBox(this, freejoy_style::accentAmber(), tr("Missing firmware"),
             tr("Both a bootloader and an application .bin are required, and "
                "both files must exist."));
         return;
@@ -711,7 +711,7 @@ void DfuInstallDialog::onInstallClicked()
     p.timing.settleMs          = m_spinSettle->value();
 
     if (!m_session->start(p)) {
-        QMessageBox::critical(this, tr("Couldn't start"),
+        freejoy_style::alertBox(this, freejoy_style::accentRed(), tr("Couldn't start"),
             m_session->lastErrorDetail().isEmpty()
                 ? tr("The install couldn't be started.")
                 : m_session->lastErrorDetail());

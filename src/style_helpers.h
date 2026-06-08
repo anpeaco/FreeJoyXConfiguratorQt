@@ -13,6 +13,7 @@
 #include <QIcon>
 #include <QLabel>
 #include <QList>
+#include <QMessageBox>
 #include <QPainter>
 #include <QPalette>
 #include <QPen>
@@ -523,6 +524,30 @@ inline QPixmap statusPixmap(const QColor &accent, int px = 18)
         ? tintedSvgPixmap(QStringLiteral(":/Images/icons/lucide/check-dark.svg"),
                           QSize(px, px), accent)
         : tintedTrianglePixmap(accent, px);
+}
+
+// Themed replacement for the QMessageBox::warning / critical / question
+// convenience functions. Shows the app's lucide status icon tinted to the
+// severity accent (green check for success, otherwise the amber/red triangle)
+// instead of the native platform icon, so every alert/confirm dialog matches the
+// rest of the UI. `accent` picks the severity per the status-box guide above:
+// amber = caution/confirm, red = destructive/error, green = success. Returns the
+// button the user chose, exactly like the QMessageBox statics it replaces.
+inline QMessageBox::StandardButton alertBox(
+        QWidget *parent, const QColor &accent,
+        const QString &title, const QString &text,
+        QMessageBox::StandardButtons buttons = QMessageBox::Ok,
+        QMessageBox::StandardButton defaultButton = QMessageBox::NoButton)
+{
+    QMessageBox box(parent);
+    box.setWindowTitle(title);
+    box.setText(text);
+    box.setStandardButtons(buttons);
+    if (defaultButton != QMessageBox::NoButton) {
+        box.setDefaultButton(defaultButton);
+    }
+    box.setIconPixmap(statusPixmap(accent, 40));
+    return static_cast<QMessageBox::StandardButton>(box.exec());
 }
 
 // Dynamic-property keys recording a widget's themed-icon source + render size,
