@@ -84,6 +84,7 @@ SOURCES += \
     flashverdict.cpp \
     firmwareupdater.cpp \
     hiddevice.cpp \
+    windevicecache.cpp \
     main.cpp \
     mainwindow.cpp \
     mousewheelguard.cpp \
@@ -160,6 +161,7 @@ HEADERS += \
     global.h \
     hidapi.h \
     hiddevice.h \
+    windevicecache.h \
     mainwindow.h \
     mousewheelguard.h \
     reportconverter.h \
@@ -271,7 +273,7 @@ linux {
 
 win32 {
     RC_FILE = winapp.rc
-    LIBS += -lhid -lsetupapi -ldwmapi
+    LIBS += -lhid -lsetupapi -ldwmapi -lshell32
     SOURCES += \
         windows/hidapi.c
 }

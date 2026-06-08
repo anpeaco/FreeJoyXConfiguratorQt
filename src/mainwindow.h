@@ -90,6 +90,7 @@ private slots:
     void on_pushButton_ReadConfig_clicked();
     void on_pushButton_WriteConfig_clicked();
     void on_pushButton_UpgradeFirmware_clicked();
+    void on_pushButton_FixWindowsCache_clicked();
 
     void on_pushButton_SaveToFile_clicked();
     void on_pushButton_LoadFromFile_clicked();

@@ -27,6 +27,7 @@
 #include "style_helpers.h"
 
 #include "boarddisplay.h"
+#include "windevicecache.h"
 #include "common_types.h"
 #include "common_defines.h"
 #include "global.h"
@@ -112,6 +113,20 @@ MainWindow::MainWindow(QWidget *parent)
      * bundled upgrade bin when one is present. (Text comes from the .ui.) */
     ui->pushButton_UpgradeFirmware->setVisible(true);
     ui->pushButton_UpgradeFirmware->setEnabled(false);
+
+    /* "Fix name in Windows" -- clears the Windows-side cached controller name
+     * (joy.cpl / VPC show a stale name keyed by VID+PID) and forces a fresh
+     * enumeration. Windows-only; a secondary maintenance action, so it gets the
+     * compact role and starts disabled until a device is connected. */
+    freejoy_style::setRole(ui->pushButton_FixWindowsCache, "role", "compact");
+    ui->pushButton_FixWindowsCache->setToolTip(freejoy_style::tipHtml(
+        tr("Fix the controller name in Windows"),
+        { tr("Clears Windows' cached name for this device (joy.cpl / VPC)."),
+          tr("Re-detects the device so its USB descriptor is re-read."),
+          tr("Needs admin (one prompt). Your on-device mappings aren't touched.") }));
+#ifndef Q_OS_WIN
+    ui->pushButton_FixWindowsCache->hide();   // registry/pnputil are Windows-only
+#endif
 
     /* Neither Read nor Write is permanently "primary":
      *  - Read auto-fires on connect (m_autoReadOnConnect), so a glowing Read
@@ -1500,6 +1515,9 @@ void MainWindow::updatePendingChangesBadge()
     // the Write button uses when the shown config differs from the device (file
     // load, or pin/edits not yet written). Guarded by m_pillUnsaved so we only
     // touch the pill on a transition, and never override disconnected/restarting.
+    // The Windows cache-fix needs a connected device's VID/PID/serial.
+    ui->pushButton_FixWindowsCache->setEnabled(m_deviceConnectedOk);
+
     const bool wantPillUnsaved = m_deviceConnectedOk && !m_postWriteRestarting && changed;
     if (wantPillUnsaved != m_pillUnsaved) {
         m_pillUnsaved = wantPillUnsaved;
@@ -2453,6 +2471,55 @@ void MainWindow::on_pushButton_UpgradeFirmware_clicked()
         deviceVersionDisplay(gEnv.pDeviceConfig->paramsReport);
     m_advSettings->flasher()->openFlashDialog(fwPath, deviceName,
                                               deviceSerial, deviceVer);
+}
+
+void MainWindow::on_pushButton_FixWindowsCache_clicked()
+{
+    if (m_currentDeviceVid.isEmpty() || m_currentDevicePid.isEmpty()) {
+        freejoy_style::alertBox(this, freejoy_style::accentAmber(),
+            tr("No device connected"),
+            tr("Connect a device first so its cached name can be cleared."));
+        return;
+    }
+
+    const QString vidpid = m_currentDeviceVid.toUpper() + QStringLiteral(":")
+                         + m_currentDevicePid.toUpper();
+
+    if (freejoy_style::alertBox(this, freejoy_style::accentAmber(),
+            tr("Fix the controller name in Windows?"),
+            tr("Windows caches this controller's name and identity by VID:PID "
+               "(%1), which is why joy.cpl / VPC can keep showing a stale name.\n\n"
+               "This clears the cached name and asks Windows to re-detect the "
+               "device so its USB descriptor is re-read. You'll get one "
+               "administrator (UAC) prompt. The button and axis mappings stored "
+               "on the device are not affected.").arg(vidpid),
+            QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Cancel)
+        != QMessageBox::Ok) {
+        return;
+    }
+
+    const win_device_cache::ResetResult res = win_device_cache::reset(
+        m_currentDeviceVid, m_currentDevicePid, m_currentDeviceSerial);
+
+    if (!res.supported) {
+        freejoy_style::alertBox(this, freejoy_style::accentAmber(),
+            tr("Not available"), tr("This action is only available on Windows."));
+        return;
+    }
+    if (res.userCancelled) {
+        return;   // declined the UAC prompt -- nothing to report
+    }
+    if (!res.error.isEmpty()) {
+        freejoy_style::alertBox(this, freejoy_style::accentRed(),
+            tr("Couldn't reset the cache"), res.error);
+        return;
+    }
+
+    freejoy_style::alertBox(this, freejoy_style::accentGreen(),
+        tr("Windows cache cleared"),
+        tr("Cleared the cached name for %1.\n\nIf the name or buttons don't "
+           "refresh within a few seconds, unplug and replug the device, then "
+           "reopen the Windows Game Controllers panel (joy.cpl).").arg(vidpid));
 }
 
 void MainWindow::doActualWriteToDevice()
