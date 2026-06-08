@@ -46,6 +46,11 @@ Check the upstream [FreeJoy wiki](https://github.com/FreeJoy-Team/FreeJoyWiki) f
 
 Full history on the [Releases](https://github.com/anpeaco/FreeJoyXConfiguratorQt/releases) page.
 
+### v0.1.10
+- **Release bundle now ships F103 *and* F411 firmware** — the Windows zip / Linux archive carry `boot` + `app` `.bin`s for **both** boards under `firmware/` (previously F411 only), so a download has current firmware for either target. Flasher helper bumped to the pinned `flash-v0.1.7` (reliable post-install DFU leave + timing flags).
+- Pairs with firmware **v0.1.10** (F411 joystick-report freeze fix). App version 0.1.9 → 0.1.10 (from the release tag); `FREEJOYX_VERSION` synced 0.1.9 → 0.1.10 with the firmware repo.
+- **Fix name in Windows** device-card action, shared "modified" dot on the pill + Write button, themed alert dialogs, and assorted board-row alignment / dirty-tracking / listen-button polish from this cycle.
+
 ### v0.1.5
 - **DFU install diagnostics** — the helper's USB enumeration is now surfaced in the dialog log (helper stderr is captured; a failed "Re-check" reports *why* instead of silently showing "not detected"), and a manual Re-check runs a verbose probe listing what it enumerated. Addresses the "install helper missing / device not detected" reports.
 - **Releases now bundle the flasher + firmware automatically** — the Windows zip / Linux archive ship `freejoyx-flash` (downloaded from the firmware-side `flash-v*` helper release) plus the F411 `boot` + `app` `.bin`s (latest firmware release), so the DFU install flow works out of the box with no manual file-wrangling.
@@ -62,7 +67,7 @@ Full history on the [Releases](https://github.com/anpeaco/FreeJoyXConfiguratorQt
 
 ## Downloads
 
-Configurator binaries for both Linux and Windows are published to this repo's [Releases](https://github.com/anpeaco/FreeJoyXConfiguratorQt/releases) by the tag-triggered `release.yml` workflow. The Windows zip is self-contained — Qt DLLs and the MinGW runtime are bundled via `windeployqt` so end users don't need Qt or MinGW installed. Since **v0.1.5** the release bundle also ships the `freejoyx-flash` DFU install helper (pulled from the firmware-side [`flash-v*` helper release](https://github.com/anpeaco/FreeJoyXConfigurator/releases)) and the F411 `boot` + `app` firmware `.bin`s (from the [paired firmware repo's latest release](https://github.com/anpeaco/FreeJoyX/releases)) under `firmware/`, so the USB-DFU install flow works without downloading anything separately. Tagging the same `vX.Y.Z` on the configurator + firmware repos in lockstep produces matched artefacts.
+Configurator binaries for both Linux and Windows are published to this repo's [Releases](https://github.com/anpeaco/FreeJoyXConfiguratorQt/releases) by the tag-triggered `release.yml` workflow. The Windows zip is self-contained — Qt DLLs and the MinGW runtime are bundled via `windeployqt` so end users don't need Qt or MinGW installed. Since **v0.1.5** the release bundle also ships the `freejoyx-flash` DFU install helper (pulled from the firmware-side [`flash-v*` helper release](https://github.com/anpeaco/FreeJoyXConfigurator/releases)) and firmware `boot` + `app` `.bin`s (from the [paired firmware repo's latest release](https://github.com/anpeaco/FreeJoyX/releases)) under `firmware/`, so the USB-DFU install flow works without downloading anything separately. As of **v0.1.10** the bundle carries **both** F103 and F411 firmware (it shipped F411 only through v0.1.9). Tagging the same `vX.Y.Z` on the configurator + firmware repos in lockstep produces matched artefacts.
 
 The release workflow also supports `workflow_dispatch` (with an optional `ref` input) for retro-running against an existing tag — useful for adding a missing platform asset to a published release without cutting a new version.
 

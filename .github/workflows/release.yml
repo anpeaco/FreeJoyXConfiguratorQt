@@ -19,13 +19,14 @@ permissions:
 #   - freejoyx-flash  -- the DfuSe install helper, built + released by the Rust
 #     repo (anpeaco/FreeJoyXConfigurator, release-flash.yml). Pinned by tag here
 #     so a configurator release is reproducible; bump when a new helper ships.
-#   - the F411 boot+app firmware bins, pulled from the LATEST anpeaco/FreeJoyX
-#     release so a download always carries current firmware.
+#   - the F103 AND F411 boot+app firmware bins, pulled from the LATEST
+#     anpeaco/FreeJoyX release so a download always carries current firmware
+#     for both supported boards.
 # Both are fetched with `gh release download` (all three repos are public, so
 # the default job token has read access) rather than rebuilt here -- that keeps
 # the Rust toolchain + libwdi/WDK mess out of this Qt workflow.
 env:
-  FLASH_HELPER_TAG: flash-v0.1.6   # pinned freejoyx-flash helper release tag
+  FLASH_HELPER_TAG: flash-v0.1.7   # pinned freejoyx-flash helper release tag
 
 jobs:
   build-linux:
@@ -67,13 +68,16 @@ jobs:
             --pattern 'freejoyx-flash-linux-x64' --dir dist --clobber
           mv dist/freejoyx-flash-linux-x64 dist/freejoyx-flash
           chmod +x dist/freejoyx-flash
-          # Latest F411 firmware (app + boot) from the firmware repo.
+          # Latest F103 + F411 firmware (app + boot) from the firmware repo.
           gh release download --repo anpeaco/FreeJoyX \
+            --pattern 'freejoyx-f103-app-*.bin' --pattern 'freejoyx-f103-boot-*.bin' \
             --pattern 'freejoyx-f411-app-*.bin' --pattern 'freejoyx-f411-boot-*.bin' \
             --dir dist/firmware --clobber
           # The configurator looks for UNVERSIONED names next to the exe or under
           # firmware/ (dfuinstalldialog.cpp kBootBinName/kAppBinName) -- strip the
           # version suffix the release assets carry.
+          mv dist/firmware/freejoyx-f103-app-*.bin  dist/firmware/freejoyx-f103-app.bin
+          mv dist/firmware/freejoyx-f103-boot-*.bin dist/firmware/freejoyx-f103-boot.bin
           mv dist/firmware/freejoyx-f411-app-*.bin  dist/firmware/freejoyx-f411-app.bin
           mv dist/firmware/freejoyx-f411-boot-*.bin dist/firmware/freejoyx-f411-boot.bin
 
@@ -210,12 +214,17 @@ jobs:
           gh release download "$env:FLASH_HELPER_TAG" --repo anpeaco/FreeJoyXConfigurator `
             --pattern 'freejoyx-flash-windows-x64.exe' --dir dist --clobber
           Move-Item -Force dist\freejoyx-flash-windows-x64.exe dist\freejoyx-flash.exe
-          # Latest F411 firmware (app + boot) from the firmware repo.
+          # Latest F103 + F411 firmware (app + boot) from the firmware repo.
           gh release download --repo anpeaco/FreeJoyX `
+            --pattern 'freejoyx-f103-app-*.bin' --pattern 'freejoyx-f103-boot-*.bin' `
             --pattern 'freejoyx-f411-app-*.bin' --pattern 'freejoyx-f411-boot-*.bin' `
             --dir dist\firmware --clobber
           # The configurator expects UNVERSIONED names (dfuinstalldialog.cpp
           # kBootBinName/kAppBinName) -- strip the version suffix.
+          Get-ChildItem dist\firmware\freejoyx-f103-app-*.bin  | Select-Object -First 1 |
+            Move-Item -Destination dist\firmware\freejoyx-f103-app.bin -Force
+          Get-ChildItem dist\firmware\freejoyx-f103-boot-*.bin | Select-Object -First 1 |
+            Move-Item -Destination dist\firmware\freejoyx-f103-boot.bin -Force
           Get-ChildItem dist\firmware\freejoyx-f411-app-*.bin  | Select-Object -First 1 |
             Move-Item -Destination dist\firmware\freejoyx-f411-app.bin -Force
           Get-ChildItem dist\firmware\freejoyx-f411-boot-*.bin | Select-Object -First 1 |
