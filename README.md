@@ -83,6 +83,31 @@ The release workflow also supports `workflow_dispatch` (with an optional `ref` i
    * `sudo cp 99-hid-FreeJoy.rules /etc/udev/rules.d`
 4. Run the AppImage or build from source.
 
+## Upgrading firmware — the standard way (HID flash)
+
+The everyday way to update an **already-running** FreeJoyX board — works the same
+on **F103 and F411** — is the **Flash** button in the firmware flasher. It talks
+to the board's own HID bootloader, so there is **no driver to install, no DFU
+mode, and no ST-Link**:
+
+1. Connect the board (it enumerates as a FreeJoyX device).
+2. Pick the image. The bundled per-board binary
+   (`firmware/freejoyx-f103-app-*.bin` or `freejoyx-f411-app-*.bin`) is selected
+   automatically to match the connected board, or **Browse** to your own. The
+   **Selected firmware** card reads the board, version and build straight from
+   the binary's embedded ID footer and warns if the image's board doesn't match
+   the device.
+3. Click **Flash**. The configurator reboots the board into its HID bootloader,
+   writes the **application** region, then restores your config and reconnects. A
+   post-flash restore that stalls times out gracefully and is cancellable — no
+   stuck progress dialog.
+
+This updates the **application only**; it cannot replace the bootloader itself.
+To replace the bootloader, or to recover a blank/bricked board, use the **F411
+USB DFU** installer below (on F103 that case uses ST-Link — its ROM has no USB
+DFU). Since **v0.1.10** the download bundles current firmware for **both boards**,
+so the right image is always on hand offline.
+
 ## Flashing a brand-new F411 — no ST-Link needed (v0.1.4+)
 
 A new (or bricked) **F411 Black Pill** ships with no FreeJoyX firmware, so there's
@@ -107,6 +132,42 @@ ROM USB DFU bootloader, with **no ST-Link and no STM32CubeProgrammer**.
 **Windows:** the first install auto-installs the WinUSB driver (one UAC prompt —
 no Zadig). **Linux:** ships a `df11` udev rule. *(F103 boards have no USB DFU in
 ROM, so they use the ST-Link path instead.)*
+
+### Under the hood: the `freejoyx-flash` helper (revised in flash-v0.1.7)
+
+The DFU installer drives a bundled command-line helper — `freejoyx-flash`
+(`freejoyx-flash.exe` on Windows), pinned per release and shipped next to the app.
+You never need to run it by hand, but it's documented here because the dialog's
+behaviour maps directly onto its four sub-commands:
+
+| Command | What it does |
+|---|---|
+| `probe --board f411 [--check-driver] [--verbose]` | Cheap check for a board sitting in ROM DFU mode. `--check-driver` also reports WinUSB driver state; `--verbose` narrates what it enumerated (the dialog's **Re-check**). |
+| `install --board f411 --boot <bin> --app <bin>` | Erase + write the bootloader **and** app over DfuSe, verify the read-back, then leave DFU. |
+| `bind --board f411` | Install the WinUSB driver for the ROM DFU device (libwdi — the one-UAC prompt; Windows only). |
+| `leave --board f411` | **New in flash-v0.1.7** — drive a board that's stuck in DFU back to normal runtime *without* reflashing. The installer now calls this automatically after a successful write, which fixes the old "device still in DFU / needs a manual replug" symptom. |
+
+### Advanced DfuSe timing
+
+The installer has an **Advanced** section with timing knobs for awkward USB paths
+(unpowered hubs, long cables, slow ports) where a default-speed install can stall
+mid-write. Presets: **Normal** (default), **Tolerant**, **Maximum compatibility**,
+and **Custom**. Each value maps to a `freejoyx-flash install` switch, and each
+switch can also be set as an environment variable if you ever run the helper
+directly:
+
+| Switch | Env var | Normal | Purpose |
+|---|---|---|---|
+| `--dnload-delay-ms` | `FREEJOYX_FLASH_DNLOAD_DELAY_MS` | 0 | Pause between download blocks |
+| `--poll-timeout-ms` | — | 5000 | Max wait for an erase/program block to report done |
+| `--transfer-timeout-ms` | `FREEJOYX_FLASH_XFER_TIMEOUT_MS` | 5000 | Per USB control-transfer timeout |
+| `--retries` | `FREEJOYX_FLASH_BLOCK_RETRIES` | 4 | Per-block download retries before giving up |
+| `--settle-ms` | `FREEJOYX_FLASH_LEAVE_SETTLE_MS` | 1500 | Wait after leave-DFU for the board to re-enumerate |
+
+Leave everything on **Normal** unless an install actually fails partway through;
+then raise retries / timeouts / delay (the **Tolerant** → **Maximum compatibility**
+presets do this for you) for an unreliable USB path. The chosen timing is echoed
+into the install log so it's clear what was applied.
 
 After this one-time install, routine app updates can use the normal **Write
 config** / HID **Upgrade firmware** flow — the DFU installer is only for blank or
