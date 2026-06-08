@@ -162,7 +162,7 @@ fn cmd_leave(args: &[String]) -> i32 {
         driver::ensure_reachable()?;
         let dfu = open_with_retry(CliTiming::default())?;
         proto::log("leaving DFU — the board will reboot into its firmware");
-        dfu.leave();  // drives to idle internally before the manifest sequence
+        dfu.leave(); // drives to idle internally before the manifest sequence
         Ok(())
     })();
     match r {
@@ -218,11 +218,11 @@ fn cmd_install(args: &[String]) -> i32 {
     // Absent flags keep the helper's proven defaults, so a bare `install` is
     // unchanged.
     let timing = CliTiming {
-        dnload_delay_ms:     flag_u64(args, "--dnload-delay-ms"),
-        poll_timeout_ms:     flag_u64(args, "--poll-timeout-ms"),
+        dnload_delay_ms: flag_u64(args, "--dnload-delay-ms"),
+        poll_timeout_ms: flag_u64(args, "--poll-timeout-ms"),
         transfer_timeout_ms: flag_u64(args, "--transfer-timeout-ms"),
-        retries:             flag_u64(args, "--retries").map(|v| v as u32),
-        settle_ms:           flag_u64(args, "--settle-ms"),
+        retries: flag_u64(args, "--retries").map(|v| v as u32),
+        settle_ms: flag_u64(args, "--settle-ms"),
     };
 
     match run_install(&boot, &app, timing) {
@@ -277,6 +277,7 @@ fn run_install(boot: &[u8], app: &[u8], timing: CliTiming) -> Result<(), String>
 ///   - read-back UNAVAILABLE (the device refused UPLOAD / I/O error) -> skip with
 ///     a warning: we couldn't read it back, but every write block was accepted by
 ///     the device, so don't fail a write that itself succeeded.
+///
 /// `verify_image` reports a mismatch as "...mismatch..." and an unreadable device
 /// as "UPLOAD(...) failed: ..." -- we split on that.
 fn verify_soft(dfu: &Dfu, base: u32, data: &[u8], what: &str) -> Result<(), String> {
@@ -289,7 +290,9 @@ fn verify_soft(dfu: &Dfu, base: u32, data: &[u8], what: &str) -> Result<(), Stri
             Err(format!("{what} read-back verification FAILED: {e}"))
         }
         Err(e) => {
-            proto::log(&format!("{what} verify skipped (read-back unavailable): {e}"));
+            proto::log(&format!(
+                "{what} verify skipped (read-back unavailable): {e}"
+            ));
             Ok(())
         }
     }

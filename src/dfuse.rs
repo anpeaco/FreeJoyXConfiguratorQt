@@ -490,7 +490,11 @@ pub struct Dfu {
 fn crc32_step(mut crc: u32, byte: u8) -> u32 {
     crc ^= byte as u32;
     for _ in 0..8 {
-        crc = if crc & 1 != 0 { (crc >> 1) ^ 0xEDB8_8320 } else { crc >> 1 };
+        crc = if crc & 1 != 0 {
+            (crc >> 1) ^ 0xEDB8_8320
+        } else {
+            crc >> 1
+        };
     }
     crc
 }
@@ -590,7 +594,11 @@ impl Dfu {
         let mut buf = [0u8; 6];
         let n = self
             .iface
-            .control_in_blocking(Self::ctrl(DFU_GETSTATUS, 0), &mut buf, self.t.ctrl_timeout())
+            .control_in_blocking(
+                Self::ctrl(DFU_GETSTATUS, 0),
+                &mut buf,
+                self.t.ctrl_timeout(),
+            )
             .map_err(|e| format!("GETSTATUS failed: {e}"))?;
         if n < 6 {
             return Err(format!("short GETSTATUS ({n} bytes)"));
@@ -600,15 +608,17 @@ impl Dfu {
     }
 
     fn clear_status(&self) {
-        let _ = self
-            .iface
-            .control_out_blocking(Self::ctrl(DFU_CLRSTATUS, 0), &[], self.t.ctrl_timeout());
+        let _ = self.iface.control_out_blocking(
+            Self::ctrl(DFU_CLRSTATUS, 0),
+            &[],
+            self.t.ctrl_timeout(),
+        );
     }
 
     fn abort(&self) {
-        let _ = self
-            .iface
-            .control_out_blocking(Self::ctrl(DFU_ABORT, 0), &[], self.t.ctrl_timeout());
+        let _ =
+            self.iface
+                .control_out_blocking(Self::ctrl(DFU_ABORT, 0), &[], self.t.ctrl_timeout());
     }
 
     /// Drive the device to a clean dfuIDLE before starting work — clears a
@@ -902,12 +912,16 @@ impl Dfu {
         let total = data.len() as u64;
         let mut done = 0u64;
         let mut buf = vec![0u8; self.xfer];
-        let mut chip_crc = 0xFFFF_FFFFu32;          // CRC32 of the bytes read back
+        let mut chip_crc = 0xFFFF_FFFFu32; // CRC32 of the bytes read back
         for (i, chunk) in data.chunks(self.xfer).enumerate() {
             let block = 2u16 + i as u16;
             let n = self
                 .iface
-                .control_in_blocking(Self::ctrl(DFU_UPLOAD, block), &mut buf, self.t.ctrl_timeout())
+                .control_in_blocking(
+                    Self::ctrl(DFU_UPLOAD, block),
+                    &mut buf,
+                    self.t.ctrl_timeout(),
+                )
                 .map_err(|e| format!("UPLOAD(block {block}) failed: {e}"))?;
             if n < chunk.len() {
                 return Err(format!(
@@ -936,7 +950,11 @@ impl Dfu {
         let file_crc = crc32(data);
         crate::proto::log(&format!(
             "CRC32 @0x{base:08x}: file=0x{file_crc:08X} chip=0x{chip_crc:08X} ({})",
-            if file_crc == chip_crc { "match" } else { "MISMATCH" }
+            if file_crc == chip_crc {
+                "match"
+            } else {
+                "MISMATCH"
+            }
         ));
         Ok(())
     }
