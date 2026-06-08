@@ -16,6 +16,7 @@
 #include <QPainter>
 #include <QDateTime>
 #include <QDir>
+#include <QScrollArea>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -78,6 +79,27 @@ MainWindow::MainWindow(QWidget *parent)
     timer.start();
 
     ui->setupUi(this);
+
+    /* Wrap the whole central area in a scroll area. setWidgetResizable(true) lets
+     * the content fill the viewport, so the main area always occupies the full
+     * window height (it grows to use the space) and a vertical scrollbar appears
+     * only when the content genuinely needs more room than the window has. Each
+     * page's own layout top-anchors its widgets (the pin page uses a trailing
+     * spacer row; the others end in a stretch), so content sits at the top and
+     * never floats down or stretches on pages that don't need the extra height.
+     * Horizontal centring on wide screens is handled by the central grid's
+     * spacer columns. */
+    {
+        QWidget *centralContent = takeCentralWidget();
+        auto *scroll = new QScrollArea(this);
+        scroll->setObjectName(QStringLiteral("centralScroll"));
+        scroll->setFrameShape(QFrame::NoFrame);
+        scroll->setWidgetResizable(true);
+        scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        scroll->setWidget(centralContent);
+        setCentralWidget(scroll);
+    }
 
     /* The device-card "Upgrade Firmware" button is always visible; it starts
      * disabled and refreshUpgradeButtonState() enables it only when a newer
@@ -739,9 +761,17 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
                 (!m_currentDeviceVid.isEmpty() && !m_currentDevicePid.isEmpty())
                     ? (m_currentDeviceVid + QStringLiteral(":") + m_currentDevicePid)
                     : QString();
+            /* Name the device by its LIVE USB enumeration (the connected entry in
+             * the HID list) -- NOT config.device_name, which reflects whatever
+             * config is loaded in memory (a .cfg file / an earlier device / an
+             * unwritten edit) and can name a different board than the one plugged
+             * in. setConnectedDevice falls back to "F411 (Black Pill)" if blank. */
+            QString liveName = ui->comboBox_HidDeviceList->currentText();
+            if (liveName.startsWith(QStringLiteral("ONLY FLASH ")))
+                liveName = liveName.mid(11);   // strip the flash-only list prefix
             m_advSettings->flasher()->setConnectedDeviceInfo(
                 boardId == BOARD_ID_F411_BLACKPILL,
-                QString::fromLatin1(gEnv.pDeviceConfig->config.device_name).trimmed(),
+                liveName.trimmed(),
                 vidPid);
         } else {
             /* Unrecognised firmware: the params_report layout may differ, so
@@ -922,6 +952,19 @@ void MainWindow::startConsolidatedFlash(const QString &filePath)
     });
     m_flashProgress->show();
 
+    /* Start the GUI-thread responsiveness probe (m_flashHeartbeat). It records
+     * the longest gap between its own 100ms ticks -- i.e. the longest the GUI
+     * event loop failed to run. Reported in onFlashSessionFinished so we can
+     * tell a real UI freeze from Windows ghosting a momentarily-busy window. */
+    m_flashMaxStallMs = 0;
+    m_flashHeartbeat.setInterval(100);
+    connect(&m_flashHeartbeat, &QTimer::timeout, this, [this]() {
+        const qint64 gap = m_flashHeartbeatGap.restart();
+        if (gap > m_flashMaxStallMs) m_flashMaxStallMs = gap;
+    }, Qt::UniqueConnection);
+    m_flashHeartbeatGap.start();
+    m_flashHeartbeat.start();
+
     /* Compute the verdict to decide whether to auto-restore post-flash.
      * The confirmation dialog already showed the user this same verdict
      * before they accepted -- recomputing here matches what they saw.
@@ -1035,6 +1078,13 @@ void MainWindow::onFlashSessionStateChanged(int newState, const QString &detail)
 void MainWindow::onFlashSessionFinished(bool success, const QString &finalDetail)
 {
     qDebug() << "FlashSession finished:" << success << finalDetail;
+    if (m_flashHeartbeat.isActive()) {
+        m_flashHeartbeat.stop();
+        const QString msg = tr("UI responsiveness during flash: longest stall %1 ms")
+                                .arg(m_flashMaxStallMs);
+        qWarning().noquote() << msg;
+        if (m_flashProgress) m_flashProgress->appendStatus(msg);
+    }
     if (m_flashChainLocked) {
         setFlashChainUiLocked(false);
     }
@@ -1215,6 +1265,20 @@ void MainWindow::doEnterFlashMode()
 
 void MainWindow::doEnterSystemDfu()
 {
+    /* Snapshot THIS board's USB serial before it drops off the bus, so that when
+     * it reboots back into firmware after the DFU install we re-select the same
+     * physical board automatically. The serial is derived from the STM32 96-bit
+     * UID (Get_SerialNum / Get_SerialNumStr in the firmware), so it's stable
+     * across the reflash + factory reset -- unlike VID/PID/name, which a DFU
+     * install resets to firmware defaults. Hence serial-only (expectedVid/Pid 0):
+     * the VID/PID fallback would match the pre-reset identity, which the board no
+     * longer has. The always-on serial matcher in HidDevice's enumeration loop
+     * (priority 1) does the reconnect when the board reappears; no grace timer is
+     * needed because the matcher isn't gated by the post-write window. Harmless
+     * if the user cancels the install -- it simply re-selects the same board
+     * whenever it next appears (e.g. after a manual "Exit DFU mode"). */
+    m_hidDeviceWorker->captureReconnectIdentity(/*expectedVid=*/0, /*expectedPid=*/0);
+
     QEventLoop loop;
     QObject context;
     context.moveToThread(m_threadGetSendConfig);
@@ -1236,19 +1300,18 @@ void MainWindow::doFlashFirmwareBytes(const QByteArray *firmware)
      * runs on m_threadGetSendConfig and blocks until the flash either
      * finishes or errors -- which is why we set up the EventLoop dance.
      * Mirrors doEnterFlashMode's threading model. */
-    QEventLoop loop;
-    QObject context;
-    context.moveToThread(m_threadGetSendConfig);
-    connect(m_threadGetSendConfig, &QThread::started, &context, [&]() {
-        qDebug() << "Start flash";
-        m_hidDeviceWorker->flashFirmware(firmware);
-        qDebug() << "Flash firmware finished";
-        loop.quit();
-    });
-    m_threadGetSendConfig->start();
-    loop.exec();
-    m_threadGetSendConfig->quit();
-    m_threadGetSendConfig->wait();
+    /* HidDevice::flashFirmware() only stores the firmware pointer and sets the
+     * REPORT_ID_FIRMWARE work flag under HidDevice's mutex -- it does NO blocking
+     * work. The actual packet loop runs on the detection worker thread
+     * (processData -> flashFirmwareToDevice), driven by that flag.
+     *
+     * So calling it is cheap and thread-safe; do it directly. The old
+     * QEventLoop + m_threadGetSendConfig->start()/quit()/wait() dance (copied
+     * from doEnterFlashMode, where the worker call genuinely blocks) was
+     * pointless here AND its ->wait() blocked the GUI thread for the entire
+     * flash -- the 62s "Not Responding" freeze (issue #94). No dance => the GUI
+     * event loop keeps running while the worker streams the firmware. */
+    m_hidDeviceWorker->flashFirmware(firmware);
 }
 
 

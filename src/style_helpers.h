@@ -278,6 +278,24 @@ inline QString dangerBannerQss()  { return alertBannerQss(accentRed()); }
 // Blue informational bar (theme-aware blue). Pair with a tinted info icon.
 inline QString infoBannerQss()    { return alertBannerQss(accentBlue(true)); }
 
+// Accent-tinted push button: outlined in the accent with a light accent fill
+// that strengthens on hover/press; neutral palette ink for legibility; greys out
+// when disabled. Used for action buttons that live inside an alert banner so the
+// button reads as part of the box (e.g. the blue Re-check button in the blue
+// info banner). Pass the banner's accent so the two always match.
+inline QString accentButtonQss(const QColor &accent)
+{
+    return QStringLiteral(
+        "QPushButton { padding:4px 12px; border-radius:4px; border:1px solid %1;"
+        " background-color:%2; color:palette(text); }"
+        "QPushButton:hover { background-color:%3; }"
+        "QPushButton:pressed { background-color:%4; }"
+        "QPushButton:disabled { border-color:palette(mid);"
+        " color:palette(disabled, text); background-color:transparent; }")
+        .arg(hexStr(accent), rgbaStr(accent, 40),
+             rgbaStr(accent, 70), rgbaStr(accent, 110));
+}
+
 // Build a complete alert banner as a widget: a coloured, outlined box holding a
 // tinted triangle icon and the message, laid out side-by-side. The icon is
 // top-aligned so on a multi-line banner (heading + list + note) it rides next
@@ -290,9 +308,20 @@ inline QString infoBannerQss()    { return alertBannerQss(accentBlue(true)); }
 // accentBlue() for warning / danger / info.
 inline int alertSeverityRank(const QColor &accent);   // defined just below
 
+// Vertically aligns an alert banner's icon / text / action buttons by line count
+// and keeps it correct on resize (wrapping depends on width):
+//   - single line  -> centre the icon, text and buttons together on one midline
+//   - multi-line   -> top-align text + buttons; ride the icon's centre on the
+//                     FIRST text line (not the middle of the whole block)
+// Defined in mainwindow_style.cpp (needs a QObject resize watcher). Called by
+// makeAlertBanner; not normally called directly.
+void applyBannerLineAlignment(QFrame *banner, QLabel *icon, QLabel *msg,
+                              const QList<QWidget *> &actions);
+
 inline QFrame *makeAlertBanner(const QColor &accent, const QString &text,
                                QWidget *parent = nullptr,
-                               const QPixmap &leadingIcon = QPixmap())
+                               const QPixmap &leadingIcon = QPixmap(),
+                               const QList<QWidget *> &trailingActions = {})
 {
     auto *frame = new QFrame(parent);
     // Box chrome only (fill + border + radius); inner padding comes from the
@@ -314,23 +343,40 @@ inline QFrame *makeAlertBanner(const QColor &accent, const QString &text,
 
     auto *icon = new QLabel(frame);
     icon->setPixmap(leadingIcon.isNull() ? tintedTrianglePixmap(accent, 18) : leadingIcon);
-    // Native pixmap (no scaledContents/fixedSize squash) + a 2px top margin so
-    // the glyph drops onto the text's cap line rather than riding above it.
-    icon->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
-    icon->setContentsMargins(0, 2, 0, 0);
+    // Glyph centred within the icon cell; applyBannerLineAlignment() positions
+    // the cell -- centred in the box for a single-line banner, or sized to one
+    // text line (so the glyph centre rides the FIRST line) when the text wraps.
+    icon->setAlignment(Qt::AlignCenter);
 
     auto *msg = new QLabel(text, frame);
     msg->setWordWrap(true);
 
-    // Both icon and text top-aligned: the icon rides at the top of the box and
-    // the text starts on the same line beside it. Without AlignTop on the text
-    // it would vertically-centre and float below the top-pinned icon whenever
-    // the box is taller than one line.
-    row->addWidget(icon, 0, Qt::AlignTop);
-    row->addWidget(msg, 1, Qt::AlignTop);
+    // Initial alignment is centred (the common single-line case);
+    // applyBannerLineAlignment() flips icon/text/actions to top-aligned when the
+    // message wraps, and re-evaluates on every resize.
+    row->addWidget(icon, 0, Qt::AlignVCenter);
+    row->addWidget(msg, 1, Qt::AlignVCenter);
+    // Optional trailing action buttons (e.g. a banner's Re-check / driver
+    // action). The message's stretch pushes them to the right edge. The widgets
+    // are reparented into the banner -- callers that rebuild the banner pass
+    // persistent widgets and re-assert their visibility afterwards (reparenting
+    // hides a QWidget).
+    QList<QWidget *> actions;
+    for (QWidget *action : trailingActions) {
+        if (action) {
+            // Tint the action to the banner's accent so it reads as part of the
+            // box (e.g. a blue Re-check button inside the blue info banner).
+            action->setStyleSheet(accentButtonQss(accent));
+            row->addWidget(action, 0, Qt::AlignVCenter);
+            actions.append(action);
+        }
+    }
     // Tag the banner's severity so a stack of banners can be ordered red ->
     // amber -> green (see restackBanners).
     frame->setProperty("fjAlertRank", alertSeverityRank(accent));
+    // Single-line -> centre everything; multi-line -> top-align + icon on first
+    // line. Re-applied on resize.
+    applyBannerLineAlignment(frame, icon, msg, actions);
     return frame;
 }
 

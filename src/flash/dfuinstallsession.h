@@ -65,7 +65,7 @@
   *
   *   Optional DfuSe timing flags (the Install dialog's Advanced section; from
   *   the Params::Timing struct). The helper applies them to the transfer; when
-  *   omitted it uses its built-in defaults (which equal the Baseline preset):
+  *   omitted it uses its built-in defaults (which equal the Normal preset):
   *     --dnload-delay-ms <n>      pause between download blocks (default 0)
   *     --poll-timeout-ms <n>      max wait for an erase/program block (5000)
   *     --transfer-timeout-ms <n>  per USB control transfer (3000)
@@ -135,7 +135,7 @@ public:
     Q_ENUM(Availability)
 
     /* DfuSe transfer timing, surfaced in the Install dialog's Advanced section
-     * (preset Baseline/Loose/Lax or Custom). Defaults == the Baseline preset ==
+     * (preset Normal/Tolerant/Maximum compatibility or Custom). Defaults == the Normal preset ==
      * the helper's own built-in behaviour, so a default install is byte-for-byte
      * what it was before this struct grew these fields. Passed to the helper as
      * `install` flags (see the CLI contract above) ONLY when the helper is known
@@ -145,8 +145,8 @@ public:
     struct Timing {
         int dnloadDelayMs     = 0;      /* --dnload-delay-ms : pause between download blocks */
         int pollTimeoutMs     = 5000;   /* --poll-timeout-ms : max wait for an erase/program block */
-        int transferTimeoutMs = 3000;   /* --transfer-timeout-ms : per USB control transfer */
-        int retries           = 0;      /* --retries : per-block retry on error */
+        int transferTimeoutMs = 5000;   /* --transfer-timeout-ms : per USB control transfer */
+        int retries           = 4;      /* --retries : per-block retry on error (helper built-in) */
         int settleMs          = 1500;   /* --settle-ms : wait after leave-DFU */
     };
 
@@ -211,6 +211,13 @@ public:
      * install, since DfuSe always erases before writing. */
     void cancel();
 
+    /* Leave DFU without flashing: runs `freejoyx-flash leave`, which manifests +
+     * resets the chip so it reboots into its firmware -- no power-cycle needed.
+     * Only effective if the board entered DFU via the software reboot (BOOT0 low);
+     * a held BOOT0 re-enters DFU on the reset. Outcome via leaveFinished(); the
+     * device then disappears from probe(). Coalesced if a session is active. */
+    void leaveDfu();
+
 signals:
     /* Result of probe(). */
     void availability(DfuInstallSession::Availability avail);
@@ -219,6 +226,11 @@ signals:
      * is a human-readable summary for the dialog's log. The dialog should
      * re-probe afterwards to pick up the now-bound device. */
     void driverInstallFinished(bool ok, const QString &detail);
+
+    /* Result of leaveDfu(). ok == the leave helper exited cleanly (the board is
+     * rebooting out of DFU). The dialog re-probes / the poll picks up the device
+     * leaving on its own. */
+    void leaveFinished(bool ok, const QString &detail);
 
     void stageChanged(DfuInstallSession::Stage s, const QString &detail);
     void progress(qint64 bytesDone, qint64 bytesTotal);
@@ -245,6 +257,7 @@ private:
     bool      m_probing = false;    /* true while a probe() process is in flight */
     bool      m_probeVerbose = false; /* the in-flight probe was asked to narrate */
     bool      m_binding = false;    /* true while an installDriver() process is in flight */
+    bool      m_leaving = false;    /* true while a leaveDfu() process is in flight */
     bool      m_sawError = false;   /* an ERROR line was emitted -> don't synthesise another */
     bool      m_verifiedBoot = false; /* helper reported `VERIFY boot ok` this run */
     bool      m_verifiedApp  = false; /* helper reported `VERIFY app ok` this run */

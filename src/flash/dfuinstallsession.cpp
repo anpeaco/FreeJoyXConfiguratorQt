@@ -54,6 +54,8 @@ DfuInstallSession::~DfuInstallSession()
      * teardown, kill it synchronously so we don't leak a child holding the
      * USB device open. */
     if (m_proc && m_proc->state() != QProcess::NotRunning) {
+        qWarning() << "~DfuInstallSession -- session destroyed while helper still "
+                      "running; killing it (this aborts an in-flight install)";
         m_proc->kill();
         m_proc->waitForFinished(2000);
     }
@@ -104,6 +106,11 @@ void DfuInstallSession::probe(bool verbose, bool checkDriver)
      * --check-driver for the quiet background escalation case. */
     if (verbose) probeArgs << QStringLiteral("--verbose");
     else if (checkDriver) probeArgs << QStringLiteral("--check-driver");
+    /* Pin the child's working directory to the helper's own folder. Otherwise it
+     * inherits the app's CWD (e.g. Qt Creator's run dir), and Windows' legacy DLL
+     * search includes the CWD -- a stray DLL there can be loaded into the helper
+     * and crash it. Every reliable standalone run used the helper's folder as CWD. */
+    m_proc->setWorkingDirectory(QFileInfo(helper).absolutePath());
     m_proc->start(helper, probeArgs);
 }
 
@@ -140,7 +147,47 @@ void DfuInstallSession::installDriver()
     connect(m_proc, &QProcess::errorOccurred,
             this, &DfuInstallSession::onProcessErrorOccurred);
 
+    m_proc->setWorkingDirectory(QFileInfo(helper).absolutePath());
     m_proc->start(helper, { QStringLiteral("bind"),
+                            QStringLiteral("--board"), QStringLiteral("f411") });
+}
+
+void DfuInstallSession::leaveDfu()
+{
+    /* Coalesce against any in-flight probe/install/bind/leave. */
+    if (m_proc && m_proc->state() != QProcess::NotRunning) {
+        return;
+    }
+    const QString helper = helperPath();
+    if (helper.isEmpty()) {
+        emit leaveFinished(false,
+            tr("Install helper (freejoyx-flash) is missing from the "
+               "application folder."));
+        return;
+    }
+
+    m_probing = false;
+    m_probeVerbose = false;
+    m_binding = false;
+    m_leaving = true;
+    m_sawError = false;
+    m_lastErrorDetail.clear();
+    m_stdoutBuf.clear();
+    m_stderrBuf.clear();
+
+    m_proc = new QProcess(this);
+    m_proc->setProcessChannelMode(QProcess::SeparateChannels);
+    connect(m_proc, &QProcess::readyReadStandardOutput,
+            this, &DfuInstallSession::onReadyReadStdout);
+    connect(m_proc, &QProcess::readyReadStandardError,
+            this, &DfuInstallSession::onReadyReadStderr);
+    connect(m_proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, &DfuInstallSession::onProcessFinished);
+    connect(m_proc, &QProcess::errorOccurred,
+            this, &DfuInstallSession::onProcessErrorOccurred);
+
+    m_proc->setWorkingDirectory(QFileInfo(helper).absolutePath());
+    m_proc->start(helper, { QStringLiteral("leave"),
                             QStringLiteral("--board"), QStringLiteral("f411") });
 }
 
@@ -193,10 +240,10 @@ bool DfuInstallSession::start(const Params &p)
      * they're only appended once the helper (anpeaco/FreeJoyXConfigurator#35)
      * accepts them. Flip kHelperSupportsTiming to true in lockstep with that
      * helper release. Until then the values are collected by the UI but not
-     * sent (the helper uses its built-in == Baseline defaults). */
-    constexpr bool kHelperSupportsTiming = false;
+     * sent (the helper uses its built-in == Normal defaults). */
+    constexpr bool kHelperSupportsTiming = true;
+    const Timing &t = p.timing;
     if (kHelperSupportsTiming) {
-        const Timing &t = p.timing;
         args << QStringLiteral("--dnload-delay-ms")     << QString::number(t.dnloadDelayMs)
              << QStringLiteral("--poll-timeout-ms")     << QString::number(t.pollTimeoutMs)
              << QStringLiteral("--transfer-timeout-ms") << QString::number(t.transferTimeoutMs)
@@ -204,12 +251,28 @@ bool DfuInstallSession::start(const Params &p)
              << QStringLiteral("--settle-ms")           << QString::number(t.settleMs);
     }
 
+    /* Surface the chosen advanced timing in the log/debug output, and be honest
+     * about whether it actually takes effect this build. */
+    const QString timingMsg =
+        QStringLiteral("DfuSe timing: dnload-delay=%1ms, poll-timeout=%2ms, "
+                       "transfer-timeout=%3ms, retries=%4, settle=%5ms %6")
+            .arg(t.dnloadDelayMs).arg(t.pollTimeoutMs).arg(t.transferTimeoutMs)
+            .arg(t.retries).arg(t.settleMs)
+            .arg(kHelperSupportsTiming
+                     ? QStringLiteral("(applied)")
+                     : QStringLiteral("(selected; helper uses built-in defaults this build)"));
+    qInfo().noquote() << "[dfu-install]" << timingMsg;
+    emit logLine(timingMsg);
+
+    m_proc->setWorkingDirectory(QFileInfo(helper).absolutePath());
     m_proc->start(helper, args);
     return true;
 }
 
 void DfuInstallSession::cancel()
 {
+    qWarning() << "DfuInstallSession::cancel() -- killing helper (running:"
+               << (m_proc && m_proc->state() != QProcess::NotRunning) << ")";
     if (m_proc && m_proc->state() != QProcess::NotRunning) {
         m_proc->kill();
     }
@@ -358,6 +421,23 @@ void DfuInstallSession::onProcessFinished(int exitCode, QProcess::ExitStatus sta
         return;
     }
 
+    if (m_leaving) {
+        const bool ok = (!crashed && exitCode == 0);
+        if (!ok && !m_sawError) {
+            m_lastErrorDetail = crashed
+                ? tr("The DFU-leave helper stopped unexpectedly.")
+                : tr("The DFU-leave helper exited with code %1.").arg(exitCode);
+        }
+        const QString detail = ok
+            ? tr("Sent DFU-leave; the board should reboot into its firmware.")
+            : m_lastErrorDetail;
+        m_leaving = false;
+        m_proc->deleteLater();
+        m_proc = nullptr;
+        emit leaveFinished(ok, detail);
+        return;
+    }
+
     bool success = (!crashed && exitCode == 0 && m_stage == Stage::Verifying)
                    || (!crashed && exitCode == 0 && m_stage == Stage::Done);
 
@@ -388,10 +468,14 @@ void DfuInstallSession::onProcessFinished(int exitCode, QProcess::ExitStatus sta
     }
 
     if (!m_sawError) {
-        /* Process died without an ERROR line (crash, or non-zero exit with no
-         * diagnostic). Synthesise something the user can act on. */
+        /* Process died without an ERROR line. Include the raw code so we can tell
+         * a real native crash (e.g. 0xC0000005 access violation) from the app
+         * having terminated it (Qt's QProcess::kill uses 0xF291) -- the latter
+         * means the dialog/session was destroyed mid-write, not a helper bug. */
+        const QString hexCode =
+            QStringLiteral("0x") + QString::number(static_cast<quint32>(exitCode), 16).toUpper();
         m_lastErrorDetail = crashed
-            ? tr("The install helper stopped unexpectedly.")
+            ? tr("The install helper stopped unexpectedly (code %1).").arg(hexCode)
             : tr("The install helper exited with code %1.").arg(exitCode);
     }
     setStage(Stage::Failed, m_lastErrorDetail);
@@ -427,6 +511,13 @@ void DfuInstallSession::onProcessErrorOccurred(QProcess::ProcessError error)
             m_binding = false;
             if (m_proc) { m_proc->deleteLater(); m_proc = nullptr; }
             emit driverInstallFinished(false,
+                tr("Couldn't launch the install helper (freejoyx-flash)."));
+            return;
+        }
+        if (m_leaving) {
+            m_leaving = false;
+            if (m_proc) { m_proc->deleteLater(); m_proc = nullptr; }
+            emit leaveFinished(false,
                 tr("Couldn't launch the install helper (freejoyx-flash)."));
             return;
         }

@@ -10,8 +10,14 @@
 #include "boarddisplay.h"
 
 #include <QDebug>
+#include <QEvent>
 #include <QFile>
+#include <QFontMetrics>
+#include <QFrame>
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QPalette>
+#include <QTimer>
 #include <QToolTip>
 #include <QWidget>
 
@@ -191,4 +197,98 @@ void MainWindow::themeChanged(bool dark)
     gEnv.pAppSettings->beginGroup("StyleSettings");
     gEnv.pAppSettings->setValue("StyleSheet", styleName);
     gEnv.pAppSettings->endGroup();
+}
+
+// ---------------------------------------------------------------------------
+// Alert-banner vertical alignment (used by freejoy_style::makeAlertBanner).
+// ---------------------------------------------------------------------------
+
+namespace {
+// Watches an alert banner and re-aligns its icon / text / action buttons by the
+// message's current line count, re-running on resize (wrapping depends on
+// width). Single line: centre everything on one midline. Multi-line: top-align
+// the text + buttons and size the icon cell to one text line so the glyph's
+// centre rides the FIRST line. No Q_OBJECT needed -- only eventFilter() is
+// overridden (no signals/slots/qobject_cast). Parented to the banner.
+class BannerLineAligner : public QObject
+{
+public:
+    BannerLineAligner(QFrame *banner, QLabel *icon, QLabel *msg,
+                      const QList<QWidget *> &actions)
+        : QObject(banner), m_banner(banner), m_icon(icon), m_msg(msg),
+          m_actions(actions)
+    {
+        banner->installEventFilter(this);
+        // First pass once the layout has given the message a real width.
+        QTimer::singleShot(0, this, [this] { recompute(); });
+    }
+
+protected:
+    bool eventFilter(QObject *o, QEvent *e) override
+    {
+        if (o == m_banner
+            && (e->type() == QEvent::Resize
+                || e->type() == QEvent::Show
+                || e->type() == QEvent::LayoutRequest)) {
+            recompute();
+        }
+        return QObject::eventFilter(o, e);
+    }
+
+private:
+    void recompute()
+    {
+        if (!m_banner || !m_icon || !m_msg) {
+            return;
+        }
+        auto *lay = qobject_cast<QHBoxLayout *>(m_banner->layout());
+        if (!lay) {
+            return;
+        }
+        const int w = m_msg->width();
+        if (w <= 0) {
+            return;   // not laid out yet; a later Resize/LayoutRequest retries
+        }
+        const int lineH = m_msg->fontMetrics().lineSpacing();
+        const int multiline = (m_msg->heightForWidth(w) > qRound(lineH * 1.4)) ? 1 : 0;
+        if (multiline == m_lastMultiline) {
+            return;   // unchanged -> don't churn the layout (avoids a relayout loop)
+        }
+        m_lastMultiline = multiline;
+
+        if (multiline) {
+            // Icon cell == one text line tall, glyph centred -> the glyph centre
+            // lands on the FIRST line (text/actions are top-aligned).
+            m_icon->setFixedHeight(lineH);
+        } else {
+            m_icon->setMinimumHeight(0);
+            m_icon->setMaximumHeight(QWIDGETSIZE_MAX);
+        }
+        const Qt::Alignment a = multiline ? Qt::Alignment(Qt::AlignTop)
+                                          : Qt::Alignment(Qt::AlignVCenter);
+        lay->setAlignment(m_icon, a);
+        lay->setAlignment(m_msg, a);
+        for (QWidget *act : m_actions) {
+            if (act) {
+                lay->setAlignment(act, a);
+            }
+        }
+    }
+
+    QFrame  *m_banner = nullptr;
+    QLabel  *m_icon   = nullptr;
+    QLabel  *m_msg    = nullptr;
+    QList<QWidget *> m_actions;
+    int      m_lastMultiline = -1;   // -1 unset, 0 single line, 1 multi-line
+};
+} // namespace
+
+void freejoy_style::applyBannerLineAlignment(QFrame *banner, QLabel *icon,
+                                             QLabel *msg,
+                                             const QList<QWidget *> &actions)
+{
+    if (!banner || !icon || !msg) {
+        return;
+    }
+    new BannerLineAligner(banner, icon, msg, actions);   // owned by `banner`
 }

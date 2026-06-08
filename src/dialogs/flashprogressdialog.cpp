@@ -9,8 +9,10 @@
 #include "ui_flashprogressdialog.h"
 
 #include <QPushButton>
+#include <QVBoxLayout>
 
 #include "progresslog.h"
+#include "style_helpers.h"
 
 FlashProgressDialog::FlashProgressDialog(bool recoveryFlash, QWidget *parent)
     : QDialog(parent)
@@ -50,6 +52,16 @@ void FlashProgressDialog::setStage(Stage s, const QString &detail)
     }
     refreshStageLabels();
     refreshProgressBar();
+
+    /* Terminal outcome -> shared alert banner (green check / red triangle)
+     * instead of a recoloured stage label. */
+    if (s == Stage::Done) {
+        showResult(/*success=*/true, m_recoveryFlash
+            ? tr("Firmware updated.")
+            : tr("Firmware updated and configuration restored."));
+    } else if (s == Stage::TerminalError) {
+        showResult(/*success=*/false, detail.isEmpty() ? tr("Flash failed.") : detail);
+    }
 }
 
 void FlashProgressDialog::setFlashBytes(int bytesSent, int bytesTotal)
@@ -85,6 +97,20 @@ void FlashProgressDialog::onCancelOrCloseClicked()
         emit cancelRequested();
         appendStatus(tr("Cancel requested. Waiting for the current step to wind down..."));
     }
+}
+
+void FlashProgressDialog::showResult(bool success, const QString &text)
+{
+    const QColor accent = success ? freejoy_style::accentGreen()
+                                  : freejoy_style::accentRed();
+    ui->label_Stage->hide();             // banner is the single result element
+    if (m_resultBanner) {                // defensive: dialog is one-shot, but be safe
+        ui->layout_Root->removeWidget(m_resultBanner);
+        m_resultBanner->deleteLater();
+    }
+    m_resultBanner = freejoy_style::makeAlertBanner(
+        accent, text, this, freejoy_style::statusPixmap(accent));
+    ui->layout_Root->insertWidget(0, m_resultBanner);
 }
 
 void FlashProgressDialog::refreshStageLabels()

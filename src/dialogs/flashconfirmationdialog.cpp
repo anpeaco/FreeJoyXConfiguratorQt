@@ -24,6 +24,7 @@
 
 #include "boarddisplay.h"
 #include "common_defines.h"
+#include "groupedcombo.h"
 #include "legacy/legacy_migrator.h"
 #include "style_helpers.h"
 
@@ -36,6 +37,11 @@ FlashConfirmationDialog::FlashConfirmationDialog(
     , ui(new Ui::FlashConfirmationDialog)
 {
     ui->setupUi(this);
+
+    /* Firmware source dropdown uses the shared grouped-combo look (bold banded
+     * board headers + indented entries), matching the Button Config / pin-role
+     * dropdowns. Headers are tagged with kGroupHeaderRole in populateSources. */
+    freejoy_ui::installGroupedDelegate(ui->comboBox_Source);
 
     /* Drop the title-bar "?" context-help button -- this dialog has no
      * what's-this help, so the marker is dead weight. */
@@ -212,9 +218,9 @@ void FlashConfirmationDialog::setSources(
         if (group.isEmpty()) return;
         auto *hdr = new QStandardItem(heading);          /* non-selectable header */
         hdr->setFlags(Qt::NoItemFlags);
-        QFont hf = hdr->font();
-        hf.setBold(true);
-        hdr->setData(hf, Qt::FontRole);
+        // Tag as a grouped-combo header so GroupedComboDelegate paints it as a
+        // bold banded divider (and indents the entries below it).
+        hdr->setData(true, freejoy_ui::kGroupHeaderRole);
         model->appendRow(hdr);
         const QIcon icon = boardCpuIcon(boardId);
         for (const Entry &e : group) {

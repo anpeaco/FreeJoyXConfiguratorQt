@@ -123,6 +123,14 @@ private:
      * stage's 80% is interpolated by setFlashBytes; the others are
      * each fixed 5%. */
     static int stageBaseProgress(Stage s, bool recoveryFlash);
+
+    /* Show the terminal outcome as the shared app alert banner (green check on
+     * Done, red triangle on TerminalError) pinned above the stage line, instead
+     * of a recoloured stage label. The stage line is hidden while the banner is
+     * up. One-shot: this dialog is created fresh per flash, so there's no clear. */
+    void showResult(bool success, const QString &text);
+
+    QWidget *m_resultBanner = nullptr;   /* terminal result banner; null until shown */
 };
 
 #endif // FLASHPROGRESSDIALOG_H

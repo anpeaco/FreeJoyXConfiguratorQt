@@ -838,56 +838,83 @@ void HidDevice::flashFirmwareToDevice()
     qDebug()<<"flash size = "<<m_firmware->size();
     if (m_flasherPath.isEmpty() == false)
     {
+        /* The flasher has only just re-enumerated; for the first instant its USB
+         * receive side may not be openable / ready. Retry the open briefly rather
+         * than writing the start header into a null/not-ready handle, which would
+         * strand the whole flash ("stuck at 0 bytes / 10%"). */
         hid_device* flasher = hid_open_path(m_flasherPath);
-        qint64 millis;
+        for (int i = 0; i < 10 && flasher == nullptr; ++i) {
+            QThread::msleep(100);
+            flasher = hid_open_path(m_flasherPath);
+        }
+        if (flasher == nullptr) {
+            emit flashStatus(666, 0, int(m_firmware->size()));
+            return;
+        }
+        /* Settle: let the just-opened flasher become ready to receive the OUT
+         * report before the one-shot start header. The bootloader re-erases the
+         * whole app region on EVERY start header (cnt==0) with no guard, so the
+         * header must never be spammed -- see the carefully-gated resend below. */
+        QThread::msleep(300);
+
         QElapsedTimer time;
         time.start();
-        millis = time.elapsed();
         uint8_t flash_buffer[BUFFERSIZE]{};
         uint8_t flasher_device_buffer[BUFFERSIZE]{};
-        uint16_t length = uint16_t(m_firmware->size());
-        uint16_t crc16 = FirmwareUpdater::computeChecksum(m_firmware);
+        const uint16_t length = uint16_t(m_firmware->size());
+        const uint16_t crc16 = FirmwareUpdater::computeChecksum(m_firmware);
         const int total_bytes = m_firmware->size();
         int bytes_sent = 0;
 
-        flash_buffer[0] = REPORT_ID_FLASH;
-        flash_buffer[1] = 0;
-        flash_buffer[2] = 0;
-        flash_buffer[3] = 0;
-        flash_buffer[4] = uint8_t(length & 0xFF);
-        flash_buffer[5] = uint8_t(length >> 8);
-        flash_buffer[6] = uint8_t(crc16 & 0xFF);
-        flash_buffer[7] = uint8_t(crc16 >> 8);
+        /* Start header (length + CRC) kept in its own buffer so it can be re-sent
+         * verbatim -- flash_buffer is reused for packet data once underway. */
+        uint8_t start_header[BUFFERSIZE]{};
+        start_header[0] = REPORT_ID_FLASH;
+        start_header[4] = uint8_t(length & 0xFF);
+        start_header[5] = uint8_t(length >> 8);
+        start_header[6] = uint8_t(crc16 & 0xFF);
+        start_header[7] = uint8_t(crc16 >> 8);
+        hid_write(flasher, start_header, BUFFERSIZE);
 
-        hid_write(flasher, flash_buffer, BUFFERSIZE);
+        /* Timeouts:
+         *  - The device erases the whole app region (F103 ~1s, F411 ~3-5s) inside
+         *    the start-header handler BEFORE requesting packet 1, so allow a
+         *    generous grace for the first request.
+         *  - Re-sending the start header is only SAFE once the device is provably
+         *    idle (past any erase, nothing written yet) -- i.e. after a silence
+         *    longer than the worst-case erase. So we re-send ONLY after the full
+         *    grace lapses with no request at all, and NEVER once the transfer has
+         *    started. This recovers a header lost to the not-ready window without
+         *    ever racing the erase or wiping already-written packets.
+         *  - Once flashing, each request resets an inactivity deadline. This
+         *    replaces the old fixed 50s total budget, which could kill a slow but
+         *    healthy flash (~100ms/packet -> a large image legitimately exceeds
+         *    50s). A genuine stall still fails within kIdleMs. */
+        const qint64 kEraseGraceMs    = 12000;  // first request must arrive within this (> max erase)
+        const qint64 kIdleMs          = 10000;  // max gap between packets once started
+        const int    kMaxStartResends = 3;
+
+        bool   flashingStarted = false;         // a packet request (not status) was seen
+        int    startResends    = 0;
+        qint64 deadline = time.elapsed() + kEraseGraceMs;
 
         int res = 0;
         uint8_t buffer[BUFFERSIZE]{};
-        while (time.elapsed() < millis + 50000) // 50 for flashing
+        for (;;)
         {
-            if (flasher){
-                res=hid_read_timeout(flasher, buffer, BUFFERSIZE,5000);  // 5000?
-                if (res < 0) {
-                    /* HID read errored mid-flash (cable pulled, device
-                     * crashed, or hidapi handle went bad). Without this
-                     * emit, FlashSession would sit in Flashing forever
-                     * because no terminal flashStatus signal ever fires
-                     * -- the dialog freezes, no recovery surface.
-                     * status=666 is the generic "flash hung" code used
-                     * by the outer 50s timeout below; consumers
-                     * (FlashSession::onFlashStatus, Flasher::flashStatus)
-                     * treat any non-FINISHED / non-IN_PROCESS value as
-                     * terminal failure. */
-                    hid_close(flasher);
-                    flasher=nullptr;
-                    emit flashStatus(666, bytes_sent, total_bytes);
-                    return;
-                } else {
-                    if (buffer[0] == REPORT_ID_FLASH) {
-                        memset(flasher_device_buffer, 0, BUFFERSIZE);
-                        memcpy(flasher_device_buffer, buffer, BUFFERSIZE);
-                    }
-                }
+            res = hid_read_timeout(flasher, buffer, BUFFERSIZE, 1000); // short so the deadline logic runs
+            if (res < 0) {
+                /* HID read errored mid-flash (cable pulled, device crashed, or the
+                 * handle went bad). Emit a terminal failure so FlashSession doesn't
+                 * hang in Flashing forever. 666 is the generic "flash hung" code;
+                 * consumers treat any non-FINISHED/non-IN_PROCESS value as terminal. */
+                hid_close(flasher);
+                emit flashStatus(666, bytes_sent, total_bytes);
+                return;
+            }
+            if (res > 0 && buffer[0] == REPORT_ID_FLASH) {
+                memset(flasher_device_buffer, 0, BUFFERSIZE);
+                memcpy(flasher_device_buffer, buffer, BUFFERSIZE);
             }
 
             if (flasher_device_buffer[0] == REPORT_ID_FLASH)
@@ -895,67 +922,65 @@ void HidDevice::flashFirmwareToDevice()
                 uint16_t cnt = uint16_t(flasher_device_buffer[1] << 8 | flasher_device_buffer[2]);
                 if ((cnt & 0xF000) == 0xF000)  // status packet
                 {
-                    //qDebug()<<"ERROR";
-                    if (cnt == 0xF001)  // firmware size error
-                    {
+                    if (cnt == 0xF001) { hid_close(flasher); emit flashStatus(SIZE_ERROR,  bytes_sent, total_bytes); return; }
+                    else if (cnt == 0xF002) { hid_close(flasher); emit flashStatus(CRC_ERROR,   bytes_sent, total_bytes); return; }
+                    else if (cnt == 0xF003) { hid_close(flasher); emit flashStatus(ERASE_ERROR, bytes_sent, total_bytes); return; }
+                    else if (cnt == 0xF000) {
                         hid_close(flasher);
-                        emit flashStatus(SIZE_ERROR, bytes_sent, total_bytes);
-                        return;
-                    }
-                    else if (cnt == 0xF002) // CRC error
-                    {
-                        hid_close(flasher);
-                        emit flashStatus(CRC_ERROR, bytes_sent, total_bytes);
-                        return;
-                    }
-                    else if (cnt == 0xF003) // flash erase error
-                    {
-                        hid_close(flasher);
-                        emit flashStatus(ERASE_ERROR, bytes_sent, total_bytes);
-                        return;
-                    }
-                    else if (cnt == 0xF000) // OK
-                    {
-                        hid_close(flasher);
-                        /* Force terminal counter to total so the progress
-                         * bar reads 100% on success even if the last
-                         * partial-packet emit left it short. */
+                        /* Force the counter to total so the bar reads 100% even if
+                         * the last partial packet left it short. */
                         emit flashStatus(FINISHED, total_bytes, total_bytes);
                         return;
                     }
                 }
-                else
+                else  // packet request -> send that packet
                 {
-                    qDebug()<<"Firmware packet requested:"<<cnt;
-
+                    flashingStarted = true;
+                    qDebug() << "Firmware packet requested:" << cnt;
                     flash_buffer[0] = REPORT_ID_FLASH;
                     flash_buffer[1] = uint8_t(cnt >> 8);
                     flash_buffer[2] = uint8_t(cnt & 0xFF);
                     flash_buffer[3] = 0;
-
-                    if (cnt * 60 < m_firmware->size())
-                    {
-                        memcpy(flash_buffer +4, m_firmware->constData() + (cnt - 1) * 60, 60);
+                    if (cnt * 60 < m_firmware->size()) {
+                        memcpy(flash_buffer + 4, m_firmware->constData() + (cnt - 1) * 60, 60);
                         bytes_sent = (cnt - 1) * 60;
-                        hid_write(flasher, flash_buffer, 64);
-                        emit flashStatus(IN_PROCESS, bytes_sent, total_bytes);
-
-                        qDebug()<<"Firmware packet sent:"<<cnt;
-                    }
-                    else
-                    {
-                        memcpy(flash_buffer +4, m_firmware->constData() + (cnt - 1) * 60, m_firmware->size() - (cnt - 1) * 60);
+                    } else {
+                        memcpy(flash_buffer + 4, m_firmware->constData() + (cnt - 1) * 60,
+                               m_firmware->size() - (cnt - 1) * 60);
                         bytes_sent = total_bytes;
-                        hid_write(flasher, flash_buffer, 64);
-                        emit flashStatus(IN_PROCESS, bytes_sent, total_bytes);
-
-                        qDebug()<<"Firmware packet sent:"<<cnt;
                     }
+                    hid_write(flasher, flash_buffer, 64);
+                    emit flashStatus(IN_PROCESS, bytes_sent, total_bytes);
+                    qDebug() << "Firmware packet sent:" << cnt;
+                }
+                /* Consume the request so a later read timeout (buffer unchanged)
+                 * doesn't reprocess the same cnt, and reset the deadline. */
+                flasher_device_buffer[0] = 0;
+                deadline = time.elapsed() + (flashingStarted ? kIdleMs : kEraseGraceMs);
+            }
+
+            if (time.elapsed() > deadline)
+            {
+                if (!flashingStarted && startResends < kMaxStartResends) {
+                    /* Grace lapsed with no request: the start header was lost (the
+                     * not-ready window) or a request was missed. Either way the
+                     * device is now idle past any erase, so re-sending the start
+                     * header is safe -- it (re-)erases an empty region and asks for
+                     * packet 1. Unreachable once flashingStarted, so it never wipes
+                     * written data. */
+                    ++startResends;
+                    qDebug() << "Flash start not acknowledged; re-sending start header"
+                             << startResends << "/" << kMaxStartResends;
+                    hid_write(flasher, start_header, BUFFERSIZE);
+                    deadline = time.elapsed() + kEraseGraceMs;
+                } else {
+                    /* No start after the resends, or an inactivity stall mid-flash. */
+                    hid_close(flasher);
+                    emit flashStatus(666, bytes_sent, total_bytes);
+                    return;
                 }
             }
         }
-        hid_close(flasher);
-        emit flashStatus(666, bytes_sent, total_bytes);
     }
 }
 
@@ -1079,6 +1104,7 @@ bool HidDevice::enterToFlashMode()
             if (m_flasherPath.isEmpty() == false){
                 return true;
             }
+            QThread::msleep(10);   // yield instead of spinning a core flat-out
         }
     }
     return false;

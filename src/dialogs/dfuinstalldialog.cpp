@@ -20,6 +20,7 @@
 #include <QPushButton>
 #include <QToolButton>
 #include <QComboBox>
+#include <QFrame>
 #include <QSpinBox>
 #include <QSignalBlocker>
 #include <QFileDialog>
@@ -31,6 +32,8 @@
 #include <QFileInfo>
 #include <QFont>
 #include <QEvent>
+#include <QCloseEvent>
+#include <QDebug>
 
 #include "global.h"
 #include "widgets/debugwindow.h"
@@ -76,6 +79,8 @@ DfuInstallDialog::DfuInstallDialog(QWidget *parent)
             this, &DfuInstallDialog::onAvailability);
     connect(m_session, &DfuInstallSession::driverInstallFinished,
             this, &DfuInstallDialog::onDriverInstallFinished);
+    connect(m_session, &DfuInstallSession::leaveFinished,
+            this, &DfuInstallDialog::onLeaveFinished);
     connect(m_session, &DfuInstallSession::stageChanged,
             this, &DfuInstallDialog::onStageChanged);
     connect(m_session, &DfuInstallSession::progress,
@@ -103,17 +108,14 @@ DfuInstallDialog::~DfuInstallDialog() = default;
 void DfuInstallDialog::setConnectedDevice(bool f411Present, const QString &name,
                                           const QString &vidPid)
 {
-    /* The one-click reboot shortcut only does anything when an F411 running
-     * FreeJoyX is connected, so show the row only then -- and label it with
-     * the device's name + VID:PID so the user knows what will be rebooted. */
-    if (!m_rebootRow) return;
-    if (f411Present) {
-        QString id = name.trimmed().isEmpty() ? tr("F411 (Black Pill)") : name.trimmed();
-        if (!vidPid.isEmpty()) id += QStringLiteral(" — ") + vidPid;
-        m_connLabel->setText(tr("Connected: <b>%1</b>").arg(id.toHtmlEscaped()));
-        m_rebootRow->setVisible(true);
-    } else {
-        m_rebootRow->setVisible(false);
+    /* Record the live connected-device identity; the DFU-entry state machine
+     * (updateDfuEntryState) decides whether to offer the one-click Reboot path
+     * (F411 app device present) or the manual BOOT0 + Re-check path. */
+    m_f411Connected = f411Present;
+    m_connName      = name;
+    m_connVidPid    = vidPid;
+    if (!m_installing && !m_bindingDriver) {
+        updateDfuEntryState();
     }
 }
 
@@ -127,29 +129,35 @@ void DfuInstallDialog::buildUi()
     auto *dfuLay = new QVBoxLayout(dfuBox);
     dfuLay->setSpacing(8);
 
-    /* Preferred path, shown only when an F411 is connected: ask the firmware
-     * to reboot itself into ROM DFU (anpeaco/FreeJoyX#55) -- no jumper. The
-     * whole row is hidden by setConnectedDevice() when no F411 is present
-     * (the reboot command would do nothing). */
-    m_rebootRow = new QWidget(dfuBox);
-    auto *rebootLay = new QVBoxLayout(m_rebootRow);
-    rebootLay->setContentsMargins(0, 0, 0, 0);
-    rebootLay->setSpacing(4);
-    m_connLabel = new QLabel(m_rebootRow);
-    m_connLabel->setWordWrap(true);
-    rebootLay->addWidget(m_connLabel);
-    auto *rebootBtnRow = new QHBoxLayout();
-    auto *rebootHint = new QLabel(tr("Reboot it straight into DFU:"), m_rebootRow);
-    rebootHint->setWordWrap(true);
-    m_rebootBtn = new QPushButton(tr("Reboot into DFU"), m_rebootRow);
+    /* The DFU-entry view is a SINGLE state-driven banner in m_detectArea, swapped
+     * by updateDfuEntryState() from two inputs -- whether a DFU device is
+     * detected (onAvailability) and whether an F411 app-mode device is connected
+     * (setConnectedDevice). It shows exactly one of:
+     *   - green  "ready"          (DFU detected)              -> no button
+     *   - amber  "driver needed"  (DFU detected, unbound)     -> Install driver
+     *   - blue   "Reboot <dev>"   (F411 app device connected) -> Reboot into DFU
+     *   - blue   "no board yet"   (nothing connected)         -> Re-check + the
+     *                                                            BOOT0 steps below
+     * The three action buttons are persistent (signals intact); setDetectStatus
+     * reparents all three into the current banner and updateDfuEntryState reveals
+     * the one for the active state. Created hidden. */
+    m_rebootBtn = new QPushButton(tr("Reboot into DFU"), dfuBox);
+    m_rebootBtn->hide();
     connect(m_rebootBtn, &QPushButton::clicked, this, &DfuInstallDialog::onRebootToDfu);
-    rebootBtnRow->addWidget(rebootHint, 1);
-    rebootBtnRow->addWidget(m_rebootBtn, 0);
-    rebootLay->addLayout(rebootBtnRow);
-    m_rebootRow->setVisible(false);          // setConnectedDevice() reveals it
-    dfuLay->addWidget(m_rebootRow);
+    m_driverBtn = new QPushButton(tr("Install WinUSB driver"), dfuBox);
+    m_driverBtn->hide();
+    connect(m_driverBtn, &QPushButton::clicked, this, &DfuInstallDialog::onInstallDriverClicked);
+    m_detectBtn = new QPushButton(tr("Re-check"), dfuBox);
+    m_detectBtn->hide();
+    connect(m_detectBtn, &QPushButton::clicked, this, &DfuInstallDialog::onManualRecheck);
+    /* Exit DFU without flashing -- manifest + reset so the chip reboots into its
+     * firmware (no replug). Shown only in the Ready state. */
+    m_leaveBtn = new QPushButton(tr("Exit DFU mode"), dfuBox);
+    m_leaveBtn->hide();
+    connect(m_leaveBtn, &QPushButton::clicked, this, &DfuInstallDialog::onLeaveClicked);
 
-    /* Manual BOOT0 method (always available). */
+    /* Manual BOOT0 steps -- shown only in the "nothing connected" state, above
+     * the status banner (the banner's text says "follow the steps above"). */
     m_instructions = new QLabel(dfuBox);
     m_instructions->setTextFormat(Qt::RichText);
     m_instructions->setWordWrap(true);
@@ -158,33 +166,13 @@ void DfuInstallDialog::buildUi()
         "<li>Hold <b>BOOT0</b>.</li>"
         "<li>Tap <b>NRST</b> (reset), then release it.</li>"
         "<li>Release <b>BOOT0</b>.</li>"
-        "</ol>"
-        "The board then re-appears as "
-        "<i>STM32&nbsp;BOOTLOADER</i>."));
+        "</ol>"));
     dfuLay->addWidget(m_instructions);
 
-    /* Detection status as a severity banner (shared makeAlertBanner look),
-     * with the re-check / driver buttons on their own right-aligned row below. */
+    /* Single state banner area. */
     m_detectArea = new QVBoxLayout();
     m_detectArea->setContentsMargins(0, 0, 0, 0);
     dfuLay->addLayout(m_detectArea);
-
-    auto *detectBtnRow = new QHBoxLayout();
-    detectBtnRow->addStretch(1);
-    /* Shown only when a probe reports NeedsDriver: the board is present but its
-     * USB driver isn't installed (typical fresh-Windows state). Hidden until
-     * then; on Linux/macOS the needs-driver verdict never arises, so it stays
-     * hidden there. */
-    m_driverBtn = new QPushButton(tr("Install WinUSB driver"), dfuBox);
-    m_driverBtn->setVisible(false);
-    connect(m_driverBtn, &QPushButton::clicked, this, &DfuInstallDialog::onInstallDriverClicked);
-    m_detectBtn = new QPushButton(tr("Re-check"), dfuBox);
-    connect(m_detectBtn, &QPushButton::clicked, this, &DfuInstallDialog::onManualRecheck);
-    detectBtnRow->addWidget(m_driverBtn, 0);
-    detectBtnRow->addWidget(m_detectBtn, 0);
-    dfuLay->addLayout(detectBtnRow);
-
-    setDetectStatus(DetectInfo, tr("Looking for a board in DFU mode…"));
 
     root->addWidget(dfuBox);
 
@@ -229,7 +217,7 @@ void DfuInstallDialog::buildUi()
     /* Shared "Extended Settings" disclosure look (gear + label + chevron),
      * identical to the axes Extended Settings toggle. */
     freejoy_style::configureSectionToggle(m_advToggle, tr("Extended Settings"));
-    binLay->addWidget(m_advToggle, 0, Qt::AlignLeft);
+    binLay->addWidget(m_advToggle, 0, Qt::AlignRight);
 
     m_advBox = new QWidget(binBox);
     m_advBox->setVisible(false);
@@ -237,10 +225,11 @@ void DfuInstallDialog::buildUi()
     advForm->setContentsMargins(14, 4, 0, 4);          /* indent under the toggle */
 
     m_presetCombo = new QComboBox(m_advBox);
-    m_presetCombo->addItems({ tr("Baseline"), tr("Loose"), tr("Lax"), tr("Custom") });
-    m_presetCombo->setToolTip(tr("Baseline = fast/tight (good USB); Loose / Lax add "
-                                 "margins for flaky cables or hubs; Custom unlocks "
-                                 "the boxes."));
+    m_presetCombo->addItems({ tr("Normal"), tr("Tolerant"),
+                              tr("Maximum compatibility"), tr("Custom") });
+    m_presetCombo->setToolTip(tr("Normal = fast/tight (good USB); Tolerant and "
+                                 "Maximum compatibility add margins for flaky cables "
+                                 "or hubs; Custom unlocks the boxes."));
     advForm->addRow(tr("Timing preset:"), m_presetCombo);
 
     auto makeSpin = [this](int lo, int hi, int step, const QString &suffix) {
@@ -315,6 +304,12 @@ void DfuInstallDialog::buildUi()
         m_installBtn->setEnabled(false);
         m_detectBtn->setEnabled(false);
         m_rebootBtn->setEnabled(false);
+        m_leaveBtn->setEnabled(false);
+    } else {
+        /* Initial render now that Step 2/3 widgets exist (refreshInstallEnabled
+         * needs them). Starts in the Manual state until the first probe /
+         * setConnectedDevice arrives. */
+        updateDfuEntryState();
     }
 
     /* The setup dialog is now compact (progress/log moved to their own window).
@@ -346,14 +341,18 @@ void DfuInstallDialog::buildProgressDialog()
     auto *lay = new QVBoxLayout(m_progressDialog);
     lay->setSpacing(10);
     lay->setContentsMargins(14, 14, 14, 14);
+    m_progLayout = lay;
 
+    /* Small neutral stage line (e.g. "Erasing…"). The terminal result is shown
+     * as the shared alert banner via showProgressResult(), not by recolouring
+     * this label. */
     m_stageLabel = new QLabel(tr("Preparing…"), m_progressDialog);
-    m_stageLabel->setStyleSheet(QStringLiteral("font-size:13pt; font-weight:600;"));
+    m_stageLabel->setStyleSheet(QStringLiteral("font-weight:600;"));
     m_stageLabel->setWordWrap(true);
     lay->addWidget(m_stageLabel);
 
     m_bytesLabel = new QLabel(m_progressDialog);
-    m_bytesLabel->setStyleSheet(QStringLiteral("font-family:Consolas, monospace; color: palette(mid);"));
+    m_bytesLabel->setStyleSheet(QStringLiteral("font-family:Consolas, monospace; color: palette(text);"));
     lay->addWidget(m_bytesLabel);
 
     m_progress = new QProgressBar(m_progressDialog);
@@ -406,6 +405,50 @@ bool DfuInstallDialog::eventFilter(QObject *obj, QEvent *ev)
     return QDialog::eventFilter(obj, ev);
 }
 
+void DfuInstallDialog::reject()
+{
+    /* Destroying this dialog mid-write kills the helper (session destructor ->
+     * QProcess::kill -> "stopped unexpectedly"). Ignore Escape/programmatic
+     * reject while installing; the progress window's Cancel is the way to abort. */
+    if (m_installing) {
+        qWarning() << "DfuInstallDialog::reject() ignored -- install in flight";
+        return;
+    }
+    QDialog::reject();
+}
+
+void DfuInstallDialog::closeEvent(QCloseEvent *event)
+{
+    if (m_installing) {
+        qWarning() << "DfuInstallDialog::closeEvent ignored -- install in flight";
+        event->ignore();
+        return;
+    }
+    QDialog::closeEvent(event);
+}
+
+void DfuInstallDialog::showEvent(QShowEvent *event)
+{
+    QDialog::showEvent(event);
+    if (!m_firstShow) return;          // only the initial open; don't fight later focus
+    m_firstShow = false;
+
+    /* The base showEvent assigns initial focus to the first field and Qt
+     * select-alls it, so the auto-filled bootloader path opens highlighted in
+     * blue. Clear that and show the filename end of each path. Deferred to the
+     * event loop (singleShot 0) because the select-all is applied during the
+     * show/activation that's still settling -- deselecting inline here would be
+     * overwritten by it. */
+    auto tidy = [this]() {
+        for (QLineEdit *e : { m_bootEdit, m_appEdit }) {
+            if (!e) continue;
+            e->deselect();
+            e->setCursorPosition(e->text().size());
+        }
+    };
+    QTimer::singleShot(0, this, tidy);
+}
+
 void DfuInstallDialog::prefillBundledBinaries()
 {
     /* Look for the bundled per-board binaries next to the exe, both directly
@@ -456,12 +499,12 @@ void DfuInstallDialog::onRebootToDfu()
      * report. The device drops off USB and (on F411) re-enumerates as the ROM
      * DFU device, which the periodic probe below then detects. */
     emit rebootToDfuRequested();
+    m_enteredDfuViaCommand = true;   // software reboot -> board self-restarts after install
     appendLog(tr("Sent reboot-to-DFU command; waiting for the board to "
                  "re-enumerate in DFU mode…"));
-    if (!m_installing) {
-        setDetectStatus(DetectInfo, tr("Rebooting into DFU… if nothing happens, "
-                                       "use the BOOT0 method above."));
-    }
+    /* No banner change: the device stays app-connected (Reboot banner) until it
+     * drops off USB, then setConnectedDevice(false) / onAvailability flip the
+     * state machine to Manual or Ready on their own. */
 }
 
 void DfuInstallDialog::onRefreshDetect()
@@ -497,26 +540,15 @@ void DfuInstallDialog::onManualRecheck()
 void DfuInstallDialog::onAvailability(DfuInstallSession::Availability avail)
 {
     using Avail = DfuInstallSession::Availability;
+    m_dfuAvail      = avail;
     m_devicePresent = (avail == Avail::Ready);
     m_driverNeeded  = (avail == Avail::NeedsDriver);
 
     if (!m_installing && !m_bindingDriver) {
-        switch (avail) {
-        case Avail::Ready:
-            setDetectStatus(DetectReady, tr("Board detected in DFU mode — ready to write."));
-            break;
-        case Avail::NeedsDriver:
-            setDetectStatus(DetectWarn, tr("Board found, but its USB driver isn't installed — "
-                                           "click \"Install WinUSB driver\"."));
-            break;
-        case Avail::Absent:
-            setDetectStatus(DetectInfo, tr("No board in DFU mode yet — follow the steps above."));
-            break;
-        }
+        updateDfuEntryState();   // picks the banner + which button is visible
     }
 
-    /* Reveal the driver button only when it's actionable. */
-    m_driverBtn->setVisible(m_driverNeeded);
+    /* Driver button enablement (its *visibility* is owned by updateDfuEntryState). */
     m_driverBtn->setEnabled(m_driverNeeded && !m_installing && !m_bindingDriver
                             && DfuInstallSession::helperAvailable());
     refreshInstallEnabled();
@@ -553,16 +585,52 @@ void DfuInstallDialog::onDriverInstallFinished(bool ok, const QString &detail)
     if (!m_installing) m_session->probe(/*verbose=*/true);
 }
 
+void DfuInstallDialog::onLeaveClicked()
+{
+    if (m_installing || m_bindingDriver || m_leaving) return;
+    if (!DfuInstallSession::helperAvailable()) return;
+
+    m_leaving = true;
+    m_leaveBtn->setEnabled(false);
+    setDetectStatus(DetectInfo, tr("Exiting DFU mode — the board will reboot into "
+                                   "its firmware."));
+    appendLog(tr("Leaving DFU mode (manifest + reset)…"));
+    m_session->leaveDfu();
+}
+
+void DfuInstallDialog::onLeaveFinished(bool ok, const QString &detail)
+{
+    m_leaving = false;
+    if (!detail.isEmpty()) appendLog(detail);
+    if (!ok) {
+        QMessageBox::warning(this, tr("Exit DFU mode"),
+            detail.isEmpty() ? tr("Couldn't take the board out of DFU mode. If you "
+                                  "entered DFU with the BOOT0 jumper, release it and "
+                                  "power-cycle the board.")
+                             : detail);
+    } else {
+        appendLog(tr("The board is rebooting out of DFU mode."));
+    }
+    /* The chip is dropping off the bus; re-probe so the banner reflects it
+     * leaving (the background poll would catch it too, but this is immediate). */
+    if (!m_installing) m_session->probe(/*verbose=*/false, /*checkDriver=*/true);
+}
+
 void DfuInstallDialog::onTimingPresetChanged(int index)
 {
-    /* Preset -> spinbox values. Baseline matches the helper's built-in timing;
-     * Loose/Lax add progressively larger margins for flaky USB. Custom (last
-     * entry) leaves the values and unlocks the boxes for manual tuning. */
+    /* Preset -> spinbox values. Normal matches the helper's built-in timing;
+     * Tolerant / Maximum compatibility add progressively larger margins for
+     * flaky USB. Custom (last entry) leaves the values and unlocks the boxes
+     * for manual tuning. */
     struct Preset { int delay, poll, xfer, retries, settle; };
     static const Preset presets[] = {
-        {  0,  5000,  3000, 0, 1500 },   // Baseline
-        {  5,  8000,  5000, 2, 3000 },   // Loose
-        { 20, 15000, 10000, 5, 5000 },   // Lax
+        /* Normal == the helper's built-in timing (transfer-timeout 5000ms,
+         * 4 block retries, poll-timeout 5000ms -> ~1000 polls), so selecting it
+         * is a behavioural no-op vs not passing flags at all. Tolerant / Maximum
+         * compatibility widen the margins for flaky cables/hubs. */
+        {  0,  5000,  5000,  4, 1500 },   // Normal
+        {  5,  8000,  8000,  6, 3000 },   // Tolerant
+        { 20, 15000, 12000, 10, 5000 },   // Maximum compatibility
     };
     const int presetCount = int(sizeof(presets) / sizeof(presets[0]));
     const bool custom = (index >= presetCount);   // last item == Custom
@@ -595,15 +663,36 @@ void DfuInstallDialog::onInstallClicked()
         return;
     }
 
-    const QMessageBox::StandardButton rc = QMessageBox::warning(this,
-        tr("Erase and reinstall?"),
-        tr("<p>This erases the chip and writes a fresh bootloader and "
-           "application over USB DFU.</p>"
-           "<p><b>Any existing configuration on the board will be lost</b> "
-           "(the device returns to factory defaults).</p>"
-           "<p>Continue?</p>"),
-        QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel);
-    if (rc != QMessageBox::Yes) return;
+    /* Quiesce the background detection probe BEFORE the confirmation dialog.
+     * Otherwise it keeps opening the DFU device every ~1.5s while the user reads
+     * the prompt, and the install then opens the same WinUSB device right after a
+     * probe closes its handle -- which races nusb's WinUSB backend into a native
+     * crash ("install helper stopped unexpectedly"). With probing stopped here,
+     * any in-flight probe finishes during the prompt and the device is idle when
+     * the install opens it. Resumed on cancel / failed start. */
+    m_detectTimer->stop();
+
+    /* Themed confirmation (amber caution triangle + primary confirm button) so
+     * this matches the app's dialog style rather than the native warning box. */
+    QMessageBox box(this);
+    box.setWindowTitle(tr("Erase and reinstall?"));
+    box.setTextFormat(Qt::RichText);
+    box.setText(tr("<p>This erases the chip and writes a fresh bootloader and "
+                   "application over USB DFU.</p>"
+                   "<p><b>Any existing configuration on the board will be lost</b> "
+                   "(the device returns to factory defaults).</p>"
+                   "<p>Continue?</p>"));
+    box.setIconPixmap(freejoy_style::tintedTrianglePixmap(freejoy_style::accentAmber(), 40));
+    QPushButton *eraseBtn  = box.addButton(tr("Erase and reinstall"), QMessageBox::AcceptRole);
+    QPushButton *cancelBtn = box.addButton(tr("Cancel"), QMessageBox::RejectRole);
+    freejoy_style::setRole(eraseBtn, "role", "primary");
+    box.setDefaultButton(cancelBtn);   // safe default: don't erase on a stray Enter
+    box.setEscapeButton(cancelBtn);
+    box.exec();
+    if (box.clickedButton() != eraseBtn) {
+        m_detectTimer->start();          // cancelled -> resume detection
+        return;
+    }
 
     DfuInstallSession::Params p;
     p.bootBinPath = boot;
@@ -622,46 +711,56 @@ void DfuInstallDialog::onInstallClicked()
             m_session->lastErrorDetail().isEmpty()
                 ? tr("The install couldn't be started.")
                 : m_session->lastErrorDetail());
+        m_detectTimer->start();          // failed start -> resume detection
         return;
     }
 
     m_installing = true;
-    m_detectTimer->stop();
+    /* (Detection probe already stopped before the confirmation dialog.) */
     setControlsLocked(true);
 
     /* Bring up the progress window and run the install in it. */
     m_log->clear();
     m_progress->setValue(0);
     m_bytesLabel->clear();
+    clearProgressResult();               // drop any banner from a prior run
+    m_stageLabel->show();
     m_stageLabel->setText(tr("Starting install…"));
-    m_stageLabel->setStyleSheet(QStringLiteral("font-size:13pt; font-weight:600;"));
+    m_stageLabel->setStyleSheet(QStringLiteral("font-weight:600;"));
     if (m_progCancelBtn) m_progCancelBtn->setText(tr("Cancel"));
     appendLog(tr("Starting install…"));
+    /* Show the progress window (app-modal) ON TOP of the setup dialog. Do NOT
+     * hide() the setup dialog: it is running exec(), and hiding a dialog that's in
+     * exec() makes exec() RETURN -- which destroys this dialog (and the
+     * DfuInstallSession + QProcess it owns) mid-write, so the session destructor
+     * kills the helper (exit 0xF291) and the install dies. That was the long-
+     * standing "install does nothing / stopped unexpectedly" bug. The modal
+     * progress window covers the setup dialog; on finish the progress window is
+     * closed (revealing the setup for a retry) or accept()ed on success. */
     m_progressDialog->show();
     m_progressDialog->raise();
     m_progressDialog->activateWindow();
-    /* The setup dialog steps aside once the write starts -- the progress window
-     * takes over. It's only hidden (not closed): on a failure/cancel we bring it
-     * back so the user can retry; on success the whole flow ends. */
-    hide();
 }
 
 void DfuInstallDialog::onStageChanged(DfuInstallSession::Stage s, const QString &detail)
 {
+    /* Step-numbered labels to match the firmware-upgrade dialog's "Step X of Y"
+     * format. The install has 5 working stages (bind / erase / write boot /
+     * write app / verify); Done / Failed / Idle are terminal/initial, no number. */
     QString label;
     switch (s) {
-    case DfuInstallSession::Stage::BindingDriver:     label = tr("Preparing USB driver…"); break;
-    case DfuInstallSession::Stage::Erasing:           label = tr("Erasing…"); break;
-    case DfuInstallSession::Stage::WritingBootloader: label = tr("Writing bootloader…"); break;
-    case DfuInstallSession::Stage::WritingApp:        label = tr("Writing application…"); break;
-    case DfuInstallSession::Stage::Verifying:         label = tr("Verifying…"); break;
+    case DfuInstallSession::Stage::BindingDriver:     label = tr("Step 1 of 5: Preparing USB driver…"); break;
+    case DfuInstallSession::Stage::Erasing:           label = tr("Step 2 of 5: Erasing…"); break;
+    case DfuInstallSession::Stage::WritingBootloader: label = tr("Step 3 of 5: Writing bootloader…"); break;
+    case DfuInstallSession::Stage::WritingApp:        label = tr("Step 4 of 5: Writing application…"); break;
+    case DfuInstallSession::Stage::Verifying:         label = tr("Step 5 of 5: Verifying…"); break;
     case DfuInstallSession::Stage::Done:              label = tr("Done."); break;
     case DfuInstallSession::Stage::Failed:            label = tr("Failed."); break;
     case DfuInstallSession::Stage::Idle:              label = tr("Idle."); break;
     }
     m_stageLabel->setText(label);
-    /* Base style; terminal colouring is layered on in onFinished. */
-    m_stageLabel->setStyleSheet(QStringLiteral("font-size:13pt; font-weight:600;"));
+    /* Neutral stage line; the terminal outcome is the alert banner, not this. */
+    m_stageLabel->setStyleSheet(QStringLiteral("font-weight:600;"));
     /* Byte counter only means something while bytes are streaming. */
     if (s != DfuInstallSession::Stage::WritingBootloader
         && s != DfuInstallSession::Stage::WritingApp) {
@@ -702,23 +801,61 @@ void DfuInstallDialog::onFinished(bool success, const QString &detail)
      * its button flips back to "Close" via setControlsLocked above. No stacked
      * message box -- mirrors the Upgrade-Firmware progress flow. */
     m_bytesLabel->clear();
+    /* The terminal outcome is the shared alert banner (green check / red
+     * triangle), not a recoloured stage label. Hide the neutral stage line so
+     * the banner is the single result element. */
+    m_stageLabel->hide();
     if (success) {
         m_progress->setValue(100);
-        m_stageLabel->setText(tr("Firmware installed. Unplug and replug the "
-                                 "board to start using it."));
-        m_stageLabel->setStyleSheet(QStringLiteral("font-size:13pt; font-weight:600; color:%1;")
-                                        .arg(freejoy_style::hexStr(freejoy_style::accentGreen())));
-        m_stageLabel->setWordWrap(true);
-        setDetectStatus(DetectReady, tr("Install complete. Unplug/replug to use the "
-                                        "board; reopen this dialog to install again."));
+        /* Wording depends on how the chip got into DFU. A software reboot leaves
+         * BOOT0 high, so the helper's post-install leave restarts the board into
+         * firmware on its own and it serial-reconnects -- no replug. A manual
+         * held-BOOT0 entry re-enters DFU on that reset, so the user must remove
+         * the jumper / replug. */
+        showProgressResult(/*success=*/true, m_enteredDfuViaCommand
+            ? tr("Firmware installed. The board is restarting and should reconnect "
+                 "automatically.")
+            : tr("Firmware installed. Remove the BOOT0 jumper and replug the board "
+                 "to start using it."));
+        setDetectStatus(DetectReady, m_enteredDfuViaCommand
+            ? tr("Install complete. The board is restarting into its firmware; "
+                 "reopen this dialog to install again.")
+            : tr("Install complete. Remove BOOT0 and replug to use the board; "
+                 "reopen this dialog to install again."));
     } else {
-        m_stageLabel->setText(detail.isEmpty() ? tr("Install failed.") : detail);
-        m_stageLabel->setStyleSheet(QStringLiteral("font-size:13pt; font-weight:600; color:%1;")
-                                        .arg(freejoy_style::hexStr(freejoy_style::accentRed())));
-        m_stageLabel->setWordWrap(true);
+        showProgressResult(/*success=*/false,
+                           detail.isEmpty() ? tr("Install failed.") : detail);
         /* Resume detection so the user can retry after re-entering DFU. */
         m_detectTimer->start();
     }
+
+    /* Make sure the result is actually seen: bring the progress window forward.
+     * On a very fast failure it can otherwise be left behind the main window. */
+    if (m_progressDialog && m_progressDialog->isVisible()) {
+        m_progressDialog->raise();
+        m_progressDialog->activateWindow();
+    }
+}
+
+void DfuInstallDialog::showProgressResult(bool success, const QString &text)
+{
+    clearProgressResult();
+    const QColor accent = success ? freejoy_style::accentGreen()
+                                  : freejoy_style::accentRed();
+    /* Same alert banner the setup dialog uses for detection status: green check
+     * on success, red triangle on failure. Pinned to the top of the progress
+     * window, above the hidden stage line. */
+    m_resultBanner = freejoy_style::makeAlertBanner(
+        accent, text, m_progressDialog, freejoy_style::statusPixmap(accent));
+    m_progLayout->insertWidget(0, m_resultBanner);
+}
+
+void DfuInstallDialog::clearProgressResult()
+{
+    if (!m_resultBanner) return;
+    m_progLayout->removeWidget(m_resultBanner);
+    m_resultBanner->deleteLater();
+    m_resultBanner = nullptr;
 }
 
 void DfuInstallDialog::setControlsLocked(bool locked)
@@ -729,6 +866,7 @@ void DfuInstallDialog::setControlsLocked(bool locked)
     m_detectBtn->setEnabled(!locked && DfuInstallSession::helperAvailable());
     m_driverBtn->setEnabled(!locked && m_driverNeeded
                             && DfuInstallSession::helperAvailable());
+    m_leaveBtn->setEnabled(!locked && DfuInstallSession::helperAvailable());
     m_installBtn->setEnabled(!locked && !m_installed && m_devicePresent
                              && !m_bootEdit->text().isEmpty()
                              && !m_appEdit->text().isEmpty());
@@ -752,6 +890,7 @@ void DfuInstallDialog::setControlsLocked(bool locked)
 void DfuInstallDialog::refreshInstallEnabled()
 {
     if (m_installing) return;            /* setControlsLocked owns the state then */
+    if (!m_bootEdit || !m_appEdit || !m_installBtn) return;  /* called before Step 2 built them */
     const bool ready = !m_installed
                        && m_devicePresent
                        && DfuInstallSession::helperAvailable()
@@ -789,14 +928,92 @@ void DfuInstallDialog::setDetectStatus(DetectKind kind, const QString &text)
         break;
     }
 
+    // ALL three action buttons are embedded so the persistent widgets reparent
+    // off the old state widget before swapStateWidget deletes it -- otherwise a
+    // button left on it would be destroyed too. They're hidden by the reparent;
+    // updateDfuEntryState reveals the one for the active state (transient/direct
+    // callers leave all three hidden -- message only).
+    swapStateWidget(freejoy_style::makeAlertBanner(
+        accent, text, this, icon, { m_rebootBtn, m_driverBtn, m_detectBtn, m_leaveBtn }));
+    m_rebootBtn->hide();
+    m_driverBtn->hide();
+    m_detectBtn->hide();
+    m_leaveBtn->hide();
+}
+
+void DfuInstallDialog::swapStateWidget(QWidget *w)
+{
+    /* Replace the current DFU-entry state widget in m_detectArea -- a status
+     * banner (setDetectStatus) or the plain reboot prompt (updateDfuEntryState).
+     * The new widget already holds the reparented action buttons, so the old one
+     * is safe to delete. */
     if (m_detectBanner) {
         m_detectArea->removeWidget(m_detectBanner);
-        m_detectBanner->hide();          // hide now -- deleteLater is deferred
+        m_detectBanner->hide();              // hide now -- deleteLater is deferred
         m_detectBanner->deleteLater();
     }
-    m_detectBanner = freejoy_style::makeAlertBanner(accent, text, this, icon);
-    m_detectArea->addWidget(m_detectBanner);
-    m_detectBanner->show();              // child of an already-shown dialog won't auto-show
+    m_detectBanner = w;
+    m_detectArea->addWidget(w);
+    w->show();                               // child of an already-shown dialog won't auto-show
+}
+
+void DfuInstallDialog::updateDfuEntryState()
+{
+    /* Single mutually-exclusive view over two inputs: DFU detection (m_dfuAvail)
+     * and an F411 app-mode device being connected (m_f411Connected). Precedence:
+     * already-in-DFU (ready / needs-driver) > one-click reboot > manual. While a
+     * write or driver-bind is running, those own the banner -- don't fight them. */
+    if (m_installing || m_bindingDriver || m_leaving) {
+        return;
+    }
+    using Avail = DfuInstallSession::Availability;
+
+    QWidget *visibleBtn = nullptr;
+    if (m_dfuAvail == Avail::Ready) {
+        m_instructions->setVisible(false);
+        setDetectStatus(DetectReady, tr("Board detected in DFU mode — ready to write."));
+        visibleBtn = m_leaveBtn;   // offer a flash-free exit alongside Install
+    } else if (m_dfuAvail == Avail::NeedsDriver) {
+        m_instructions->setVisible(false);
+        setDetectStatus(DetectWarn, tr("Board found, but its USB driver isn't installed — "
+                                       "click \"Install WinUSB driver\"."));
+        visibleBtn = m_driverBtn;
+    } else if (m_f411Connected) {
+        // One-click path: a PLAIN prompt (no status-box chrome) -- it's an action,
+        // not a status. A label naming the live device + a plain Reboot button.
+        m_instructions->setVisible(false);
+        QString id = m_connName.trimmed().isEmpty() ? tr("F411 (Black Pill)")
+                                                     : m_connName.trimmed();
+        if (!m_connVidPid.isEmpty()) id += QStringLiteral(" — ") + m_connVidPid;
+        auto *w = new QWidget(this);
+        auto *h = new QHBoxLayout(w);
+        h->setContentsMargins(0, 0, 0, 0);
+        h->setSpacing(8);
+        auto *lbl = new QLabel(
+            tr("Reboot <b>%1</b> into DFU mode.").arg(id.toHtmlEscaped()), w);
+        lbl->setWordWrap(true);
+        h->addWidget(lbl, 1, Qt::AlignVCenter);
+        m_rebootBtn->setStyleSheet(QString());   // plain button (drop any banner accent tint)
+        h->addWidget(m_rebootBtn, 0, Qt::AlignVCenter);
+        h->addWidget(m_driverBtn, 0);            // reparent (kept hidden) so it isn't stranded
+        h->addWidget(m_detectBtn, 0);            // reparent (kept hidden)
+        h->addWidget(m_leaveBtn, 0);             // reparent (kept hidden)
+        swapStateWidget(w);
+        visibleBtn = m_rebootBtn;
+    } else {
+        // Nothing connected: manual BOOT0 steps + Re-check.
+        m_instructions->setVisible(true);
+        setDetectStatus(DetectInfo, tr("No board in DFU mode yet — follow the steps above."));
+        visibleBtn = m_detectBtn;
+    }
+
+    // setDetectStatus hid all four; reveal the one for this state.
+    m_rebootBtn->setVisible(visibleBtn == m_rebootBtn);
+    m_driverBtn->setVisible(visibleBtn == m_driverBtn);
+    m_detectBtn->setVisible(visibleBtn == m_detectBtn);
+    m_leaveBtn->setVisible(visibleBtn == m_leaveBtn);
+    m_leaveBtn->setEnabled(!m_installing && !m_bindingDriver && !m_leaving);
+    refreshInstallEnabled();
 }
 
 void DfuInstallDialog::appendLog(const QString &line)

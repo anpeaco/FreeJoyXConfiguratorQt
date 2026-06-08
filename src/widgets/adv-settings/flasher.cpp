@@ -381,6 +381,14 @@ void Flasher::setConnectedDeviceInfo(bool isF411, const QString &name,
      * app-mode connection makes the flag self-correct. */
     if (!name.isEmpty()) {
         m_inFlasherMode = false;
+        /* The "Connected flasher" strip describes a bootloader/flasher device;
+         * a confirmed app-mode connection means we're no longer in that state,
+         * so clear it. flasherFound(false) is the other path that hides it, but
+         * it can be missed (see above) -- and after a DFU install (which never
+         * touches HidDevice's flasher detection at all) this is the only thing
+         * that clears the now-stale strip once the board reboots into firmware. */
+        ui->frame_FlasherDeviceInfo->setVisible(false);
+        ui->label_FlasherDeviceInfo->clear();
     }
 }
 

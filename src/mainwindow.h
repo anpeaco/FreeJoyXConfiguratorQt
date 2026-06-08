@@ -291,6 +291,16 @@ private:
     bool    m_flashChainLocked = false;
     void    setFlashChainUiLocked(bool locked);
 
+    /* GUI-thread responsiveness probe, active only during a flash session.
+     * A 100ms timer on the GUI thread records the longest gap between its own
+     * ticks -- i.e. the longest stretch the GUI event loop did NOT run (a
+     * "Not Responding" stall). Reported once at flash end. Diagnoses whether the
+     * in-process HID flash actually freezes the UI or whether the grey/"Not
+     * Responding" on click is just Windows ghosting a momentarily-busy window. */
+    QTimer        m_flashHeartbeat;
+    QElapsedTimer m_flashHeartbeatGap;
+    qint64        m_flashMaxStallMs = 0;
+
     /* Cached default text for the Read / Write Config buttons, captured
      * once in the constructor before any code path mutates them. We
      * previously used `static QString button_default_text =
