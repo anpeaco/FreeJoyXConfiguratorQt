@@ -63,8 +63,8 @@
         </property>
         <property name="styleSheet">
          <string notr="true">QPushButton:checked {
-    background-color: green;
-    color: palette(button-text);
+    background-color: #22c55e;
+    color: #ffffff;
 }
 QPushButton:disabled {
     color: palette(button-text);
@@ -86,8 +86,11 @@ QPushButton:disabled {
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="toolTip">
+         <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Host-controlled LED&lt;/b&gt;&lt;/div&gt;LED controlled by host software (e.g. SimHub) instead of a button.</string>
+        </property>
         <property name="text">
-         <string>External</string>
+         <string notr="true"/>
         </property>
        </widget>
       </item>

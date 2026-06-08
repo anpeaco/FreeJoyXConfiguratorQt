@@ -7,6 +7,9 @@
 #include <QSignalBlocker>
 #include <QToolTip>
 #include <QCursor>
+#include <QEvent>
+#include <QRegularExpression>
+#include "style_helpers.h"
 
 PinTypeHelper::PinTypeHelper(QWidget *parent) :
     QWidget(parent),
@@ -71,6 +74,8 @@ PinTypeHelper::PinTypeHelper(QWidget *parent) :
     connect(ui->checkBox_spiBus, &QCheckBox::toggled, this, [this](bool on) {
         emit busToggleRequested(BUS_SPI, on);
     });
+
+    applyThemedInfoIcons();
 }
 
 PinTypeHelper::~PinTypeHelper()
@@ -88,6 +93,48 @@ void PinTypeHelper::setBusState(int bus, bool checked, bool enabled)
     cb->setEnabled(enabled);
 }
 
+
+void PinTypeHelper::changeEvent(QEvent *event)
+{
+    QWidget::changeEvent(event);
+    /* The legend's info icons are tinted to the text colour; re-tint them when
+     * the theme flips so they stay legible (white on dark, grey on light). */
+    if (event->type() == QEvent::PaletteChange
+        || event->type() == QEvent::ApplicationPaletteChange
+        || event->type() == QEvent::StyleChange) {
+        applyThemedInfoIcons();
+    }
+}
+
+void PinTypeHelper::applyThemedInfoIcons()
+{
+    /* The .ui ships each row as `<p>Label <a href="info"><img info.svg></a></p>`
+     * with a fixed-colour SVG that vanishes on dark. Rebuild each row with a
+     * palette-tinted icon, keeping the prefix text and the "info" link (so the
+     * wiring-detail tooltip still fires on icon hover). Re-reads the prefix from
+     * the current text each call, so it survives both theme and language flips. */
+    QString icon = freejoy_style::svgIconHtml(
+        QStringLiteral(":/Images/icons/lucide/info.svg"), freejoy_style::iconInk(), 12);
+    /* svgIconHtml emits `<img style=...>`; add right-alignment so it sits at the
+     * row's right edge as the original markup did. */
+    const int imgPos = icon.indexOf(QStringLiteral("<img"));
+    if (imgPos >= 0) icon.insert(imgPos + 4, QStringLiteral(" align=\"right\""));
+    const QString link = QStringLiteral("<a href=\"info\">") + icon + QStringLiteral("</a>");
+
+    static const QRegularExpression rx(
+        QStringLiteral("<p>(.*?)\\s*<a href=\"info\""),
+        QRegularExpression::DotMatchesEverythingOption);
+
+    for (QObject *c : ui->groupBox->children()) {
+        QLabel *label = qobject_cast<QLabel *>(c);
+        if (!label) continue;
+        const QRegularExpressionMatch m = rx.match(label->text());
+        if (!m.hasMatch()) continue;            // not an info row (e.g. the hint)
+        const QString prefix = m.captured(1).trimmed();
+        label->setText(QStringLiteral("<html><head/><body><p>%1 %2</p></body></html>")
+                           .arg(prefix, link));
+    }
+}
 
 bool PinTypeHelper::eventFilter(QObject *obj, QEvent *event)
 {

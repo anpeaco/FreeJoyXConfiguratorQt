@@ -58,13 +58,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Install Qt 5.15.2 (MinGW 8.1.0)
+      - name: Install Qt 5.15.2 (MinGW 8.1.0) + OpenSSL 1.1
         uses: jurplel/install-qt-action@v4
         with:
           version: '5.15.2'
           host: 'windows'
           target: 'desktop'
           arch: 'win64_mingw81'
+          # MinGW toolchain only. This is a build-only CI job: Qt5Network loads
+          # OpenSSL at RUNTIME, not link time, so the build needs no OpenSSL. The
+          # release packaging vendors OpenSSL 1.1.1 from ci/openssl-redist/ (Qt
+          # pulled its own tools_openssl_x64 package; see that dir's README).
           tools: 'tools_mingw,qt.tools.win64_mingw810'
           cache: true
 
@@ -118,6 +122,21 @@ jobs:
             if (Test-Path "$mingwBin\$dll") {
               Copy-Item "$mingwBin\$dll" dist\
             }
+          }
+
+          # OpenSSL 1.1 runtime so Qt5Network can negotiate TLS (HTTPS). Without
+          # it the online firmware-release list (FirmwareLibrary -> GitHub API)
+          # dies with "TLS initialization failed". Vendored in ci/openssl-redist/
+          # (OpenSSL 1.1.1w x64) because Qt removed its tools_openssl_x64 package
+          # and Qt 5.15.2 can't load OpenSSL 3.x -- see that dir's README.
+          $sslDir = "ci\openssl-redist"
+          foreach ($dll in 'libssl-1_1-x64.dll', 'libcrypto-1_1-x64.dll') {
+            $src = Join-Path $sslDir $dll
+            if (-not (Test-Path $src)) {
+              Write-Error "Vendored OpenSSL DLL missing: $src"
+              exit 1
+            }
+            Copy-Item $src dist\
           }
 
           # Note for testers: this CI bundle has no helper on purpose.

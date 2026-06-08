@@ -19,7 +19,11 @@
   <property name="windowTitle">
    <string notr="true">Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout" columnstretch="5,10">
+  <!-- columnstretch 1,0,0,1: the physical (col1) + logical (col2) groups size
+       to their content; the empty spacer columns 0 and 3 absorb any excess
+       window width, centering the whole button area on wide/ultrawide screens.
+       The natural max width is the sum of the two groups' size hints. -->
+  <layout class="QGridLayout" name="gridLayout" columnstretch="1,0,0,1">
    <property name="leftMargin">
     <number>6</number>
    </property>
@@ -35,7 +39,7 @@
    <property name="horizontalSpacing">
     <number>12</number>
    </property>
-   <item row="0" column="1">
+   <item row="0" column="2">
     <widget class="QGroupBox" name="groupBox_LogicalButtons">
      <property name="title">
       <string>Logical buttons</string>
@@ -186,12 +190,37 @@
        </widget>
       </item>
       <item row="1" column="14">
+       <widget class="QLabel" name="label_ClearHeader">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size><width>26</width><height>0</height></size>
+        </property>
+        <property name="maximumSize">
+         <size><width>26</width><height>16777215</height></size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="15">
        <widget class="QLabel" name="label_9">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
           <horstretch>1</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <!-- Scrollbar gutter: keeps ~scrollbar width on the right once the group
+             is capped to its content width, so the vertical scrollbar doesn't
+             overlap the Press timer column. -->
+        <property name="minimumSize">
+         <size><width>18</width><height>0</height></size>
         </property>
         <property name="text">
          <string/>
@@ -279,7 +308,7 @@
          <size><width>28</width><height>26</height></size>
         </property>
         <property name="toolTip">
-         <string>Invert this button's input (HIGH becomes pressed, LOW becomes released)</string>
+         <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Invert input&lt;/b&gt;&lt;/div&gt;HIGH becomes pressed, LOW becomes released.</string>
         </property>
         <property name="text">
          <string/>
@@ -304,10 +333,10 @@
          </sizepolicy>
         </property>
         <property name="minimumSize">
-         <size><width>8</width><height>0</height></size>
+         <size><width>2</width><height>0</height></size>
         </property>
         <property name="maximumSize">
-         <size><width>8</width><height>16777215</height></size>
+         <size><width>2</width><height>16777215</height></size>
         </property>
         <property name="text">
          <string/>
@@ -323,10 +352,10 @@
          </sizepolicy>
         </property>
         <property name="minimumSize">
-         <size><width>25</width><height>0</height></size>
+         <size><width>26</width><height>0</height></size>
         </property>
         <property name="maximumSize">
-         <size><width>25</width><height>16777215</height></size>
+         <size><width>26</width><height>16777215</height></size>
         </property>
         <property name="text">
          <string notr="true">#</string>
@@ -390,10 +419,14 @@
            "Clear All" text; relocated to sit immediately after the
            auto-set Info icon, rendered as a square reset-glyph icon
            button to match the calibration column's Reset button. -->
-      <item row="0" column="0" colspan="15">
-       <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="1,0,1">
+      <!-- colspan 14 (not 15): spans the fixed data columns 0-13 only, so the
+           right-aligned filter/reset controls end at the Press timer column's
+           right edge rather than out in the expanding column-14 scrollbar
+           gutter. -->
+      <item row="0" column="0" colspan="14">
+       <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="1,0">
         <property name="spacing">
-         <number>6</number>
+         <number>8</number>
         </property>
         <property name="leftMargin">
          <number>0</number>
@@ -414,47 +447,47 @@
           </property>
          </spacer>
         </item>
-        <item>
-         <widget class="QPushButton" name="pushButton_ClearAllLogical">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize"><size><width>22</width><height>22</height></size></property>
-          <property name="maximumSize"><size><width>22</width><height>22</height></size></property>
+        <item alignment="Qt::AlignVCenter">
+         <widget class="QCheckBox" name="checkBox_ShowBoundOnly">
           <property name="toolTip">
-           <string>Clear every logical button slot back to defaults. Pin, axis, shift register and timer settings are not affected.</string>
+           <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Show only bound rows&lt;/b&gt;&lt;/div&gt;Shows only rows with a physical button assigned, plus one empty row to add the next binding.</string>
           </property>
           <property name="text">
-           <string notr="true"/>
+           <string>Show bound only</string>
           </property>
-          <property name="icon">
-           <iconset resource="../../resources.qrc">
-            <normaloff>:/Images/icons/lucide/rotate-ccw.svg</normaloff>:/Images/icons/lucide/rotate-ccw.svg</iconset>
-          </property>
-          <property name="iconSize"><size><width>14</width><height>14</height></size></property>
-          <property name="autoDefault"><bool>false</bool></property>
-          <property name="default"><bool>false</bool></property>
          </widget>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer_8">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
         </item>
        </layout>
       </item>
-      <item row="2" column="0" colspan="15">
+      <!-- Clear-all sits in the per-row clear column (col 14) so it lines up
+           in width + horizontal position with each row's clear button. -->
+      <item row="0" column="14" alignment="Qt::AlignVCenter">
+       <widget class="QPushButton" name="pushButton_ClearAllLogical">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize"><size><width>26</width><height>26</height></size></property>
+        <property name="maximumSize"><size><width>26</width><height>26</height></size></property>
+        <property name="styleSheet"><string notr="true">QPushButton { padding: 0; margin: 0; }</string></property>
+        <property name="toolTip">
+         <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Clear all logical buttons&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Clears every logical button slot back to defaults.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Pin, axis, shift register and timer settings are not affected.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
+        </property>
+        <property name="text">
+         <string notr="true"/>
+        </property>
+        <property name="icon">
+         <iconset resource="../../resources.qrc">
+          <normaloff>:/Images/icons/lucide/trash-2.svg</normaloff>:/Images/icons/lucide/trash-2.svg</iconset>
+        </property>
+        <property name="iconSize"><size><width>16</width><height>16</height></size></property>
+        <property name="autoDefault"><bool>false</bool></property>
+        <property name="default"><bool>false</bool></property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="16">
        <widget class="QScrollArea" name="scrollArea_LogButtons">
         <property name="frameShape">
          <enum>QFrame::NoFrame</enum>
@@ -501,6 +534,12 @@
     </widget>
    </item>
    <item row="0" column="0">
+    <spacer name="horizontalSpacer_CenterL">
+     <property name="orientation"><enum>Qt::Horizontal</enum></property>
+     <property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property>
+    </spacer>
+   </item>
+   <item row="0" column="1">
     <widget class="QGroupBox" name="groupBox_PhysicalButtons">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
@@ -568,6 +607,12 @@
       </item>
      </layout>
     </widget>
+   </item>
+   <item row="0" column="3">
+    <spacer name="horizontalSpacer_CenterR">
+     <property name="orientation"><enum>Qt::Horizontal</enum></property>
+     <property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property>
+    </spacer>
    </item>
   </layout>
  </widget>

@@ -2,6 +2,7 @@
 #include "ui_buttonlogical.h"
 
 #include "widgets/debugwindow.h"
+#include "widgets/groupedcombo.h"
 #include "converter.h"
 #include "style_helpers.h"
 #include "timer_label.h"
@@ -19,6 +20,37 @@ int ButtonLogical::m_currentFocus = -1;
 int ButtonLogical::m_currentFocusSrcB = -1;
 bool ButtonLogical::m_autoPhysButEnabled = false;
 
+namespace {
+
+// Section grouping for the Function dropdown. The list in buttonlogical.h is
+// already authored in this order, so a group change marks a header boundary.
+enum FuncGroup { FG_BASIC, FG_TOGGLE, FG_POV, FG_ENCODER, FG_RADIO, FG_SEQ, FG_OTHER };
+
+FuncGroup funcGroup(int type)
+{
+    switch (type) {
+    case BUTTON_NORMAL: case DOUBLE_TAP: case TAP: case LOGIC:
+        return FG_BASIC;
+    case BUTTON_TOGGLE: case TOGGLE_SWITCH: case TOGGLE_SWITCH_ON: case TOGGLE_SWITCH_OFF:
+        return FG_TOGGLE;
+    case POV1_UP: case POV1_RIGHT: case POV1_DOWN: case POV1_LEFT: case POV1_CENTER:
+    case POV2_UP: case POV2_RIGHT: case POV2_DOWN: case POV2_LEFT: case POV2_CENTER:
+    case POV3_UP: case POV3_RIGHT: case POV3_DOWN: case POV3_LEFT: case POV3_CENTER:
+    case POV4_UP: case POV4_RIGHT: case POV4_DOWN: case POV4_LEFT: case POV4_CENTER:
+        return FG_POV;
+    case ENCODER_INPUT_A: case ENCODER_INPUT_B:
+        return FG_ENCODER;
+    case RADIO_BUTTON1: case RADIO_BUTTON2: case RADIO_BUTTON3: case RADIO_BUTTON4:
+        return FG_RADIO;
+    case SEQUENTIAL_TOGGLE: case SEQUENTIAL_BUTTON:
+        return FG_SEQ;
+    default:
+        return FG_OTHER;
+    }
+}
+
+} // namespace
+
 ButtonLogical::ButtonLogical(int buttonIndex, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::ButtonLogical)
@@ -29,6 +61,10 @@ ButtonLogical::ButtonLogical(int buttonIndex, QWidget *parent)
     m_currentState = false;
     m_debugState = false;
     ui->label_LogicalButtonNumber->setNum(m_buttonIndex + 1);
+    // Idle pip: the outlined-ring "off" state of the shared buttonState role
+    // (common.qss). setButtonState() flips it to "on" (green fill) on press,
+    // mirroring the physical-button grid's chip.
+    freejoy_style::setRole(ui->label_LogicalButtonNumber, "buttonState", "off");
     ui->spinBox_PhysicalButtonNumber->installEventFilter(this);
     ui->spinBox_SourceB->installEventFilter(this);
 
@@ -51,6 +87,10 @@ ButtonLogical::ButtonLogical(int buttonIndex, QWidget *parent)
     // sequence states. Without this the .ui's black target shows until first arm.
     freejoy_style::setThemedIcon(ui->pushButton_Listen,  QStringLiteral(":/Images/icons/lucide/target.svg"));
     freejoy_style::setThemedIcon(ui->pushButton_ListenB, QStringLiteral(":/Images/icons/lucide/target.svg"));
+    // Clear-row (reset to defaults) button at the row's right edge.
+    freejoy_style::setThemedIcon(ui->pushButton_ClearRow, QStringLiteral(":/Images/icons/lucide/trash-2.svg"));
+    connect(ui->pushButton_ClearRow, &QPushButton::clicked, this, &ButtonLogical::clearRow);
+    updateClearButtonVisibility();   // fresh row is unbound -> hidden until bound
     m_listenClickTimer = new QTimer(this);
     m_listenClickTimer->setSingleShot(true);
     connect(m_listenClickTimer, &QTimer::timeout, this, [this]() {
@@ -70,8 +110,13 @@ void ButtonLogical::retranslateUi()
 
 void ButtonLogical::initialization()
 {
-    // add gui text
-    m_logicFunc_enumIndex.reserve(m_logicFunctionList.size());
+    // add gui text. The Function dropdown is grouped with bold banded section
+    // headers (GroupedComboDelegate); the long POV-hat group is collapsible and
+    // starts folded (enableGroupCollapse, below). m_logicFunc_enumIndex stays
+    // aligned 1:1 with combo rows -- a -1 sentinel is pushed for each header.
+    freejoy_ui::installGroupedDelegate(ui->comboBox_ButtonFunction);
+    m_logicFunc_enumIndex.reserve(m_logicFunctionList.size() + 6);
+    int lastGroup = -1;
     for (int i = 0; i < m_logicFunctionList.size(); i++) {
 //        // Encoder only for first 30 buttons  // if uncomment DONT FORGET EDIT MainWindow::oldConfigHandler() !!!!!!!!
 //        if (m_buttonNumber > 29 &&
@@ -79,8 +124,43 @@ void ButtonLogical::initialization()
 //                 m_logicFunctionList[i].deviceEnumIndex == ENCODER_INPUT_B)) {
 //            continue;
 //        }
+        const FuncGroup g = funcGroup(m_logicFunctionList[i].deviceEnumIndex);
+        if (g != lastGroup) {
+            QString title;
+            switch (g) {
+            case FG_BASIC:   title = tr("Basic");      break;
+            case FG_TOGGLE:  title = tr("Toggle");     break;
+            case FG_POV:     title = tr("POV hats");   break;
+            case FG_ENCODER: title = tr("Encoder");    break;
+            case FG_RADIO:   title = tr("Radio");      break;
+            case FG_SEQ:     title = tr("Sequential"); break;
+            default:                                   break;
+            }
+            if (!title.isEmpty()) {
+                freejoy_ui::addGroupHeader(ui->comboBox_ButtonFunction, title,
+                                           /*collapsible=*/ g == FG_POV);
+                m_logicFunc_enumIndex.push_back(-1);   // sentinel: header row
+            }
+            lastGroup = g;
+        }
         ui->comboBox_ButtonFunction->addItem(m_logicFunctionList[i].guiName);
         m_logicFunc_enumIndex.push_back(m_logicFunctionList[i].deviceEnumIndex);
+        // Small gap before each POV cluster (POV2/POV3/POV4) so the four hats
+        // read as separate blocks within the one collapsible POV-hats group.
+        const int t = m_logicFunctionList[i].deviceEnumIndex;
+        if (t == POV2_UP || t == POV3_UP || t == POV4_UP) {
+            ui->comboBox_ButtonFunction->setItemData(
+                ui->comboBox_ButtonFunction->count() - 1, true,
+                freejoy_ui::kGroupSubGapRole);
+        }
+    }
+    // Row 0 is now the "Basic" header (non-selectable); default to the first
+    // real row (Normal) so the closed combo never shows a header label.
+    for (int r = 0; r < m_logicFunc_enumIndex.size(); ++r) {
+        if (m_logicFunc_enumIndex[r] >= 0) {
+            ui->comboBox_ButtonFunction->setCurrentIndex(r);
+            break;
+        }
     }
     for (int i = 0; i < SHIFT_COUNT; i++) {
         ui->comboBox_ShiftIndex->addItem(m_shiftList[i].guiName);
@@ -110,6 +190,23 @@ void ButtonLogical::initialization()
             this, SLOT(logicOpIndexChanged(int)));
     connect(ui->spinBox_PhysicalButtonNumber, SIGNAL(valueChanged(int)),
             this, SLOT(editingOnOff(int)));
+    // Eye/disable checkbox: ghost + lock the whole row when checked (the slot's
+    // config value is still picked up by the dirty-poll / writeToConfig).
+    connect(ui->checkBox_IsDisable, &QCheckBox::toggled,
+            this, &ButtonLogical::setSlotDisabled);
+
+    // Click-to-collapse on the POV-hats group. Folds it by default and keeps
+    // whichever group holds the current selection expanded (so a chosen POV
+    // direction is always visible when the popup reopens). Installed after the
+    // connects so its own selection hook coexists with functionIndexChanged.
+    freejoy_ui::enableGroupCollapse(ui->comboBox_ButtonFunction);
+
+    // Establish the initial Op / Source B enabled state. initialization() set
+    // the Function to "Normal" above *before* the combo's signal was connected,
+    // so functionIndexChanged never fired -- without this the Source B spinbox +
+    // its detection button would keep their .ui default (enabled). They must be
+    // enabled only when Function == LOGIC (see updateLogicWidgetsEnabled).
+    updateLogicWidgetsEnabled();
 }
 
 void ButtonLogical::setMaxPhysButtons(int maxPhysButtons)
@@ -119,11 +216,14 @@ void ButtonLogical::setMaxPhysButtons(int maxPhysButtons)
 
 void ButtonLogical::setSpinBoxOnOff(int maxPhysButtons)
 {
-    if (maxPhysButtons > 0) {
-        ui->spinBox_PhysicalButtonNumber->setEnabled(true);
-    } else {
+    // Remember the max-derived state so setSlotDisabled() can restore the
+    // spinbox correctly on re-enable.
+    m_spinBoxEnabledByMax = (maxPhysButtons > 0);
+    if (m_slotDisabled) {
         ui->spinBox_PhysicalButtonNumber->setEnabled(false);
+        return;
     }
+    ui->spinBox_PhysicalButtonNumber->setEnabled(m_spinBoxEnabledByMax);
 }
 
 void ButtonLogical::functionIndexChanged(int index)
@@ -131,10 +231,13 @@ void ButtonLogical::functionIndexChanged(int index)
     /* setCurrentIndex(-1) (combobox deselection) fires this slot with
      * index=-1. Happens when readFromConfig calls setCurrentIndex with
      * EnumToIndex(button->type, ...) that returned -1 for an unknown
-     * button type. m_logicFunctionList[-1] would QList-ASSERT-crash --
-     * guard and bail. */
-    if (index < 0 || index >= m_logicFunctionList.size()) return;
-    int type = m_logicFunctionList[index].deviceEnumIndex;
+     * button type. m_logicFunc_enumIndex[-1] would QList-ASSERT-crash --
+     * guard and bail. m_logicFunc_enumIndex (not m_logicFunctionList) is the
+     * row-aligned vector: it carries a -1 sentinel for each grouped section
+     * header, so combo row -> enum stays correct once headers are inserted. */
+    if (index < 0 || index >= m_logicFunc_enumIndex.size()) return;
+    int type = m_logicFunc_enumIndex[index];
+    if (type < 0) return;   // section-header row -- not a selectable type
 
     // Any function change clears the LOGIC-only fields back to their
     // "-" sentinels:
@@ -184,6 +287,13 @@ void ButtonLogical::logicOpIndexChanged(int /*index*/)
 
 void ButtonLogical::updateLogicWidgetsEnabled()
 {
+    if (m_slotDisabled) {
+        // Slot locked: Op / Source B / its listen button stay disabled.
+        ui->comboBox_LogicOp->setEnabled(false);
+        ui->spinBox_SourceB->setEnabled(false);
+        ui->pushButton_ListenB->setEnabled(false);
+        return;
+    }
     const bool physSet  = ui->spinBox_PhysicalButtonNumber->value() > 0
                        && ui->spinBox_PhysicalButtonNumber->isEnabled();
     const bool isLogic  = (currentButtonType() == LOGIC);
@@ -210,22 +320,39 @@ void ButtonLogical::updateLogicWidgetsEnabled()
         emit listenForceDisarm(m_buttonIndex, ListenSourceB);
     }
     ui->pushButton_ListenB->setEnabled(srcBEnabled);
-    // Qt's default disabled styling barely dims an icon-only button.
-    // Fade it hard with an opacity effect so "Source B isn't bindable
-    // here" reads at a glance. Only (re)create the effect when the state
-    // actually flips to avoid churn on every updateLogicWidgetsEnabled.
-    const bool hasEffect = ui->pushButton_ListenB->graphicsEffect() != nullptr;
-    if (!srcBEnabled && !hasEffect) {
-        auto *eff = new QGraphicsOpacityEffect(ui->pushButton_ListenB);
+    // Fade the icon-only button hard so "Source B isn't bindable here" reads at
+    // a glance (Qt barely dims icon-only buttons on its own).
+    setListenButtonFaded(ui->pushButton_ListenB, !srcBEnabled);
+}
+
+void ButtonLogical::setListenButtonFaded(QWidget *btn, bool faded)
+{
+    // Only (re)create/remove the effect when the state actually flips, to avoid
+    // churn on every updateLogicWidgetsEnabled / setSlotDisabled call.
+    const bool hasEffect = btn->graphicsEffect() != nullptr;
+    if (faded && !hasEffect) {
+        auto *eff = new QGraphicsOpacityEffect(btn);
         eff->setOpacity(0.20);
-        ui->pushButton_ListenB->setGraphicsEffect(eff);
-    } else if (srcBEnabled && hasEffect) {
-        ui->pushButton_ListenB->setGraphicsEffect(nullptr);
+        btn->setGraphicsEffect(eff);
+    } else if (!faded && hasEffect) {
+        btn->setGraphicsEffect(nullptr);
     }
 }
 
 void ButtonLogical::editingOnOff(int value)
 {
+    if (m_slotDisabled) {
+        // Slot locked: keep every config cell disabled regardless of the
+        // physical assignment. The eye/disable checkbox is left untouched
+        // (it stays enabled so the user can re-enable the slot).
+        ui->checkBox_IsInvert->setEnabled(false);
+        ui->comboBox_ButtonFunction->setEnabled(false);
+        ui->comboBox_ShiftIndex->setEnabled(false);
+        ui->comboBox_DelayTimerIndex->setEnabled(false);
+        ui->comboBox_PressTimerIndex->setEnabled(false);
+        updateLogicWidgetsEnabled();   // its own guard locks Op / Source B
+        return;
+    }
     if (value > 0 && ui->spinBox_PhysicalButtonNumber->isEnabled()) {
         ui->checkBox_IsInvert->setEnabled(true);
         ui->checkBox_IsDisable->setEnabled(true);
@@ -242,26 +369,85 @@ void ButtonLogical::editingOnOff(int value)
         ui->comboBox_PressTimerIndex->setEnabled(false);
     }
     updateLogicWidgetsEnabled();
+    updateClearButtonVisibility();
     emit physicalNumChanged(m_buttonIndex);
+}
+
+void ButtonLogical::setSlotDisabled(bool disabled)
+{
+    if (disabled == m_slotDisabled) {
+        return;
+    }
+    m_slotDisabled = disabled;
+
+    if (disabled) {
+        // Lock + ghost every cell EXCEPT the eye/disable checkbox, which stays
+        // bright and interactive so the slot can be re-enabled. Qt's disabled
+        // palette supplies the recessive "ghosted" look (theme-aware, the
+        // opposite weight of the green active badge). The m_slotDisabled guards
+        // in editingOnOff / updateLogicWidgetsEnabled / setTimerColumnsEnabled /
+        // setSpinBoxOnOff keep the row locked against any later recompute.
+        ui->label_DragHandle->setEnabled(false);
+        ui->label_LogicalButtonNumber->setEnabled(false);
+        ui->pushButton_Listen->setEnabled(false);
+        ui->spinBox_PhysicalButtonNumber->setEnabled(false);
+        ui->checkBox_IsInvert->setEnabled(false);
+        ui->comboBox_ButtonFunction->setEnabled(false);
+        ui->comboBox_LogicOp->setEnabled(false);
+        ui->spinBox_SourceB->setEnabled(false);
+        ui->pushButton_ListenB->setEnabled(false);
+        ui->comboBox_ShiftIndex->setEnabled(false);
+        ui->comboBox_DelayTimerIndex->setEnabled(false);
+        ui->comboBox_PressTimerIndex->setEnabled(false);
+        // Icon-only listen buttons need the explicit opacity fade to look
+        // disabled (same treatment Source B uses when not bindable).
+        setListenButtonFaded(ui->pushButton_Listen, true);
+        setListenButtonFaded(ui->pushButton_ListenB, true);
+    } else {
+        // Restore: re-enable the always-on cells and the spinbox per the current
+        // max-phys state, then let editingOnOff recompute the rest (checkboxes,
+        // function/shift/timer combos, Op/Source B via updateLogicWidgetsEnabled,
+        // and gesture gating via the physicalNumChanged it emits).
+        ui->label_DragHandle->setEnabled(true);
+        ui->label_LogicalButtonNumber->setEnabled(true);
+        ui->pushButton_Listen->setEnabled(true);
+        setListenButtonFaded(ui->pushButton_Listen, false);
+        ui->spinBox_PhysicalButtonNumber->setEnabled(m_spinBoxEnabledByMax);
+        // editingOnOff -> updateLogicWidgetsEnabled restores the Source B
+        // button's own fade based on whether Source B is bindable again.
+        editingOnOff(ui->spinBox_PhysicalButtonNumber->value());
+    }
 }
 
 void ButtonLogical::setButtonState(bool state)
 {
     if (state != m_currentState) {
-        setAutoFillBackground(true);
-
         if (state) {
-            QPalette pal(window()->palette());
-            pal.setColor(QPalette::Window, QColor(0, 128, 0));
-            setPalette(pal);
-
-            m_lastAct.start();
+            // Two-part "active" treatment (replaces the old full-saturation
+            // row flood):
+            //   1. A crisp green pip on the row-number label -- the SAME
+            //      buttonState="on" role the physical-button grid uses, so the
+            //      two tabs read identically (common.qss QLabel[buttonState]).
+            //   2. A subtle green wash on the row's Window colour, showing only
+            //      in the gutters between child widgets as a peripheral "this
+            //      row" cue. accentGreenWash() is ~18% alpha. See applyRowWash()
+            //      -- also re-asserted from changeEvent on a theme swap.
+            // m_currentState is set BEFORE the palette work so the synchronous
+            // PaletteChange our setPalette emits sees the correct state in
+            // changeEvent (and the m_inWashUpdate guard suppresses the re-assert).
             m_currentState = state;
+            freejoy_style::setRole(ui->label_LogicalButtonNumber, "buttonState", "on");
+            applyRowWash();
+            m_lastAct.start();
         } else {
             // sometimes state dont have time to render. e.g. encoder press time 10ms and monitor refresh time 17ms(60fps)
             if (m_lastAct.hasExpired(30)) {
-                setPalette(window()->palette());
+                // Clear m_currentState first: clearRowWash()'s setPalette emits a
+                // synchronous PaletteChange, and changeEvent must NOT treat the
+                // row as still-active and re-paint the wash we are removing.
                 m_currentState = state;
+                freejoy_style::setRole(ui->label_LogicalButtonNumber, "buttonState", "off");
+                clearRowWash();
             }
         }
     }
@@ -277,6 +463,52 @@ void ButtonLogical::setButtonState(bool state)
             }
         }
         m_debugState = state;
+    }
+}
+
+// Paint the subtle active-row wash: accentGreenWash() (theme-independent, ~18%
+// alpha green) on QPalette::Window with autoFillBackground, so it shows only in
+// the gutters between the row's child widgets. Non-Window roles are taken from
+// the live window palette so they track the current theme. Called on press and
+// re-asserted from changeEvent after a theme swap wipes it. m_inWashUpdate
+// guards the synchronous PaletteChange setPalette() emits from re-entering
+// changeEvent's re-assert.
+void ButtonLogical::applyRowWash()
+{
+    m_inWashUpdate = true;
+    setAutoFillBackground(true);
+    QPalette pal(window()->palette());
+    pal.setColor(QPalette::Window, freejoy_style::accentGreenWash());
+    setPalette(pal);
+    m_inWashUpdate = false;
+}
+
+// Remove the wash entirely: drop the Window override back to the live window
+// palette and turn autoFillBackground off so the row returns to its pristine
+// transparent state (showing the group's background, not an opaque window fill).
+void ButtonLogical::clearRowWash()
+{
+    m_inWashUpdate = true;
+    setPalette(window()->palette());
+    setAutoFillBackground(false);
+    m_inWashUpdate = false;
+}
+
+void ButtonLogical::changeEvent(QEvent *event)
+{
+    QWidget::changeEvent(event);
+    // mainwindow_style.cpp's theme swap unpolish/polishes every widget, which
+    // re-resolves this row's palette and drops the wash. The pip is QSS-driven
+    // and survives the repolish on its own; re-assert the palette wash here so a
+    // row that is active across a theme toggle keeps its highlight. Skip when our
+    // own apply/clearRowWash() is mid-update (its setPalette also fires this).
+    if (m_inWashUpdate) {
+        return;
+    }
+    if ((event->type() == QEvent::PaletteChange
+         || event->type() == QEvent::StyleChange)
+        && m_currentState) {
+        applyRowWash();
     }
 }
 
@@ -408,6 +640,13 @@ void ButtonLogical::setTimerColumnsEnabled(bool delayEnabled, bool pressEnabled)
      * the combo and the underlying config value so the user can't set a
      * meaningless timer. press_timer stays editable on these slots --
      * it becomes the per-slot minimum-hold floor. */
+    if (m_slotDisabled) {
+        // Slot locked: both timer columns stay disabled regardless of the
+        // gesture gating ButtonConfig is requesting.
+        ui->comboBox_DelayTimerIndex->setEnabled(false);
+        ui->comboBox_PressTimerIndex->setEnabled(false);
+        return;
+    }
     ui->comboBox_DelayTimerIndex->setEnabled(delayEnabled);
     ui->comboBox_PressTimerIndex->setEnabled(pressEnabled);
     if (!delayEnabled && ui->comboBox_DelayTimerIndex->currentIndex() != 0)
@@ -416,16 +655,18 @@ void ButtonLogical::setTimerColumnsEnabled(bool delayEnabled, bool pressEnabled)
     }
     QString tip = delayEnabled
         ? QString()
-        : tr("Disabled: gesture-managed slots are driven by the global "
-             "tap and double-tap windows.");
+        : freejoy_style::tipHtml(
+              tr("Delay timer disabled"),
+              tr("Gesture-managed slots are driven by the global tap and double-tap windows."));
     ui->comboBox_DelayTimerIndex->setToolTip(tip);
     ui->comboBox_PressTimerIndex->setToolTip(
         pressEnabled
             ? (delayEnabled
                 ? QString()
-                : tr("Minimum-hold floor: guarantees the host sees the logical "
-                     "button high for at least this duration after the gesture "
-                     "fires. Minimum 20 ms."))
+                : freejoy_style::tipHtml(
+                      tr("Minimum-hold floor"),
+                      { tr("Guarantees the host sees the logical button high for at least this duration after the gesture fires."),
+                        tr("Minimum 20 ms.") }))
             : QString());
 }
 
@@ -522,6 +763,13 @@ bool ButtonLogical::eventFilter(QObject *obj, QEvent *event)
     // Listen buttons: own the click so the checkable QPushButton doesn't
     // auto-toggle, and disambiguate single (arm) vs double (sequence).
     if (obj == ui->pushButton_Listen || obj == ui->pushButton_ListenB) {
+        // A disabled listen button must not arm. This filter consumes the press
+        // BEFORE Qt's normal disabled-widget handling, so without this guard a
+        // greyed-out Source B button (non-LOGIC row, or unary operator) would
+        // still arm when clicked.
+        if (!static_cast<QWidget *>(obj)->isEnabled()) {
+            return false;
+        }
         const int field = (obj == ui->pushButton_ListenB)
             ? ListenSourceB : ListenPhysical;
         switch (event->type()) {
@@ -682,6 +930,59 @@ void ButtonLogical::readFromConfig()
             break;
         }
     }
+
+    // Apply the ghost + lock visual last, once every cell holds its loaded
+    // value. The setChecked() above may already have driven this via the toggled
+    // connect; setSlotDisabled() is idempotent, and the m_slotDisabled guards
+    // keep the row locked through ButtonConfig's post-load coexistence filter.
+    setSlotDisabled(button->is_disabled);
+
+    // Explicitly recompute the LOGIC-only cells (Operator / Source B + its listen
+    // button). The function setCurrentIndex above only fires functionIndexChanged
+    // when the index actually MOVES, and setSlotDisabled() early-returns when the
+    // disabled state is unchanged -- so on a plain load of a non-LOGIC button into
+    // an enabled row neither path runs, leaving the Source B button stale-enabled.
+    updateLogicWidgetsEnabled();
+    updateClearButtonVisibility();
+}
+
+void ButtonLogical::clearRow()
+{
+    // Clear this slot: drop its binding (physical_num = -1 -> unbound) and reset
+    // every setting (type/invert/disable/shift/timers/logic). Unbinding is what
+    // makes the row fall out of the "show bound only" view -- it's effectively
+    // removed. readFromConfig() repaints the row from the cleared config; its
+    // setValue / setCurrentIndex calls drive editingOnOff / functionIndexChanged,
+    // so enabled-state + coexistence recompute for free.
+    button_t *b = &gEnv.pDeviceConfig->config.buttons[m_buttonIndex];
+    const button_type_t prevType = b->type;
+    b->physical_num     = -1;
+    b->type             = BUTTON_NORMAL;
+    b->src_b            = -1;
+    b->shift_modificator = 0;
+    b->is_inverted      = 0;
+    b->is_disabled      = 0;
+    b->op               = 0;
+    b->delay_timer      = static_cast<button_timer_t>(0);
+    b->press_timer      = static_cast<button_timer_t>(0);
+
+    readFromConfig();
+
+    // Make sure ButtonConfig recomputes the cross-row coexistence filter and the
+    // app picks up the change, even if readFromConfig's setters didn't move (and
+    // so didn't fire their own signals).
+    if (prevType != BUTTON_NORMAL) {
+        emit functionTypeChanged(BUTTON_NORMAL, prevType, m_buttonIndex);
+    }
+    emit physicalNumChanged(m_buttonIndex);
+}
+
+void ButtonLogical::updateClearButtonVisibility()
+{
+    // The clear / remove button only makes sense on a BOUND row. On unbound rows
+    // -- notably the trailing "add another" row in show-bound-only mode -- there's
+    // nothing to remove, so hide it.
+    ui->pushButton_ClearRow->setVisible(currentPhysicalNum() >= 0);
 }
 
 void ButtonLogical::writeToConfig()

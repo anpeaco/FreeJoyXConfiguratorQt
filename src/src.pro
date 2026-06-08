@@ -72,6 +72,7 @@ SOURCES += \
     configtofile.cpp \
     converter.cpp \
     deviceconfig.cpp \
+    deviceversion.cpp \
     dialogs/busremapconfirmationdialog.cpp \
     dialogs/dfuinstalldialog.cpp \
     dialogs/flashconfirmationdialog.cpp \
@@ -80,8 +81,10 @@ SOURCES += \
     flash/dfuinstallsession.cpp \
     flash/flashsession.cpp \
     firmwareimage.cpp \
+    flashverdict.cpp \
     firmwareupdater.cpp \
     hiddevice.cpp \
+    windevicecache.cpp \
     main.cpp \
     mainwindow.cpp \
     mousewheelguard.cpp \
@@ -91,6 +94,7 @@ SOURCES += \
     widgets/color/colorpicker.cpp \
     widgets/color/colorvalueslider.cpp \
     widgets/color/colorwheel.cpp \
+    widgets/groupedcombo.cpp \
     widgets/infolabel.cpp \
     widgets/led_rgb/ledfunction.cpp \
     widgets/led_rgb/ledrgb.cpp \
@@ -142,6 +146,7 @@ HEADERS += \
     configtofile.h \
     converter.h \
     deviceconfig.h \
+    deviceversion.h \
     devicesync.h \
     dialogs/busremapconfirmationdialog.h \
     dialogs/dfuinstalldialog.h \
@@ -151,10 +156,12 @@ HEADERS += \
     flash/dfuinstallsession.h \
     flash/flashsession.h \
     firmwareimage.h \
+    flashverdict.h \
     firmwareupdater.h \
     global.h \
     hidapi.h \
     hiddevice.h \
+    windevicecache.h \
     mainwindow.h \
     mousewheelguard.h \
     reportconverter.h \
@@ -163,6 +170,7 @@ HEADERS += \
     widgets/color/colorpicker.h \
     widgets/color/colorvalueslider.h \
     widgets/color/colorwheel.h \
+    widgets/groupedcombo.h \
     widgets/infolabel.h \
     widgets/led_rgb/ledfunction.h \
     widgets/led_rgb/ledrgb.h \
@@ -265,7 +273,7 @@ linux {
 
 win32 {
     RC_FILE = winapp.rc
-    LIBS += -lhid -lsetupapi -ldwmapi
+    LIBS += -lhid -lsetupapi -ldwmapi -lshell32
     SOURCES += \
         windows/hidapi.c
 }

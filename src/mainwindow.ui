@@ -20,7 +20,12 @@
    <string notr="true">FreeJoy QtConfigurator</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="layoutG_MainLayout" rowstretch="10,1" columnstretch="1,5">
+   <!-- columnstretch 1,0,0,1: sidebar (col1, fixed 200) + tab area (col2, sized
+        to the widest tab) take their natural widths; the empty spacer columns 0
+        and 3 absorb excess window width, centering the whole app (sidebar + tabs
+        + log) on wide/ultrawide screens. Required width = 200 + spacing + widest
+        tab's size hint. -->
+   <layout class="QGridLayout" name="layoutG_MainLayout" rowstretch="10,1" columnstretch="1,0,0,1">
     <property name="leftMargin">
      <number>6</number>
     </property>
@@ -33,14 +38,14 @@
     <property name="bottomMargin">
      <number>6</number>
     </property>
-    <item row="1" column="0" colspan="2">
+    <item row="1" column="1" colspan="2">
      <layout class="QVBoxLayout" name="layoutV_DebugWindow">
       <property name="spacing">
        <number>0</number>
       </property>
      </layout>
     </item>
-    <item row="0" column="1">
+    <item row="0" column="2">
      <widget class="QTabWidget" name="tabWidget">
       <property name="baseSize">
        <size>
@@ -274,7 +279,15 @@
      </widget>
     </item>
     <item row="0" column="0">
+     <spacer name="horizontalSpacer_MainCenterL">
+      <property name="orientation"><enum>Qt::Horizontal</enum></property>
+      <property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property>
+     </spacer>
+    </item>
+    <item row="0" column="1">
      <widget class="QWidget" name="widget_Sidebar">
+      <property name="minimumSize"><size><width>200</width><height>0</height></size></property>
+      <property name="maximumSize"><size><width>200</width><height>16777215</height></size></property>
       <layout class="QVBoxLayout" name="layoutV_Sidebar">
        <property name="spacing"><number>9</number></property>
        <property name="leftMargin"><number>0</number></property>
@@ -314,18 +327,25 @@
              <property name="bottomMargin"><number>6</number></property>
              <property name="horizontalSpacing"><number>8</number></property>
              <property name="verticalSpacing"><number>2</number></property>
-             <item row="0" column="0"><widget class="QLabel" name="label_VersionKey"><property name="text"><string>Version</string></property><property name="toolTip"><string>The device's firmware version, reported live by the firmware. FreeJoyX devices show their FREEJOYX_VERSION; upstream FreeJoy devices show their nibble-encoded version (e.g. v1.7.8).</string></property></widget></item>
-             <item row="0" column="1"><widget class="QLabel" name="label_VersionVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="toolTip"><string>The device's firmware version, reported live by the firmware. FreeJoyX devices show their FREEJOYX_VERSION; upstream FreeJoy devices show their nibble-encoded version (e.g. v1.7.8).</string></property></widget></item>
+             <item row="0" column="0"><widget class="QLabel" name="label_VersionKey"><property name="text"><string>Version:</string></property><property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Firmware version&lt;/b&gt;&lt;/div&gt;Reported live by the firmware. FreeJoyX devices show their FREEJOYX_VERSION; upstream FreeJoy devices show their nibble-encoded version (e.g. v1.7.8).</string></property></widget></item>
+             <item row="0" column="1"><widget class="QLabel" name="label_VersionVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Firmware version&lt;/b&gt;&lt;/div&gt;Reported live by the firmware. FreeJoyX devices show their FREEJOYX_VERSION; upstream FreeJoy devices show their nibble-encoded version (e.g. v1.7.8).</string></property></widget></item>
              <item row="1" column="0"><widget class="QLabel" name="label_VidPidKey"><property name="text"><string>VID:PID</string></property></widget></item>
              <item row="1" column="1"><widget class="QLabel" name="label_VidPidVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property></widget></item>
-             <item row="2" column="0"><widget class="QLabel" name="label_SerialKey"><property name="text"><string>Serial</string></property></widget></item>
+             <item row="2" column="0"><widget class="QLabel" name="label_SerialKey"><property name="text"><string>Serial:</string></property></widget></item>
              <item row="2" column="1"><widget class="QLabel" name="label_SerialVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="wordWrap"><bool>true</bool></property></widget></item>
-             <item row="3" column="0"><widget class="QLabel" name="label_BoardKey"><property name="text"><string>Board</string></property></widget></item>
-             <item row="3" column="1"><widget class="QLabel" name="label_BoardVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property></widget></item>
-             <item row="4" column="0"><widget class="QLabel" name="label_PacketsKey"><property name="text"><string>Packets</string></property><property name="toolTip"><string>USB report packets received from the device since it connected</string></property></widget></item>
-             <item row="4" column="1"><widget class="QLabel" name="label_PacketsVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="toolTip"><string>USB report packets received from the device since it connected</string></property></widget></item>
-             <item row="5" column="0"><widget class="QLabel" name="label_RateKey"><property name="text"><string>Rate</string></property><property name="toolTip"><string>Average time between received packets, sampled over 5 s</string></property></widget></item>
-             <item row="5" column="1"><widget class="QLabel" name="label_RateVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="toolTip"><string>Average time between received packets, sampled over 5 s</string></property></widget></item>
+             <item row="3" column="0"><widget class="QLabel" name="label_BoardKey"><property name="text"><string>Board:</string></property></widget></item>
+             <item row="3" column="1">
+              <layout class="QHBoxLayout" name="layoutH_BoardVal">
+               <property name="spacing"><number>4</number></property>
+               <item><spacer name="spacerH_BoardVal"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
+               <item><widget class="QLabel" name="label_BoardIcon"><property name="text"><string notr="true"/></property><property name="alignment"><set>Qt::AlignVCenter</set></property></widget></item>
+               <item><widget class="QLabel" name="label_BoardVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignVCenter</set></property></widget></item>
+              </layout>
+             </item>
+             <item row="4" column="0"><widget class="QLabel" name="label_PacketsKey"><property name="text"><string>Packets:</string></property><property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Packets received&lt;/b&gt;&lt;/div&gt;USB report packets received from the device since it connected.</string></property></widget></item>
+             <item row="4" column="1"><widget class="QLabel" name="label_PacketsVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Packets received&lt;/b&gt;&lt;/div&gt;USB report packets received from the device since it connected.</string></property></widget></item>
+             <item row="5" column="0"><widget class="QLabel" name="label_RateKey"><property name="text"><string>Rate:</string></property><property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Packet rate&lt;/b&gt;&lt;/div&gt;Average time between received packets, sampled over 5 s.</string></property></widget></item>
+             <item row="5" column="1"><widget class="QLabel" name="label_RateVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Packet rate&lt;/b&gt;&lt;/div&gt;Average time between received packets, sampled over 5 s.</string></property></widget></item>
             </layout>
            </widget>
           </item>
@@ -348,7 +368,14 @@
             <property name="enabled"><bool>false</bool></property>
             <property name="minimumSize"><size><width>165</width><height>37</height></size></property>
             <property name="text"><string>Upgrade firmware</string></property>
-            <property name="toolTip"><string>Read your current config, flash the latest matching firmware, then write the config back. One click.</string></property>
+            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Upgrade firmware in one click&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Reads your current config.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Flashes the latest matching firmware.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Writes the config back.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string></property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_FixWindowsCache">
+            <property name="enabled"><bool>false</bool></property>
+            <property name="minimumSize"><size><width>165</width><height>0</height></size></property>
+            <property name="text"><string>Fix name in Windows…</string></property>
            </widget>
           </item>
          </layout>
@@ -380,7 +407,7 @@
            <widget class="QPushButton" name="pushButton_ResetAllPins">
             <property name="minimumSize"><size><width>165</width><height>37</height></size></property>
             <property name="text"><string>Reset All Settings</string></property>
-            <property name="toolTip"><string>Resets every setting (pins, axes, buttons, encoders, sensors, USB identity, gestures, logic, LEDs, shifts &amp; timers) to factory defaults. The change is in-memory only — click Write Config to apply it to the connected device.</string></property>
+            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Reset all settings to factory defaults&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Resets every setting (pins, axes, buttons, encoders, sensors, USB identity, gestures, logic, LEDs, shifts &amp; timers).&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;The change is in-memory only — click &lt;b&gt;Write Config&lt;/b&gt; to apply it to the connected device.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string></property>
             <property name="checked"><bool>false</bool></property>
            </widget>
           </item>
@@ -408,7 +435,7 @@
              <property name="bottomMargin"><number>6</number></property>
              <property name="horizontalSpacing"><number>8</number></property>
              <property name="verticalSpacing"><number>2</number></property>
-             <item row="0" column="0"><widget class="QLabel" name="label_AppFirmwareKey"><property name="text"><string>Firmware</string></property></widget></item>
+             <item row="0" column="0"><widget class="QLabel" name="label_AppFirmwareKey"><property name="text"><string>Firmware:</string></property></widget></item>
              <item row="0" column="1"><widget class="QLabel" name="label_AppFirmwareVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property></widget></item>
             </layout>
            </widget>
@@ -425,6 +452,31 @@
             <property name="text"><string>Wiki</string></property>
            </widget>
           </item>
+          <item>
+           <layout class="QHBoxLayout" name="layoutH_Theme">
+            <property name="spacing"><number>6</number></property>
+            <item>
+             <widget class="QLabel" name="label_Theme">
+              <property name="text"><string>Theme</string></property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_Theme">
+              <property name="orientation"><enum>Qt::Horizontal</enum></property>
+              <property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_ThemeToggle">
+              <property name="toolButtonStyle"><enum>Qt::ToolButtonIconOnly</enum></property>
+              <property name="iconSize"><size><width>20</width><height>20</height></size></property>
+              <property name="autoRaise"><bool>true</bool></property>
+              <property name="minimumSize"><size><width>32</width><height>28</height></size></property>
+              <property name="toolTip"><string>Toggle light/dark theme</string></property>
+             </widget>
+            </item>
+           </layout>
+          </item>
          </layout>
         </widget>
        </item>
@@ -436,6 +488,12 @@
        </item>
       </layout>
      </widget>
+    </item>
+    <item row="0" column="3">
+     <spacer name="horizontalSpacer_MainCenterR">
+      <property name="orientation"><enum>Qt::Horizontal</enum></property>
+      <property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property>
+     </spacer>
     </item>
    </layout>
   </widget>

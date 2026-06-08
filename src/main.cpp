@@ -11,6 +11,7 @@
 #include <QDir>
 #include "infolabel.h"
 #include "windowthemehelper.h"
+#include "tooltippositioner.h"
 
 // global environment
 #include "global.h"
@@ -75,6 +76,10 @@ int main(int argc, char *argv[])
     // as it is shown, not just the main window. themeChanged() seeds the
     // active-theme flag this filter reads.
     a.installEventFilter(new freejoy_style::TitleBarThemeFilter(&a));
+
+    // Anchor every tooltip to its control and keep it inside the app window
+    // (rather than Qt's default cursor-anchored placement). See tooltippositioner.h.
+    a.installEventFilter(new freejoy_ui::TooltipPositioner(&a));
 
     QString docLoc = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     if (docLoc.isEmpty() == false) {

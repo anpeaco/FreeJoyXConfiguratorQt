@@ -1,0 +1,62 @@
+/**
+  ******************************************************************************
+  * @file           : flashverdict.h
+  * @brief          : Pure flash-decision logic, extracted from the GUI so it
+  *                   can be unit-tested without Qt Widgets / FirmwareImage /
+  *                   the legacy module. No dependencies beyond <cstdint>.
+  *
+  *                   FlashConfirmationDialog::computeVerdict() wraps
+  *                   classifyFlash() (mapping the FirmwareImage + legacy
+  *                   migrator availability into raw values); the dialog's
+  *                   crossing banner uses isCrossingToFreeJoyX(); the device
+  *                   card's Update-Firmware visibility uses
+  *                   firmwareNewerAvailable().
+  ******************************************************************************
+  */
+
+#ifndef FLASHVERDICT_H
+#define FLASHVERDICT_H
+
+#include <cstdint>
+
+/* Classification of an upcoming flash. Mirrors the cases the Confirm dialog
+ * renders. `None` = nothing selected yet. */
+enum class FlashVerdict {
+    SameGeneration,    /* wire-format identical; config preserved */
+    Upgrade,           /* target newer; migrator exists; config migrated */
+    UpgradeNoMigrator, /* target newer; no migrator; config lost */
+    Downgrade,         /* target older; no auto-restore; factory-reset */
+    Recovery,          /* device already in bootloader; no backup possible */
+    Incompatible,      /* board mismatch / unloadable; Flash disabled */
+    None,              /* no firmware selected yet */
+};
+
+/* Pure classifier. `imageBoardId` is already mapped to a BOARD_ID_* (or 0 when
+ * unknown); `migratorAvailable` = whether a legacy migrator exists for
+ * `deviceFwVersion`. Board mismatch is the highest-stakes check and refuses
+ * (Incompatible). A device in recovery / reporting version 0 yields Recovery. */
+FlashVerdict classifyFlash(int deviceBoardId, std::uint16_t deviceFwVersion,
+                           bool deviceInRecoveryMode, int imageBoardId,
+                           std::uint16_t imageFwVersion, bool imageLoaded,
+                           bool migratorAvailable);
+
+/* True when the flash crosses project lines: the device runs upstream FreeJoy
+ * (wire-gen in the 0x17xx lineage) and the target is FreeJoyX (gen < 0x1000). */
+bool isCrossingToFreeJoyX(std::uint16_t deviceFwVersion, std::uint16_t targetFwVersion);
+
+/* True when the amber "Downgrade" verdict box should be hidden because the
+ * flash is really an upstream FreeJoy -> FreeJoyX crossing. The raw version
+ * math classifies 0x17xx -> 0x00xx as a Downgrade, but it's a project change,
+ * not a regression; the red crossing banner carries that message instead, so a
+ * second amber "older firmware" box only confuses. The verdict stays Downgrade
+ * (post-flash auto-restore still correctly skipped) -- this only gates display. */
+bool crossingMasksDowngrade(FlashVerdict verdict, bool crossing);
+
+/* True when a newer firmware is available for the connected device: a different
+ * wire-format generation, OR the same generation but the device's reported
+ * FreeJoyX semver is older than the bundled (configurator) semver. */
+bool firmwareNewerAvailable(int devMajor, int devMinor, int devPatch,
+                            int bundledMajor, int bundledMinor, int bundledPatch,
+                            bool sameWireGen);
+
+#endif // FLASHVERDICT_H

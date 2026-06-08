@@ -45,4 +45,19 @@ void PinsContrLite::addPinComboBox(QList<PinComboBox *> pinList)
         }
     }
     Q_ASSERT(tmp == PINS_COUNT);
+
+    /* Uniform height for every pin line (label columns are at 0,3,6,9,12). */
+    const int rowH = pinList.isEmpty() ? 0 : pinList.first()->minimumHeight();
+    if (rowH > 0) {
+        for (int r = 0; r < ui->layoutG_pins->rowCount(); ++r) {
+            bool hasLabel = false;
+            for (int c = 0; c < 5 && !hasLabel; ++c) {
+                hasLabel = ui->layoutG_pins->itemAtPosition(r, c * 3) != nullptr;
+            }
+            if (hasLabel) {
+                ui->layoutG_pins->setRowMinimumHeight(r, rowH);
+                ui->layoutG_pins->setRowStretch(r, 0);
+            }
+        }
+    }
 }

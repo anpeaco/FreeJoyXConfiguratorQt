@@ -117,6 +117,18 @@ public:
     //! clears, or the pin loses its colour permanently.
     void reapplyRoleColor();
 
+    //! Function-group colour for a device-enum role (the fixed per-role QColor
+    //! in m_pinTypes), or an invalid QColor if the role isn't in the table.
+    //! Used by the Pin Info hover highlight to outline matching pins in the
+    //! role's own group colour.
+    QColor colorForRole(int deviceEnum) const;
+
+    //! Pin Info hover highlight: draw a coloured outline around the closed
+    //! combobox (border in `border`'s colour) without changing its fill. Pass an
+    //! invalid QColor to clear it. The role text colour is restored either way,
+    //! so the outline doesn't wipe the pin's role tint.
+    void setHoverOutline(const QColor &border);
+
     /* Programmatically set this pin's role by device-enum value.
      * Returns true if the enum corresponds to an item currently in
      * the dropdown for this pin (the legal-roles list varies per pin

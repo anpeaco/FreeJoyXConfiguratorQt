@@ -31,6 +31,12 @@ public:
      * construction so logging is correct whether or not this pane was opened. */
     void setWriteToFile(bool on);
 
+    /* Mirror an already-formatted (timestamped) line from the flash / DFU
+     * install progress dialogs into the on-disk log, honouring the same
+     * OtherSettings/LogEnabled gate the app log uses. The caller supplies the
+     * line; this adds the trailing newline. No-op when file logging is off. */
+    void appendProgressLine(const QString &line);
+
     Q_INVOKABLE // for multithreading -- CustomMessageHandler in main posts here
         void printMsg(const QString &msg, int level = int(LogLevel::Info));
 

@@ -37,7 +37,13 @@ class QLineEdit;
 class QProgressBar;
 class QPlainTextEdit;
 class QPushButton;
+class QToolButton;
+class QComboBox;
+class QSpinBox;
+class QWidget;
 class QTimer;
+class QDialogButtonBox;
+class QVBoxLayout;
 
 class DfuInstallDialog : public QDialog
 {
@@ -69,50 +75,139 @@ private slots:
     void onRefreshDetect();    /* silent background poll (timer) */
     void onManualRecheck();    /* user-driven verbose re-check (button) */
     void onInstallDriverClicked();  /* "Install WinUSB driver" (needs-driver state) */
+    void onLeaveClicked();          /* "Exit DFU mode" (ready state) -- manifest + reset, no flash */
+    void onTimingPresetChanged(int index);  /* Advanced: preset -> fill + lock the spinboxes */
 
     /* DfuInstallSession feeds. */
     void onAvailability(DfuInstallSession::Availability avail);
     void onDriverInstallFinished(bool ok, const QString &detail);
+    void onLeaveFinished(bool ok, const QString &detail);
     void onStageChanged(DfuInstallSession::Stage s, const QString &detail);
     void onProgress(qint64 done, qint64 total);
     void onLogLine(const QString &line);
     void onFinished(bool success, const QString &detail);
 
+protected:
+    /* Blocks the progress dialog's window-close (X) while a write is live so the
+     * user can't orphan the device mid-flash; Cancel is the supported abort. */
+    bool eventFilter(QObject *obj, QEvent *ev) override;
+
+    /* While a write is in flight the dialog MUST NOT be torn down: it owns the
+     * DfuInstallSession (and its QProcess), so destroying it kills the helper
+     * mid-flash (its destructor calls QProcess::kill -> the configurator reports
+     * "stopped unexpectedly"). The setup dialog is hidden (not closed) during the
+     * write, but a stray reject() (Escape) or close (X/Alt-F4) would end exec()
+     * and destroy it -- guard both while m_installing. */
+    void reject() override;
+    void closeEvent(QCloseEvent *event) override;
+
+    /* The auto-filled path fields shouldn't open pre-selected: the first
+     * focusable QLineEdit gets focus on show and Qt select-alls it, so the whole
+     * bootloader path appears highlighted in blue (reads like an error). Drop
+     * that selection on the first show and park the cursor at the end so the
+     * filename is what's visible. */
+    void showEvent(QShowEvent *event) override;
+
 private:
+    /* Severity of the DFU-mode detection banner (setDetectStatus). */
+    enum DetectKind { DetectInfo, DetectReady, DetectWarn, DetectError };
+
     void buildUi();
+    void buildProgressDialog();              /* the separate progress/log window shown on Install */
     void prefillBundledBinaries();
     void refreshInstallEnabled();
     void appendLog(const QString &line);
     void setControlsLocked(bool locked);     /* lock inputs while a write is in flight */
+    /* Swap the detection status banner (shared makeAlertBanner look) -- blue-info
+     * for neutral states, green ready, amber needs-driver, red error. Embeds all
+     * action buttons (reparented, hidden); updateDfuEntryState reveals the right
+     * one. Direct callers use it for transient/terminal messages (no buttons). */
+    void setDetectStatus(DetectKind kind, const QString &text);
+
+    /* The DFU-entry state machine: renders ONE of {ready / needs-driver / reboot
+     * / manual} from m_dfuAvail + m_f411Connected, toggling the BOOT0 steps and
+     * the active action button. Called by onAvailability + setConnectedDevice. */
+    void updateDfuEntryState();
+
+    /* Swap the current DFU-entry state widget (status banner or the plain reboot
+     * prompt) into m_detectArea, deleting the previous one. The new widget must
+     * already own the reparented action buttons. */
+    void swapStateWidget(QWidget *w);
 
     /* Maps a stage + byte fraction to a coarse weighted overall percentage. */
     static int weightedProgress(DfuInstallSession::Stage s, qint64 done, qint64 total);
 
     DfuInstallSession *m_session = nullptr;
 
-    QLabel         *m_instructions = nullptr;
-    QWidget        *m_rebootRow = nullptr;     /* whole reboot option; hidden if no F411 */
-    QLabel         *m_connLabel = nullptr;     /* "<name> — VID:PID" of the connected F411 */
+    QLabel         *m_instructions = nullptr;  /* manual BOOT0 steps; shown only in the Manual state */
     QLineEdit      *m_bootEdit = nullptr;
     QLineEdit      *m_appEdit = nullptr;
-    QLabel         *m_detectLabel = nullptr;
-    QProgressBar   *m_progress = nullptr;
-    QLabel         *m_stageLabel = nullptr;
-    QPlainTextEdit *m_log = nullptr;
+    QVBoxLayout    *m_detectArea = nullptr;    /* holds the detection status banner */
+    QWidget        *m_detectBanner = nullptr;  /* current detection banner (swapped by setDetectStatus) */
     QPushButton    *m_browseBootBtn = nullptr;
     QPushButton    *m_browseAppBtn = nullptr;
     QPushButton    *m_detectBtn = nullptr;
     QPushButton    *m_driverBtn = nullptr;     /* "Install WinUSB driver"; shown only when needed */
+    QPushButton    *m_leaveBtn = nullptr;      /* "Exit DFU mode"; shown only in the Ready state */
     QPushButton    *m_rebootBtn = nullptr;
     QPushButton    *m_installBtn = nullptr;
     QPushButton    *m_closeBtn = nullptr;
+
+    /* Separate progress/log window, shown on Install. Same design as the
+     * Upgrade-Firmware FlashProgressDialog (stage label, byte counter, centred
+     * progress bar, "Status:" log) -- the stage/progress/log live here, not in
+     * the setup dialog above. */
+    QDialog          *m_progressDialog = nullptr;
+    QVBoxLayout      *m_progLayout = nullptr;    /* progress dialog's root layout (for the result banner) */
+    QLabel           *m_stageLabel = nullptr;
+    QLabel           *m_bytesLabel = nullptr;   /* "<sent> / <total> bytes" during write stages */
+    QProgressBar     *m_progress = nullptr;
+    QPlainTextEdit   *m_log = nullptr;
+    QWidget          *m_resultBanner = nullptr; /* terminal result shown as the app alert banner */
+    QDialogButtonBox *m_progButtons = nullptr;
+    QPushButton      *m_progCancelBtn = nullptr; /* "Cancel" during a write, "Close" after */
+
+    /* Show the terminal outcome as the shared alert banner (green check on
+     * success, red triangle on failure) at the top of the progress window,
+     * instead of recolouring the stage label. clearProgressResult() removes it
+     * for a retry. */
+    void showProgressResult(bool success, const QString &text);
+    void clearProgressResult();
+
+    /* Advanced (collapsible) DfuSe timing controls. m_advBox is hidden until the
+     * cog toggle is checked. The preset combo (Baseline/Loose/Lax/Custom) fills
+     * + locks the spinboxes; Custom unlocks them within sensible ranges. */
+    QToolButton    *m_advToggle = nullptr;
+    QWidget        *m_advBox = nullptr;
+    QComboBox      *m_presetCombo = nullptr;
+    QSpinBox       *m_spinDelay = nullptr;     /* inter-block delay (ms) */
+    QSpinBox       *m_spinPoll = nullptr;      /* poll/erase timeout (ms) */
+    QSpinBox       *m_spinXfer = nullptr;      /* transfer timeout (ms) */
+    QSpinBox       *m_spinRetries = nullptr;   /* per-block retries */
+    QSpinBox       *m_spinSettle = nullptr;    /* post-flash settle (ms) */
 
     QTimer *m_detectTimer = nullptr;  /* periodic re-probe so plugging in is noticed */
     int     m_detectTick = 0;         /* counts background polls; throttles the driver-layer check */
     bool    m_devicePresent = false;  /* probe reported Ready (WinUSB-bound, flashable) */
     bool    m_driverNeeded = false;   /* probe reported NeedsDriver (present, not bound) */
+
+    /* DFU-entry state-machine inputs (see updateDfuEntryState). */
+    DfuInstallSession::Availability m_dfuAvail =
+        DfuInstallSession::Availability::Absent;   /* latest DFU detection result */
+    bool    m_f411Connected = false;  /* an F411 app-mode device is connected (rebootable) */
+    QString m_connName;               /* its live USB enumeration name */
+    QString m_connVidPid;             /* its VID:PID */
     bool    m_installing = false;
     bool    m_bindingDriver = false;  /* an installDriver() run is in flight */
+    bool    m_leaving = false;        /* a leaveDfu() run is in flight */
+    bool    m_firstShow = true;       /* clear the path fields' initial select-all once */
+    /* True once the user used the software "Reboot into DFU" button (vs a manual
+     * BOOT0 jumper). When DFU was entered by command, BOOT0 was only momentarily
+     * low, so the helper's post-install leave actually exits DFU and the board
+     * restarts into firmware on its own (and serial-reconnects) -- no replug. A
+     * held-BOOT0 manual entry re-enters DFU on that reset, so a replug / jumper
+     * removal IS needed. The completion message picks wording from this. */
+    bool    m_enteredDfuViaCommand = false;
     /* Latches true after a successful install so the Install button stays
      * disabled -- the board is no longer in a fresh DFU state, and running
      * the write again over the just-finished session misbehaves. Cleared only

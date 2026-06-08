@@ -23,8 +23,9 @@ ShiftsTimersConfig::ShiftsTimersConfig(QWidget *parent)
 
     /* Per-slot widget tables. v1.7.8 (issue anpeaco/FreeJoyX#1) refactored
      * the prior hand-unrolled per-slot code into loops over these arrays;
-     * the .ui carries spinBox_Shift1..8 / text_shiftN_logicalButton labels
-     * for slots 1..MAX_SHIFTS_NUM, addressed here as 0..MAX_SHIFTS_NUM-1. */
+     * the .ui carries spinBox_Shift1..8 plus a "Shift N" label_ShiftN per slot
+     * for slots 1..MAX_SHIFTS_NUM, addressed here as 0..MAX_SHIFTS_NUM-1. The
+     * label_ShiftN is the active-shift highlight target (shiftStateChanged). */
     m_spinBoxes[0] = ui->spinBox_Shift1;
     m_spinBoxes[1] = ui->spinBox_Shift2;
     m_spinBoxes[2] = ui->spinBox_Shift3;
@@ -34,14 +35,14 @@ ShiftsTimersConfig::ShiftsTimersConfig(QWidget *parent)
     m_spinBoxes[6] = ui->spinBox_Shift7;
     m_spinBoxes[7] = ui->spinBox_Shift8;
 
-    m_labels[0] = ui->text_shift1_logicalButton;
-    m_labels[1] = ui->text_shift2_logicalButton;
-    m_labels[2] = ui->text_shift3_logicalButton;
-    m_labels[3] = ui->text_shift4_logicalButton;
-    m_labels[4] = ui->text_shift5_logicalButton;
-    m_labels[5] = ui->text_shift6_logicalButton;
-    m_labels[6] = ui->text_shift7_logicalButton;
-    m_labels[7] = ui->text_shift8_logicalButton;
+    m_labels[0] = ui->label_Shift1;
+    m_labels[1] = ui->label_Shift2;
+    m_labels[2] = ui->label_Shift3;
+    m_labels[3] = ui->label_Shift4;
+    m_labels[4] = ui->label_Shift5;
+    m_labels[5] = ui->label_Shift6;
+    m_labels[6] = ui->label_Shift7;
+    m_labels[7] = ui->label_Shift8;
 
     // Polling spinboxes round to TICKS_NS multiples on user edit. Same
     // helper that ButtonConfig used to own.

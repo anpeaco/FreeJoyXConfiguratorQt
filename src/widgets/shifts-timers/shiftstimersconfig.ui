@@ -7,543 +7,413 @@
     <x>0</x>
     <y>0</y>
     <width>1062</width>
-    <height>640</height>
+    <height>500</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string notr="true">Form</string>
   </property>
   <layout class="QVBoxLayout" name="layoutV_Main">
-   <property name="leftMargin">
-    <number>6</number>
-   </property>
-   <property name="topMargin">
-    <number>6</number>
-   </property>
-   <property name="rightMargin">
-    <number>6</number>
-   </property>
-   <property name="bottomMargin">
-    <number>6</number>
-   </property>
-   <property name="spacing">
-    <number>12</number>
-   </property>
+   <property name="leftMargin"><number>6</number></property>
+   <property name="topMargin"><number>6</number></property>
+   <property name="rightMargin"><number>6</number></property>
+   <property name="bottomMargin"><number>6</number></property>
+   <property name="spacing"><number>12</number></property>
+
+   <!-- ===== Shifts: a compact 4-column x 2-row grid (was 8 heavy boxes) ===== -->
    <item>
     <widget class="QGroupBox" name="groupBox_Shifts">
-     <property name="title">
-      <string>Shifts</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_Shifts">
-      <property name="leftMargin">
-       <number>6</number>
-      </property>
-      <property name="topMargin">
-       <number>4</number>
-      </property>
-      <property name="rightMargin">
-       <number>6</number>
-      </property>
-      <property name="bottomMargin">
-       <number>6</number>
-      </property>
-     <item>
-      <widget class="QGroupBox" name="groupBox_Shift1">
-       <property name="title">
-        <string>Shift 1</string>
-       </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="2,1">
-        <property name="leftMargin">
-         <number>6</number>
-        </property>
-        <property name="topMargin">
-         <number>4</number>
-        </property>
-        <property name="rightMargin">
-         <number>6</number>
-        </property>
-        <item>
-         <widget class="QLabel" name="text_shift1_logicalButton">
-          <property name="text">
-           <string>Logical button</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QSpinBox" name="spinBox_Shift1">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-          <property name="maximum">
-           <number>128</number>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item>
-      <widget class="QGroupBox" name="groupBox_Shift2">
-       <property name="title">
-        <string>Shift 2</string>
-       </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="2,1">
-        <property name="leftMargin">
-         <number>6</number>
-        </property>
-        <property name="topMargin">
-         <number>4</number>
-        </property>
-        <property name="rightMargin">
-         <number>6</number>
-        </property>
-        <item>
-         <widget class="QLabel" name="text_shift2_logicalButton">
-          <property name="text">
-           <string>Logical button</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QSpinBox" name="spinBox_Shift2">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-          <property name="maximum">
-           <number>128</number>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item>
-      <widget class="QGroupBox" name="groupBox_Shift3">
-       <property name="title">
-        <string>Shift 3</string>
-       </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="2,1">
-        <property name="leftMargin">
-         <number>6</number>
-        </property>
-        <property name="topMargin">
-         <number>4</number>
-        </property>
-        <property name="rightMargin">
-         <number>6</number>
-        </property>
-        <item>
-         <widget class="QLabel" name="text_shift3_logicalButton">
-          <property name="text">
-           <string>Logical button</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QSpinBox" name="spinBox_Shift3">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-          <property name="maximum">
-           <number>128</number>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item>
-      <widget class="QGroupBox" name="groupBox_Shift4">
-       <property name="title">
-        <string>Shift 4</string>
-       </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="2,1">
-        <property name="leftMargin">
-         <number>6</number>
-        </property>
-        <property name="topMargin">
-         <number>4</number>
-        </property>
-        <property name="rightMargin">
-         <number>6</number>
-        </property>
-        <item>
-         <widget class="QLabel" name="text_shift4_logicalButton">
-          <property name="text">
-           <string>Logical button</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QSpinBox" name="spinBox_Shift4">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-          <property name="maximum">
-           <number>128</number>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item>
-      <widget class="QGroupBox" name="groupBox_Shift5">
-       <property name="title">
-        <string>Shift 5</string>
-       </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="2,1">
-        <property name="leftMargin">
-         <number>6</number>
-        </property>
-        <property name="topMargin">
-         <number>4</number>
-        </property>
-        <property name="rightMargin">
-         <number>6</number>
-        </property>
-        <item>
-         <widget class="QLabel" name="text_shift5_logicalButton">
-          <property name="text">
-           <string>Logical button</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QSpinBox" name="spinBox_Shift5">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-          <property name="maximum">
-           <number>128</number>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item>
-      <widget class="QGroupBox" name="groupBox_Shift6">
-       <property name="title">
-        <string>Shift 6</string>
-       </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="2,1">
-        <property name="leftMargin">
-         <number>6</number>
-        </property>
-        <property name="topMargin">
-         <number>4</number>
-        </property>
-        <property name="rightMargin">
-         <number>6</number>
-        </property>
-        <item>
-         <widget class="QLabel" name="text_shift6_logicalButton">
-          <property name="text">
-           <string>Logical button</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QSpinBox" name="spinBox_Shift6">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-          <property name="maximum">
-           <number>128</number>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item>
-      <widget class="QGroupBox" name="groupBox_Shift7">
-       <property name="title">
-        <string>Shift 7</string>
-       </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="2,1">
-        <property name="leftMargin">
-         <number>6</number>
-        </property>
-        <property name="topMargin">
-         <number>4</number>
-        </property>
-        <property name="rightMargin">
-         <number>6</number>
-        </property>
-        <item>
-         <widget class="QLabel" name="text_shift7_logicalButton">
-          <property name="text">
-           <string>Logical button</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QSpinBox" name="spinBox_Shift7">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-          <property name="maximum">
-           <number>128</number>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item>
-      <widget class="QGroupBox" name="groupBox_Shift8">
-       <property name="title">
-        <string>Shift 8</string>
-       </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_9" stretch="2,1">
-        <property name="leftMargin">
-         <number>6</number>
-        </property>
-        <property name="topMargin">
-         <number>4</number>
-        </property>
-        <property name="rightMargin">
-         <number>6</number>
-        </property>
-        <item>
-         <widget class="QLabel" name="text_shift8_logicalButton">
-          <property name="text">
-           <string>Logical button</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QSpinBox" name="spinBox_Shift8">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-          <property name="maximum">
-           <number>128</number>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="groupBox_EncoderTimings">
-     <property name="title">
-      <string>Encoder timings</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
-     <layout class="QFormLayout" name="formLayout_EncoderTimings">
-      <property name="leftMargin"><number>16</number></property>
-      <property name="topMargin"><number>8</number></property>
-      <property name="rightMargin"><number>16</number></property>
+     <property name="title"><string>Shifts</string></property>
+     <layout class="QVBoxLayout" name="layoutV_Shifts">
+      <property name="leftMargin"><number>12</number></property>
+      <property name="topMargin"><number>6</number></property>
+      <property name="rightMargin"><number>12</number></property>
       <property name="bottomMargin"><number>8</number></property>
-      <property name="horizontalSpacing"><number>12</number></property>
-      <property name="verticalSpacing"><number>6</number></property>
-      <property name="fieldGrowthPolicy"><enum>QFormLayout::FieldsStayAtSizeHint</enum></property>
-      <property name="labelAlignment"><set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set></property>
+      <property name="spacing"><number>6</number></property>
+      <item>
+       <widget class="QLabel" name="label_ShiftsHint">
+        <property name="text"><string>A shift is held while its assigned logical button is active.</string></property>
+        <property name="styleSheet"><string notr="true">color: palette(mid); font-style: italic;</string></property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QGridLayout" name="grid_Shifts">
+        <property name="horizontalSpacing"><number>18</number></property>
+        <property name="verticalSpacing"><number>8</number></property>
+        <property name="columnStretch" stdset="0"><string notr="true">1,1,1,1</string></property>
 
-      <item row="0" column="0">
-       <widget class="QLabel" name="text_encoderPressTimer">
-        <property name="text"><string>Encoder press timer</string></property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QSpinBox" name="spinBox_EncoderPressTimer">
-        <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
-        <property name="alignment"><set>Qt::AlignCenter</set></property>
-        <property name="suffix"><string> ms</string></property>
-        <property name="maximum"><number>65535</number></property>
-       </widget>
-      </item>
+        <!-- row 0: shifts 1-4 -->
+        <item row="0" column="0">
+         <layout class="QHBoxLayout" name="cell_Shift1">
+          <property name="spacing"><number>8</number></property>
+          <item>
+           <widget class="QLabel" name="label_Shift1">
+            <property name="text"><string notr="true">Shift 1:</string></property>
+            <property name="font"><font><bold>true</bold></font></property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spinBox_Shift1">
+            <property name="enabled"><bool>false</bool></property>
+            <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
+            <property name="alignment"><set>Qt::AlignCenter</set></property>
+            <property name="maximum"><number>128</number></property>
+            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Shift trigger&lt;/b&gt;&lt;/div&gt;Logical button that holds this shift active.</string></property>
+           </widget>
+          </item>
+          <item><spacer name="sp_Shift1"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
+         </layout>
+        </item>
+        <item row="0" column="1">
+         <layout class="QHBoxLayout" name="cell_Shift2">
+          <property name="spacing"><number>8</number></property>
+          <item>
+           <widget class="QLabel" name="label_Shift2">
+            <property name="text"><string notr="true">Shift 2:</string></property>
+            <property name="font"><font><bold>true</bold></font></property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spinBox_Shift2">
+            <property name="enabled"><bool>false</bool></property>
+            <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
+            <property name="alignment"><set>Qt::AlignCenter</set></property>
+            <property name="maximum"><number>128</number></property>
+            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Shift trigger&lt;/b&gt;&lt;/div&gt;Logical button that holds this shift active.</string></property>
+           </widget>
+          </item>
+          <item><spacer name="sp_Shift2"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
+         </layout>
+        </item>
+        <item row="0" column="2">
+         <layout class="QHBoxLayout" name="cell_Shift3">
+          <property name="spacing"><number>8</number></property>
+          <item>
+           <widget class="QLabel" name="label_Shift3">
+            <property name="text"><string notr="true">Shift 3:</string></property>
+            <property name="font"><font><bold>true</bold></font></property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spinBox_Shift3">
+            <property name="enabled"><bool>false</bool></property>
+            <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
+            <property name="alignment"><set>Qt::AlignCenter</set></property>
+            <property name="maximum"><number>128</number></property>
+            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Shift trigger&lt;/b&gt;&lt;/div&gt;Logical button that holds this shift active.</string></property>
+           </widget>
+          </item>
+          <item><spacer name="sp_Shift3"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
+         </layout>
+        </item>
+        <item row="0" column="3">
+         <layout class="QHBoxLayout" name="cell_Shift4">
+          <property name="spacing"><number>8</number></property>
+          <item>
+           <widget class="QLabel" name="label_Shift4">
+            <property name="text"><string notr="true">Shift 4:</string></property>
+            <property name="font"><font><bold>true</bold></font></property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spinBox_Shift4">
+            <property name="enabled"><bool>false</bool></property>
+            <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
+            <property name="alignment"><set>Qt::AlignCenter</set></property>
+            <property name="maximum"><number>128</number></property>
+            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Shift trigger&lt;/b&gt;&lt;/div&gt;Logical button that holds this shift active.</string></property>
+           </widget>
+          </item>
+          <item><spacer name="sp_Shift4"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
+         </layout>
+        </item>
 
-      <item row="1" column="0">
-       <widget class="QLabel" name="text_encoderPolling">
-        <property name="text"><string>Encoders polling</string></property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QSpinBox" name="spinBox_EncoderPolling">
-        <property name="toolTip"><string>Polling interval. A low value will not improve the operation of the buttons; on the contrary, increasing it may improve encoder operation.</string></property>
-        <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
-        <property name="alignment"><set>Qt::AlignCenter</set></property>
-        <property name="suffix"><string> ns</string></property>
-        <property name="minimum"><number>500</number></property>
-        <property name="maximum"><number>10000</number></property>
-        <property name="singleStep"><number>500</number></property>
-       </widget>
+        <!-- row 1: shifts 5-8 -->
+        <item row="1" column="0">
+         <layout class="QHBoxLayout" name="cell_Shift5">
+          <property name="spacing"><number>8</number></property>
+          <item>
+           <widget class="QLabel" name="label_Shift5">
+            <property name="text"><string notr="true">Shift 5:</string></property>
+            <property name="font"><font><bold>true</bold></font></property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spinBox_Shift5">
+            <property name="enabled"><bool>false</bool></property>
+            <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
+            <property name="alignment"><set>Qt::AlignCenter</set></property>
+            <property name="maximum"><number>128</number></property>
+            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Shift trigger&lt;/b&gt;&lt;/div&gt;Logical button that holds this shift active.</string></property>
+           </widget>
+          </item>
+          <item><spacer name="sp_Shift5"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
+         </layout>
+        </item>
+        <item row="1" column="1">
+         <layout class="QHBoxLayout" name="cell_Shift6">
+          <property name="spacing"><number>8</number></property>
+          <item>
+           <widget class="QLabel" name="label_Shift6">
+            <property name="text"><string notr="true">Shift 6:</string></property>
+            <property name="font"><font><bold>true</bold></font></property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spinBox_Shift6">
+            <property name="enabled"><bool>false</bool></property>
+            <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
+            <property name="alignment"><set>Qt::AlignCenter</set></property>
+            <property name="maximum"><number>128</number></property>
+            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Shift trigger&lt;/b&gt;&lt;/div&gt;Logical button that holds this shift active.</string></property>
+           </widget>
+          </item>
+          <item><spacer name="sp_Shift6"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
+         </layout>
+        </item>
+        <item row="1" column="2">
+         <layout class="QHBoxLayout" name="cell_Shift7">
+          <property name="spacing"><number>8</number></property>
+          <item>
+           <widget class="QLabel" name="label_Shift7">
+            <property name="text"><string notr="true">Shift 7:</string></property>
+            <property name="font"><font><bold>true</bold></font></property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spinBox_Shift7">
+            <property name="enabled"><bool>false</bool></property>
+            <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
+            <property name="alignment"><set>Qt::AlignCenter</set></property>
+            <property name="maximum"><number>128</number></property>
+            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Shift trigger&lt;/b&gt;&lt;/div&gt;Logical button that holds this shift active.</string></property>
+           </widget>
+          </item>
+          <item><spacer name="sp_Shift7"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
+         </layout>
+        </item>
+        <item row="1" column="3">
+         <layout class="QHBoxLayout" name="cell_Shift8">
+          <property name="spacing"><number>8</number></property>
+          <item>
+           <widget class="QLabel" name="label_Shift8">
+            <property name="text"><string notr="true">Shift 8:</string></property>
+            <property name="font"><font><bold>true</bold></font></property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spinBox_Shift8">
+            <property name="enabled"><bool>false</bool></property>
+            <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
+            <property name="alignment"><set>Qt::AlignCenter</set></property>
+            <property name="maximum"><number>128</number></property>
+            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Shift trigger&lt;/b&gt;&lt;/div&gt;Logical button that holds this shift active.</string></property>
+           </widget>
+          </item>
+          <item><spacer name="sp_Shift8"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
+         </layout>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>
    </item>
 
+   <!-- ===== Timing settings: four logically-grouped cards filling the width ===== -->
    <item>
-    <widget class="QGroupBox" name="groupBox_ButtonDefaults">
-     <property name="title">
-      <string>Button defaults</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
-     <layout class="QFormLayout" name="formLayout_ButtonDefaults">
-      <property name="leftMargin"><number>16</number></property>
-      <property name="topMargin"><number>8</number></property>
-      <property name="rightMargin"><number>16</number></property>
-      <property name="bottomMargin"><number>8</number></property>
-      <property name="horizontalSpacing"><number>12</number></property>
-      <property name="verticalSpacing"><number>6</number></property>
-      <property name="fieldGrowthPolicy"><enum>QFormLayout::FieldsStayAtSizeHint</enum></property>
-      <property name="labelAlignment"><set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set></property>
+    <layout class="QHBoxLayout" name="row_Groups" stretch="1,1,1,1">
+     <property name="spacing"><number>12</number></property>
 
-      <item row="0" column="0">
-       <widget class="QLabel" name="text_timer1"><property name="text"><string>Timer 1</string></property></widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QSpinBox" name="spinBox_Timer1">
-        <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
-        <property name="alignment"><set>Qt::AlignCenter</set></property>
-        <property name="suffix"><string> ms</string></property>
-        <property name="maximum"><number>65535</number></property>
-       </widget>
-      </item>
+     <!-- Card 1: Button timers (T1/T2/T3) -->
+     <item>
+      <widget class="QGroupBox" name="groupBox_Timers">
+       <property name="title"><string>Button timers</string></property>
+       <property name="alignment"><set>Qt::AlignLeft</set></property>
+       <layout class="QFormLayout" name="form_Timers">
+        <property name="leftMargin"><number>14</number></property>
+        <property name="topMargin"><number>8</number></property>
+        <property name="rightMargin"><number>14</number></property>
+        <property name="bottomMargin"><number>8</number></property>
+        <property name="horizontalSpacing"><number>12</number></property>
+        <property name="verticalSpacing"><number>8</number></property>
+        <property name="fieldGrowthPolicy"><enum>QFormLayout::FieldsStayAtSizeHint</enum></property>
+        <property name="formAlignment"><set>Qt::AlignHCenter|Qt::AlignTop</set></property>
+        <property name="labelAlignment"><set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set></property>
 
-      <item row="1" column="0">
-       <widget class="QLabel" name="text_timer2"><property name="text"><string>Timer 2</string></property></widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QSpinBox" name="spinBox_Timer2">
-        <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
-        <property name="alignment"><set>Qt::AlignCenter</set></property>
-        <property name="suffix"><string> ms</string></property>
-        <property name="maximum"><number>65535</number></property>
-       </widget>
-      </item>
+        <item row="0" column="0"><widget class="QLabel" name="text_timer1"><property name="text"><string>Timer 1:</string></property></widget></item>
+        <item row="0" column="1">
+         <widget class="QSpinBox" name="spinBox_Timer1">
+          <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
+          <property name="alignment"><set>Qt::AlignCenter</set></property>
+          <property name="suffix"><string> ms</string></property>
+          <property name="maximum"><number>65535</number></property>
+         </widget>
+        </item>
+        <item row="1" column="0"><widget class="QLabel" name="text_timer2"><property name="text"><string>Timer 2:</string></property></widget></item>
+        <item row="1" column="1">
+         <widget class="QSpinBox" name="spinBox_Timer2">
+          <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
+          <property name="alignment"><set>Qt::AlignCenter</set></property>
+          <property name="suffix"><string> ms</string></property>
+          <property name="maximum"><number>65535</number></property>
+         </widget>
+        </item>
+        <item row="2" column="0"><widget class="QLabel" name="text_timer3"><property name="text"><string>Timer 3:</string></property></widget></item>
+        <item row="2" column="1">
+         <widget class="QSpinBox" name="spinBox_Timer3">
+          <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
+          <property name="alignment"><set>Qt::AlignCenter</set></property>
+          <property name="suffix"><string> ms</string></property>
+          <property name="maximum"><number>65535</number></property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
 
-      <item row="2" column="0">
-       <widget class="QLabel" name="text_timer3"><property name="text"><string>Timer 3</string></property></widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QSpinBox" name="spinBox_Timer3">
-        <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
-        <property name="alignment"><set>Qt::AlignCenter</set></property>
-        <property name="suffix"><string> ms</string></property>
-        <property name="maximum"><number>65535</number></property>
-       </widget>
-      </item>
+     <!-- Card 2: Gestures (tap / double-tap cutoffs) -->
+     <item>
+      <widget class="QGroupBox" name="groupBox_Gestures">
+       <property name="title"><string>Gestures</string></property>
+       <property name="alignment"><set>Qt::AlignLeft</set></property>
+       <layout class="QFormLayout" name="form_Gestures">
+        <property name="leftMargin"><number>14</number></property>
+        <property name="topMargin"><number>8</number></property>
+        <property name="rightMargin"><number>14</number></property>
+        <property name="bottomMargin"><number>8</number></property>
+        <property name="horizontalSpacing"><number>12</number></property>
+        <property name="verticalSpacing"><number>8</number></property>
+        <property name="fieldGrowthPolicy"><enum>QFormLayout::FieldsStayAtSizeHint</enum></property>
+        <property name="formAlignment"><set>Qt::AlignHCenter|Qt::AlignTop</set></property>
+        <property name="labelAlignment"><set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set></property>
 
-      <item row="3" column="0">
-       <widget class="QLabel" name="text_debounceTimer"><property name="text"><string>Debounce timer</string></property></widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QSpinBox" name="spinBox_DebounceTimer">
-        <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
-        <property name="alignment"><set>Qt::AlignCenter</set></property>
-        <property name="suffix"><string> ms</string></property>
-        <property name="maximum"><number>65535</number></property>
-       </widget>
-      </item>
+        <item row="0" column="0"><widget class="QLabel" name="text_longPress"><property name="text"><string>Tap cutoff:</string></property></widget></item>
+        <item row="0" column="1">
+         <widget class="QSpinBox" name="spinBox_LongPressThreshold">
+          <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Tap cutoff&lt;/b&gt;&lt;/div&gt;Press shorter than this counts as a tap; longer is a long-press.</string></property>
+          <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
+          <property name="alignment"><set>Qt::AlignCenter</set></property>
+          <property name="suffix"><string> ms</string></property>
+          <property name="minimum"><number>100</number></property>
+          <property name="maximum"><number>5000</number></property>
+          <property name="value"><number>200</number></property>
+         </widget>
+        </item>
+        <item row="1" column="0"><widget class="QLabel" name="text_doubleTap"><property name="text"><string>Double-tap cutoff:</string></property></widget></item>
+        <item row="1" column="1">
+         <widget class="QSpinBox" name="spinBox_DoubleTapWindow">
+          <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Double-tap cutoff&lt;/b&gt;&lt;/div&gt;Maximum gap between two taps to register a double-tap.</string></property>
+          <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
+          <property name="alignment"><set>Qt::AlignCenter</set></property>
+          <property name="suffix"><string> ms</string></property>
+          <property name="minimum"><number>100</number></property>
+          <property name="maximum"><number>2000</number></property>
+          <property name="value"><number>200</number></property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
 
-      <item row="4" column="0">
-       <widget class="QLabel" name="text_a2bDebounce"><property name="text"><string>Axes-to-buttons debounce</string></property></widget>
-      </item>
-      <item row="4" column="1">
-       <widget class="QSpinBox" name="spinBox_A2bDebounce">
-        <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
-        <property name="alignment"><set>Qt::AlignCenter</set></property>
-        <property name="suffix"><string> ms</string></property>
-        <property name="maximum"><number>65535</number></property>
-       </widget>
-      </item>
+     <!-- Card 3: Debounce (buttons / axes-to-buttons) -->
+     <item>
+      <widget class="QGroupBox" name="groupBox_Debounce">
+       <property name="title"><string>Debounce</string></property>
+       <property name="alignment"><set>Qt::AlignLeft</set></property>
+       <layout class="QFormLayout" name="form_Debounce">
+        <property name="leftMargin"><number>14</number></property>
+        <property name="topMargin"><number>8</number></property>
+        <property name="rightMargin"><number>14</number></property>
+        <property name="bottomMargin"><number>8</number></property>
+        <property name="horizontalSpacing"><number>12</number></property>
+        <property name="verticalSpacing"><number>8</number></property>
+        <property name="fieldGrowthPolicy"><enum>QFormLayout::FieldsStayAtSizeHint</enum></property>
+        <property name="formAlignment"><set>Qt::AlignHCenter|Qt::AlignTop</set></property>
+        <property name="labelAlignment"><set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set></property>
 
-      <item row="5" column="0">
-       <widget class="QLabel" name="text_buttonsPolling"><property name="text"><string>Buttons polling</string></property></widget>
-      </item>
-      <item row="5" column="1">
-       <widget class="QSpinBox" name="spinBox_ButtonsPolling">
-        <property name="toolTip"><string>Polling interval. A low value will not improve the operation of the buttons; on the contrary, increasing it may improve encoder operation.</string></property>
-        <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
-        <property name="alignment"><set>Qt::AlignCenter</set></property>
-        <property name="suffix"><string> ns</string></property>
-        <property name="minimum"><number>500</number></property>
-        <property name="maximum"><number>10000</number></property>
-        <property name="singleStep"><number>500</number></property>
-        <property name="value"><number>2500</number></property>
-       </widget>
-      </item>
+        <item row="0" column="0"><widget class="QLabel" name="text_debounceTimer"><property name="text"><string>Buttons:</string></property></widget></item>
+        <item row="0" column="1">
+         <widget class="QSpinBox" name="spinBox_DebounceTimer">
+          <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
+          <property name="alignment"><set>Qt::AlignCenter</set></property>
+          <property name="suffix"><string> ms</string></property>
+          <property name="maximum"><number>65535</number></property>
+         </widget>
+        </item>
+        <item row="1" column="0"><widget class="QLabel" name="text_a2bDebounce"><property name="text"><string>Axes-to-buttons:</string></property></widget></item>
+        <item row="1" column="1">
+         <widget class="QSpinBox" name="spinBox_A2bDebounce">
+          <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
+          <property name="alignment"><set>Qt::AlignCenter</set></property>
+          <property name="suffix"><string> ms</string></property>
+          <property name="maximum"><number>65535</number></property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
 
-      <item row="6" column="0">
-       <widget class="QLabel" name="text_longPress"><property name="text"><string>Tap cutoff</string></property></widget>
-      </item>
-      <item row="6" column="1">
-       <widget class="QSpinBox" name="spinBox_LongPressThreshold">
-        <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
-        <property name="alignment"><set>Qt::AlignCenter</set></property>
-        <property name="suffix"><string> ms</string></property>
-        <property name="minimum"><number>100</number></property>
-        <property name="maximum"><number>5000</number></property>
-        <property name="value"><number>200</number></property>
-       </widget>
-      </item>
+     <!-- Card 4: Polling & encoder -->
+     <item>
+      <widget class="QGroupBox" name="groupBox_PollingEncoder">
+       <property name="title"><string>Polling &amp;&amp; encoder</string></property>
+       <property name="alignment"><set>Qt::AlignLeft</set></property>
+       <layout class="QFormLayout" name="form_PollingEncoder">
+        <property name="leftMargin"><number>14</number></property>
+        <property name="topMargin"><number>8</number></property>
+        <property name="rightMargin"><number>14</number></property>
+        <property name="bottomMargin"><number>8</number></property>
+        <property name="horizontalSpacing"><number>12</number></property>
+        <property name="verticalSpacing"><number>8</number></property>
+        <property name="fieldGrowthPolicy"><enum>QFormLayout::FieldsStayAtSizeHint</enum></property>
+        <property name="formAlignment"><set>Qt::AlignHCenter|Qt::AlignTop</set></property>
+        <property name="labelAlignment"><set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set></property>
 
-      <item row="7" column="0">
-       <widget class="QLabel" name="text_doubleTap"><property name="text"><string>Double tap cutoff</string></property></widget>
-      </item>
-      <item row="7" column="1">
-       <widget class="QSpinBox" name="spinBox_DoubleTapWindow">
-        <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
-        <property name="alignment"><set>Qt::AlignCenter</set></property>
-        <property name="suffix"><string> ms</string></property>
-        <property name="minimum"><number>100</number></property>
-        <property name="maximum"><number>2000</number></property>
-        <property name="value"><number>200</number></property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
+        <item row="0" column="0"><widget class="QLabel" name="text_buttonsPolling"><property name="text"><string>Buttons polling:</string></property></widget></item>
+        <item row="0" column="1">
+         <widget class="QSpinBox" name="spinBox_ButtonsPolling">
+          <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Polling interval&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;A low value will not improve the operation of the buttons.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Increasing it may improve encoder operation.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string></property>
+          <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
+          <property name="alignment"><set>Qt::AlignCenter</set></property>
+          <property name="suffix"><string> ns</string></property>
+          <property name="minimum"><number>500</number></property>
+          <property name="maximum"><number>10000</number></property>
+          <property name="singleStep"><number>500</number></property>
+          <property name="value"><number>2500</number></property>
+         </widget>
+        </item>
+        <item row="1" column="0"><widget class="QLabel" name="text_encoderPolling"><property name="text"><string>Encoders polling:</string></property></widget></item>
+        <item row="1" column="1">
+         <widget class="QSpinBox" name="spinBox_EncoderPolling">
+          <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Polling interval&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;A low value will not improve the operation of the buttons.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Increasing it may improve encoder operation.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string></property>
+          <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
+          <property name="alignment"><set>Qt::AlignCenter</set></property>
+          <property name="suffix"><string> ns</string></property>
+          <property name="minimum"><number>500</number></property>
+          <property name="maximum"><number>10000</number></property>
+          <property name="singleStep"><number>500</number></property>
+         </widget>
+        </item>
+        <item row="2" column="0"><widget class="QLabel" name="text_encoderPressTimer"><property name="text"><string>Encoder press:</string></property></widget></item>
+        <item row="2" column="1">
+         <widget class="QSpinBox" name="spinBox_EncoderPressTimer">
+          <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Encoder step hold&lt;/b&gt;&lt;/div&gt;How long an encoder step holds its virtual button pressed.</string></property>
+          <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
+          <property name="alignment"><set>Qt::AlignCenter</set></property>
+          <property name="suffix"><string> ms</string></property>
+          <property name="maximum"><number>65535</number></property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
    </item>
+
    <item>
     <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
+     <property name="orientation"><enum>Qt::Vertical</enum></property>
+     <property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property>
     </spacer>
    </item>
   </layout>

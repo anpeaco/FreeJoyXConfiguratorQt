@@ -53,6 +53,16 @@ public:
      * flag itself as a collision. */
     void setOtherConnectedDevices(const QList<OtherDevice> &devices);
 
+    /* Suppress the VID:PID conflict banner while the displayed config does NOT
+     * correspond to the selected device -- i.e. between a device swap and the
+     * subsequent (auto-)read. During that window the still-shown old config's
+     * PID would self-collide with the just-deselected device (now an "other"),
+     * flashing a false conflict until the new config lands. MainWindow sets
+     * this true on selection change and false once UiReadFromConfig completes;
+     * the exclusion list still updates underneath, so the pill is correct the
+     * moment it un-suppresses. A user PID edit also clears it. */
+    void setPidConflictSuppressed(bool suppressed);
+
     /* Push the currently-active save directory (the one MainWindow owns in
      * m_cfgDirPath) into the Default save directory line edit. Kept in sync
      * by MainWindow so the tab reflects out-of-band changes (e.g. the legacy
@@ -61,7 +71,6 @@ public:
 
 signals:
     void languageChanged(const QString &language);
-    void themeChanged(bool dark);
 
     void fontChanged();
 
@@ -97,8 +106,6 @@ private slots:
     void on_pushButton_About_clicked();
 
     void on_pushButton_removeName_clicked();
-
-    void on_pushButton_RestartApp_clicked();
 
     void on_pushButton_LangDeutsch_clicked();
 
@@ -140,6 +147,11 @@ private:
     QWidget     *m_pidConflictRow   = nullptr;
     QLabel      *m_pidConflictIcon  = nullptr;
     QLabel      *m_pidConflictLabel = nullptr;
+
+    /* See setPidConflictSuppressed(): true while the shown config is stale
+     * w.r.t. the selected device (mid device-swap), so refreshPidConflictPill
+     * keeps the banner hidden. */
+    bool         m_suppressConflict = false;
 
     /* Diagnostic button beneath the PID input -- always visible. Lets
      * the user dump the full connected-FreeJoy list when a phantom

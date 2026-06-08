@@ -112,10 +112,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="checkBox_ShowExtend">
-          <property name="cursor">
-           <cursorShape>PointingHandCursor</cursorShape>
-          </property>
+         <widget class="QToolButton" name="toolButton_ShowExtend">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
             <horstretch>0</horstretch>
@@ -128,15 +125,11 @@
             <height>17</height>
            </size>
           </property>
-          <property name="layoutDirection">
-           <enum>Qt::RightToLeft</enum>
-          </property>
           <property name="toolTip">
-           <string>Toggle prescaler, resolution, and axes-to-buttons sliders for this axis</string>
+           <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Extended axis settings&lt;/b&gt;&lt;/div&gt;Toggles the prescaler, resolution, and axes-to-buttons sliders for this axis.</string>
           </property>
-          <property name="text">
-           <string>Show extended settings</string>
-          </property>
+          <!-- Look (gear + "Extended Settings" + chevron) is applied in code via
+               freejoy_style::configureSectionToggle so it matches the DFU dialog. -->
          </widget>
         </item>
        </layout>
@@ -184,7 +177,7 @@
           </property>
           <property name="minimumSize"><size><width>30</width><height>30</height></size></property>
           <property name="maximumSize"><size><width>30</width><height>30</height></size></property>
-          <property name="toolTip"><string>Reset calibration (Min / Center / Max back to factory defaults)</string></property>
+          <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Reset calibration&lt;/b&gt;&lt;/div&gt;Returns Min / Center / Max to factory defaults.</string></property>
           <property name="text"><string notr="true"/></property>
           <property name="icon">
            <iconset resource="../../resources.qrc">
@@ -253,7 +246,7 @@
         </item>
         <item>
          <widget class="QCheckBox" name="checkBox_Center">
-          <property name="toolTip"><string>Override the natural midpoint between Min and Max with a custom center value</string></property>
+          <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Custom center&lt;/b&gt;&lt;/div&gt;Overrides the natural midpoint between Min and Max with a custom center value.</string></property>
           <property name="text"><string notr="true"/></property>
          </widget>
         </item>
@@ -267,7 +260,7 @@
           </property>
           <property name="minimumSize"><size><width>30</width><height>30</height></size></property>
           <property name="maximumSize"><size><width>30</width><height>30</height></size></property>
-          <property name="toolTip"><string>Capture the current axis value as the new Center</string></property>
+          <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Capture center&lt;/b&gt;&lt;/div&gt;Captures the current axis value as the new Center.</string></property>
           <property name="text"><string notr="true"/></property>
           <property name="icon">
            <iconset resource="../../resources.qrc">
@@ -698,7 +691,7 @@ QProgressBar::chunk:disabled {
           </property>
           <property name="iconSize"><size><width>16</width><height>16</height></size></property>
           <property name="toolTip">
-           <string>Click then rotate any connected axis to set its source pin as this axis's source. Click again to cancel. Only works for pins already bound to some axis -- the firmware reports raw values per-axis, not per-pin.</string>
+           <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Capture this axis's source&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;&lt;b&gt;Click&lt;/b&gt;, then rotate any connected axis to capture its source pin as this axis's source.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;&lt;b&gt;Double-click&lt;/b&gt;, then rotate any connected axis to capture its source, and auto-arm the next axis.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Press &lt;b&gt;Esc&lt;/b&gt; to cancel.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Times out after 5 seconds.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Only works for pins already bound to some axis -- the firmware reports raw values per-axis, not per-pin.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
           </property>
           <property name="checkable"><bool>true</bool></property>
          </widget>

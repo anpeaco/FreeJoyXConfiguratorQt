@@ -4,6 +4,8 @@
 #include <QList>
 #include <QPair>
 #include <QString>
+#include <QVariant>
+#include <QVector>
 #include <QWidget>
 
 namespace Ui {
@@ -11,6 +13,7 @@ class Flasher;
 }
 
 class FirmwareLibrary;
+class FlashConfirmationDialog;
 
 class Flasher : public QWidget
 {
@@ -28,6 +31,19 @@ public:
      * triggerBootloader=false) instead of a normal flash when the device
      * is already in bootloader mode. */
     bool isInFlasherMode() const { return m_inFlasherMode; }
+
+    /* Open the firmware picker + Upgrade Firmware dialog for the connected
+     * device. `preferredPath` (e.g. the bundled upgrade firmware) is
+     * pre-selected if it matches a source. The device identity triple
+     * (name/serial/versionText) is supplied by the caller so the dialog's
+     * Device pane matches the main device card exactly; when left blank the
+     * dialog falls back to the flasher-mode values it scraped from HID
+     * enumeration (recovery path). Called by the device card's "Upgrade
+     * Firmware" button (MainWindow) and the now-hidden Flasher tab button. */
+    void openFlashDialog(const QString &preferredPath = QString(),
+                         const QString &deviceName = QString(),
+                         const QString &deviceSerial = QString(),
+                         const QString &deviceVersionText = QString());
 
 signals:
     /* Consolidated one-click flash. Emitted by the Flash button after the
@@ -87,14 +103,27 @@ private slots:
     void onAssetDownloaded(const QString &localPath, bool success);
 
 private:
-    /* Open the confirmation dialog with the given firmware path and, on
-     * accept, emit consolidatedFlashRequested. Shared by Browse and the
-     * Flash button's local + post-download paths. */
-    void requestConsolidatedFlash(const QString &filePath);
+    /* Tier 2 -- the firmware picker lives in the FlashConfirmationDialog now.
+     * on_pushButton_FlashConsolidated_clicked() opens it; these drive it:
+     *  - buildSourceItems()      : the (label, data) list for the dialog combo
+     *                              (same content the old inline dropdown built).
+     *  - onDialogSourceSelected(): resolve a pick to a local file (downloading a
+     *                              remote asset if needed) and push it back.
+     *  - onDialogBrowseRequested : file-pick + add to MRU + re-populate sources.
+     *  - showResolvedInDialog()  : load the .bin and call setResolvedTarget. */
+    QVector<QPair<QString, QVariant>> buildSourceItems();
+    void onDialogSourceSelected(const QVariant &data);
+    void onDialogBrowseRequested();
+    void showResolvedInDialog(const QString &localPath);
 
-    /* Path of the asset we kicked off a download for (set when the user
-     * clicks Flash on a not-yet-cached remote entry). Cleared by
-     * onAssetDownloaded. Non-empty -> a download is in flight. */
+    /* The open FlashConfirmationDialog (valid only during its exec()), and the
+     * file path currently resolved into it -- emitted on accept. */
+    FlashConfirmationDialog *m_flashDlg = nullptr;
+    QString m_dlgResolvedPath;
+
+    /* Path of the asset we kicked off a download for (set when a not-yet-cached
+     * remote entry is selected in the dialog). Cleared by onAssetDownloaded.
+     * Non-empty -> a download is in flight. */
     QString m_pendingDownloadPath;
 
     Ui::Flasher *ui;

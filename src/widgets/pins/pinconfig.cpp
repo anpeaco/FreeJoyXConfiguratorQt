@@ -703,26 +703,23 @@ bool PinConfig::limitIsReached()
 
 void PinConfig::highlightPins(pin_t pinType, bool enable)
 {
-    // QSS in 8597cbd took over QComboBox styling, so setPalette() no
-    // longer repaints; drive the highlight via a dynamic property and
-    // let QComboBox[pinHighlight="true"] in common.qss handle the look.
-    bool i2c = (pinType == I2C_SDA);
+    // Hovering a Pin Info row outlines every pin that can take that role, in the
+    // role's own function-group colour (rather than a flat blue fill) -- so the
+    // highlight reads as "these pins, this function". The colour comes from the
+    // m_pinTypes table (PinComboBox::colorForRole). I2C is the one role that
+    // spans two pins (SDA + SCL), so it highlights both; they share a group
+    // colour, so SDA's colour drives both.
+    const bool i2c = (pinType == I2C_SDA);
+
+    QColor outline;
+    if (enable && !m_pinCBoxPtrList.isEmpty()) {
+        outline = m_pinCBoxPtrList.first()->colorForRole(pinType);
+    }
 
     for (int i = 0; i < m_pinCBoxPtrList.size(); ++i) {
         for (auto &type: m_pinCBoxPtrList[i]->enumIndex()) {
             if (type == pinType || (i2c && type == I2C_SCL)) {
-                for (auto *cb : m_pinCBoxPtrList[i]->findChildren<QComboBox*>()) {
-                    if (enable) {
-                        freejoy_style::setRole(cb, "pinHighlight", true);
-                    } else {
-                        freejoy_style::clearRole(cb, "pinHighlight");
-                    }
-                }
-                // clearRole's unpolish/polish wipes the palette-driven role
-                // colour; restore it so the pin keeps its colour after hover.
-                if (!enable) {
-                    m_pinCBoxPtrList[i]->reapplyRoleColor();
-                }
+                m_pinCBoxPtrList[i]->setHoverOutline(enable ? outline : QColor());
                 break;
             }
         }

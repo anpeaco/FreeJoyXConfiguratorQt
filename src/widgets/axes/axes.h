@@ -170,7 +170,7 @@ private slots:
 
     void on_pushButton_ResetCalib_clicked();
 
-    void on_checkBox_ShowExtend_stateChanged(int state);
+    void on_toolButton_ShowExtend_toggled(bool checked);
 
 protected:
     /* Owns the Detect button's mouse events so the checkable

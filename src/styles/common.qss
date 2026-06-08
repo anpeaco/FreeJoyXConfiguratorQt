@@ -20,8 +20,10 @@ QToolTip {
     color: palette(tool-tip-text);
     background-color: palette(tool-tip-base);
     border: 1px solid palette(mid);
-    border-radius: 4px;
-    padding: 4px 8px;
+    border-radius: 5px;
+    /* A little breathing room for the instructional multi-line tooltips without
+     * being heavy. */
+    padding: 5px 8px;
 }
 
 /* ----- Group boxes --------------------------------------------------- */
@@ -35,12 +37,16 @@ QGroupBox {
     font-weight: 600;
 }
 
+/* Title sits *over* the top frame border (straddling the line, the line
+ * notched out behind the title's window-coloured background) and is aligned
+ * close to the left corner. `top: 6px` lowers it from the top of the 14px
+ * margin band onto the border at y=14; `left: 4px` pulls it further left. */
 QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
-    left: 10px;
-    top: 0px;
-    padding: 0px 6px;
+    left: 4px;
+    top: 6px;
+    padding: 0px 5px;
     color: palette(window-text);
     background: palette(window);
 }
@@ -96,17 +102,24 @@ QPushButton:default {
     border: 1px solid palette(highlight);
 }
 
-/* Primary action buttons (Read / Write to device).
+/* Primary action buttons (Read / Write to device). Subtle emphasis: a faint
+ * blue tint + a blue (highlight) border at rest -- distinct from the plain
+ * mid-grey-bordered buttons without the heavy solid-blue block. The strong blue
+ * only appears on hover as interaction feedback.
  * Apply via: button->setProperty("role", "primary"); style->polish(button); */
 QPushButton[role="primary"] {
-    background-color: palette(highlight);
-    color: palette(highlighted-text);
+    background-color: %accent-blue-fill%;
     border: 1px solid palette(highlight);
-    font-weight: 600;
 }
 
 QPushButton[role="primary"]:hover {
-    /* slight tint shift handled by theme files */
+    background-color: palette(highlight);
+    color: palette(highlighted-text);
+    border-color: palette(highlight);
+}
+
+QPushButton[role="primary"]:pressed {
+    background-color: palette(dark);
 }
 
 QPushButton[role="primary"]:disabled {
@@ -232,8 +245,16 @@ QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
     width: 9px;
     height: 9px;
 }
-/* image: url(...) per-theme in dark.qss / light.qss so the chevron
- * stroke contrasts with the active palette. */
+/* Theme-independent grey chevrons (one stroke colour that reads on both
+ * the light and dark input backgrounds). Keeping the image theme-neutral is
+ * what lets the whole stylesheet be applied ONCE and a theme swap be a cheap
+ * palette change -- see MainWindow::themeChanged. */
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
+    image: url(:/Images/icons/lucide/chevron-up-neutral.svg);
+}
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
+    image: url(:/Images/icons/lucide/chevron-down-neutral.svg);
+}
 
 QComboBox::drop-down {
     border: none;
@@ -245,8 +266,8 @@ QComboBox::drop-down {
 QComboBox::down-arrow {
     width: 10px;
     height: 10px;
+    image: url(:/Images/icons/lucide/chevron-down-neutral.svg);
 }
-/* image: url(...) per-theme in dark.qss / light.qss. */
 
 /* No `color:` here on purpose: the popup list must honour each item's
  * Qt::ForegroundRole (PinComboBox tints rows per pin function). Plain
@@ -296,16 +317,23 @@ QCheckBox::indicator:hover {
  * selection rather than a state. The border accent on :checked is
  * kept so "on" still has visible affordance.
  *
- * image: url(...) per-theme in dark.qss / light.qss because
- * QSvgRenderer does not resolve SVG currentColor from QSS. */
+ * The check glyph is a theme-independent blue (matches this highlight
+ * border) so it reads on both light and dark indicator fills without a
+ * per-theme stylesheet -- which is what lets the sheet be applied once and
+ * a theme swap be a cheap palette change (MainWindow::themeChanged). */
 QCheckBox::indicator:checked {
     border-color: palette(highlight);
+    image: url(:/Images/icons/lucide/check-neutral.svg);
 }
 
 QCheckBox::indicator:disabled {
     background: palette(disabled, base);
     border-color: palette(disabled, mid);
 }
+
+/* The axes "Extended Settings" disclosure is now a QToolButton (gear + label +
+ * chevron), configured in code by freejoy_style::configureSectionToggle to match
+ * the DFU Install dialog's toggle -- no per-checkbox indicator styling needed. */
 
 QRadioButton::indicator {
     border: 1px solid palette(mid);
@@ -545,18 +573,32 @@ QLabel[role="status-error"] {
 
 /* ----- Physical-button indicator on Button Config tab --------------- */
 
-/* 26x26 chip per slot in the 128-button grid. Outlined-when-off,
- * filled-when-on so the inactive grid stays visually quiet and only
- * pressed buttons pop. Shape lives here; off-state colour tuning is
- * per-theme in dark.qss / light.qss because the ring + muted text
+/* Rounded-rect status badge per slot. Used by the 128-button grid chips and
+ * the Logical-buttons row-number column. Outlined-when-off, filled-when-on so
+ * the inactive list/grid stays visually quiet and only pressed slots pop. A
+ * 6px-radius badge (rather than a full 13px circle) keeps the rounded look but
+ * gives 3-digit slot numbers (100-128) their full horizontal room instead of
+ * squeezing them into a circle's corners. Shape lives here; off-state colour
+ * tuning is per-theme in dark.qss / light.qss because the ring + muted text
  * need theme-specific contrast. */
 
 QLabel[buttonState="off"], QLabel[buttonState="on"] {
-    border-radius: 13px;
+    border-radius: 6px;
     min-height: 26px;
     min-width: 26px;
     border: 1px solid transparent;
     background-color: transparent;
+}
+
+/* Off-state: muted text + a fill a touch darker than the base UI colour, in
+ * both themes. The translucent-black overlay darkens whatever window colour sits
+ * behind it (light -> faint grey, dark -> a shade deeper), so the not-pressed pip
+ * reads as a recessed well rather than nothing (dark) / a stray tint (light).
+ * Palette-driven border/ink keep it theme-tracking from one apply-once rule. */
+QLabel[buttonState="off"] {
+    border-color: palette(mid);
+    color: palette(disabled, text);
+    background-color: rgba(0, 0, 0, 33);
 }
 
 QLabel[buttonState="on"] {
@@ -610,20 +652,28 @@ QFrame[role="info-card"] {
     background-color: palette(alternate-base);
 }
 
-/* Key labels (left column): muted so the values dominate visually.
- * Targeted by objectName suffix convention -- every key label in either
- * card is named *Key. */
+/* Key labels (left column): muted so the values dominate visually. QSS can't
+ * match an objectName suffix, so every key label in either card is listed
+ * explicitly -- keep this in sync with the card rows (Version/VID:PID/Serial/
+ * Board/Packets/Rate + App Firmware). */
+QFrame[role="info-card"] QLabel#label_VersionKey,
 QFrame[role="info-card"] QLabel#label_VidPidKey,
 QFrame[role="info-card"] QLabel#label_SerialKey,
+QFrame[role="info-card"] QLabel#label_BoardKey,
+QFrame[role="info-card"] QLabel#label_PacketsKey,
+QFrame[role="info-card"] QLabel#label_RateKey,
 QFrame[role="info-card"] QLabel#label_AppFirmwareKey {
     color: palette(disabled, text);
 }
 
-/* Value labels (right column): monospace so 4-digit VID:PID pairs align
- * column-wise across rows and serial-number hex/digit strings stay
- * readable without ambiguity. */
+/* Value labels (right column): monospace for the numeric/hex/version values so
+ * digits align column-wise across rows. Board is excluded -- it renders a CPU
+ * icon + proper board name (board_display), which reads better in the UI font. */
+QFrame[role="info-card"] QLabel#label_VersionVal,
 QFrame[role="info-card"] QLabel#label_VidPidVal,
 QFrame[role="info-card"] QLabel#label_SerialVal,
+QFrame[role="info-card"] QLabel#label_PacketsVal,
+QFrame[role="info-card"] QLabel#label_RateVal,
 QFrame[role="info-card"] QLabel#label_AppFirmwareVal {
     color: palette(text);
     font-family: "Consolas", "Cascadia Mono", "Courier New", monospace;

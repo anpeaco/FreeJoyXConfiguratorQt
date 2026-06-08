@@ -3,6 +3,7 @@
 
 #include <QAbstractButton>
 #include <QApplication>
+#include <QBoxLayout>
 #include <QBuffer>
 #include <QByteArray>
 #include <QColor>
@@ -11,14 +12,21 @@
 #include <QHash>
 #include <QIcon>
 #include <QLabel>
+#include <QList>
+#include <QMessageBox>
 #include <QPainter>
 #include <QPalette>
+#include <QPen>
 #include <QPixmap>
+#include <QRectF>
 #include <QSize>
+#include <QSizePolicy>
 #include <QString>
 #include <QStyle>
+#include <QToolButton>
 #include <QVariant>
 #include <QWidget>
+#include <algorithm>
 
 namespace freejoy_style {
 
@@ -33,11 +41,57 @@ namespace freejoy_style {
 // QPalette::Highlight per theme.
 inline QColor accentGreen()       { return QColor(0x22, 0xc5, 0x5e); } // active / success / connected
 inline QColor accentGreenBorder() { return QColor(0x16, 0xa3, 0x4a); }
+// Subtle "active row" wash. accentGreen at ~18% alpha — composites over the
+// row's window colour as a faint mint (light) / green-grey (dark) tint. This is
+// the same translucency the app's alert banners use (alertBannerQss), so the
+// active row reads at the app's standard accent weight. Painted on
+// QPalette::Window with autoFillBackground so it shows only in the gutters
+// between the row's child widgets: a peripheral "this row" cue that pairs with
+// the crisp buttonState pip on the row-number label. Far quieter than the
+// full-saturation flood it replaces.
+inline QColor accentGreenWash()   { return QColor(0x22, 0xc5, 0x5e, 46); }
 inline QColor accentRed()         { return QColor(0xef, 0x44, 0x44); } // error / disconnected
 inline QColor accentRedBorder()   { return QColor(0xdc, 0x26, 0x26); }
 inline QColor accentAmber()       { return QColor(0xf5, 0x9e, 0x0b); } // warning *fill* (white ink on top)
 inline QColor accentAmberBorder() { return QColor(0xd9, 0x77, 0x06); }
 inline QColor accentBlue(bool dark) { return dark ? QColor(0x26, 0x82, 0xe2) : QColor(0x21, 0x76, 0xd4); }
+
+// ----- Status-box colour style guide ------------------------------------
+//
+// Every coloured message box / pill / banner in the app picks one of three
+// state accents. The colour answers a single question: "what does the user
+// need to feel about this?" -- not how severe the wording is. Apply
+// consistently so a glance at the hue conveys outcome before the text is read.
+//
+//   GREEN  (accentGreen)  -- Safe / success / no data loss.
+//                            The action completes cleanly and nothing the
+//                            user configured is lost. Examples: device
+//                            connected; "Same generation -- configuration
+//                            preserved"; "Upgrade -- configuration migrated";
+//                            a Read/Write that succeeded.
+//
+//   AMBER  (accentAmber)  -- Caution / proceed-with-consequence.
+//                            The action is allowed and will work, but the
+//                            user loses or must re-do something, or must take
+//                            care during it. Reversible or recoverable.
+//                            Examples: factory-reset on flash (config saved to
+//                            disk first); downgrade / no-migrator; recovery
+//                            flash; "do not unplug" process notes.
+//
+//   RED    (accentRed)    -- Blocked / error / destructive-and-irreversible.
+//                            The action is refused, has failed, or will
+//                            irrecoverably destroy state. Examples:
+//                            incompatible board (flash refused); a failed
+//                            Read/Write; erase-and-reinstall warnings; the
+//                            project-crossing (FreeJoy->FreeJoyX) banner.
+//
+// BLUE (accentBlue) is reserved for neutral, non-state UI accents (selection,
+// drop targets, progress) -- never a success/caution/danger signal.
+//
+// All three render with the SAME translucent treatment (alertBannerQss):
+// accent fill at ~18% alpha, a solid 1px accent border, neutral palette(text)
+// ink, and a leading accent-tinted icon (check for green, triangle for
+// amber/red). Only the hue differs -- see makeAlertBanner / alertBannerQss.
 
 // Shared warning accent colour (amber). This is the *foreground / ink* amber,
 // used to tint the warning icon and warning text on a window-coloured
@@ -116,10 +170,15 @@ inline QHash<QString, QString> accentTokens(bool dark)
     t.insert(QStringLiteral("%red-fill%"),   fill(accentRed()));
     t.insert(QStringLiteral("%amber-fill%"), fill(accentAmber()));
 
-    // Blue accent matches QPalette::Highlight for the active theme so the
-    // translucent fills and the progress-bar gradient track the same hue the
-    // rest of the UI uses.
-    const QColor blue = accentBlue(dark);
+    // Blue accent for the QSS tokens. Deliberately theme-INDEPENDENT: the
+    // applied stylesheet must be identical for both themes so it can be applied
+    // once (a theme swap is then just a cheap palette change, not a multi-second
+    // full-tree QSS repolish -- see MainWindow::themeChanged). The two themes'
+    // highlight blues are nearly identical, so one fixed blue reads correctly on
+    // both; per-theme blue still flows through the palette for palette()-driven
+    // rules. `dark` is intentionally unused here.
+    (void)dark;
+    const QColor blue = accentBlue(true);
     t.insert(QStringLiteral("%accent-blue%"),      hexStr(blue));
     t.insert(QStringLiteral("%accent-blue-fill%"), rgbaStr(blue, 60));
     t.insert(QStringLiteral("%bar-fill%"),
@@ -220,15 +279,50 @@ inline QString dangerBannerQss()  { return alertBannerQss(accentRed()); }
 // Blue informational bar (theme-aware blue). Pair with a tinted info icon.
 inline QString infoBannerQss()    { return alertBannerQss(accentBlue(true)); }
 
+// Accent-tinted push button: outlined in the accent with a light accent fill
+// that strengthens on hover/press; neutral palette ink for legibility; greys out
+// when disabled. Used for action buttons that live inside an alert banner so the
+// button reads as part of the box (e.g. the blue Re-check button in the blue
+// info banner). Pass the banner's accent so the two always match.
+inline QString accentButtonQss(const QColor &accent)
+{
+    return QStringLiteral(
+        "QPushButton { padding:4px 12px; border-radius:4px; border:1px solid %1;"
+        " background-color:%2; color:palette(text); }"
+        "QPushButton:hover { background-color:%3; }"
+        "QPushButton:pressed { background-color:%4; }"
+        "QPushButton:disabled { border-color:palette(mid);"
+        " color:palette(disabled, text); background-color:transparent; }")
+        .arg(hexStr(accent), rgbaStr(accent, 40),
+             rgbaStr(accent, 70), rgbaStr(accent, 110));
+}
+
 // Build a complete alert banner as a widget: a coloured, outlined box holding a
-// tinted triangle icon and the message, laid out side-by-side and vertically
-// centred. This is the alignment-safe replacement for the old "icon-as-inline-
+// tinted triangle icon and the message, laid out side-by-side. The icon is
+// top-aligned so on a multi-line banner (heading + list + note) it rides next
+// to the heading rather than floating in the vertical middle of the block; on a
+// single-line banner top and centre coincide. This is the alignment-safe
+// replacement for the old "icon-as-inline-
 // <img> inside one QLabel" pattern, where Qt's rich-text baseline handling left
 // the icon riding above the text. Text uses the default (palette) label colour,
 // so it stays legible and theme-tracking. Pass accentAmber()/accentRed()/
 // accentBlue() for warning / danger / info.
+inline int alertSeverityRank(const QColor &accent);   // defined just below
+
+// Vertically aligns an alert banner's icon / text / action buttons by line count
+// and keeps it correct on resize (wrapping depends on width):
+//   - single line  -> centre the icon, text and buttons together on one midline
+//   - multi-line   -> top-align text + buttons; ride the icon's centre on the
+//                     FIRST text line (not the middle of the whole block)
+// Defined in mainwindow_style.cpp (needs a QObject resize watcher). Called by
+// makeAlertBanner; not normally called directly.
+void applyBannerLineAlignment(QFrame *banner, QLabel *icon, QLabel *msg,
+                              const QList<QWidget *> &actions);
+
 inline QFrame *makeAlertBanner(const QColor &accent, const QString &text,
-                               QWidget *parent = nullptr)
+                               QWidget *parent = nullptr,
+                               const QPixmap &leadingIcon = QPixmap(),
+                               const QList<QWidget *> &trailingActions = {})
 {
     auto *frame = new QFrame(parent);
     // Box chrome only (fill + border + radius); inner padding comes from the
@@ -240,22 +334,91 @@ inline QFrame *makeAlertBanner(const QColor &accent, const QString &text,
     frame->setStyleSheet(QStringLiteral(
         "QFrame#fjAlertBanner { border-radius:4px; background-color:%1; border:1px solid %2; }")
         .arg(rgbaStr(accent, 46), hexStr(accent)));
+    // Hug content vertically -- don't let a parent layout stretch the box taller
+    // than its text (which would strand the top-pinned icon above the text).
+    frame->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
     auto *row = new QHBoxLayout(frame);
     row->setContentsMargins(10, 7, 10, 7);
     row->setSpacing(8);
 
     auto *icon = new QLabel(frame);
-    icon->setPixmap(tintedTrianglePixmap(accent, 16));
-    icon->setFixedSize(16, 16);
-    icon->setScaledContents(true);
+    icon->setPixmap(leadingIcon.isNull() ? tintedTrianglePixmap(accent, 18) : leadingIcon);
+    // Glyph centred within the icon cell; applyBannerLineAlignment() positions
+    // the cell -- centred in the box for a single-line banner, or sized to one
+    // text line (so the glyph centre rides the FIRST line) when the text wraps.
+    icon->setAlignment(Qt::AlignCenter);
 
     auto *msg = new QLabel(text, frame);
     msg->setWordWrap(true);
 
+    // Initial alignment is centred (the common single-line case);
+    // applyBannerLineAlignment() flips icon/text/actions to top-aligned when the
+    // message wraps, and re-evaluates on every resize.
     row->addWidget(icon, 0, Qt::AlignVCenter);
-    row->addWidget(msg, 1);
+    row->addWidget(msg, 1, Qt::AlignVCenter);
+    // Optional trailing action buttons (e.g. a banner's Re-check / driver
+    // action). The message's stretch pushes them to the right edge. The widgets
+    // are reparented into the banner -- callers that rebuild the banner pass
+    // persistent widgets and re-assert their visibility afterwards (reparenting
+    // hides a QWidget).
+    QList<QWidget *> actions;
+    for (QWidget *action : trailingActions) {
+        if (action) {
+            // Tint the action to the banner's accent so it reads as part of the
+            // box (e.g. a blue Re-check button inside the blue info banner).
+            action->setStyleSheet(accentButtonQss(accent));
+            row->addWidget(action, 0, Qt::AlignVCenter);
+            actions.append(action);
+        }
+    }
+    // Tag the banner's severity so a stack of banners can be ordered red ->
+    // amber -> green (see restackBanners).
+    frame->setProperty("fjAlertRank", alertSeverityRank(accent));
+    // Single-line -> centre everything; multi-line -> top-align + icon on first
+    // line. Re-applied on resize.
+    applyBannerLineAlignment(frame, icon, msg, actions);
     return frame;
+}
+
+// Severity rank for ordering a stack of banners at the top of a dialog:
+// red (0) is most urgent, then amber (1), then green (2); anything else
+// (e.g. info blue) sorts last. Used by restackBanners().
+inline int alertSeverityRank(const QColor &accent)
+{
+    if (accent == accentRed())   return 0;
+    if (accent == accentAmber()) return 1;
+    if (accent == accentGreen()) return 2;
+    return 3;
+}
+
+// Re-stack the managed `banners` inside `area` (a vertical layout pinned to the
+// top of a dialog) ordered by severity: red, then amber, then green. Null and
+// hidden (setVisible(false)) banners are dropped from the layout; order is
+// stable within a rank. Call after any banner is created / shown / hidden /
+// recoloured so the dialog's top message area stays correctly ordered.
+inline void restackBanners(QBoxLayout *area, QList<QWidget *> banners)
+{
+    if (!area) return;
+    // Pull every managed banner out first so re-adding lands them in order.
+    for (QWidget *b : banners) {
+        if (b) area->removeWidget(b);
+    }
+    std::stable_sort(banners.begin(), banners.end(), [](QWidget *a, QWidget *b) {
+        const int ra = a ? a->property("fjAlertRank").toInt() : 99;
+        const int rb = b ? b->property("fjAlertRank").toInt() : 99;
+        return ra < rb;
+    });
+    for (QWidget *b : banners) {
+        if (b && !b->isHidden()) {
+            area->addWidget(b);
+            // Adding a child to an ALREADY-VISIBLE parent does not auto-show it
+            // (Qt only shows layout children on the parent's own show()), so a
+            // banner created while the dialog is open would stay invisible.
+            // Show it explicitly; harmless before the dialog is first shown.
+            b->show();
+        }
+    }
 }
 
 // ----- Themed monochrome glyph icons ------------------------------------
@@ -295,6 +458,98 @@ inline QIcon tintedSvgIcon(const QString &svgPath, const QSize &size, const QCol
     return QIcon(tintedSvgPixmap(svgPath, size, color));
 }
 
+// A small rounded-square colour chip for list/legend indicators (e.g. the
+// board marker in the firmware dropdown). Filled with `fill` and outlined with
+// `border` (1px) so it reads on either theme; pass a transparent fill for a
+// hollow "unknown" chip.
+inline QPixmap colorChipPixmap(const QColor &fill, const QColor &border, int px = 12)
+{
+    QPixmap pm(px, px);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setBrush(fill);
+    QPen pen(border);
+    pen.setWidthF(1.0);
+    p.setPen(pen);
+    p.drawRoundedRect(QRectF(0.5, 0.5, px - 1.0, px - 1.0), 2.5, 2.5);
+    p.end();
+    return pm;
+}
+
+// Inline <img> (base64 PNG) for any bundled monochrome lucide glyph, tinted to
+// `color`. Generalises triangleIconHtml() so a status box can pick a
+// severity-appropriate leading icon (a check for a green/success box, the
+// triangle for amber caution / red danger). Cached per (path, colour, size).
+inline QString svgIconHtml(const QString &svgPath, const QColor &color, int px = 14,
+                           const QString &vAlign = QStringLiteral("middle"))
+{
+    static QHash<QString, QString> cache;
+    const QString key = svgPath + QLatin1Char('|') + color.name()
+                        + QLatin1Char('@') + QString::number(px)
+                        + QLatin1Char('/') + vAlign;
+    if (!cache.contains(key)) {
+        QByteArray ba;
+        QBuffer buf(&ba);
+        buf.open(QIODevice::WriteOnly);
+        tintedSvgPixmap(svgPath, QSize(px, px), color).save(&buf, "PNG");
+        cache.insert(key, QStringLiteral("<img style=\"vertical-align: %1;\" "
+                                          "src=\"data:image/png;base64,%2\"/>")
+                              .arg(vAlign, QString::fromLatin1(ba.toBase64())));
+    }
+    return cache.value(key);
+}
+
+// Green "success" check, tinted to `color`. Pair with a green status box.
+inline QString checkIconHtml(const QColor &color, int px = 14)
+{
+    return svgIconHtml(QStringLiteral(":/Images/icons/lucide/check-dark.svg"), color, px);
+}
+
+// Pick the leading icon for a status box from its accent: a check for the
+// green/success hue, the alert triangle for amber caution and red danger.
+// Keeps the green/amber/red style guide (above) in one decision.
+inline QString statusIconHtml(const QColor &accent, int px = 14)
+{
+    return (accent == accentGreen()) ? checkIconHtml(accent, px)
+                                     : triangleIconHtml(accent, px);
+}
+
+// Pixmap form of the status icon (check for green, triangle otherwise), tinted
+// to `accent`. For makeAlertBanner's leadingIcon so a status banner picks the
+// right glyph while sharing the banner's icon/text alignment.
+inline QPixmap statusPixmap(const QColor &accent, int px = 18)
+{
+    return (accent == accentGreen())
+        ? tintedSvgPixmap(QStringLiteral(":/Images/icons/lucide/check-dark.svg"),
+                          QSize(px, px), accent)
+        : tintedTrianglePixmap(accent, px);
+}
+
+// Themed replacement for the QMessageBox::warning / critical / question
+// convenience functions. Shows the app's lucide status icon tinted to the
+// severity accent (green check for success, otherwise the amber/red triangle)
+// instead of the native platform icon, so every alert/confirm dialog matches the
+// rest of the UI. `accent` picks the severity per the status-box guide above:
+// amber = caution/confirm, red = destructive/error, green = success. Returns the
+// button the user chose, exactly like the QMessageBox statics it replaces.
+inline QMessageBox::StandardButton alertBox(
+        QWidget *parent, const QColor &accent,
+        const QString &title, const QString &text,
+        QMessageBox::StandardButtons buttons = QMessageBox::Ok,
+        QMessageBox::StandardButton defaultButton = QMessageBox::NoButton)
+{
+    QMessageBox box(parent);
+    box.setWindowTitle(title);
+    box.setText(text);
+    box.setStandardButtons(buttons);
+    if (defaultButton != QMessageBox::NoButton) {
+        box.setDefaultButton(defaultButton);
+    }
+    box.setIconPixmap(statusPixmap(accent, 40));
+    return static_cast<QMessageBox::StandardButton>(box.exec());
+}
+
 // Dynamic-property keys recording a widget's themed-icon source + render size,
 // so retintThemedIcons() can re-render it after a theme change.
 constexpr const char *kThemedIconSvgProp  = "fjThemedIconSvg";
@@ -315,6 +570,55 @@ inline void setThemedIcon(QAbstractButton *btn, const QString &svgPath)
     btn->setProperty(kThemedIconSvgProp, svgPath);
     btn->setProperty(kThemedIconSizeProp, sz);
     btn->setIcon(tintedSvgIcon(svgPath, sz, iconInk()));
+}
+
+// Forward declaration: the QLabel overload of setThemedIcon is defined below,
+// but configureSectionToggle (which tints its chevron QLabel) needs it visible.
+inline void setThemedIcon(QLabel *label, const QString &svgPath, const QSize &size);
+
+// Configure a QToolButton as a collapsible-section toggle with the app-standard
+// look: a themed gear icon, the section label, and a trailing lucide chevron
+// that flips chevron-right (collapsed) -> chevron-down (expanded). Used so every
+// "Extended Settings"-style disclosure looks identical (gear, label, chevron)
+// and matches the combo drop-arrows. The caller wires the actual show/hide to
+// the button's toggled(bool); this only keeps the icon in sync.
+//
+// QToolButton has a single icon slot (the gear), so the trailing chevron is a
+// small right-aligned QLabel overlay added via a layout on the button. The
+// label text carries trailing spaces to reserve room beneath the chevron.
+inline void configureSectionToggle(QToolButton *btn, const QString &label)
+{
+    if (btn == nullptr) {
+        return;
+    }
+    btn->setCheckable(true);
+    btn->setAutoRaise(true);
+    btn->setCursor(Qt::PointingHandCursor);
+    btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    btn->setIconSize(QSize(16, 16));
+    setThemedIcon(btn, QStringLiteral(":/Images/icons/lucide/settings.svg"));   // leading gear
+    btn->setText(label + QStringLiteral("      "));   // reserve room for the chevron
+
+    QLabel *chevron = btn->findChild<QLabel *>(QStringLiteral("fjSectionChevron"));
+    if (chevron == nullptr) {
+        auto *lay = new QHBoxLayout(btn);
+        lay->setContentsMargins(0, 0, 8, 0);
+        lay->addStretch(1);
+        chevron = new QLabel(btn);
+        chevron->setObjectName(QStringLiteral("fjSectionChevron"));
+        chevron->setAttribute(Qt::WA_TransparentForMouseEvents);
+        lay->addWidget(chevron, 0, Qt::AlignVCenter);
+    }
+    auto applyChevron = [chevron](bool on) {
+        setThemedIcon(chevron,
+                      on ? QStringLiteral(":/Images/icons/lucide/chevron-down-neutral.svg")
+                         : QStringLiteral(":/Images/icons/lucide/chevron-right-neutral.svg"),
+                      QSize(16, 16));
+    };
+    applyChevron(btn->isChecked());
+    QObject::connect(btn, &QToolButton::toggled, btn, [applyChevron](bool on) {
+        applyChevron(on);
+    });
 }
 
 // QLabel variant for icon-as-pixmap headers / info badges.
@@ -377,6 +681,47 @@ inline void setRole(QWidget *w, const char *property, const QVariant &value)
         s->polish(w);
     }
     w->update();
+}
+
+// Instructional tooltip: a bold heading line followed by bulleted, action-first
+// points (Qt renders it as rich text -- auto-detected from the markup). Use for
+// any control whose tooltip is more than a short label. `heading` is escaped;
+// each point may carry inline markup (e.g. "<b>Double-click</b> ...").
+//   setToolTip(freejoy_style::tipHtml(tr("Assign a physical button"),
+//                                     { tr("Click, then press a button to bind it here."),
+//                                       tr("<b>Double-click</b> to auto-sequence down the rows."),
+//                                       tr("Times out after 5 seconds.") }));
+inline QString tipHtml(const QString &heading, const QStringList &points)
+{
+    // Heading on its own line with a small gap below (section breathing), then a
+    // real bullet list. A <ul>/<li> list gives a hanging indent: the bullet stays
+    // attached to its text and any wrapped continuation aligns under the text,
+    // instead of breaking the bullet onto its own line.
+    // A two-column table per bullet gives a true hanging indent: the bullet sits
+    // in a narrow first column and the text wraps within the second column, so a
+    // wrapped line aligns under the TEXT (not under the bullet). The bullet cell's
+    // right padding is the gap between bullet and text; the bottom padding lets
+    // the points breathe; the table margin is the slight list indent.
+    QString s = QStringLiteral("<div style=\"margin-bottom:11px;\"><b>%1</b></div>")
+                    .arg(heading.toHtmlEscaped());
+    s += QStringLiteral("<table cellspacing=\"0\" cellpadding=\"0\" style=\"margin-left:4px;\">");
+    for (const QString &p : points) {
+        s += QStringLiteral("<tr>"
+                            "<td valign=\"top\" style=\"padding:0 8px 4px 0;\">&bull;</td>"
+                            "<td style=\"padding:0 0 4px 0;\">%1</td>"
+                            "</tr>").arg(p);
+    }
+    s += QStringLiteral("</table>");
+    return s;
+}
+
+// Instructional tooltip with no discrete steps: a bold heading then a short
+// descriptive line (no bullet). For controls that explain a concept rather than
+// a sequence of actions.
+inline QString tipHtml(const QString &heading, const QString &body)
+{
+    return QStringLiteral("<div style=\"margin-bottom:11px;\"><b>%1</b></div>%2")
+        .arg(heading.toHtmlEscaped(), body);
 }
 
 // Clear a dynamic role so the widget reverts to its default QSS rules.

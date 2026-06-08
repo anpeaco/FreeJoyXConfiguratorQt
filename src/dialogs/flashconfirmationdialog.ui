@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Confirm flash</string>
+   <string>Upgrade firmware</string>
   </property>
   <property name="modal">
    <bool>true</bool>
@@ -22,16 +22,6 @@
    <property name="topMargin"><number>14</number></property>
    <property name="rightMargin"><number>14</number></property>
    <property name="bottomMargin"><number>14</number></property>
-   <item>
-    <widget class="QLabel" name="label_Headline">
-     <property name="text">
-      <string>Confirm flash</string>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">font-size:14pt; font-weight:600;</string>
-     </property>
-    </widget>
-   </item>
    <item>
     <widget class="QGroupBox" name="groupBox_Device">
      <property name="title">
@@ -60,11 +50,16 @@
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="QLabel" name="label_DeviceBoard"><property name="text"><string notr="true">-</string></property></widget>
+       <layout class="QHBoxLayout" name="layoutH_DeviceBoard">
+        <property name="spacing"><number>4</number></property>
+        <item><widget class="QLabel" name="label_DeviceBoardIcon"><property name="text"><string notr="true"/></property><property name="alignment"><set>Qt::AlignVCenter</set></property></widget></item>
+        <item><widget class="QLabel" name="label_DeviceBoard"><property name="text"><string notr="true">-</string></property><property name="alignment"><set>Qt::AlignVCenter</set></property></widget></item>
+        <item><spacer name="spacerH_DeviceBoard"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
+       </layout>
       </item>
       <item row="3" column="0">
        <widget class="QLabel" name="label_DeviceFwTag">
-        <property name="text"><string>Current firmware:</string></property>
+        <property name="text"><string>Firmware:</string></property>
        </widget>
       </item>
       <item row="3" column="1">
@@ -76,67 +71,92 @@
    <item>
     <widget class="QGroupBox" name="groupBox_Target">
      <property name="title">
-      <string>Target firmware</string>
+      <string>Firmware</string>
      </property>
-     <layout class="QFormLayout" name="form_Target">
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_TargetFileTag">
-        <property name="text"><string>File:</string></property>
-       </widget>
+     <layout class="QVBoxLayout" name="vbox_Target">
+      <item>
+       <layout class="QHBoxLayout" name="row_Source">
+        <property name="spacing"><number>6</number></property>
+        <item>
+         <widget class="QComboBox" name="comboBox_Source">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>1</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_Browse">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize"><size><width>72</width><height>16777215</height></size></property>
+          <property name="text"><string>Browse…</string></property>
+         </widget>
+        </item>
+       </layout>
       </item>
-      <item row="0" column="1">
-       <widget class="QLabel" name="label_TargetFile"><property name="text"><string notr="true">-</string></property></widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_TargetBoardTag">
-        <property name="text"><string>Board:</string></property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QLabel" name="label_TargetBoard"><property name="text"><string notr="true">-</string></property></widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_TargetFwTag">
-        <property name="text"><string>Version:</string></property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QLabel" name="label_TargetFw"><property name="text"><string notr="true">-</string></property></widget>
+      <item>
+       <layout class="QFormLayout" name="form_Target">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_TargetFileTag">
+          <property name="text"><string>File:</string></property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLabel" name="label_TargetFile"><property name="text"><string notr="true">-</string></property></widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_TargetBoardTag">
+          <property name="text"><string>Board:</string></property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <layout class="QHBoxLayout" name="layoutH_TargetBoard">
+          <property name="spacing"><number>4</number></property>
+          <item><widget class="QLabel" name="label_TargetBoardIcon"><property name="text"><string notr="true"/></property><property name="alignment"><set>Qt::AlignVCenter</set></property></widget></item>
+          <item><widget class="QLabel" name="label_TargetBoard"><property name="text"><string notr="true">-</string></property><property name="alignment"><set>Qt::AlignVCenter</set></property></widget></item>
+          <item><spacer name="spacerH_TargetBoard"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
+         </layout>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_TargetFwTag">
+          <property name="text"><string>Version:</string></property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QLabel" name="label_TargetFw"><property name="text"><string notr="true">-</string></property></widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>
    </item>
+   <!-- label_Verdict / label_Warning are hidden anchors: the dialog builds the
+        real banners with makeAlertBanner into the top banner area and these stay
+        hidden. No styleSheet here so the old non-token look can't creep back. -->
    <item>
     <widget class="QLabel" name="label_Verdict">
      <property name="text"><string notr="true"/></property>
      <property name="wordWrap"><bool>true</bool></property>
-     <property name="styleSheet">
-      <string notr="true">padding:8px; border-radius:4px; font-weight:600;</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="label_StepsHeading">
-     <property name="text"><string>The configurator will:</string></property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="label_Steps">
-     <property name="text"><string notr="true"/></property>
-     <property name="wordWrap"><bool>true</bool></property>
-     <property name="textFormat"><enum>Qt::RichText</enum></property>
     </widget>
    </item>
    <item>
     <widget class="QLabel" name="label_Warning">
-     <property name="text">
-      <string>Approximately 30 seconds. Do not unplug the device during this process.</string>
-     </property>
+     <property name="text"><string notr="true"/></property>
      <property name="wordWrap"><bool>true</bool></property>
-     <property name="styleSheet">
-      <string notr="true">color:#a05a00; font-style:italic;</string>
-     </property>
     </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer_BeforeButtons">
+     <property name="orientation"><enum>Qt::Vertical</enum></property>
+     <property name="sizeHint" stdset="0"><size><width>20</width><height>0</height></size></property>
+    </spacer>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">

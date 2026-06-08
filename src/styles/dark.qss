@@ -1,64 +1,13 @@
 /* FreeJoy Configurator — dark theme overrides.
  *
- * Appended after common.qss when MainWindow::themeChanged(true) runs.
- * The QPalette set in themeChanged() handles 80% of colours; this file
- * only specifies overrides where palette references are not enough.
+ * INTENTIONALLY EMPTY. All theme colour now comes from the QPalette set in
+ * MainWindow::themeChanged(); every QSS rule lives in common.qss and is either
+ * palette()-driven or uses a theme-independent accent/icon. This is what lets
+ * the stylesheet be applied ONCE and a theme swap be a cheap palette change
+ * instead of a multi-second full-tree QSS repolish.
+ *
+ * DO NOT add theme-specific rules here: themeChanged applies the sheet only
+ * once, so anything added here would not take effect on a later toggle. If you
+ * genuinely need a colour the palette can't express, drive it from the palette
+ * or a theme-independent token in common.qss, or draw it in code at paint time.
  */
-
-/* Off-state for the physical-button indicator on dark backgrounds:
- * outlined ring, transparent fill, muted text. Shape and the
- * transparent-base reset live in common.qss; this only sets the
- * theme-tuned colours. */
-
-QLabel[buttonState="off"] {
-    border-color: #5a5a5a;
-    color: #b0b0b0;
-}
-
-/* Primary button hover/pressed: lift the highlight tone slightly so
- * the user gets visible feedback without changing the silhouette. */
-
-QPushButton[role="primary"]:hover {
-    background-color: #2f8be8;
-    border-color: #2f8be8;
-}
-
-QPushButton[role="primary"]:pressed {
-    background-color: #1864b0;
-    border-color: #1864b0;
-}
-
-/* Spinbox / combobox chevrons — light strokes for dark palette.
- * Qt's QSvgRenderer doesn't resolve SVG currentColor from QSS, so the
- * stroke colour is baked into each variant SVG. */
-
-QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
-    image: url(:/Images/icons/lucide/chevron-up-dark.svg);
-}
-
-QSpinBox::down-arrow, QDoubleSpinBox::down-arrow,
-QComboBox::down-arrow {
-    image: url(:/Images/icons/lucide/chevron-down-dark.svg);
-}
-
-QCheckBox::indicator:checked {
-    image: url(:/Images/icons/lucide/check-dark.svg);
-}
-
-/* "Show extended settings" toggle: render as a chevron rather than a
- * checkbox so the affordance reads as "expand/collapse" instead of
- * "yes/no". chevron-down when collapsed; chevron-up when expanded. */
-QCheckBox#checkBox_ShowExtend::indicator {
-    border: none;
-    background: transparent;
-    width: 14px;
-    height: 14px;
-    image: url(:/Images/icons/lucide/chevron-down-dark.svg);
-}
-QCheckBox#checkBox_ShowExtend::indicator:hover {
-    border: none;
-    background: transparent;
-}
-QCheckBox#checkBox_ShowExtend::indicator:checked {
-    image: url(:/Images/icons/lucide/chevron-up-dark.svg);
-}

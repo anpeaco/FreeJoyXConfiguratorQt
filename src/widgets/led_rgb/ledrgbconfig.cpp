@@ -112,56 +112,36 @@ void LedRGBConfig::setColorToSelectedItems(const QColor &color)
 }
 
 
+void LedRGBConfig::applyEffectMode(int maxLeds, bool colorAndList, bool delay, bool brightness)
+{
+    ui->spinBox_ledsCount->setMaximum(maxLeds);
+    m_colorPicker.setEnabled(colorAndList);
+    ui->listWidget_leds->setEnabled(colorAndList);
+    ui->spinBox_delay->setEnabled(delay);
+    ui->label_delay->setEnabled(delay);
+    ui->spinBox_RBBrightness->setEnabled(brightness);
+    ui->label_RBBrightness->setEnabled(brightness);
+}
+
 void LedRGBConfig::on_radioButton_staticColor_clicked(bool checked)
 {
-    if (checked) {
-        ui->spinBox_ledsCount->setMaximum(NUM_RGB_LEDS);
-        m_colorPicker.setEnabled(true);
-        ui->listWidget_leds->setEnabled(true);
-        ui->spinBox_delay->setEnabled(false);
-        ui->label_delay->setEnabled(false);
-        ui->spinBox_RBBrightness->setEnabled(false);
-        ui->label_RBBrightness->setEnabled(false);
-    }
+    //                       maxLeds        colour+list  delay  brightness
+    if (checked) applyEffectMode(NUM_RGB_LEDS,    true,  false, false);
 }
 
 void LedRGBConfig::on_radioButton_rainbow_clicked(bool checked)
 {
-    if (checked) {
-        ui->spinBox_ledsCount->setMaximum(NUM_RGB_LEDS);
-        m_colorPicker.setEnabled(false);
-        ui->listWidget_leds->setEnabled(false);
-        ui->spinBox_delay->setEnabled(true);
-        ui->label_delay->setEnabled(true);
-        ui->spinBox_RBBrightness->setEnabled(true);
-        ui->label_RBBrightness->setEnabled(true);
-    }
+    if (checked) applyEffectMode(NUM_RGB_LEDS,    false, true,  true);
 }
 
 void LedRGBConfig::on_radioButton_simHub_clicked(bool checked)
 {
-    if (checked) {
-        ui->spinBox_ledsCount->setMaximum(NUM_RGB_LEDS_SH);
-        m_colorPicker.setEnabled(false);
-        ui->listWidget_leds->setEnabled(false);
-        ui->spinBox_delay->setEnabled(false);
-        ui->label_delay->setEnabled(false);
-        ui->spinBox_RBBrightness->setEnabled(false);
-        ui->label_RBBrightness->setEnabled(false);
-    }
+    if (checked) applyEffectMode(NUM_RGB_LEDS_SH, false, false, false);
 }
 
 void LedRGBConfig::on_radioButton_flow_clicked(bool checked)
 {
-    if (checked) {
-        ui->spinBox_ledsCount->setMaximum(NUM_RGB_LEDS);
-        m_colorPicker.setEnabled(true);
-        ui->listWidget_leds->setEnabled(true);
-        ui->spinBox_delay->setEnabled(true);
-        ui->label_delay->setEnabled(true);
-        ui->spinBox_RBBrightness->setEnabled(false);
-        ui->label_RBBrightness->setEnabled(false);
-    }
+    if (checked) applyEffectMode(NUM_RGB_LEDS,    true,  true,  false);
 }
 
 void LedRGBConfig::on_spinBox_ledsCount_valueChanged(int value)

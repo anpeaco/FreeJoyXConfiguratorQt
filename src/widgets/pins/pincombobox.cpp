@@ -1,6 +1,8 @@
 #include "pincombobox.h"
 #include "ui_pincombobox.h"
 
+#include "groupedcombo.h"
+
 #include <QFont>
 #include <QSignalBlocker>
 
@@ -10,6 +12,15 @@ PinComboBox::PinComboBox(uint pinNumber, QWidget *parent) : // pin handling was 
     ui(new Ui::PinComboBox)                                 // condolences to anyone trying to understand it
 {
     ui->setupUi(this);
+    /* Fixed vertical size: the pin rows keep a constant height instead of
+     * stretching/squishing with the window. Without this the dropdowns scaled
+     * down on a vertical shrink (and dragged the board image -- whose height
+     * tracks these rows -- out of aspect). Horizontal stays flexible. The +5px
+     * over the bare hint gives the rows a comfortable, readable height. */
+    setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    setFixedHeight(sizeHint().height() + 5);
+    // Custom popup rendering: section headers vs. function-coloured hover/select.
+    freejoy_ui::installGroupedDelegate(ui->comboBox_PinsType);
     // minimum pinNumber = enum PA_0 = 1
     if (pinNumber < 1 || pinNumber > PINS_COUNT) {
         qFatal("(pinNumber < 1 || pinNumber > PINS_COUNT) in pincombobox.cpp");
@@ -29,6 +40,14 @@ PinComboBox::PinComboBox(uint pinNumber, QWidget *parent) : // pin handling was 
 
     connect(ui->comboBox_PinsType, SIGNAL(currentIndexChanged(int)),
                 this, SLOT(indexChanged(int)));
+
+    // After the user commits a selection the combobox retains keyboard focus, so
+    // the :focus blue border lingers on every configured pin (a column of blue
+    // outlines). Drop focus once a choice is made -- the focus ring still shows
+    // while the dropdown is open/being navigated, just not after. activated() is
+    // user-interaction only, so programmatic loads (Read / auto-read) don't trip it.
+    connect(ui->comboBox_PinsType, QOverload<int>::of(&QComboBox::activated),
+            this, [this]() { ui->comboBox_PinsType->clearFocus(); });
 }
 
 PinComboBox::~PinComboBox()
@@ -196,6 +215,34 @@ void PinComboBox::reapplyRoleColor()
     applyTextColor(m_roleColor);
 }
 
+QColor PinComboBox::colorForRole(int deviceEnum) const
+{
+    for (const cBox &c : m_pinTypes) {
+        if (c.deviceEnumIndex == deviceEnum) {
+            return c.color;
+        }
+    }
+    return QColor();
+}
+
+void PinComboBox::setHoverOutline(const QColor &border)
+{
+    /* Inline stylesheet on the inner combobox: a thicker coloured border in the
+     * hovered role's group colour, with padding trimmed 1px to absorb the extra
+     * border so the control doesn't shift. Clearing removes the stylesheet. The
+     * setStyleSheet polish wipes the palette-driven role text colour, so restore
+     * it via reapplyRoleColor() afterwards (same reason flashAutoAssignedPin /
+     * highlightPins do). border-radius matches the global QComboBox rule. */
+    if (border.isValid()) {
+        ui->comboBox_PinsType->setStyleSheet(
+            QStringLiteral("QComboBox { border: 2px solid %1; border-radius: 4px; "
+                           "padding: 1px 5px; }").arg(border.name()));
+    } else {
+        ui->comboBox_PinsType->setStyleSheet(QString());
+    }
+    reapplyRoleColor();
+}
+
 void PinComboBox::setIndex_iteraction(int index, int senderIndex)
 {
     if(m_isInteracts == false && m_isCall_Interaction == false)     // ui->comboBox_PinsType->isEnabled()
@@ -275,20 +322,20 @@ void PinComboBox::initializationPins(uint pin)      // pin_number_ - 1 -- not gr
         const int group = m_pinTypes[i].group;
         const QString title = sectionTitle(group);
         if (lastGroup != -1 && group != lastGroup && !title.isEmpty()) {
-            const int hdr = ui->comboBox_PinsType->count();
-            ui->comboBox_PinsType->addItem(title);
-            ui->comboBox_PinsType->setItemData(hdr, 0, Qt::UserRole - 1);   // non-selectable
-            QFont hf = ui->comboBox_PinsType->font();
-            hf.setBold(true);
-            ui->comboBox_PinsType->setItemData(hdr, hf, Qt::FontRole);
-            ui->comboBox_PinsType->setItemData(hdr, QBrush(QColor(150, 150, 150)), Qt::ForegroundRole);
+            // Non-selectable bold banded header (GroupedComboDelegate). Pin-role
+            // groups are short, so these are static (non-collapsible).
+            freejoy_ui::addGroupHeader(ui->comboBox_PinsType, title, /*collapsible=*/false);
             m_pinTypesIndex.push_back(-1);   // sentinel: header row, no backing type
             m_enumIndex.push_back(-1);
         }
         ui->comboBox_PinsType->addItem(m_pinTypes[i].guiName);
-        // dropdown tooltip explaining the device + how its pins bind
-        ui->comboBox_PinsType->setItemData(ui->comboBox_PinsType->count() - 1,
-                                           m_pinTypes[i].description, Qt::ToolTipRole);
+        // Dropdown tooltip explaining the device + how its pins bind. Wrapped in
+        // <qt> (escaped) so Qt treats it as rich text and word-wraps the long
+        // descriptions instead of showing one very wide line.
+        ui->comboBox_PinsType->setItemData(
+            ui->comboBox_PinsType->count() - 1,
+            QStringLiteral("<qt>%1</qt>").arg(m_pinTypes[i].description.toHtmlEscaped()),
+            Qt::ToolTipRole);
         m_pinTypesIndex.push_back(i);
         m_enumIndex.push_back(m_pinTypes[i].deviceEnumIndex);
         lastGroup = group;

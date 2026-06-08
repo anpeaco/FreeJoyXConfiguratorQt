@@ -20,7 +20,7 @@
 #include "pinconfig.h"
 #include "shiftregistersconfig.h"
 #include "shiftstimersconfig.h"
-#include "switchbutton.h"
+#include "loadingoverlay.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -59,7 +59,8 @@ private slots:
     void configSent(bool success);
     /* Old upstream firmware was read + the bytes translated into the
      * current dev_config_t shape. Surface a message dialog explaining
-     * the migration and the next-step (flash + write). */
+     * the migration and the next step (Upgrade Firmware on the device
+     * panel, which backs up + flashes + writes the migrated config back). */
     void legacyConfigMigrated(uint16_t oldFirmwareVersion);
     void blockWRConfigToDevice(bool block);
 
@@ -89,6 +90,7 @@ private slots:
     void on_pushButton_ReadConfig_clicked();
     void on_pushButton_WriteConfig_clicked();
     void on_pushButton_UpgradeFirmware_clicked();
+    void on_pushButton_FixWindowsCache_clicked();
 
     void on_pushButton_SaveToFile_clicked();
     void on_pushButton_LoadFromFile_clicked();
@@ -175,6 +177,8 @@ private:
     QThread *m_thread;
     HidDevice *m_hidDeviceWorker;
 
+    freejoy_ui::LoadingOverlay *m_loadingOverlay = nullptr;  // modal mask during read/write
+
     QThread *m_threadGetSendConfig;
 
     PinConfig *m_pinConfig;
@@ -189,6 +193,16 @@ private:
 
     DebugWindow *m_debugWindow = nullptr;
     bool m_debugIsEnable;
+
+    /* Active theme, tracked so the App-card theme toggle (toolButton_ThemeToggle)
+     * can flip to the opposite theme and paint the matching sun/moon glyph.
+     * Updated by themeChanged(). */
+    bool m_darkThemeActive = true;
+
+    /* Board id currently shown on the Device card's Board row (0 = none/unknown).
+     * Cached so themeChanged() can re-render the rich-text board label -- the
+     * F411 CPU-icon ink tracks the theme. */
+    int m_deviceCardBoardId = 0;
 
     /* Packet stats shown in the Device info card (relocated out of the debug
      * pane so they're visible whenever a device is connected). m_packetsReceived
@@ -212,6 +226,11 @@ private:
     QByteArray m_deviceConfigSnapshot;
     bool       m_haveDeviceConfigSnapshot = false;
     QTimer    *m_dirtyCheckTimer = nullptr;
+    // True only in the normal compatible-connected state (green pill) -- gates
+    // the "Connected • unsaved" amber decoration the dirty poll applies. False
+    // for disconnected / restarting / legacy / incompatible / flasher.
+    bool       m_deviceConnectedOk = false;
+    bool       m_pillUnsaved = false;   // last-applied pill dirty decoration (transition guard)
 
     /* Guards the 1 Hz dirty poll (updatePendingChangesBadge ->
      * uiHasUnsavedDeviceEdits -> flushUiToConfig) from firing while a
@@ -223,6 +242,16 @@ private:
      * just-loaded config, blanking it. Set across the whole
      * reset+load+UiReadFromConfig sequence at every file-load entry point. */
     bool       m_configLoadInProgress = false;
+
+    /* True from the moment a device Read is kicked (on_pushButton_ReadConfig_clicked)
+     * until configReceived() lands. The worker thread fills dev_config_t in place
+     * as fragments arrive, so the 1 Hz dirty poll must not flush the (still-stale)
+     * UI over it or compare against the half-filled struct -- otherwise the
+     * Write-config "pending changes" dot flickers on during the read. Cleared at
+     * the top of configReceived() (which the worker always emits, success or
+     * fail) so it can't stick. Distinct from m_configLoadInProgress, which is a
+     * synchronous RAII guard for file loads. */
+    bool       m_deviceReadInProgress = false;
 
     /* Auto-read-on-connect: when true (default), a compatible device
      * connecting triggers an automatic Read of its stored config into the
@@ -270,6 +299,16 @@ private:
      * in-flight flash + reconnect. Released by onFlashSessionFinished. */
     bool    m_flashChainLocked = false;
     void    setFlashChainUiLocked(bool locked);
+
+    /* GUI-thread responsiveness probe, active only during a flash session.
+     * A 100ms timer on the GUI thread records the longest gap between its own
+     * ticks -- i.e. the longest stretch the GUI event loop did NOT run (a
+     * "Not Responding" stall). Reported once at flash end. Diagnoses whether the
+     * in-process HID flash actually freezes the UI or whether the grey/"Not
+     * Responding" on click is just Windows ghosting a momentarily-busy window. */
+    QTimer        m_flashHeartbeat;
+    QElapsedTimer m_flashHeartbeatGap;
+    qint64        m_flashMaxStallMs = 0;
 
     /* Cached default text for the Read / Write Config buttons, captured
      * once in the constructor before any code path mutates them. We
@@ -377,7 +416,10 @@ private:
     QIcon pixmapToIcon(QPixmap pixmap, const QColor &color);
     void updateColor();
 
-    void UiReadFromConfig();
+    // resetDirtyBaseline: true for a DEVICE sync (read), so the "pending changes"
+    // baseline is reset to match the device; false for a FILE load / reset-to-
+    // default, which must stay dirty vs what's on the device.
+    void UiReadFromConfig(bool resetDirtyBaseline = true);
     void UiWriteToConfig();
     /* Side-effect-free portion of UiWriteToConfig: fans out
      * writeToConfig() to every tab widget and captures the breakdown
@@ -399,6 +441,10 @@ private:
      * shows/hides label_PendingChanges accordingly. No-op until a
      * snapshot has been taken. */
     void updatePendingChangesBadge();
+    // Set the device-card Board row: tinted CPU icon in label_BoardIcon (hidden
+    // for unknown) + name in label_BoardVal, both centred so they align with the
+    // "Board:" key. boardId 0/unknown shows the em dash with no icon.
+    void setDeviceCardBoard(int boardId);
 
     /* True when the live UI config differs from the last device-sync
      * snapshot (m_deviceConfigSnapshot) -- i.e. the user has unsaved edits

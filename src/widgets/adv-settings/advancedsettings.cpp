@@ -5,9 +5,11 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QFileDialog>
+#include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QSignalBlocker>
 #include <QLineEdit>
 #include <QPainter>
 #include <QPixmap>
@@ -16,7 +18,6 @@
 #include <QSettings>
 #include <QTextStream>
 #include <QTimer>
-#include <QProcess>
 
 #include <QDesktopServices>
 #include <QDir>
@@ -37,11 +38,20 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
 {
     ui->setupUi(this);
 
-    // The VID/PID caution triangles are loaded as the raw (black) lucide SVG in
-    // the .ui; tint them to the amber warning colour so they read on both
-    // themes. Amber is theme-independent, so this set-once is enough.
-    ui->info_VID->setPixmap(freejoy_style::warningPixmap(16));
-    ui->info_PID->setPixmap(freejoy_style::warningPixmap(16));
+    // info_VID / info_PID are InfoLabels carrying an OS-compatibility tooltip
+    // (some PID values break on some OSes) -- they are NOT conflict indicators,
+    // so a permanent amber warning triangle read as a false alarm. Render them
+    // as a subtle grey info "i" glyph instead: an unobtrusive "hover for help"
+    // affordance that stays put without implying a problem. A real VID:PID
+    // collision is surfaced separately by the conflict banner below. Grey
+    // (#909090) reads on both themes, so this set-once is enough.
+    {
+        const QPixmap infoGlyph = freejoy_style::tintedSvgPixmap(
+            QStringLiteral(":/Images/icons/lucide/info.svg"), QSize(16, 16),
+            QColor(0x90, 0x90, 0x90));
+        ui->info_VID->setPixmap(infoGlyph);
+        ui->info_PID->setPixmap(infoGlyph);
+    }
 
     m_flasher = new Flasher(this);
     ui->layoutH_Flasher->addWidget(m_flasher);
@@ -50,15 +60,9 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
     ui->spinBox_FontSize->setValue(gEnv.pAppSettings->value("FontSize", "8").toInt());
     gEnv.pAppSettings->endGroup();
 
-    gEnv.pAppSettings->beginGroup("StyleSettings");
-    QString style = gEnv.pAppSettings->value("StyleSheet", "default").toString();
-    gEnv.pAppSettings->endGroup();
-    if (style == "dark") {
-        ui->widget_StyleSwitch->setChecked(true);
-    } else {
-        ui->widget_StyleSwitch->setChecked(false);
-    }
-    connect(ui->widget_StyleSwitch, &SwitchButton::stateChanged, this, &AdvancedSettings::themeChanged);
+    /* The theme toggle moved to the App card (MainWindow's
+     * toolButton_ThemeToggle) -- a single sun/moon icon button. The startup
+     * theme is still seeded from the saved StyleSheet setting by MainWindow. */
 
 #ifndef Q_OS_WIN
     ui->text_removeName->setHidden(true);
@@ -73,38 +77,30 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
      * the group rather than being squeezed into the narrow VID/PID
      * column. The pill stays empty when no conflict; surfaces a
      * triangle-alert lucide icon + warning text when collisions exist. */
-    m_pidConflictRow = new QWidget(this);
+    /* Styled exactly like the app's other alert banners (makeAlertBanner):
+     * translucent red fill + solid red border + a red triangle icon
+     * top-aligned beside neutral palette text. The fill/border/icon carry the
+     * severity, so the text is the normal ink, not red-bold. */
+    auto *conflictFrame = new QFrame(this);
+    conflictFrame->setObjectName(QStringLiteral("fjConflictBanner"));
+    conflictFrame->setStyleSheet(QStringLiteral(
+        "QFrame#fjConflictBanner { border-radius:4px; background-color:%1; "
+        "border:1px solid %2; }")
+        .arg(freejoy_style::rgbaStr(freejoy_style::accentRed(), 46),
+             freejoy_style::hexStr(freejoy_style::accentRed())));
+    m_pidConflictRow = conflictFrame;
     auto *rowLayout = new QHBoxLayout(m_pidConflictRow);
-    rowLayout->setContentsMargins(0, 0, 0, 0);
+    rowLayout->setContentsMargins(10, 7, 10, 7);
     rowLayout->setSpacing(8);
 
     m_pidConflictIcon = new QLabel(m_pidConflictRow);
-    /* The lucide SVG renders to a pixmap at the host font's height for
-     * crisp visual pairing with the text. The pixmap is recoloured by
-     * pixmapToIcon-equivalent painting so it matches the warning hue
-     * regardless of theme. We paint once during construction; refresh
-     * just toggles visibility. */
-    {
-        const int h = qMax(16, fontMetrics().height());
-        QPixmap pix(":/Images/icons/lucide/triangle-alert.svg");
-        if (!pix.isNull()) {
-            pix = pix.scaledToHeight(h, Qt::SmoothTransformation);
-            QPixmap colored(pix.size());
-            colored.fill(Qt::transparent);
-            QPainter p(&colored);
-            p.setCompositionMode(QPainter::CompositionMode_Source);
-            p.drawPixmap(0, 0, pix);
-            p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-            p.fillRect(colored.rect(), freejoy_style::conflictColor());
-            p.end();
-            m_pidConflictIcon->setPixmap(colored);
-        }
-    }
+    m_pidConflictIcon->setFixedSize(18, 18);
+    m_pidConflictIcon->setScaledContents(true);
+    m_pidConflictIcon->setPixmap(
+        freejoy_style::tintedTrianglePixmap(freejoy_style::accentRed(), 18));
 
     m_pidConflictLabel = new QLabel(m_pidConflictRow);
     m_pidConflictLabel->setText(QString());
-    m_pidConflictLabel->setStyleSheet(
-        QStringLiteral("color: %1; font-weight: bold;").arg(freejoy_style::conflictColor().name()));
     m_pidConflictLabel->setWordWrap(true);
     m_pidConflictLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
@@ -113,21 +109,22 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
     m_pidConflictRow->setVisible(false);
 
     m_showAllDevicesButton = new QPushButton(tr("Show all connected devices"), this);
-    m_showAllDevicesButton->setToolTip(tr(
-        "Dump every detected FreeJoy device's USB identity (VID:PID, "
-        "name, serial). Useful for diagnosing phantom PID conflicts."));
+    m_showAllDevicesButton->setToolTip(freejoy_style::tipHtml(
+        tr("List connected USB identities"),
+        { tr("Dumps every detected FreeJoy device's USB identity (VID:PID, name, serial)."),
+          tr("Useful for diagnosing phantom PID conflicts.") }));
     connect(m_showAllDevicesButton, &QPushButton::clicked,
             this, &AdvancedSettings::showAllConnectedDevicesRequested);
 
-    /* Attach to the OUTER "USB settings" VBox (layoutV_USBSettings).
-     * Pill row first (full width, wrapping text), suggest button below
-     * (left-aligned). The .ui restructure to the horizontal Name/VID/PID
-     * row means we no longer have a grid to span -- a vertical layout
-     * with addWidget is the natural append. */
+    /* Attach to the OUTER "USB settings" VBox (layoutV_USBSettings). The
+     * conflict banner goes LAST -- below the "Show all connected devices"
+     * button -- so when it appears/disappears it only grows the bottom of the
+     * group rather than shoving the VID/PID fields and buttons the user is
+     * interacting with (the "controls jump about" complaint). */
     QVBoxLayout *outerVBox = findChild<QVBoxLayout *>(QStringLiteral("layoutV_USBSettings"));
     if (outerVBox) {
-        outerVBox->addWidget(m_pidConflictRow);
         outerVBox->addWidget(m_showAllDevicesButton, 0, Qt::AlignLeft);
+        outerVBox->addWidget(m_pidConflictRow);
     }
 
     /* Live conflict check on every PID edit. */
@@ -142,10 +139,11 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
      * doesn't need restructuring. Persists to OtherSettings/AutoReadOnConnect
      * and signals MainWindow, which owns the connect-time behaviour. */
     m_autoReadCheck = new QCheckBox(tr("Auto-read config from device on connect"), this);
-    m_autoReadCheck->setToolTip(tr(
-        "When a compatible device connects, automatically read its stored "
-        "configuration into the configurator. If you have unsaved changes "
-        "you'll be asked first. Turn off to manage reads manually."));
+    m_autoReadCheck->setToolTip(freejoy_style::tipHtml(
+        tr("Auto-read on connect"),
+        { tr("When a compatible device connects, automatically reads its stored configuration into the configurator."),
+          tr("If you have unsaved changes you'll be asked first."),
+          tr("Turn off to manage reads manually.") }));
     gEnv.pAppSettings->beginGroup("OtherSettings");
     m_autoReadCheck->setChecked(
         gEnv.pAppSettings->value("AutoReadOnConnect", true).toBool());
@@ -167,9 +165,10 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
      * persists to OtherSettings/LogEnabled and signals MainWindow, which
      * forwards it to the DebugWindow logger. */
     m_writeLogCheck = new QCheckBox(tr("Write log to file"), this);
-    m_writeLogCheck->setToolTip(tr(
-        "Append the debug log to a dated file under Documents/FreeJoy/log/. "
-        "Useful for capturing a bench session to review later."));
+    m_writeLogCheck->setToolTip(freejoy_style::tipHtml(
+        tr("Write debug log to file"),
+        { tr("Appends the debug log to a dated file under Documents/FreeJoy/log/."),
+          tr("Useful for capturing a bench session to review later.") }));
     gEnv.pAppSettings->beginGroup("OtherSettings");
     m_writeLogCheck->setChecked(gEnv.pAppSettings->value("LogEnabled", false).toBool());
     gEnv.pAppSettings->endGroup();
@@ -197,16 +196,18 @@ void AdvancedSettings::retranslateUi()
     // refresh its strings here for live language switches.
     if (m_autoReadCheck) {
         m_autoReadCheck->setText(tr("Auto-read config from device on connect"));
-        m_autoReadCheck->setToolTip(tr(
-            "When a compatible device connects, automatically read its stored "
-            "configuration into the configurator. If you have unsaved changes "
-            "you'll be asked first. Turn off to manage reads manually."));
+        m_autoReadCheck->setToolTip(freejoy_style::tipHtml(
+            tr("Auto-read on connect"),
+            { tr("When a compatible device connects, automatically reads its stored configuration into the configurator."),
+              tr("If you have unsaved changes you'll be asked first."),
+              tr("Turn off to manage reads manually.") }));
     }
     if (m_writeLogCheck) {
         m_writeLogCheck->setText(tr("Write log to file"));
-        m_writeLogCheck->setToolTip(tr(
-            "Append the debug log to a dated file under Documents/FreeJoy/log/. "
-            "Useful for capturing a bench session to review later."));
+        m_writeLogCheck->setToolTip(freejoy_style::tipHtml(
+            tr("Write debug log to file"),
+            { tr("Appends the debug log to a dated file under Documents/FreeJoy/log/."),
+              tr("Useful for capturing a bench session to review later.") }));
     }
 }
 
@@ -249,12 +250,6 @@ void AdvancedSettings::on_pushButton_LangDeutsch_clicked()
     gEnv.pAppSettings->endGroup();
 
     emit languageChanged("deutsch");
-}
-
-void AdvancedSettings::on_pushButton_RestartApp_clicked()
-{
-    qApp->quit();
-    QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
 }
 
 void AdvancedSettings::on_spinBox_FontSize_valueChanged(int fontSize)
@@ -307,7 +302,18 @@ void AdvancedSettings::on_pushButton_removeName_clicked()
 
 void AdvancedSettings::readFromConfig()
 {
-    // PID
+    /* Block the live PID-conflict check while the load bulk-sets the fields:
+     * the per-keystroke textChanged otherwise fires mid-load against a device
+     * list that hasn't settled (the just-connected device isn't excluded from
+     * the conflict set yet), flashing a false "VID:PID already used" banner that
+     * clears once loading finishes. The pill is re-evaluated authoritatively by
+     * MainWindow::UiReadFromConfig (via refreshOtherConnectedDevices ->
+     * setOtherConnectedDevices) once the load is complete and the selected
+     * device -- i.e. the one this config came from -- is correctly excluded. */
+    const QSignalBlocker blockVid(ui->lineEdit_VID);
+    const QSignalBlocker blockPid(ui->lineEdit_PID);
+
+    // VID
     ui->lineEdit_VID->setText(QString::number(gEnv.pDeviceConfig->config.vid, 16).toUpper().rightJustified(4, '0'));
     // PID
     //ui->lineEdit_PID->setInputMask("HHHH");
@@ -346,12 +352,33 @@ void AdvancedSettings::setOtherConnectedDevices(
 
 void AdvancedSettings::onPidTextChanged(const QString &)
 {
+    /* A user edit means the shown config is now intentionally "this device's"
+     * again -- drop any swap-time suppression so the live check resumes. */
+    m_suppressConflict = false;
     refreshPidConflictPill();
+}
+
+void AdvancedSettings::setPidConflictSuppressed(bool suppressed)
+{
+    m_suppressConflict = suppressed;
+    /* Hide immediately when suppressing; un-suppressing is followed by the
+     * caller's refreshOtherConnectedDevices(), which re-evaluates. */
+    if (suppressed) refreshPidConflictPill();
 }
 
 void AdvancedSettings::refreshPidConflictPill()
 {
     if (!m_pidConflictLabel) return;
+
+    /* Suppressed mid-swap: the shown config doesn't belong to the selected
+     * device yet, so any "conflict" would be against a stale PID. Keep the
+     * banner down until the new config loads (or the user edits the PID). */
+    if (m_suppressConflict) {
+        m_pidConflictLabel->setText(QString());
+        if (m_pidConflictRow) m_pidConflictRow->setVisible(false);
+        ui->lineEdit_PID->setStyleSheet(QString());
+        return;
+    }
 
     const uint16_t curVid = uint16_t(ui->lineEdit_VID->text().toInt(nullptr, 16));
     const uint16_t curPid = uint16_t(ui->lineEdit_PID->text().toInt(nullptr, 16));

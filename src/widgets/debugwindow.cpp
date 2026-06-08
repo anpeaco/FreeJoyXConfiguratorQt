@@ -144,6 +144,15 @@ void DebugWindow::setWriteToFile(bool on)
     m_writeToFile = on;
 }
 
+void DebugWindow::appendProgressLine(const QString &line)
+{
+    /* Public entry point for the progress dialogs (flash + DFU install): they
+     * format their own `[HH:mm:ss] ...` line for their on-screen status view,
+     * then hand the same text here so it also lands in the on-disk log when
+     * logging is enabled. */
+    appendToLogFile(line + '\n');
+}
+
 void DebugWindow::appendToLogFile(const QString &line)
 {
     /* Shared file-write helper used by every code path that wants to

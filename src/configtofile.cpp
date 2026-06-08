@@ -1,9 +1,16 @@
 #include "configtofile.h"
 #include <QSettings>
 #include <QMessageBox>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QPushButton>
+#include <QVBoxLayout>
 #include "common_defines.h"
 #include "deviceconfig.h"
 #include "global.h"
+#include "style_helpers.h"
 
 #include <QDebug>
 
@@ -327,13 +334,39 @@ void ConfigToFile::crossBoardCheck(QWidget *parent, dev_config_t &devC)
                           "the matching board or convert.")
                   .arg(boardName(deviceBoard));
 
-    const auto choice = QMessageBox::question(
-        parent,
-        QObject::tr("Cross-board config"),
-        prompt,
-        QMessageBox::Yes | QMessageBox::No,
-        QMessageBox::Yes);
-    if (choice != QMessageBox::Yes) {
+    /* Present in the app's alert idiom (matches the legacy-import dialog): an
+     * amber Lucide caution triangle top-aligned beside the text, borderless
+     * (no tinted fill, since it's a standalone dialog not an inline bar). Amber
+     * is theme-independent, so this static helper needs no theme lookup. */
+    QDialog dlg(parent);
+    dlg.setWindowTitle(QObject::tr("Cross-board config"));
+    dlg.setWindowFlags(dlg.windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
+    auto *root = new QVBoxLayout(&dlg);
+    root->setContentsMargins(16, 16, 16, 12);
+    root->setSpacing(14);
+
+    auto *row = new QHBoxLayout();
+    row->setSpacing(12);
+    auto *icon = new QLabel(&dlg);
+    icon->setFixedSize(22, 22);
+    icon->setScaledContents(true);
+    icon->setPixmap(freejoy_style::tintedTrianglePixmap(freejoy_style::accentAmber(), 22));
+    auto *text = new QLabel(prompt, &dlg);
+    text->setTextFormat(Qt::PlainText);   // prompt is \n-delimited plain text
+    text->setWordWrap(true);
+    text->setMaximumWidth(440);
+    row->addWidget(icon, 0, Qt::AlignTop);
+    row->addWidget(text, 1);
+    root->addLayout(row);
+
+    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Yes | QDialogButtonBox::No, &dlg);
+    QObject::connect(buttons, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    QObject::connect(buttons, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    if (QPushButton *yes = buttons->button(QDialogButtonBox::Yes)) yes->setDefault(true);
+    root->addWidget(buttons);
+
+    if (dlg.exec() != QDialog::Accepted) {
         return;
     }
 
@@ -373,7 +406,7 @@ void ConfigToFile::oldConfigHandler(QWidget *parent, dev_config_t &devC)
             if (devC.pins[19] == I2C_SCL || devC.pins[20] == I2C_SDA) {
                 QString warning(tr("Firmware version in config file doesn't match configurator version. Check settings before writing config."));
                 QString differences(tr("Pins B8, B9 reset! In this version I2C moved from pins B8, B9 to B10, B11. Check it!"));
-                QMessageBox::warning(parent, tr("Firmware version!"), warning + " " + differences);
+                freejoy_style::alertBox(parent, freejoy_style::accentAmber(), tr("Firmware version!"), warning + " " + differences);
                 devC.pins[19] = devC.pins[20] = NOT_USED;
             } else {
                 //QMessageBox::information(this, tr("Firmware version!"), warning);

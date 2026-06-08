@@ -51,7 +51,19 @@ bool darkThemeActive() { return g_darkActive; }
 
 bool TitleBarThemeFilter::eventFilter(QObject *obj, QEvent *ev)
 {
-    if (ev->type() == QEvent::Show) {
+    // Re-assert the dark caption on Show AND on re-activation / window-state
+    // changes. Show alone isn't enough: when the UI thread blocks long enough
+    // for Windows to mark the window "Not Responding", DWM discards the custom
+    // immersive-dark frame and repaints the default light caption. No new Show
+    // fires on recovery, so the grey caption would stick. WindowActivate (the
+    // user clicking back onto the window) and WindowStateChange (min/restore)
+    // give us a cheap, idempotent hook to restore it. The underlying freeze --
+    // the firmware-send phase blocking the UI thread -- is tracked separately;
+    // this only heals the cosmetic fallout.
+    switch (ev->type()) {
+    case QEvent::Show:
+    case QEvent::WindowActivate:
+    case QEvent::WindowStateChange:
         if (auto *w = qobject_cast<QWidget *>(obj)) {
             // Only real top-level windows carry a title bar -- skip popups,
             // tooltips, combo dropdowns, etc.
@@ -60,6 +72,9 @@ bool TitleBarThemeFilter::eventFilter(QObject *obj, QEvent *ev)
                 applyDarkTitleBar(w, g_darkActive);
             }
         }
+        break;
+    default:
+        break;
     }
     return QObject::eventFilter(obj, ev);
 }

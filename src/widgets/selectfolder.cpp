@@ -34,7 +34,7 @@ QString SelectFolder::folderPath() const
 
 void SelectFolder::setFolderPath(const QString &path)
 {
-    if (path == ui->lineEdit_currentFolder->text()) { ////////// ????????????????
+    if (path == ui->lineEdit_currentFolder->text()) {
         return;
     }
     ui->lineEdit_currentFolder->setText(path);
@@ -43,7 +43,7 @@ void SelectFolder::setFolderPath(const QString &path)
 
 void SelectFolder::selectFolder()
 {
-    QString folder = QFileDialog::getExistingDirectory(0,
+    QString folder = QFileDialog::getExistingDirectory(this,
                                                        (tr("Select configs folder")),
                                                        ui->lineEdit_currentFolder->text());
     if (folder.isEmpty()) {
