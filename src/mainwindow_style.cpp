@@ -180,7 +180,7 @@ void MainWindow::themeChanged(bool dark)
      * theme, so its baked colour goes stale on a toggle. (F103 is theme-fixed
      * blue, but re-rendering is harmless.) */
     if (m_deviceCardBoardId != 0 && ui->label_BoardVal) {
-        ui->label_BoardVal->setText(board_display::html(m_deviceCardBoardId));
+        setDeviceCardBoard(m_deviceCardBoardId);   // re-tints the CPU icon pixmap
     }
 
     // Track the active theme and re-skin every open top-level window's title

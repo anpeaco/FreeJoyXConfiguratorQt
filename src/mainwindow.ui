@@ -334,7 +334,14 @@
              <item row="2" column="0"><widget class="QLabel" name="label_SerialKey"><property name="text"><string>Serial:</string></property></widget></item>
              <item row="2" column="1"><widget class="QLabel" name="label_SerialVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="wordWrap"><bool>true</bool></property></widget></item>
              <item row="3" column="0"><widget class="QLabel" name="label_BoardKey"><property name="text"><string>Board:</string></property></widget></item>
-             <item row="3" column="1"><widget class="QLabel" name="label_BoardVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property></widget></item>
+             <item row="3" column="1">
+              <layout class="QHBoxLayout" name="layoutH_BoardVal">
+               <property name="spacing"><number>4</number></property>
+               <item><spacer name="spacerH_BoardVal"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
+               <item><widget class="QLabel" name="label_BoardIcon"><property name="text"><string notr="true"/></property><property name="alignment"><set>Qt::AlignVCenter</set></property></widget></item>
+               <item><widget class="QLabel" name="label_BoardVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignVCenter</set></property></widget></item>
+              </layout>
+             </item>
              <item row="4" column="0"><widget class="QLabel" name="label_PacketsKey"><property name="text"><string>Packets:</string></property><property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Packets received&lt;/b&gt;&lt;/div&gt;USB report packets received from the device since it connected.</string></property></widget></item>
              <item row="4" column="1"><widget class="QLabel" name="label_PacketsVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Packets received&lt;/b&gt;&lt;/div&gt;USB report packets received from the device since it connected.</string></property></widget></item>
              <item row="5" column="0"><widget class="QLabel" name="label_RateKey"><property name="text"><string>Rate:</string></property><property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Packet rate&lt;/b&gt;&lt;/div&gt;Average time between received packets, sampled over 5 s.</string></property></widget></item>

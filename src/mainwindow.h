@@ -440,6 +440,10 @@ private:
      * shows/hides label_PendingChanges accordingly. No-op until a
      * snapshot has been taken. */
     void updatePendingChangesBadge();
+    // Set the device-card Board row: tinted CPU icon in label_BoardIcon (hidden
+    // for unknown) + name in label_BoardVal, both centred so they align with the
+    // "Board:" key. boardId 0/unknown shows the em dash with no icon.
+    void setDeviceCardBoard(int boardId);
 
     /* True when the live UI config differs from the last device-sync
      * snapshot (m_deviceConfigSnapshot) -- i.e. the user has unsaved edits

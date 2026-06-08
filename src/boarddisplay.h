@@ -13,6 +13,8 @@
  * card) must re-render on a theme change; a modal dialog needn't bother. */
 
 #include <QColor>
+#include <QPixmap>
+#include <QSize>
 #include <QString>
 
 #include "common_defines.h"
@@ -40,8 +42,23 @@ inline QColor color(int boardId)
     }
 }
 
+// The CPU glyph tinted to the board's colour, as a pixmap (for a dedicated icon
+// QLabel sitting next to the text label -- the clean way to vertically centre the
+// icon + name + adjacent "Board:" key, instead of an inline-img rich-text line).
+// Null for an unknown board (caller hides its icon label).
+inline QPixmap iconPixmap(int boardId, int px = 14)
+{
+    if (boardId != BOARD_ID_F103_BLUEPILL && boardId != BOARD_ID_F411_BLACKPILL) {
+        return QPixmap();
+    }
+    return freejoy_style::tintedSvgPixmap(QStringLiteral(":/Images/icons/lucide/cpu.svg"),
+                                          QSize(px, px), color(boardId));
+}
+
 // Rich-text "CPU icon + board name" for a QLabel. The icon is omitted for an
-// unknown board (just the em dash).
+// unknown board (just the em dash). Prefer iconPixmap()+text() into two labels
+// where vertical alignment with neighbouring text matters; html() is kept for
+// modal dialogs where the inline form is fine.
 inline QString html(int boardId, int px = 14)
 {
     if (boardId != BOARD_ID_F103_BLUEPILL && boardId != BOARD_ID_F411_BLACKPILL) {

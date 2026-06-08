@@ -568,14 +568,11 @@ void MainWindow::setDeviceInfo(const QString &vidHex, const QString &pidHex, con
     // Empty strings = no device / disconnect; reset the card to "—".
     const QString placeholder = QStringLiteral("—");   // em dash
     m_deviceCardBoardId = 0;   // board row reset until params arrive (getParamsPacket)
-    // Plain "—" needs no icon-row nudge; drop any margin from a prior board so
-    // it stays aligned with the other "—" rows. getParamsPacket re-adds it.
-    ui->label_BoardVal->setContentsMargins(0, 0, 0, 0);
     if (vidHex.isEmpty() && pidHex.isEmpty() && serial.isEmpty()) {
         ui->label_VersionVal->setText(placeholder);
         ui->label_VidPidVal->setText(placeholder);
         ui->label_SerialVal->setText(placeholder);
-        ui->label_BoardVal->setText(placeholder);
+        setDeviceCardBoard(0);   // em dash + no icon
         /* Re-enable the LED tab on disconnect so the user can edit a
          * config offline. getParamsPacket re-disables it if the next
          * device that connects is an F411. */
@@ -597,7 +594,7 @@ void MainWindow::setDeviceInfo(const QString &vidHex, const QString &pidHex, con
     // that never answers the params request) would leave the previous
     // device's firmware version + board name visible on the card.
     ui->label_VersionVal->setText(placeholder);
-    ui->label_BoardVal->setText(placeholder);
+    setDeviceCardBoard(0);   // em dash + no icon
 }
 
 // after a config-write USB re-enumerate). Block signals during the rebuild so the
@@ -725,8 +722,7 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
             const int shownBoard = (boardId == BOARD_ID_F411_BLACKPILL)
                 ? BOARD_ID_F411_BLACKPILL : BOARD_ID_F103_BLUEPILL;
             m_deviceCardBoardId = shownBoard;
-            ui->label_BoardVal->setText(board_display::html(shownBoard));
-            ui->label_BoardVal->setContentsMargins(0, 2, 0, 0);  // align inline icon row
+            setDeviceCardBoard(shownBoard);
             if (boardId != 0) {
                 /* Switching boards here can migrate pins (I2C SDA, per-board
                  * role strips), which shifts the physical-button breakdown and
@@ -787,8 +783,7 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
              * connected device is a Blue Pill (F103). Show that rather than a
              * blank, matching the "not Black -> Blue" rule used elsewhere. */
             m_deviceCardBoardId = BOARD_ID_F103_BLUEPILL;
-            ui->label_BoardVal->setText(board_display::html(BOARD_ID_F103_BLUEPILL));
-            ui->label_BoardVal->setContentsMargins(0, 2, 0, 0);  // align inline icon row
+            setDeviceCardBoard(BOARD_ID_F103_BLUEPILL);
             /* Unrecognised firmware -> board_id can't be trusted; don't offer
              * the reboot shortcut. */
             m_advSettings->flasher()->setConnectedDeviceInfo(false, QString(), QString());
@@ -1467,6 +1462,19 @@ void MainWindow::snapshotDeviceConfig()
     }
 }
 
+void MainWindow::setDeviceCardBoard(int boardId)
+{
+    const QPixmap icon = board_display::iconPixmap(boardId);
+    if (icon.isNull()) {
+        ui->label_BoardIcon->clear();
+        ui->label_BoardIcon->hide();
+    } else {
+        ui->label_BoardIcon->setPixmap(icon);
+        ui->label_BoardIcon->show();
+    }
+    ui->label_BoardVal->setText(board_display::text(boardId));
+}
+
 bool MainWindow::uiHasUnsavedDeviceEdits()
 {
     // No snapshot yet (no Read/Write this session) -> nothing the user could
@@ -1496,33 +1504,39 @@ void MainWindow::updatePendingChangesBadge()
     const bool changed = uiHasUnsavedDeviceEdits();
 
     // Mirror the dirty state on the connection pill while a compatible device is
-    // connected: green "Connected" when the shown config matches the device,
-    // amber "Connected • unsaved" when it differs (e.g. after a file load or pin
-    // edits not yet written). Guarded by m_pillUnsaved so we only touch the pill
-    // on a transition, and never override the disconnected / restarting states.
+    // connected: keep the green "Connected" pill, but add the same "modified" dot
+    // the Write button uses when the shown config differs from the device (file
+    // load, or pin/edits not yet written). Guarded by m_pillUnsaved so we only
+    // touch the pill on a transition, and never override disconnected/restarting.
     const bool wantPillUnsaved = m_deviceConnectedOk && !m_postWriteRestarting && changed;
     if (wantPillUnsaved != m_pillUnsaved) {
         m_pillUnsaved = wantPillUnsaved;
-        if (wantPillUnsaved) {
-            freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-warning");
-            ui->label_DeviceStatus->setText(tr("Connected • unsaved"));
-            ui->label_DeviceStatus->setToolTip(
-                tr("What you're editing isn't on the device yet — Write to apply."));
-        } else if (m_deviceConnectedOk) {
-            freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-connected");
-            ui->label_DeviceStatus->setText(tr("Connected"));
-            ui->label_DeviceStatus->setToolTip(QString());
+        if (m_deviceConnectedOk) {
+            if (wantPillUnsaved) {
+                ui->label_DeviceStatus->setText(
+                    tr("Connected") + QStringLiteral(" &nbsp;")
+                    + freejoy_style::svgIconHtml(
+                          QStringLiteral(":/Images/icons/lucide/circle-modified.svg"),
+                          freejoy_style::warningColor(), 11));
+                ui->label_DeviceStatus->setToolTip(
+                    tr("What you're editing isn't on the device yet — Write to apply."));
+            } else {
+                ui->label_DeviceStatus->setText(tr("Connected"));
+                ui->label_DeviceStatus->setToolTip(QString());
+            }
         }
     }
 
     const bool currentlyMarked = !ui->pushButton_WriteConfig->icon().isNull();
     if (changed == currentlyMarked) return;
     if (changed) {
-        // Subtle filled-dot icon (Lucide-style) signals "unsaved
-        // changes" the same way IDE tabs mark modified files. Themed so it
-        // reads as light grey on the dark theme instead of near-black.
+        // Filled-dot "modified" glyph -- the SAME icon the device pill shows,
+        // tinted to the warning accent so "you have unsaved changes vs the device"
+        // reads identically on both surfaces.
         ui->pushButton_WriteConfig->setIconSize(QSize(12, 12));
-        freejoy_style::setThemedIcon(ui->pushButton_WriteConfig, QStringLiteral(":/Images/icons/lucide/circle-modified.svg"));
+        ui->pushButton_WriteConfig->setIcon(freejoy_style::tintedSvgIcon(
+            QStringLiteral(":/Images/icons/lucide/circle-modified.svg"),
+            QSize(12, 12), freejoy_style::warningColor()));
         ui->pushButton_WriteConfig->setToolTip(freejoy_style::tipHtml(
             tr("Pending changes"),
             { tr("The device still runs its previously-flashed config."),
@@ -1532,8 +1546,8 @@ void MainWindow::updatePendingChangesBadge()
         // write -- the accent now means "you have changes to push".
         freejoy_style::setRole(ui->pushButton_WriteConfig, "role", "primary");
     } else {
-        // Drop the themed-icon tag too, so a later theme change doesn't
-        // re-tint (and thus resurrect) the cleared dot.
+        // Drop any stale themed-icon registration (the dot used to be themed) so a
+        // later theme change can't resurrect a cleared dot, then clear the icon.
         freejoy_style::clearThemedIcon(ui->pushButton_WriteConfig);
         ui->pushButton_WriteConfig->setIcon(QIcon());
         ui->pushButton_WriteConfig->setToolTip(QString());
