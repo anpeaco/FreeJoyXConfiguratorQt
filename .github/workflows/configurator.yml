@@ -69,7 +69,12 @@ jobs:
           # it for TLS (HTTPS); without it the online firmware-release list
           # (FirmwareLibrary -> api.github.com) fails with "TLS initialization
           # failed". Bundled into dist/ in the Package step below.
-          tools: 'tools_mingw,qt.tools.win64_mingw810,tools_openssl_x64'
+          # NOTE: space separates distinct tools; comma pairs a tool with its
+          # variant. All-comma collapses to a single `aqt install-tool` call with
+          # three positionals, which aqt rejects ("unrecognized arguments:
+          # tools_openssl_x64"). The Qt cache masked this until a cache miss
+          # surfaced it -- keep openssl as its own space-separated entry.
+          tools: 'tools_mingw,qt.tools.win64_mingw810 tools_openssl_x64'
           cache: true
 
       - name: Build
