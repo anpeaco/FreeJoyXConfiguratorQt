@@ -2498,6 +2498,15 @@ void MainWindow::on_pushButton_FixWindowsCache_clicked()
         return;
     }
 
+    /* The reset removes + rescans the USB node, so the device re-enumerates with
+     * the same serial. Arm HidDevice's always-on serial matcher (priority 1) to
+     * re-select it when it reappears -- otherwise hidDeviceList's natural-rebuild
+     * path leaves the device dropdown blank even though the worker reconnects.
+     * Serial-only (0,0), no grace window needed; harmless if the user cancels. */
+    if (m_hidDeviceWorker) {
+        m_hidDeviceWorker->captureReconnectIdentity(0, 0);
+    }
+
     const win_device_cache::ResetResult res = win_device_cache::reset(
         m_currentDeviceVid, m_currentDevicePid, m_currentDeviceSerial);
 
