@@ -65,16 +65,11 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_mingw81'
-          # tools_openssl_x64 = Qt's own OpenSSL 1.1.1 toolkit. Qt5Network needs
-          # it for TLS (HTTPS); without it the online firmware-release list
-          # (FirmwareLibrary -> api.github.com) fails with "TLS initialization
-          # failed". Bundled into dist/ in the Package step below.
-          # NOTE: space separates distinct tools; comma pairs a tool with its
-          # variant. All-comma collapses to a single `aqt install-tool` call with
-          # three positionals, which aqt rejects ("unrecognized arguments:
-          # tools_openssl_x64"). The Qt cache masked this until a cache miss
-          # surfaced it -- keep openssl as its own space-separated entry.
-          tools: 'tools_mingw,qt.tools.win64_mingw810 tools_openssl_x64'
+          # MinGW toolchain only. This is a build-only CI job: Qt5Network loads
+          # OpenSSL at RUNTIME, not link time, so the build needs no OpenSSL. The
+          # release packaging vendors OpenSSL 1.1.1 from ci/openssl-redist/ (Qt
+          # pulled its own tools_openssl_x64 package; see that dir's README).
+          tools: 'tools_mingw,qt.tools.win64_mingw810'
           cache: true
 
       - name: Build
