@@ -20,8 +20,10 @@ QToolTip {
     color: palette(tool-tip-text);
     background-color: palette(tool-tip-base);
     border: 1px solid palette(mid);
-    border-radius: 4px;
-    padding: 4px 8px;
+    border-radius: 5px;
+    /* A little breathing room for the instructional multi-line tooltips without
+     * being heavy. */
+    padding: 5px 8px;
 }
 
 /* ----- Group boxes --------------------------------------------------- */
@@ -588,12 +590,15 @@ QLabel[buttonState="off"], QLabel[buttonState="on"] {
     background-color: transparent;
 }
 
-/* Off-state: outlined ring + muted text, transparent fill. Palette-driven so
- * it tracks both themes from one rule (mid border + disabled-text ink) -- no
- * per-theme stylesheet, which is what keeps the sheet apply-once. */
+/* Off-state: muted text + a fill a touch darker than the base UI colour, in
+ * both themes. The translucent-black overlay darkens whatever window colour sits
+ * behind it (light -> faint grey, dark -> a shade deeper), so the not-pressed pip
+ * reads as a recessed well rather than nothing (dark) / a stray tint (light).
+ * Palette-driven border/ink keep it theme-tracking from one apply-once rule. */
 QLabel[buttonState="off"] {
     border-color: palette(mid);
     color: palette(disabled, text);
+    background-color: rgba(0, 0, 0, 33);
 }
 
 QLabel[buttonState="on"] {

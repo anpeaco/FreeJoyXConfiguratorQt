@@ -190,6 +190,25 @@
        </widget>
       </item>
       <item row="1" column="14">
+       <widget class="QLabel" name="label_ClearHeader">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size><width>26</width><height>0</height></size>
+        </property>
+        <property name="maximumSize">
+         <size><width>26</width><height>16777215</height></size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="15">
        <widget class="QLabel" name="label_9">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -289,7 +308,7 @@
          <size><width>28</width><height>26</height></size>
         </property>
         <property name="toolTip">
-         <string>Invert this button's input (HIGH becomes pressed, LOW becomes released)</string>
+         <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Invert input&lt;/b&gt;&lt;/div&gt;HIGH becomes pressed, LOW becomes released.</string>
         </property>
         <property name="text">
          <string/>
@@ -405,7 +424,7 @@
            right edge rather than out in the expanding column-14 scrollbar
            gutter. -->
       <item row="0" column="0" colspan="14">
-       <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="1,0,0">
+       <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="1,0">
         <property name="spacing">
          <number>8</number>
         </property>
@@ -431,41 +450,44 @@
         <item alignment="Qt::AlignVCenter">
          <widget class="QCheckBox" name="checkBox_ShowBoundOnly">
           <property name="toolTip">
-           <string>Show only rows with a physical button assigned, plus one empty row to add the next binding.</string>
+           <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Show only bound rows&lt;/b&gt;&lt;/div&gt;Shows only rows with a physical button assigned, plus one empty row to add the next binding.</string>
           </property>
           <property name="text">
            <string>Show bound only</string>
           </property>
          </widget>
         </item>
-        <item alignment="Qt::AlignVCenter">
-         <widget class="QPushButton" name="pushButton_ClearAllLogical">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize"><size><width>22</width><height>22</height></size></property>
-          <property name="maximumSize"><size><width>22</width><height>22</height></size></property>
-          <property name="toolTip">
-           <string>Clear every logical button slot back to defaults. Pin, axis, shift register and timer settings are not affected.</string>
-          </property>
-          <property name="text">
-           <string notr="true"/>
-          </property>
-          <property name="icon">
-           <iconset resource="../../resources.qrc">
-            <normaloff>:/Images/icons/lucide/rotate-ccw.svg</normaloff>:/Images/icons/lucide/rotate-ccw.svg</iconset>
-          </property>
-          <property name="iconSize"><size><width>14</width><height>14</height></size></property>
-          <property name="autoDefault"><bool>false</bool></property>
-          <property name="default"><bool>false</bool></property>
-         </widget>
-        </item>
        </layout>
       </item>
-      <item row="2" column="0" colspan="15">
+      <!-- Clear-all sits in the per-row clear column (col 14) so it lines up
+           in width + horizontal position with each row's clear button. -->
+      <item row="0" column="14" alignment="Qt::AlignVCenter">
+       <widget class="QPushButton" name="pushButton_ClearAllLogical">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize"><size><width>26</width><height>26</height></size></property>
+        <property name="maximumSize"><size><width>26</width><height>26</height></size></property>
+        <property name="styleSheet"><string notr="true">QPushButton { padding: 0; margin: 0; }</string></property>
+        <property name="toolTip">
+         <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Clear all logical buttons&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Clears every logical button slot back to defaults.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Pin, axis, shift register and timer settings are not affected.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
+        </property>
+        <property name="text">
+         <string notr="true"/>
+        </property>
+        <property name="icon">
+         <iconset resource="../../resources.qrc">
+          <normaloff>:/Images/icons/lucide/rotate-ccw.svg</normaloff>:/Images/icons/lucide/rotate-ccw.svg</iconset>
+        </property>
+        <property name="iconSize"><size><width>16</width><height>16</height></size></property>
+        <property name="autoDefault"><bool>false</bool></property>
+        <property name="default"><bool>false</bool></property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="16">
        <widget class="QScrollArea" name="scrollArea_LogButtons">
         <property name="frameShape">
          <enum>QFrame::NoFrame</enum>

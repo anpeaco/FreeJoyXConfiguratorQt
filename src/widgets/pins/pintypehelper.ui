@@ -56,7 +56,7 @@
       <item>
        <widget class="QCheckBox" name="checkBox_i2cBus">
         <property name="toolTip">
-         <string>Assign the I2C bus pins (SCL + SDA) in one click for AS5600 / ADS1115 sensors. Uncheck to release them.</string>
+         <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Assign the I2C bus pins&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Assigns SCL + SDA in one click for AS5600 / ADS1115 sensors.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Normally claimed automatically when you pick an I2C sensor.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Uncheck to release them.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
         </property>
         <property name="text">
          <string>I2C bus (AS5600 / ADS1115)</string>
@@ -66,7 +66,7 @@
       <item>
        <widget class="QCheckBox" name="checkBox_spiBus">
         <property name="toolTip">
-         <string>Assign the SPI bus pins (SCK + MISO + MOSI). Normally claimed automatically when you pick an SPI sensor's chip-select.</string>
+         <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Assign the SPI bus pins&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Assigns SCK + MISO + MOSI.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Normally claimed automatically when you pick an SPI sensor's chip-select.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Uncheck to release them.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
         </property>
         <property name="text">
          <string>SPI bus (SCK / MISO / MOSI)</string>

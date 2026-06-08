@@ -101,6 +101,10 @@ MainWindow::MainWindow(QWidget *parent)
         setCentralWidget(scroll);
     }
 
+    // Modal loading mask, parented to the window so it covers everything (incl.
+    // the menu/toolbar). Shown during read / write; see on_pushButton_*Config.
+    m_loadingOverlay = new freejoy_ui::LoadingOverlay(this);
+
     /* The device-card "Upgrade Firmware" button is always visible; it starts
      * disabled and refreshUpgradeButtonState() enables it only when a newer
      * firmware is available for the connected device. Its click opens the
@@ -1489,10 +1493,11 @@ void MainWindow::updatePendingChangesBadge()
         // reads as light grey on the dark theme instead of near-black.
         ui->pushButton_WriteConfig->setIconSize(QSize(12, 12));
         freejoy_style::setThemedIcon(ui->pushButton_WriteConfig, QStringLiteral(":/Images/icons/lucide/circle-modified.svg"));
-        ui->pushButton_WriteConfig->setToolTip(
-            tr("Pending changes. The device still runs its previously-flashed "
-               "config; the live press preview reflects that, not your edits. "
-               "Click to write."));
+        ui->pushButton_WriteConfig->setToolTip(freejoy_style::tipHtml(
+            tr("Pending changes"),
+            { tr("The device still runs its previously-flashed config."),
+              tr("The live press preview reflects that, not your edits."),
+              tr("<b>Click</b> to write.") }));
         // Raise Write to the primary accent only while there's something to
         // write -- the accent now means "you have changes to push".
         freejoy_style::setRole(ui->pushButton_WriteConfig, "role", "primary");
@@ -1694,6 +1699,9 @@ void MainWindow::legacyConfigMigrated(uint16_t oldFirmwareVersion)
 
 void MainWindow::configReceived(bool success)
 {
+    // Read finished (success or failure) -- lift the loading mask.
+    if (m_loadingOverlay) m_loadingOverlay->stop();
+
     /* The read is done (worker emits this on success and failure alike), so the
      * worker is no longer touching dev_config_t -- re-enable the dirty poll. The
      * snapshot taken in the success branch below leaves the badge correctly
@@ -1832,6 +1840,10 @@ void MainWindow::configReceived(bool success)
 // slot after sending the config
 void MainWindow::configSent(bool success)
 {
+    // Write transmitted -- lift the loading mask. (A post-write re-read, if it
+    // fires, shows its own brief "Reading configuration" mask.)
+    if (m_loadingOverlay) m_loadingOverlay->stop();
+
     // curves pointer activated
     m_axesCurvesConfig->deviceStatus(true);
 
@@ -2187,6 +2199,7 @@ void MainWindow::on_pushButton_ResetAllPins_clicked()
 void MainWindow::on_pushButton_ReadConfig_clicked()
 {
     qDebug()<<"Read config started";
+    if (m_loadingOverlay) m_loadingOverlay->start(tr("Reading configuration…"));
     blockWRConfigToDevice(true);
 
     /* Gate the dirty poll: the worker fills dev_config_t in place as the read
@@ -2219,6 +2232,7 @@ void MainWindow::on_pushButton_WriteConfig_clicked()
 {
     qDebug()<<"Write config started";
     if (!confirmLogicConfigComplete()) return;
+    if (m_loadingOverlay) m_loadingOverlay->start(tr("Writing configuration…"), 30000);
 
     /* Pre-write device-config backup (THOUGHTS #2). Snapshot the user's
      * staged edits, kick off a Read of the device's current config so

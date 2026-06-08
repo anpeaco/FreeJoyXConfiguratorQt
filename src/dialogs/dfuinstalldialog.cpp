@@ -227,9 +227,11 @@ void DfuInstallDialog::buildUi()
     m_presetCombo = new QComboBox(m_advBox);
     m_presetCombo->addItems({ tr("Normal"), tr("Tolerant"),
                               tr("Maximum compatibility"), tr("Custom") });
-    m_presetCombo->setToolTip(tr("Normal = fast/tight (good USB); Tolerant and "
-                                 "Maximum compatibility add margins for flaky cables "
-                                 "or hubs; Custom unlocks the boxes."));
+    m_presetCombo->setToolTip(freejoy_style::tipHtml(
+        tr("Pick a DFU timing preset"),
+        { tr("<b>Normal</b> is fast/tight for a good USB connection."),
+          tr("<b>Tolerant</b> and <b>Maximum compatibility</b> add margins for flaky cables or hubs."),
+          tr("<b>Custom</b> unlocks the boxes.") }));
     advForm->addRow(tr("Timing preset:"), m_presetCombo);
 
     auto makeSpin = [this](int lo, int hi, int step, const QString &suffix) {
@@ -254,15 +256,17 @@ void DfuInstallDialog::buildUi()
     connect(m_advToggle, &QToolButton::toggled, this, [this](bool on) {
         m_advBox->setVisible(on);
         /* The gear/label/chevron text is kept in sync by configureSectionToggle. */
-        /* Re-fit height for the now-(in)visible Advanced box, preserving width.
-         * Showing/hiding m_advBox posts a *queued* layout invalidation, so we
-         * must activate() the layout to recompute sizeHint() synchronously --
-         * otherwise the collapse path resizes against the stale (still-expanded)
-         * hint and the dialog never shrinks back. Width is held so a bare
-         * adjustSize() can't snap to the content's narrower natural width. */
+        /* Re-fit the dialog height to the (collapsed/expanded) content, holding
+         * the width. m_advBox is nested inside the Firmware group box, so showing
+         * or hiding it posts *queued* layout invalidations up the parent chain --
+         * the new sizeHint isn't ready synchronously. A same-tick resize would
+         * shrink against the stale, still-expanded hint, so the dialog never
+         * contracts. Defer to the next event-loop turn so every nested layout has
+         * settled first; width is held so we don't snap to a narrower hint. */
         const int keepWidth = width();
-        if (QLayout *l = layout()) l->activate();
-        resize(keepWidth, sizeHint().height());
+        QTimer::singleShot(0, this, [this, keepWidth]() {
+            resize(keepWidth, sizeHint().height());
+        });
     });
     connect(m_presetCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &DfuInstallDialog::onTimingPresetChanged);

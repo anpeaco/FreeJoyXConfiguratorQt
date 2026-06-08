@@ -658,6 +658,47 @@ inline void setRole(QWidget *w, const char *property, const QVariant &value)
     w->update();
 }
 
+// Instructional tooltip: a bold heading line followed by bulleted, action-first
+// points (Qt renders it as rich text -- auto-detected from the markup). Use for
+// any control whose tooltip is more than a short label. `heading` is escaped;
+// each point may carry inline markup (e.g. "<b>Double-click</b> ...").
+//   setToolTip(freejoy_style::tipHtml(tr("Assign a physical button"),
+//                                     { tr("Click, then press a button to bind it here."),
+//                                       tr("<b>Double-click</b> to auto-sequence down the rows."),
+//                                       tr("Times out after 5 seconds.") }));
+inline QString tipHtml(const QString &heading, const QStringList &points)
+{
+    // Heading on its own line with a small gap below (section breathing), then a
+    // real bullet list. A <ul>/<li> list gives a hanging indent: the bullet stays
+    // attached to its text and any wrapped continuation aligns under the text,
+    // instead of breaking the bullet onto its own line.
+    // A two-column table per bullet gives a true hanging indent: the bullet sits
+    // in a narrow first column and the text wraps within the second column, so a
+    // wrapped line aligns under the TEXT (not under the bullet). The bullet cell's
+    // right padding is the gap between bullet and text; the bottom padding lets
+    // the points breathe; the table margin is the slight list indent.
+    QString s = QStringLiteral("<div style=\"margin-bottom:11px;\"><b>%1</b></div>")
+                    .arg(heading.toHtmlEscaped());
+    s += QStringLiteral("<table cellspacing=\"0\" cellpadding=\"0\" style=\"margin-left:4px;\">");
+    for (const QString &p : points) {
+        s += QStringLiteral("<tr>"
+                            "<td valign=\"top\" style=\"padding:0 8px 4px 0;\">&bull;</td>"
+                            "<td style=\"padding:0 0 4px 0;\">%1</td>"
+                            "</tr>").arg(p);
+    }
+    s += QStringLiteral("</table>");
+    return s;
+}
+
+// Instructional tooltip with no discrete steps: a bold heading then a short
+// descriptive line (no bullet). For controls that explain a concept rather than
+// a sequence of actions.
+inline QString tipHtml(const QString &heading, const QString &body)
+{
+    return QStringLiteral("<div style=\"margin-bottom:11px;\"><b>%1</b></div>%2")
+        .arg(heading.toHtmlEscaped(), body);
+}
+
 // Clear a dynamic role so the widget reverts to its default QSS rules.
 inline void clearRole(QWidget *w, const char *property)
 {

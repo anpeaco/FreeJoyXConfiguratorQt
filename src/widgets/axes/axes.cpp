@@ -319,9 +319,22 @@ void Axes::setDetectArmed(bool armed, bool sequence)
 
     ui->pushButton_DetectSource->setToolTip(armed
         ? (sequence
-            ? tr("Auto-sequence -- rotate any axis to assign its source, then the next axis arms automatically. Single-click, Esc, or click elsewhere to stop.")
-            : tr("Armed -- rotate any connected axis to assign its source. Click again to cancel."))
-        : tr("Click then rotate any connected axis to set its source pin as this axis's source. Double-click to auto-sequence down the axes. Only works for pins already bound to some axis -- the firmware reports raw values per-axis, not per-pin."));
+            ? freejoy_style::tipHtml(
+                  tr("Auto-capturing sources"),
+                  { tr("<b>Rotate</b> any axis to capture its source, then the next axis arms automatically."),
+                    tr("<b>Single-click</b>, <b>Esc</b>, or click elsewhere to stop.") })
+            : freejoy_style::tipHtml(
+                  tr("Armed for source capture"),
+                  { tr("<b>Rotate</b> any connected axis to capture its source."),
+                    tr("<b>Click</b> again, or press <b>Esc</b>, to cancel."),
+                    tr("Times out after 5 seconds.") }))
+        : freejoy_style::tipHtml(
+              tr("Capture this axis's source"),
+              { tr("<b>Click</b>, then rotate any connected axis to capture its source pin as this axis's source."),
+                tr("<b>Double-click</b>, then rotate any connected axis to capture its source, and auto-arm the next axis."),
+                tr("Press <b>Esc</b> to cancel."),
+                tr("Times out after 5 seconds."),
+                tr("Only works for pins already bound to some axis -- the firmware reports raw values per-axis, not per-pin.") }));
 
     /* Listen-for-input pulse (UI_PATTERNS.md): pulse the source
      * dropdown while waiting for the user's axis rotation, stop the
@@ -510,9 +523,9 @@ void Axes::applyOutputGuard()
         // -> m_outputEnabled = false, keeping the local cache honest.
         ui->checkBox_Output->setChecked(false);
         ui->checkBox_Output->setEnabled(false);
-        ui->checkBox_Output->setToolTip(tr(
-            "No input source assigned. Select a Main Source above to "
-            "enable HID output for this axis."));
+        ui->checkBox_Output->setToolTip(freejoy_style::tipHtml(
+            tr("No input source assigned"),
+            tr("Select a Main Source above to enable HID output for this axis.")));
     }
 }
 

@@ -149,9 +149,11 @@ private slots:
     void editingOnOff(int value);
     void functionIndexChanged(int index);
     void logicOpIndexChanged(int index);
+    void clearRow();	// reset this slot's button_t to defaults + refresh the row
 
 private:
     void updateLogicWidgetsEnabled();	// enable/disable Op + SourceB based on type / op
+    void updateClearButtonVisibility();	// show the clear/remove button only on bound rows
     void startRowDrag();				// begin QDrag carrying m_buttonIndex
     void applyRowWash();				// paint the subtle active-row green wash (palette-based)
     void clearRowWash();				// remove the wash, restoring the pristine transparent row

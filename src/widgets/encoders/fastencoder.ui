@@ -96,7 +96,7 @@
       <string>Enable</string>
      </property>
      <property name="toolTip">
-      <string>Enable this fast encoder. Maps both encoder pins (A and B) to FAST_ENCODER in Pin Config; clearing the checkbox releases them back to NOT_USED.</string>
+      <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Enable this fast encoder&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Maps both encoder pins (A and B) to FAST_ENCODER in Pin Config.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Clearing the checkbox releases them back to NOT_USED.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
      </property>
     </widget>
    </item>

@@ -87,6 +87,10 @@ ButtonLogical::ButtonLogical(int buttonIndex, QWidget *parent)
     // sequence states. Without this the .ui's black target shows until first arm.
     freejoy_style::setThemedIcon(ui->pushButton_Listen,  QStringLiteral(":/Images/icons/lucide/target.svg"));
     freejoy_style::setThemedIcon(ui->pushButton_ListenB, QStringLiteral(":/Images/icons/lucide/target.svg"));
+    // Clear-row (reset to defaults) button at the row's right edge.
+    freejoy_style::setThemedIcon(ui->pushButton_ClearRow, QStringLiteral(":/Images/icons/lucide/rotate-ccw.svg"));
+    connect(ui->pushButton_ClearRow, &QPushButton::clicked, this, &ButtonLogical::clearRow);
+    updateClearButtonVisibility();   // fresh row is unbound -> hidden until bound
     m_listenClickTimer = new QTimer(this);
     m_listenClickTimer->setSingleShot(true);
     connect(m_listenClickTimer, &QTimer::timeout, this, [this]() {
@@ -365,6 +369,7 @@ void ButtonLogical::editingOnOff(int value)
         ui->comboBox_PressTimerIndex->setEnabled(false);
     }
     updateLogicWidgetsEnabled();
+    updateClearButtonVisibility();
     emit physicalNumChanged(m_buttonIndex);
 }
 
@@ -650,16 +655,18 @@ void ButtonLogical::setTimerColumnsEnabled(bool delayEnabled, bool pressEnabled)
     }
     QString tip = delayEnabled
         ? QString()
-        : tr("Disabled: gesture-managed slots are driven by the global "
-             "tap and double-tap windows.");
+        : freejoy_style::tipHtml(
+              tr("Delay timer disabled"),
+              tr("Gesture-managed slots are driven by the global tap and double-tap windows."));
     ui->comboBox_DelayTimerIndex->setToolTip(tip);
     ui->comboBox_PressTimerIndex->setToolTip(
         pressEnabled
             ? (delayEnabled
                 ? QString()
-                : tr("Minimum-hold floor: guarantees the host sees the logical "
-                     "button high for at least this duration after the gesture "
-                     "fires. Minimum 20 ms."))
+                : freejoy_style::tipHtml(
+                      tr("Minimum-hold floor"),
+                      { tr("Guarantees the host sees the logical button high for at least this duration after the gesture fires."),
+                        tr("Minimum 20 ms.") }))
             : QString());
 }
 
@@ -922,6 +929,53 @@ void ButtonLogical::readFromConfig()
     // connect; setSlotDisabled() is idempotent, and the m_slotDisabled guards
     // keep the row locked through ButtonConfig's post-load coexistence filter.
     setSlotDisabled(button->is_disabled);
+
+    // Explicitly recompute the LOGIC-only cells (Operator / Source B + its listen
+    // button). The function setCurrentIndex above only fires functionIndexChanged
+    // when the index actually MOVES, and setSlotDisabled() early-returns when the
+    // disabled state is unchanged -- so on a plain load of a non-LOGIC button into
+    // an enabled row neither path runs, leaving the Source B button stale-enabled.
+    updateLogicWidgetsEnabled();
+    updateClearButtonVisibility();
+}
+
+void ButtonLogical::clearRow()
+{
+    // Clear this slot: drop its binding (physical_num = -1 -> unbound) and reset
+    // every setting (type/invert/disable/shift/timers/logic). Unbinding is what
+    // makes the row fall out of the "show bound only" view -- it's effectively
+    // removed. readFromConfig() repaints the row from the cleared config; its
+    // setValue / setCurrentIndex calls drive editingOnOff / functionIndexChanged,
+    // so enabled-state + coexistence recompute for free.
+    button_t *b = &gEnv.pDeviceConfig->config.buttons[m_buttonIndex];
+    const button_type_t prevType = b->type;
+    b->physical_num     = -1;
+    b->type             = BUTTON_NORMAL;
+    b->src_b            = -1;
+    b->shift_modificator = 0;
+    b->is_inverted      = 0;
+    b->is_disabled      = 0;
+    b->op               = 0;
+    b->delay_timer      = static_cast<button_timer_t>(0);
+    b->press_timer      = static_cast<button_timer_t>(0);
+
+    readFromConfig();
+
+    // Make sure ButtonConfig recomputes the cross-row coexistence filter and the
+    // app picks up the change, even if readFromConfig's setters didn't move (and
+    // so didn't fire their own signals).
+    if (prevType != BUTTON_NORMAL) {
+        emit functionTypeChanged(BUTTON_NORMAL, prevType, m_buttonIndex);
+    }
+    emit physicalNumChanged(m_buttonIndex);
+}
+
+void ButtonLogical::updateClearButtonVisibility()
+{
+    // The clear / remove button only makes sense on a BOUND row. On unbound rows
+    // -- notably the trailing "add another" row in show-bound-only mode -- there's
+    // nothing to remove, so hide it.
+    ui->pushButton_ClearRow->setVisible(currentPhysicalNum() >= 0);
 }
 
 void ButtonLogical::writeToConfig()

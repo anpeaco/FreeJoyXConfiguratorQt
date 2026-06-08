@@ -87,7 +87,7 @@ QPushButton:disabled {
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>LED controlled by host software (e.g. SimHub) instead of a button.</string>
+         <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Host-controlled LED&lt;/b&gt;&lt;/div&gt;LED controlled by host software (e.g. SimHub) instead of a button.</string>
         </property>
         <property name="text">
          <string notr="true"/>

@@ -420,7 +420,7 @@
         <item>
          <widget class="QLabel" name="text_source">
           <property name="toolTip">
-           <string>Host = LED driven by host software (e.g. SimHub). Unchecked = driven by the button below.</string>
+           <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;LED control source&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;&lt;b&gt;Host&lt;/b&gt; = LED driven by host software (e.g. SimHub).&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;&lt;b&gt;Unchecked&lt;/b&gt; = driven by the button below.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
           </property>
           <property name="text">
            <string>Host</string>

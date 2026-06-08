@@ -20,6 +20,7 @@
 #include "pinconfig.h"
 #include "shiftregistersconfig.h"
 #include "shiftstimersconfig.h"
+#include "loadingoverlay.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -174,6 +175,8 @@ private:
 
     QThread *m_thread;
     HidDevice *m_hidDeviceWorker;
+
+    freejoy_ui::LoadingOverlay *m_loadingOverlay = nullptr;  // modal mask during read/write
 
     QThread *m_threadGetSendConfig;
 

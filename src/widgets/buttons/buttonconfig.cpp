@@ -717,15 +717,22 @@ void ButtonConfig::applyBoundFilter(bool revealTrailing)
         return;
     }
 
-    // The single trailing "add another" row = the lowest-index unbound slot.
-    // -1 when all MAX_BUTTONS_NUM slots are bound (nothing left to add).
-    int trailing = -1;
+    // The single trailing "add another" row sits just AFTER the last bound slot,
+    // so it always stays at the BOTTOM of the list. (Using the lowest *unbound*
+    // slot instead made a freshly-cleared middle row become the add row, popping
+    // the blank row up into the middle and dropping the old bottom row off.)
+    // Any unbound slots in gaps between bound rows are simply hidden, so the
+    // visible list reads as bound rows + one trailing add row. -1 when every slot
+    // is bound (nothing left to add).
+    int lastBound = -1;
     for (int i = 0; i < m_logicButtonPtrList.size(); ++i) {
-        if (m_logicButtonPtrList[i]->currentPhysicalNum() < 0) {
-            trailing = i;
-            break;
+        if (m_logicButtonPtrList[i]->currentPhysicalNum() >= 0) {
+            lastBound = i;
         }
     }
+    const int trailing = (lastBound + 1 < m_logicButtonPtrList.size())
+                         ? lastBound + 1
+                         : -1;
 
     for (int i = 0; i < m_logicButtonPtrList.size(); ++i) {
         const bool bound = m_logicButtonPtrList[i]->currentPhysicalNum() >= 0;

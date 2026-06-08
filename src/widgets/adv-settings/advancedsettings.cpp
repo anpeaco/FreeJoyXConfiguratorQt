@@ -109,9 +109,10 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
     m_pidConflictRow->setVisible(false);
 
     m_showAllDevicesButton = new QPushButton(tr("Show all connected devices"), this);
-    m_showAllDevicesButton->setToolTip(tr(
-        "Dump every detected FreeJoy device's USB identity (VID:PID, "
-        "name, serial). Useful for diagnosing phantom PID conflicts."));
+    m_showAllDevicesButton->setToolTip(freejoy_style::tipHtml(
+        tr("List connected USB identities"),
+        { tr("Dumps every detected FreeJoy device's USB identity (VID:PID, name, serial)."),
+          tr("Useful for diagnosing phantom PID conflicts.") }));
     connect(m_showAllDevicesButton, &QPushButton::clicked,
             this, &AdvancedSettings::showAllConnectedDevicesRequested);
 
@@ -138,10 +139,11 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
      * doesn't need restructuring. Persists to OtherSettings/AutoReadOnConnect
      * and signals MainWindow, which owns the connect-time behaviour. */
     m_autoReadCheck = new QCheckBox(tr("Auto-read config from device on connect"), this);
-    m_autoReadCheck->setToolTip(tr(
-        "When a compatible device connects, automatically read its stored "
-        "configuration into the configurator. If you have unsaved changes "
-        "you'll be asked first. Turn off to manage reads manually."));
+    m_autoReadCheck->setToolTip(freejoy_style::tipHtml(
+        tr("Auto-read on connect"),
+        { tr("When a compatible device connects, automatically reads its stored configuration into the configurator."),
+          tr("If you have unsaved changes you'll be asked first."),
+          tr("Turn off to manage reads manually.") }));
     gEnv.pAppSettings->beginGroup("OtherSettings");
     m_autoReadCheck->setChecked(
         gEnv.pAppSettings->value("AutoReadOnConnect", true).toBool());
@@ -163,9 +165,10 @@ AdvancedSettings::AdvancedSettings(QWidget *parent)
      * persists to OtherSettings/LogEnabled and signals MainWindow, which
      * forwards it to the DebugWindow logger. */
     m_writeLogCheck = new QCheckBox(tr("Write log to file"), this);
-    m_writeLogCheck->setToolTip(tr(
-        "Append the debug log to a dated file under Documents/FreeJoy/log/. "
-        "Useful for capturing a bench session to review later."));
+    m_writeLogCheck->setToolTip(freejoy_style::tipHtml(
+        tr("Write debug log to file"),
+        { tr("Appends the debug log to a dated file under Documents/FreeJoy/log/."),
+          tr("Useful for capturing a bench session to review later.") }));
     gEnv.pAppSettings->beginGroup("OtherSettings");
     m_writeLogCheck->setChecked(gEnv.pAppSettings->value("LogEnabled", false).toBool());
     gEnv.pAppSettings->endGroup();
@@ -193,16 +196,18 @@ void AdvancedSettings::retranslateUi()
     // refresh its strings here for live language switches.
     if (m_autoReadCheck) {
         m_autoReadCheck->setText(tr("Auto-read config from device on connect"));
-        m_autoReadCheck->setToolTip(tr(
-            "When a compatible device connects, automatically read its stored "
-            "configuration into the configurator. If you have unsaved changes "
-            "you'll be asked first. Turn off to manage reads manually."));
+        m_autoReadCheck->setToolTip(freejoy_style::tipHtml(
+            tr("Auto-read on connect"),
+            { tr("When a compatible device connects, automatically reads its stored configuration into the configurator."),
+              tr("If you have unsaved changes you'll be asked first."),
+              tr("Turn off to manage reads manually.") }));
     }
     if (m_writeLogCheck) {
         m_writeLogCheck->setText(tr("Write log to file"));
-        m_writeLogCheck->setToolTip(tr(
-            "Append the debug log to a dated file under Documents/FreeJoy/log/. "
-            "Useful for capturing a bench session to review later."));
+        m_writeLogCheck->setToolTip(freejoy_style::tipHtml(
+            tr("Write debug log to file"),
+            { tr("Appends the debug log to a dated file under Documents/FreeJoy/log/."),
+              tr("Useful for capturing a bench session to review later.") }));
     }
 }
 
