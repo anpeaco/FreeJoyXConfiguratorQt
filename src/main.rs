@@ -23,7 +23,7 @@
 //! All progress/results go to stdout as the line protocol in [`proto`].
 //! Exit code 0 == success, non-zero == failure (with an `ERROR` line first).
 
-use freejoyx_flash::dfuse::{self, Dfu, APP_ADDR, BOOT_ADDR};
+use freejoyx_flash::dfuse::{self, CliTiming, Dfu, APP_ADDR, BOOT_ADDR};
 use freejoyx_flash::{driver, proto};
 use proto::Stage;
 
@@ -32,7 +32,23 @@ use proto::Stage;
 const CONFIG_ADDR: u32 = 0x0801_0000;
 
 fn main() {
-    std::process::exit(real_main());
+    // Never let a panic become a silent crash. The Qt configurator only learns
+    // what went wrong from our stdout protocol lines, so an uncaught panic shows
+    // up there as a bare "the install helper stopped unexpectedly" with no
+    // detail. Catch it, surface it as a normal ERROR line, and exit non-zero so
+    // the dialog can show the message. (A native FFI access violation can't be
+    // caught here -- those are avoided by not calling into libwdi once the device
+    // is already reachable; see driver::ensure_reachable.)
+    let code = std::panic::catch_unwind(real_main).unwrap_or_else(|e| {
+        let msg = e
+            .downcast_ref::<&str>()
+            .map(|s| (*s).to_string())
+            .or_else(|| e.downcast_ref::<String>().cloned())
+            .unwrap_or_else(|| "unknown panic".to_string());
+        proto::error("panic", &msg);
+        101
+    });
+    std::process::exit(code);
 }
 
 fn real_main() -> i32 {
@@ -49,6 +65,11 @@ fn real_main() -> i32 {
         // runs first). Surfaced by the configurator's "Install WinUSB driver"
         // action when a probe reports `needs-driver`.
         "bind" => cmd_bind(&args),
+        // Leave DFU on demand (no flash): manifest + reset so the chip jumps back
+        // into its firmware, instead of the user power-cycling. Only sticks if the
+        // board entered DFU via the software reboot (BOOT0 low) -- a held BOOT0
+        // just re-enters DFU on the reset.
+        "leave" => cmd_leave(&args),
         // Internal: the self-elevated WinUSB driver install (invoked with UAC
         // by `bind`/`install`). Not meant to be run by hand.
         "bind-winusb" => cmd_bind_winusb(),
@@ -132,6 +153,27 @@ fn cmd_bind(args: &[String]) -> i32 {
     }
 }
 
+/// Leave DFU without flashing: drive to idle, then manifest + reset so the chip
+/// reboots into its application. The USB disconnect that follows is the expected,
+/// successful outcome (leave() is best-effort).
+fn cmd_leave(args: &[String]) -> i32 {
+    let _ = flag(args, "--board");
+    let r = (|| -> Result<(), String> {
+        driver::ensure_reachable()?;
+        let dfu = open_with_retry(CliTiming::default())?;
+        proto::log("leaving DFU — the board will reboot into its firmware");
+        dfu.leave(); // drives to idle internally before the manifest sequence
+        Ok(())
+    })();
+    match r {
+        Ok(()) => 0,
+        Err(e) => {
+            proto::error("leave", &e);
+            1
+        }
+    }
+}
+
 fn cmd_install(args: &[String]) -> i32 {
     let board = flag(args, "--board").unwrap_or_default();
     if board != "f411" {
@@ -172,7 +214,18 @@ fn cmd_install(args: &[String]) -> i32 {
         return 1;
     }
 
-    match run_install(&boot, &app) {
+    // Optional DfuSe timing overrides from the configurator's Advanced section.
+    // Absent flags keep the helper's proven defaults, so a bare `install` is
+    // unchanged.
+    let timing = CliTiming {
+        dnload_delay_ms: flag_u64(args, "--dnload-delay-ms"),
+        poll_timeout_ms: flag_u64(args, "--poll-timeout-ms"),
+        transfer_timeout_ms: flag_u64(args, "--transfer-timeout-ms"),
+        retries: flag_u64(args, "--retries").map(|v| v as u32),
+        settle_ms: flag_u64(args, "--settle-ms"),
+    };
+
+    match run_install(&boot, &app, timing) {
         Ok(()) => {
             proto::stage(Stage::Done);
             0
@@ -184,7 +237,7 @@ fn cmd_install(args: &[String]) -> i32 {
     }
 }
 
-fn run_install(boot: &[u8], app: &[u8]) -> Result<(), String> {
+fn run_install(boot: &[u8], app: &[u8], timing: CliTiming) -> Result<(), String> {
     proto::log(&format!(
         "install: bootloader {} bytes -> 0x{BOOT_ADDR:08x}, app {} bytes -> 0x{APP_ADDR:08x}",
         boot.len(),
@@ -193,7 +246,7 @@ fn run_install(boot: &[u8], app: &[u8]) -> Result<(), String> {
     proto::stage(Stage::BindDriver);
     driver::ensure_reachable()?;
 
-    let dfu = open_with_retry()?;
+    let dfu = open_with_retry(timing)?;
     dfu.to_idle()?;
 
     proto::stage(Stage::Erase);
@@ -209,8 +262,8 @@ fn run_install(boot: &[u8], app: &[u8]) -> Result<(), String> {
     dfu.write_image(APP_ADDR, app, proto::progress)?;
 
     proto::stage(Stage::Verify);
-    verify_soft(&dfu, BOOT_ADDR, boot, "bootloader");
-    verify_soft(&dfu, APP_ADDR, app, "app");
+    verify_soft(&dfu, BOOT_ADDR, boot, "bootloader")?;
+    verify_soft(&dfu, APP_ADDR, app, "app")?;
 
     // Manifest + reset. With manual BOOT0 entry the user still has to release
     // BOOT0 and replug; that's covered by the configurator's instructions.
@@ -218,23 +271,40 @@ fn run_install(boot: &[u8], app: &[u8]) -> Result<(), String> {
     Ok(())
 }
 
-/// Read-back verify, downgraded to a warning on failure: some devices/states
-/// refuse UPLOAD, and a write that the device itself accepted shouldn't be
-/// reported as a hard failure just because we couldn't read it back.
-fn verify_soft(dfu: &Dfu, base: u32, data: &[u8], what: &str) {
+/// Read-back verification with two distinct outcomes:
+///   - content MISMATCH (read-back succeeded but the bytes differ) -> hard error:
+///     the flash is genuinely wrong, fail the install so the user re-runs it.
+///   - read-back UNAVAILABLE (the device refused UPLOAD / I/O error) -> skip with
+///     a warning: we couldn't read it back, but every write block was accepted by
+///     the device, so don't fail a write that itself succeeded.
+///
+/// `verify_image` reports a mismatch as "...mismatch..." and an unreadable device
+/// as "UPLOAD(...) failed: ..." -- we split on that.
+fn verify_soft(dfu: &Dfu, base: u32, data: &[u8], what: &str) -> Result<(), String> {
     match dfu.verify_image(base, data, proto::progress) {
-        Ok(()) => proto::log(&format!("{what} verified")),
-        Err(e) => proto::log(&format!("{what} verify skipped: {e}")),
+        Ok(()) => {
+            proto::log(&format!("{what} verified (read-back matches)"));
+            Ok(())
+        }
+        Err(e) if e.contains("mismatch") => {
+            Err(format!("{what} read-back verification FAILED: {e}"))
+        }
+        Err(e) => {
+            proto::log(&format!(
+                "{what} verify skipped (read-back unavailable): {e}"
+            ));
+            Ok(())
+        }
     }
 }
 
 /// The user has just entered DFU (BOOT0 + reset), so the device may take a
 /// moment to settle / re-enumerate. Retry the open a few times before giving
 /// up with the platform-specific hint.
-fn open_with_retry() -> Result<Dfu, String> {
+fn open_with_retry(timing: CliTiming) -> Result<Dfu, String> {
     let mut last = String::new();
     for attempt in 0..5 {
-        match Dfu::open() {
+        match Dfu::open(timing) {
             Ok(d) => return Ok(d),
             Err(e) => {
                 last = e;
@@ -257,4 +327,9 @@ fn flag(args: &[String], name: &str) -> Option<String> {
 /// Presence check for a valueless flag (e.g. `--verbose`).
 fn has_flag(args: &[String], name: &str) -> bool {
     args.iter().any(|a| a == name)
+}
+
+/// Parse the unsigned value following `name`, if present and valid.
+fn flag_u64(args: &[String], name: &str) -> Option<u64> {
+    flag(args, name).and_then(|v| v.trim().parse::<u64>().ok())
 }

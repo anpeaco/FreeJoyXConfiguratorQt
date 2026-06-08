@@ -31,6 +31,18 @@ pub fn ensure_reachable() -> Result<(), String> {
     use crate::proto;
     use std::time::Duration;
 
+    // Fast path: if nusb can already enumerate (and so open) the ROM DFU device,
+    // it is WinUSB-bound and reachable -- there is nothing to install, so skip the
+    // libwdi introspection entirely. This matters for robustness as well as
+    // speed: libwdi's create_list() has been seen to fault on hosts with many USB
+    // devices, and the install flow only reaches here once a probe already
+    // reported `present` (nusb can open it). We only need libwdi when nusb is
+    // blind to the device, i.e. it isn't bound yet (the needs-driver case below).
+    if crate::dfuse::device_present() {
+        proto::log("DFU device already reachable (WinUSB) — skipping driver step");
+        return Ok(());
+    }
+
     match current_driver()? {
         DriverState::WinUsb => {
             proto::log("WinUSB already bound — skipping driver install");

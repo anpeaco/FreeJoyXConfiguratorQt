@@ -6,7 +6,6 @@
 
 use std::time::Duration;
 
-use nusb::descriptors::language_id;
 use nusb::transfer::{Control, ControlType, Recipient};
 use nusb::{DeviceInfo, Interface};
 
@@ -158,22 +157,20 @@ fn log_device_diagnostics(info: &DeviceInfo, device: &nusb::Device, func: Option
     match device.active_configuration() {
         Ok(cfg) => {
             for alt in cfg.interface_alt_settings() {
-                let map = alt
-                    .string_index()
-                    .and_then(|i| {
-                        device
-                            .get_string_descriptor(i, language_id::US_ENGLISH, CTRL_TIMEOUT)
-                            .ok()
-                    })
-                    .unwrap_or_default();
+                // NOTE: deliberately NOT reading the alt-setting string descriptor
+                // (the DfuSe memory-map text) here. Issuing a get_string_descriptor()
+                // control transfer *before* claim_interface() faults inside nusb's
+                // WinUSB backend on Windows, crashing the helper (observed on the
+                // F411 ROM bootloader). The class triplet below comes from the
+                // cached config descriptor (no device I/O) and is enough to confirm
+                // a DFU interface; the memory map isn't needed for the write.
                 proto::log(&format!(
-                    "dfu: iface {} alt {} class {:02x}/{:02x}/{:02x} \"{}\"",
+                    "dfu: iface {} alt {} class {:02x}/{:02x}/{:02x}",
                     alt.interface_number(),
                     alt.alternate_setting(),
                     alt.class(),
                     alt.subclass(),
                     alt.protocol(),
-                    map,
                 ));
             }
         }
@@ -222,8 +219,6 @@ const STATE_DNLOAD_IDLE: u8 = 5;
 const STATE_MANIFEST_SYNC: u8 = 6;
 const STATE_ERROR: u8 = 10;
 
-const CTRL_TIMEOUT: Duration = Duration::from_secs(5);
-
 /// Read a millisecond/count tunable from the environment, falling back to
 /// `default`. Every timing knob below can be overridden at runtime so a slow or
 /// clone bootloader can be coaxed through without a rebuild — handy when
@@ -270,6 +265,17 @@ struct Timings {
     /// device's larger reported poll), so this still allows ample time for a
     /// slow 128 KB sector erase. `FREEJOYX_FLASH_MAX_POLLS` (default 1000).
     max_polls: u32,
+    /// Pause after each data block download (in addition to the device-paced
+    /// status polling). 0 on genuine silicon; a few ms helps flaky hubs.
+    /// Configurator "Inter-block delay". `FREEJOYX_FLASH_DNLOAD_DELAY_MS` (0).
+    dnload_delay_ms: u64,
+    /// Per USB control transfer timeout. Configurator "Transfer timeout".
+    /// `FREEJOYX_FLASH_XFER_TIMEOUT_MS` (default 5000 == the historical const).
+    transfer_timeout_ms: u64,
+    /// Wait after the leave/manifest before the process exits, giving the device
+    /// time to actually reset. Configurator "Post-flash settle".
+    /// `FREEJOYX_FLASH_LEAVE_SETTLE_MS` (default 0 == prior behaviour).
+    leave_settle_ms: u64,
 }
 
 impl Timings {
@@ -281,8 +287,53 @@ impl Timings {
             retry_backoff_ms: env_u64("FREEJOYX_FLASH_RETRY_BACKOFF_MS", 25),
             block_retries: env_u64("FREEJOYX_FLASH_BLOCK_RETRIES", 4) as u32,
             max_polls: env_u64("FREEJOYX_FLASH_MAX_POLLS", 1000) as u32,
+            dnload_delay_ms: env_u64("FREEJOYX_FLASH_DNLOAD_DELAY_MS", 0),
+            transfer_timeout_ms: env_u64("FREEJOYX_FLASH_XFER_TIMEOUT_MS", 5000),
+            leave_settle_ms: env_u64("FREEJOYX_FLASH_LEAVE_SETTLE_MS", 0),
         }
     }
+
+    /// Per-control-transfer timeout as a Duration (was the CTRL_TIMEOUT const).
+    fn ctrl_timeout(&self) -> Duration {
+        Duration::from_millis(self.transfer_timeout_ms)
+    }
+
+    /// Overlay the configurator's Advanced-section values (when supplied) onto the
+    /// env/default baseline. Each field is optional so an unset knob keeps its
+    /// proven default. `poll_timeout_ms` maps to a poll *count* via the poll
+    /// floor, matching how the status loop is actually bounded.
+    fn apply(&mut self, o: &CliTiming) {
+        if let Some(v) = o.dnload_delay_ms {
+            self.dnload_delay_ms = v;
+        }
+        if let Some(v) = o.transfer_timeout_ms {
+            self.transfer_timeout_ms = v;
+        }
+        if let Some(v) = o.retries {
+            self.block_retries = v;
+        }
+        if let Some(v) = o.settle_ms {
+            self.leave_settle_ms = v;
+        }
+        if let Some(v) = o.poll_timeout_ms {
+            // The poll loop sleeps >= poll_floor_ms per iteration, so a wall-clock
+            // budget of `v` ms is ~ v / poll_floor iterations. Keeps the existing
+            // count-bounded loop while honouring the configurator's ms value.
+            self.max_polls = (v / self.poll_floor_ms.max(1)).max(1) as u32;
+        }
+    }
+}
+
+/// Optional timing overrides parsed from the `install` CLI flags (the
+/// configurator's Advanced section). Absent fields keep the helper's defaults,
+/// so a bare `install` behaves exactly as before.
+#[derive(Clone, Copy, Default)]
+pub struct CliTiming {
+    pub dnload_delay_ms: Option<u64>,
+    pub poll_timeout_ms: Option<u64>,
+    pub transfer_timeout_ms: Option<u64>,
+    pub retries: Option<u32>,
+    pub settle_ms: Option<u64>,
 }
 
 /// Why a single block download didn't complete, so the caller can decide
@@ -433,12 +484,36 @@ pub struct Dfu {
     t: Timings,
 }
 
+/// Fold one byte into a running CRC32 (IEEE 802.3 / zlib polynomial). Used only
+/// to print a file-vs-chip checksum in the verify log; the images are small so a
+/// table-less implementation is fine. Init with 0xFFFF_FFFF, finalise with `!`.
+fn crc32_step(mut crc: u32, byte: u8) -> u32 {
+    crc ^= byte as u32;
+    for _ in 0..8 {
+        crc = if crc & 1 != 0 {
+            (crc >> 1) ^ 0xEDB8_8320
+        } else {
+            crc >> 1
+        };
+    }
+    crc
+}
+
+/// CRC32 of a whole buffer.
+fn crc32(data: &[u8]) -> u32 {
+    let mut crc = 0xFFFF_FFFFu32;
+    for &b in data {
+        crc = crc32_step(crc, b);
+    }
+    !crc
+}
+
 impl Dfu {
     /// Open the ROM DFU device and claim its DFU interface (interface 0, alt
     /// setting 0 = internal flash). On Windows this fails unless the device
     /// is bound to WinUSB (see the `driver` module); the error is surfaced to
     /// the caller so it can guide the user.
-    pub fn open() -> Result<Dfu, String> {
+    pub fn open(timing: CliTiming) -> Result<Dfu, String> {
         let info = find().ok_or_else(|| "no STM32 DFU device (0483:df11) found".to_string())?;
         let device = info.open().map_err(|e| format!("open failed: {e}"))?;
 
@@ -478,16 +553,21 @@ impl Dfu {
                 "dfu: WARNING device does not advertise download capability — writes may be refused",
             );
         }
-        let t = Timings::from_env();
+        let mut t = Timings::from_env();
+        t.apply(&timing);
         crate::proto::log(&format!(
             "dfu: timings poll_floor={}ms pre_status={}ms settle={}ms \
-             retry_backoff={}ms block_retries={} max_polls={}",
+             retry_backoff={}ms block_retries={} max_polls={} \
+             dnload_delay={}ms xfer_timeout={}ms leave_settle={}ms",
             t.poll_floor_ms,
             t.pre_status_settle_ms,
             t.post_op_settle_ms,
             t.retry_backoff_ms,
             t.block_retries,
             t.max_polls,
+            t.dnload_delay_ms,
+            t.transfer_timeout_ms,
+            t.leave_settle_ms,
         ));
         Ok(Dfu { iface, xfer, t })
     }
@@ -504,7 +584,7 @@ impl Dfu {
 
     fn dnload(&self, block: u16, data: &[u8]) -> Result<(), String> {
         self.iface
-            .control_out_blocking(Self::ctrl(DFU_DNLOAD, block), data, CTRL_TIMEOUT)
+            .control_out_blocking(Self::ctrl(DFU_DNLOAD, block), data, self.t.ctrl_timeout())
             .map(|_| ())
             .map_err(|e| format!("DNLOAD(block {block}) failed: {e}"))
     }
@@ -514,7 +594,11 @@ impl Dfu {
         let mut buf = [0u8; 6];
         let n = self
             .iface
-            .control_in_blocking(Self::ctrl(DFU_GETSTATUS, 0), &mut buf, CTRL_TIMEOUT)
+            .control_in_blocking(
+                Self::ctrl(DFU_GETSTATUS, 0),
+                &mut buf,
+                self.t.ctrl_timeout(),
+            )
             .map_err(|e| format!("GETSTATUS failed: {e}"))?;
         if n < 6 {
             return Err(format!("short GETSTATUS ({n} bytes)"));
@@ -524,15 +608,17 @@ impl Dfu {
     }
 
     fn clear_status(&self) {
-        let _ = self
-            .iface
-            .control_out_blocking(Self::ctrl(DFU_CLRSTATUS, 0), &[], CTRL_TIMEOUT);
+        let _ = self.iface.control_out_blocking(
+            Self::ctrl(DFU_CLRSTATUS, 0),
+            &[],
+            self.t.ctrl_timeout(),
+        );
     }
 
     fn abort(&self) {
-        let _ = self
-            .iface
-            .control_out_blocking(Self::ctrl(DFU_ABORT, 0), &[], CTRL_TIMEOUT);
+        let _ =
+            self.iface
+                .control_out_blocking(Self::ctrl(DFU_ABORT, 0), &[], self.t.ctrl_timeout());
     }
 
     /// Drive the device to a clean dfuIDLE before starting work — clears a
@@ -677,6 +763,8 @@ impl Dfu {
             self.write_block_with_retry(base, block, addr, chunk)?;
             done += chunk.len() as u64;
             on_progress(done, total);
+            // Optional inter-block pause (0 by default) for flaky hubs.
+            self.sleep_ms(self.t.dnload_delay_ms);
         }
         Ok(())
     }
@@ -805,19 +893,48 @@ impl Dfu {
         data: &[u8],
         mut on_progress: F,
     ) -> Result<(), String> {
+        // Enter from a clean dfuIDLE. set_address is a DNLOAD command, and DNLOAD
+        // STALLs from dfuUPLOAD-IDLE -- which is exactly the state a *previous*
+        // region's verify leaves the device in (it ends on UPLOADs). So ABORT to
+        // idle before set_address. (After a write the device is dfuDNLOAD-IDLE,
+        // where DNLOAD is valid anyway, so this abort is harmless there.) This is
+        // why the 2nd region's verify used to fail with "DNLOAD(block 0) STALL".
+        self.abort();
+        let _ = self.get_status();
         self.set_address(base)?;
+        // set_address is itself a DNLOAD command -> dfuDNLOAD-IDLE. UPLOAD is only
+        // valid from dfuIDLE, so ABORT again before reading; the address pointer
+        // set above persists across the abort (mirrors dfu-util's DfuSe read).
+        self.abort();
+        let _ = self.get_status();
         // After set-address the read pointer is `base`; UPLOAD blocks start at
         // wBlockNum 2 with the same address formula as download.
         let total = data.len() as u64;
         let mut done = 0u64;
         let mut buf = vec![0u8; self.xfer];
+        let mut chip_crc = 0xFFFF_FFFFu32; // CRC32 of the bytes read back
         for (i, chunk) in data.chunks(self.xfer).enumerate() {
             let block = 2u16 + i as u16;
             let n = self
                 .iface
-                .control_in_blocking(Self::ctrl(DFU_UPLOAD, block), &mut buf, CTRL_TIMEOUT)
+                .control_in_blocking(
+                    Self::ctrl(DFU_UPLOAD, block),
+                    &mut buf,
+                    self.t.ctrl_timeout(),
+                )
                 .map_err(|e| format!("UPLOAD(block {block}) failed: {e}"))?;
-            if n < chunk.len() || buf[..chunk.len()] != *chunk {
+            if n < chunk.len() {
+                return Err(format!(
+                    "verify short read at 0x{:08x} ({n} < {} bytes)",
+                    base + (i * self.xfer) as u32,
+                    chunk.len()
+                ));
+            }
+            let read = &buf[..chunk.len()];
+            for &b in read {
+                chip_crc = crc32_step(chip_crc, b);
+            }
+            if read != chunk {
                 return Err(format!(
                     "verify mismatch at 0x{:08x}",
                     base + (i * self.xfer) as u32
@@ -826,6 +943,19 @@ impl Dfu {
             done += chunk.len() as u64;
             on_progress(done, total);
         }
+        // Display a file-vs-chip CRC32 so the match is visible in the log, not just
+        // implied by a silent byte-compare. They're equal whenever the compare
+        // above passed (same bytes); a divergence would mean a logic bug here.
+        let chip_crc = !chip_crc;
+        let file_crc = crc32(data);
+        crate::proto::log(&format!(
+            "CRC32 @0x{base:08x}: file=0x{file_crc:08X} chip=0x{chip_crc:08X} ({})",
+            if file_crc == chip_crc {
+                "match"
+            } else {
+                "MISMATCH"
+            }
+        ));
         Ok(())
     }
 
@@ -833,9 +963,20 @@ impl Dfu {
     /// download + status, which manifests and resets the device. A disconnect
     /// while doing so is the expected, successful outcome.
     pub fn leave(&self) {
+        // Drive to a clean dfuIDLE first. After a verify the device sits in
+        // dfuUPLOAD-IDLE, where set_address (a DNLOAD command) STALLs -- the same
+        // hazard verify_image guards against before its own set_address. Without
+        // this the set_address is silently dropped (errors here are best-effort),
+        // the address pointer is never armed, the manifest never fires, and the
+        // chip stays in DFU instead of rebooting into firmware. The standalone
+        // `leave` path works only because cmd_leave aborts to idle first; folding
+        // it in here makes the post-install leave behave the same.
+        let _ = self.to_idle();
         let _ = self.set_address(BOOT_ADDR);
         let _ = self.dnload(2, &[]);
         let _ = self.get_status();
+        // Give the device time to actually reset before we exit (0 by default).
+        self.sleep_ms(self.t.leave_settle_ms);
     }
 }
 
