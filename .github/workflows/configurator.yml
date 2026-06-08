@@ -126,16 +126,17 @@ jobs:
 
           # OpenSSL 1.1 runtime so Qt5Network can negotiate TLS (HTTPS). Without
           # it the online firmware-release list (FirmwareLibrary -> GitHub API)
-          # dies with "TLS initialization failed". From Qt's own OpenSSL toolkit
-          # (tools_openssl_x64), located by name so the exact sub-path/casing of
-          # install-qt-action's tool layout doesn't have to be hard-coded.
-          $sslHit = Get-ChildItem -Path "$env:IQTA_TOOLS" -Recurse -Filter 'libssl-1_1-x64.dll' -ErrorAction SilentlyContinue | Select-Object -First 1
-          if (-not $sslHit) {
-            Write-Error "OpenSSL 1.1 (libssl-1_1-x64.dll) not found under $env:IQTA_TOOLS -- is tools_openssl_x64 installed?"
-            exit 1
-          }
+          # dies with "TLS initialization failed". Vendored in ci/openssl-redist/
+          # (OpenSSL 1.1.1w x64) because Qt removed its tools_openssl_x64 package
+          # and Qt 5.15.2 can't load OpenSSL 3.x -- see that dir's README.
+          $sslDir = "ci\openssl-redist"
           foreach ($dll in 'libssl-1_1-x64.dll', 'libcrypto-1_1-x64.dll') {
-            Copy-Item (Join-Path $sslHit.DirectoryName $dll) dist\
+            $src = Join-Path $sslDir $dll
+            if (-not (Test-Path $src)) {
+              Write-Error "Vendored OpenSSL DLL missing: $src"
+              exit 1
+            }
+            Copy-Item $src dist\
           }
 
           # Note for testers: this CI bundle has no helper on purpose.
