@@ -161,8 +161,6 @@ private:
     /* Re-stack the three banners in m_bannerArea, ordered red -> amber -> green,
      * dropping hidden/null ones. Called after any banner state change. */
     void restackBanners();
-
-    static QString boardLabel(int boardId);
 };
 
 #endif // FLASHCONFIRMATIONDIALOG_H

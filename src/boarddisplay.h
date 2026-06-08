@@ -13,6 +13,7 @@
  * card) must re-render on a theme change; a modal dialog needn't bother. */
 
 #include <QColor>
+#include <QLabel>
 #include <QPixmap>
 #include <QSize>
 #include <QString>
@@ -53,6 +54,23 @@ inline QPixmap iconPixmap(int boardId, int px = 14)
     }
     return freejoy_style::tintedSvgPixmap(QStringLiteral(":/Images/icons/lucide/cpu.svg"),
                                           QSize(px, px), color(boardId));
+}
+
+// Paint a board into a dedicated icon QLabel + text QLabel -- the cleanly-aligned
+// alternative to html()'s inline icon. The icon label is hidden for an unknown
+// board (so only the em dash / "-" the caller set shows). Re-call on a theme
+// change to re-tint the F411 icon.
+inline void applyTo(QLabel *iconLabel, QLabel *textLabel, int boardId, int px = 14)
+{
+    const QPixmap pm = iconPixmap(boardId, px);
+    if (pm.isNull()) {
+        iconLabel->clear();
+        iconLabel->hide();
+    } else {
+        iconLabel->setPixmap(pm);
+        iconLabel->show();
+    }
+    textLabel->setText(text(boardId));
 }
 
 // Rich-text "CPU icon + board name" for a QLabel. The icon is omitted for an

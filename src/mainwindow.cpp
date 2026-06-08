@@ -1464,15 +1464,7 @@ void MainWindow::snapshotDeviceConfig()
 
 void MainWindow::setDeviceCardBoard(int boardId)
 {
-    const QPixmap icon = board_display::iconPixmap(boardId);
-    if (icon.isNull()) {
-        ui->label_BoardIcon->clear();
-        ui->label_BoardIcon->hide();
-    } else {
-        ui->label_BoardIcon->setPixmap(icon);
-        ui->label_BoardIcon->show();
-    }
-    ui->label_BoardVal->setText(board_display::text(boardId));
+    board_display::applyTo(ui->label_BoardIcon, ui->label_BoardVal, boardId);
 }
 
 bool MainWindow::uiHasUnsavedDeviceEdits()

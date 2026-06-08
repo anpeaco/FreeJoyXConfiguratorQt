@@ -75,11 +75,9 @@ FlashConfirmationDialog::FlashConfirmationDialog(
     for (QLabel *l : tagLabels) tagWidth = qMax(tagWidth, l->sizeHint().width());
     for (QLabel *l : tagLabels) l->setMinimumWidth(tagWidth);
 
-    /* The board rows carry an inline CPU icon (rich text), which renders ~2px
-     * higher than the plain-text rows beside them; nudge them down so the board
-     * name sits on the same baseline as Name/Serial/File/Version. */
-    ui->label_DeviceBoard->setContentsMargins(0, 2, 0, 0);
-    ui->label_TargetBoard->setContentsMargins(0, 2, 0, 0);
+    // Board rows render the CPU icon in a dedicated icon label beside the name
+    // (board_display::applyTo), so they centre cleanly with the plain-text rows --
+    // no inline-img margin nudge needed.
 
     m_dev.deviceName          = deviceName;
     m_dev.deviceSerial        = deviceSerial;
@@ -265,7 +263,7 @@ void FlashConfirmationDialog::renderDevice()
      * exactly what the .bin reports). */
     const int shownDeviceBoard = (m_dev.deviceBoardId == BOARD_ID_F411_BLACKPILL)
         ? BOARD_ID_F411_BLACKPILL : BOARD_ID_F103_BLUEPILL;
-    ui->label_DeviceBoard->setText(boardLabel(shownDeviceBoard));
+    board_display::applyTo(ui->label_DeviceBoardIcon, ui->label_DeviceBoard, shownDeviceBoard);
 
     /* Firmware version: show the SAME string the main device card paints
      * (deviceVersionText, from deviceVersionDisplay) so the two never drift.
@@ -306,7 +304,7 @@ void FlashConfirmationDialog::clearTarget(const QString &hint)
     m_verdict = Verdict::None;
     setCrossingWarning(false);
     ui->label_TargetFile->setText(QStringLiteral("-"));
-    ui->label_TargetBoard->setText(QStringLiteral("-"));
+    ui->label_TargetBoard->setText(QStringLiteral("-")); ui->label_TargetBoardIcon->hide();
     ui->label_TargetFw->setText(QStringLiteral("-"));
     hideVerdictBanner();
     setInfoBanner(freejoy_style::accentAmber(), hint);
@@ -417,7 +415,7 @@ void FlashConfirmationDialog::renderTargetAndVerdict(const Inputs &in)
         } else if (in.image->board() == FirmwareImage::Board::F411BlackPill) {
             tgtBoardId = BOARD_ID_F411_BLACKPILL;
         }
-        ui->label_TargetBoard->setText(boardLabel(tgtBoardId));
+        board_display::applyTo(ui->label_TargetBoardIcon, ui->label_TargetBoard, tgtBoardId);
 
         /* Version with the same project prefix the card uses. A FreeJoyX-gen
          * binary (wire-gen < 0x1000, or a semver-footer-only build) reads
@@ -434,7 +432,7 @@ void FlashConfirmationDialog::renderTargetAndVerdict(const Inputs &in)
         ui->label_TargetFw->setText(v);
     } else {
         ui->label_TargetFile->setText(QStringLiteral("-"));
-        ui->label_TargetBoard->setText(QStringLiteral("-"));
+        ui->label_TargetBoard->setText(QStringLiteral("-")); ui->label_TargetBoardIcon->hide();
         ui->label_TargetFw->setText(QStringLiteral("-"));
     }
 
@@ -531,13 +529,4 @@ void FlashConfirmationDialog::renderTargetAndVerdict(const Inputs &in)
                  tr("Approximately 30 seconds -- do not unplug the device during this process."));
 
     setInfoBanner(freejoy_style::accentAmber(), html);
-}
-
-QString FlashConfirmationDialog::boardLabel(int boardId)
-{
-    /* CPU icon + "F103 (Blue Pill)" / "F411 (Black Pill)" / em-dash, shared with
-     * the device card via board_display. The label renders it as rich text
-     * (QLabel auto-detects the inline <img>). Modal dialog, so baking the
-     * current theme ink for the F411 colour is fine. */
-    return board_display::html(boardId);
 }
