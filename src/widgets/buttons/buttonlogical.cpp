@@ -763,6 +763,13 @@ bool ButtonLogical::eventFilter(QObject *obj, QEvent *event)
     // Listen buttons: own the click so the checkable QPushButton doesn't
     // auto-toggle, and disambiguate single (arm) vs double (sequence).
     if (obj == ui->pushButton_Listen || obj == ui->pushButton_ListenB) {
+        // A disabled listen button must not arm. This filter consumes the press
+        // BEFORE Qt's normal disabled-widget handling, so without this guard a
+        // greyed-out Source B button (non-LOGIC row, or unary operator) would
+        // still arm when clicked.
+        if (!static_cast<QWidget *>(obj)->isEnabled()) {
+            return false;
+        }
         const int field = (obj == ui->pushButton_ListenB)
             ? ListenSourceB : ListenPhysical;
         switch (event->type()) {
