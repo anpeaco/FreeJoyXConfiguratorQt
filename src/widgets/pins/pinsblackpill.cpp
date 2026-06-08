@@ -2,13 +2,18 @@
 #include "ui_pinsblackpill.h"
 #include <QComboBox>
 
+#include "imageaspectlock.h"
+
 PinsBlackPill::PinsBlackPill(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::PinsBlackPill)
 {
     ui->setupUi(this);
 
-    ui->label_ControllerImage->contentsMargins();
+    /* Keep the board render's aspect ratio when the window is shrunk vertically
+     * (its height is driven by the pin rows). Without this, scaledContents
+     * stretches the board out of shape. */
+    freejoy_ui::lockImageAspect(ui->label_ControllerImage);
 }
 
 PinsBlackPill::~PinsBlackPill()
@@ -101,4 +106,23 @@ void PinsBlackPill::addPinComboBox(QList<PinComboBox *> pinList)
         }
     }
     Q_ASSERT(tmp == PINS_COUNT);
+
+    /* Uniform height for every pin line. The fixed-pin rows (5V / GND / USBD /
+     * 3V3) carry only a label and would otherwise sit shorter than the dropdown
+     * rows, so the board map looked uneven. Pin the minimum height of every
+     * label-bearing row to the dropdown height (PinComboBox set its own fixed
+     * height) and drop any row stretch. */
+    const int rowH = pinList.isEmpty() ? 0 : pinList.first()->minimumHeight();
+    if (rowH > 0) {
+        const struct { QGridLayout *grid; int labelCol; } grids[] = {
+            { ui->layoutG_pinsLeft, 1 }, { ui->layoutG_pinsRight, 0 } };
+        for (const auto &g : grids) {
+            for (int r = 0; r < g.grid->rowCount(); ++r) {
+                if (g.grid->itemAtPosition(r, g.labelCol)) {   // a real pin row
+                    g.grid->setRowMinimumHeight(r, rowH);
+                    g.grid->setRowStretch(r, 0);
+                }
+            }
+        }
+    }
 }

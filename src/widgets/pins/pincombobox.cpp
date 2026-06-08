@@ -12,6 +12,13 @@ PinComboBox::PinComboBox(uint pinNumber, QWidget *parent) : // pin handling was 
     ui(new Ui::PinComboBox)                                 // condolences to anyone trying to understand it
 {
     ui->setupUi(this);
+    /* Fixed vertical size: the pin rows keep a constant height instead of
+     * stretching/squishing with the window. Without this the dropdowns scaled
+     * down on a vertical shrink (and dragged the board image -- whose height
+     * tracks these rows -- out of aspect). Horizontal stays flexible. The +5px
+     * over the bare hint gives the rows a comfortable, readable height. */
+    setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    setFixedHeight(sizeHint().height() + 5);
     // Custom popup rendering: section headers vs. function-coloured hover/select.
     freejoy_ui::installGroupedDelegate(ui->comboBox_PinsType);
     // minimum pinNumber = enum PA_0 = 1

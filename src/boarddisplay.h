@@ -47,10 +47,11 @@ inline QString html(int boardId, int px = 14)
     if (boardId != BOARD_ID_F103_BLUEPILL && boardId != BOARD_ID_F411_BLACKPILL) {
         return text(boardId);
     }
-    /* text-bottom centres the CPU glyph on the text's cap region; the default
-     * "middle" rides slightly high for this icon at small sizes. */
+    /* Align the glyph to the text's cap region with "text-bottom". "middle"
+     * seats the icon at the lowercase midline, which leaves the caps/text
+     * looking raised above the icon at these small sizes. */
     return freejoy_style::svgIconHtml(QStringLiteral(":/Images/icons/lucide/cpu.svg"),
-                                      color(boardId), px, QStringLiteral("middle"))
+                                      color(boardId), px, QStringLiteral("text-bottom"))
          + QStringLiteral("&nbsp;") + text(boardId);
 }
 
