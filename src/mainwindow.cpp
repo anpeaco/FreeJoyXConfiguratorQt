@@ -501,12 +501,14 @@ void MainWindow::showConnectDeviceInfo()
         // for old(1.6-) firmware
         blockWRConfigToDevice(true);
         freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-warning");
+        m_deviceConnectedOk = false;
     }
 }
 
 // device disconnected
 void MainWindow::hideConnectDeviceInfo()
 {
+    m_deviceConnectedOk = false;   // no longer in the normal-connected state
     if (m_postWriteRestarting) {
         // Disconnect was triggered by a Write Config that wiped the
         // device list mid-flight; the chip is just re-enumerating with
@@ -540,6 +542,7 @@ void MainWindow::hideConnectDeviceInfo()
 // flasher connected
 void MainWindow::flasherConnected()
 {
+    m_deviceConnectedOk = false;   // flasher (DFU), not a normal config device
     ui->label_DeviceStatus->setText(tr("Connected"));
     freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-connected");
     blockWRConfigToDevice(true);
@@ -829,11 +832,13 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
                 // and the warning role colour signals the legacy
                 // state on its own.
                 ui->label_DeviceStatus->setText(tr("Legacy"));
+                m_deviceConnectedOk = false;
             } else {
                 blockWRConfigToDevice(true);
                 setConfigTabsEnabled(false);
                 freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-warning");
                 ui->label_DeviceStatus->setText(tr("Incompatible Firmware"));
+                m_deviceConnectedOk = false;
             }
         } else {
             if (m_pinConfig->limitIsReached() == false) {
@@ -842,6 +847,7 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
             setConfigTabsEnabled(true);
             freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-connected");
             ui->label_DeviceStatus->setText(tr("Connected"));
+            m_deviceConnectedOk = true;   // dirty poll may decorate this to "unsaved"
         }
         m_deviceChanged = false;
 
@@ -1320,7 +1326,7 @@ void MainWindow::doFlashFirmwareBytes(const QByteArray *firmware)
 
 
                                             /////////////////////    CONFIG SLOTS    /////////////////////
-void MainWindow::UiReadFromConfig()
+void MainWindow::UiReadFromConfig(bool resetDirtyBaseline)
 {
     // Bracket the load with begin/end markers so ButtonConfig's
     // physical-button auto-remap suppresses itself during the load
@@ -1350,10 +1356,13 @@ void MainWindow::UiReadFromConfig()
 
     m_buttonConfig->endConfigLoad();
 
-    // Successful Read: dev_config_t now matches the device. Reset the
-    // dirty baseline so the "Pending changes" badge stays down until
-    // the user makes an actual edit.
-    snapshotDeviceConfig();
+    // Reset the dirty baseline ONLY for a device sync (read): dev_config_t now
+    // matches the device, so the "Pending changes" badge stays down until a real
+    // edit. A FILE load / reset-to-default passes false -- the shown config does
+    // NOT match what's on the device, so it must read dirty (Write needed).
+    if (resetDirtyBaseline) {
+        snapshotDeviceConfig();
+    }
 
     /* Re-evaluate the Advanced-tab VID:PID conflict pill now that the load is
      * complete. The shown config now belongs to the selected device, so clear
@@ -1485,6 +1494,27 @@ void MainWindow::updatePendingChangesBadge()
     if (!ui || !ui->pushButton_WriteConfig) return;
 
     const bool changed = uiHasUnsavedDeviceEdits();
+
+    // Mirror the dirty state on the connection pill while a compatible device is
+    // connected: green "Connected" when the shown config matches the device,
+    // amber "Connected • unsaved" when it differs (e.g. after a file load or pin
+    // edits not yet written). Guarded by m_pillUnsaved so we only touch the pill
+    // on a transition, and never override the disconnected / restarting states.
+    const bool wantPillUnsaved = m_deviceConnectedOk && !m_postWriteRestarting && changed;
+    if (wantPillUnsaved != m_pillUnsaved) {
+        m_pillUnsaved = wantPillUnsaved;
+        if (wantPillUnsaved) {
+            freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-warning");
+            ui->label_DeviceStatus->setText(tr("Connected • unsaved"));
+            ui->label_DeviceStatus->setToolTip(
+                tr("What you're editing isn't on the device yet — Write to apply."));
+        } else if (m_deviceConnectedOk) {
+            freejoy_style::setRole(ui->label_DeviceStatus, "role", "status-connected");
+            ui->label_DeviceStatus->setText(tr("Connected"));
+            ui->label_DeviceStatus->setToolTip(QString());
+        }
+    }
+
     const bool currentlyMarked = !ui->pushButton_WriteConfig->icon().isNull();
     if (changed == currentlyMarked) return;
     if (changed) {
@@ -1599,7 +1629,9 @@ void MainWindow::loadConfigFromFile(const QString &filePath)
     BoolFlagGuard loadGuard(m_configLoadInProgress);
     gEnv.pDeviceConfig->resetConfig();
     ConfigToFile::loadDeviceConfigFromFile(this, filePath, gEnv.pDeviceConfig->config);
-    UiReadFromConfig();
+    // Don't reset the dirty baseline: a file's config differs from what's on the
+    // connected device, so "Write to device" must read dirty.
+    UiReadFromConfig(/*resetDirtyBaseline=*/false);
 }
 
 // current cfg file changed
@@ -2193,7 +2225,9 @@ void MainWindow::on_pushButton_ResetAllPins_clicked()
      * settings, buttons, shifts & timers) -- so the prior explicit
      * m_pinConfig->resetAllPins() call after this point was redundant
      * and has been dropped. */
-    UiReadFromConfig();
+    // Reset-to-default is an edit, not a device sync: keep it dirty vs the device
+    // so the user knows to Write the reset.
+    UiReadFromConfig(/*resetDirtyBaseline=*/false);
     qDebug() << "Reset all done";
 }
 

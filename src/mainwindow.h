@@ -225,6 +225,11 @@ private:
     QByteArray m_deviceConfigSnapshot;
     bool       m_haveDeviceConfigSnapshot = false;
     QTimer    *m_dirtyCheckTimer = nullptr;
+    // True only in the normal compatible-connected state (green pill) -- gates
+    // the "Connected • unsaved" amber decoration the dirty poll applies. False
+    // for disconnected / restarting / legacy / incompatible / flasher.
+    bool       m_deviceConnectedOk = false;
+    bool       m_pillUnsaved = false;   // last-applied pill dirty decoration (transition guard)
 
     /* Guards the 1 Hz dirty poll (updatePendingChangesBadge ->
      * uiHasUnsavedDeviceEdits -> flushUiToConfig) from firing while a
@@ -410,7 +415,10 @@ private:
     QIcon pixmapToIcon(QPixmap pixmap, const QColor &color);
     void updateColor();
 
-    void UiReadFromConfig();
+    // resetDirtyBaseline: true for a DEVICE sync (read), so the "pending changes"
+    // baseline is reset to match the device; false for a FILE load / reset-to-
+    // default, which must stay dirty vs what's on the device.
+    void UiReadFromConfig(bool resetDirtyBaseline = true);
     void UiWriteToConfig();
     /* Side-effect-free portion of UiWriteToConfig: fans out
      * writeToConfig() to every tab widget and captures the breakdown
