@@ -281,6 +281,24 @@ private:
 
     void logicaButtonsCreator();
 
+    /* "Show bound only" filter. When m_showBoundOnly is set, logical rows with
+     * no physical assignment are hidden, leaving only bound rows (disabled ones
+     * included) plus the lowest-index unbound slot as the trailing "add another"
+     * row and the currently-armed sequence slot (so the walk can reveal it).
+     * Re-applied on toggle, binding changes, config load, Clear All and arm.
+     * revealTrailing scrolls the freshly-exposed trailing "add" row into view
+     * when it has advanced further down the list (i.e. a slot was just bound);
+     * passed only from the interactive binding path, not toggle/load/clear. */
+    void applyBoundFilter(bool revealTrailing = false);
+    bool m_showBoundOnly = false;
+    int  m_trailingSlot  = -1;  // current trailing "add" row index (filter on), -1 otherwise
+
+    /* Scroll a logical row into the viewport. Flushes the pending layout first
+     * so the scroll area's range reflects rows just shown/hidden -- otherwise
+     * ensureWidgetVisible clamps to a stale (one-row-short) range and a freshly
+     * revealed bottom row only appears on the next add. */
+    void scrollRowIntoView(int slot);
+
     QList<ButtonLogical *> m_logicButtonPtrList;
     QList<ButtonPhysical *> m_PhysButtonPtrList;
 

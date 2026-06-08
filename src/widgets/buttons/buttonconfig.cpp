@@ -52,7 +52,15 @@ ButtonConfig::ButtonConfig(QWidget *parent)
         // row's physical-button assignment changes (the type-change path
         // is covered via functionTypeChanged below).
         connect(m_logicButtonPtrList[i], &ButtonLogical::physicalNumChanged,
-                this, [this](int){ physicalConflictFilter(); });
+                this, [this](int){
+                    physicalConflictFilter();
+                    // A binding changed -> re-evaluate the "show bound only"
+                    // filter. Skipped during a bulk load (each of the 128 rows
+                    // would fire this); readFromConfig() re-applies once at end.
+                    // revealTrailing: if this bind pushed the trailing add row
+                    // further down, scroll it into view.
+                    if (!m_configLoadInProgress) applyBoundFilter(true);
+                });
         // Listen-for-input target buttons (UI_PATTERNS.md), both the
         // physical-button and Source B fields. Single click toggles a
         // one-shot arm (onListenClicked); double click on the physical
@@ -72,6 +80,13 @@ ButtonConfig::ButtonConfig(QWidget *parent)
             }
         });
     }
+    // Trailing stretch pins the rows to the TOP of the scroll area. Without it,
+    // when only a few rows are visible (e.g. "show bound only" with one trailing
+    // row) the QVBoxLayout spreads the slack and the row floats mid-viewport.
+    // The stretch collapses to 0 once the rows exceed the viewport height, so
+    // the full 128-row scrolling case is unaffected. (moveButton reorders config
+    // data, not layout widgets, so it never disturbs this item.)
+    ui->layoutV_LogicalButton->addStretch(1);
 #endif
     logicaButtonsCreator();
 
@@ -116,6 +131,16 @@ ButtonConfig::ButtonConfig(QWidget *parent)
     connect(scUndo, &QShortcut::activated, this, [this]() {
         if (m_seqActive) seqAssignUndo();
     });
+
+    // "Show bound only" filter toggle (Logical Buttons header). Defaults ON --
+    // setChecked() after the connect drives the handler, which sets
+    // m_showBoundOnly and applies the filter (so the initial view is filtered
+    // without duplicating the default in the .ui + a manual applyBoundFilter).
+    connect(ui->checkBox_ShowBoundOnly, &QCheckBox::toggled, this, [this](bool on) {
+        m_showBoundOnly = on;
+        applyBoundFilter();
+    });
+    ui->checkBox_ShowBoundOnly->setChecked(true);
 }
 
 ButtonConfig::~ButtonConfig()
@@ -264,6 +289,9 @@ void ButtonConfig::on_pushButton_ClearAllLogical_clicked()
     for (int i = 0; i < m_logicButtonPtrList.size(); ++i) {
         m_logicButtonPtrList[i]->readFromConfig();
     }
+    // Everything is now unbound -> if the filter is on, collapse to just the
+    // trailing "add" row.
+    applyBoundFilter();
 }
 
 QList<ButtonConfig::ButtonGroup> ButtonConfig::computeButtonGroups()
@@ -675,6 +703,62 @@ void ButtonConfig::readFromConfig()
      * show both columns active before the next user edit triggers the
      * filter. */
     physicalConflictFilter();
+    applyBoundFilter();
+}
+
+void ButtonConfig::applyBoundFilter(bool revealTrailing)
+{
+    if (!m_showBoundOnly) {
+        // Filter off: every slot is visible (today's behaviour).
+        for (ButtonLogical *row : m_logicButtonPtrList) {
+            row->setVisible(true);
+        }
+        m_trailingSlot = -1;
+        return;
+    }
+
+    // The single trailing "add another" row = the lowest-index unbound slot.
+    // -1 when all MAX_BUTTONS_NUM slots are bound (nothing left to add).
+    int trailing = -1;
+    for (int i = 0; i < m_logicButtonPtrList.size(); ++i) {
+        if (m_logicButtonPtrList[i]->currentPhysicalNum() < 0) {
+            trailing = i;
+            break;
+        }
+    }
+
+    for (int i = 0; i < m_logicButtonPtrList.size(); ++i) {
+        const bool bound = m_logicButtonPtrList[i]->currentPhysicalNum() >= 0;
+        // Bound rows (including disabled-but-bound) always show. Plus the
+        // trailing add row, plus the armed slot so the auto-sequence walk can
+        // scroll the next free slot into view as it binds toward the limit.
+        const bool visible = bound || i == trailing || i == m_listenArmedSlot;
+        m_logicButtonPtrList[i]->setVisible(visible);
+    }
+
+    const int prevTrailing = m_trailingSlot;
+    m_trailingSlot = trailing;
+
+    // Scroll the freshly-exposed "add" row into view when it has advanced
+    // further down the list -- i.e. a slot was just bound, pushing the next
+    // free row down (possibly out of the viewport). Not on filter-on / load /
+    // clear (revealTrailing == false) or on an unbind (trailing retreats up).
+    if (revealTrailing && trailing >= 0 && trailing > prevTrailing) {
+        scrollRowIntoView(trailing);
+    }
+}
+
+void ButtonConfig::scrollRowIntoView(int slot)
+{
+    if (slot < 0 || slot >= m_logicButtonPtrList.size()) {
+        return;
+    }
+    // The setVisible() pass posted a LayoutRequest; flush it now so the scroll
+    // area's range already accounts for the newly-shown row. Without this,
+    // ensureWidgetVisible clamps to the stale (one-row-short) range and the new
+    // bottom row only scrolls in on the *next* add.
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+    ui->scrollArea_LogButtons->ensureWidgetVisible(m_logicButtonPtrList[slot], 0, 10);
 }
 
 void ButtonConfig::writeToConfig()
@@ -1253,6 +1337,11 @@ void ButtonConfig::onListenRequested(int slot, int field, bool armed)
         }
         m_listenArmedSlot = slot;
         m_listenArmedField = field;
+        // Reveal the armed slot under the "show bound only" filter: the
+        // auto-sequence walk arms the next (still-unbound) slot, which would
+        // otherwise be hidden -- this is what makes the walk "add one more"
+        // row visible as it advances toward the limit.
+        applyBoundFilter();
         // Watch for a click on any other control (or tab switch) while
         // armed -- it cancels the arm / walk. Installed on qApp so the
         // press is seen wherever it lands; removed again on full disarm.
@@ -1263,10 +1352,11 @@ void ButtonConfig::onListenRequested(int slot, int field, bool armed)
         // programmatic auto-arm path Sequential Assign uses to advance.
         if (slot >= 0 && slot < m_logicButtonPtrList.size()) {
             m_logicButtonPtrList[slot]->setListenArmed(field, true, m_seqActive);
-            // Keep the armed row in view: during an auto-sequence walk the
-            // next row is auto-armed and may be off-screen. ensureWidgetVisible
-            // is a no-op when the row is already visible (e.g. a manual arm).
-            ui->scrollArea_LogButtons->ensureWidgetVisible(m_logicButtonPtrList[slot], 0, 10);
+            // Keep the armed row in view: during an auto-sequence walk the next
+            // row is auto-armed and may be off-screen (and just revealed by the
+            // filter). scrollRowIntoView flushes the pending layout first so the
+            // scroll range already includes it.
+            scrollRowIntoView(slot);
         }
         // Snapshot the live phy bits so a button the user is *already*
         // holding when they arm the listener doesn't immediately count
@@ -1314,5 +1404,9 @@ void ButtonConfig::listenDisarm(int slot, int field)
             qApp->removeEventFilter(this);
         }
     }
+    // Re-hide a slot that was revealed only because it was armed (e.g. a
+    // cancelled/timed-out arm that never got bound). On the capture path the
+    // following bind re-shows it synchronously, so no flicker before repaint.
+    applyBoundFilter();
 }
 

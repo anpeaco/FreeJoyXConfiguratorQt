@@ -196,6 +196,13 @@ void ButtonLogical::initialization()
     // direction is always visible when the popup reopens). Installed after the
     // connects so its own selection hook coexists with functionIndexChanged.
     freejoy_ui::enableGroupCollapse(ui->comboBox_ButtonFunction);
+
+    // Establish the initial Op / Source B enabled state. initialization() set
+    // the Function to "Normal" above *before* the combo's signal was connected,
+    // so functionIndexChanged never fired -- without this the Source B spinbox +
+    // its detection button would keep their .ui default (enabled). They must be
+    // enabled only when Function == LOGIC (see updateLogicWidgetsEnabled).
+    updateLogicWidgetsEnabled();
 }
 
 void ButtonLogical::setMaxPhysButtons(int maxPhysButtons)
