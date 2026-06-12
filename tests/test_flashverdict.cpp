@@ -144,6 +144,109 @@ private slots:
     {
         QVERIFY(firmwareNewerAvailable(0, 0, 0, 0, 1, 9, true));
     }
+
+    /* ---- classifyUpgradeButton ----
+     * Drives the device-card Upgrade/Install button. A board sitting in the
+     * custom HID bootloader (flasher mode) never reports params, so the
+     * version-based path can't enable it -- but the HID flash CAN install the
+     * app onto it, so flasher mode yields Install regardless of the other
+     * inputs. */
+    void upgradeBtn_flasherMode_isInstall()
+    {
+        QCOMPARE(classifyUpgradeButton(/*inFlasher*/ true, /*connected*/ false,
+                                       /*haveBoard*/ false, /*newer*/ false),
+                 UpgradeButton::Install);
+    }
+    void upgradeBtn_flasherMode_winsOverAppInputs()
+    {
+        /* Defensive: if a stale params report and flasher mode disagree, the
+         * bootloader state wins -- never classify a board-in-BL as Upgrade. */
+        QCOMPARE(classifyUpgradeButton(true, true, true, true),
+                 UpgradeButton::Install);
+    }
+    void upgradeBtn_appNewerAvailable_isUpgrade()
+    {
+        QCOMPARE(classifyUpgradeButton(false, /*connected*/ true,
+                                       /*haveBoard*/ true, /*newer*/ true),
+                 UpgradeButton::Upgrade);
+    }
+    void upgradeBtn_appNotNewer_isDisabled()
+    {
+        QCOMPARE(classifyUpgradeButton(false, true, true, /*newer*/ false),
+                 UpgradeButton::Disabled);
+    }
+    void upgradeBtn_appNoBoard_isDisabled()
+    {
+        QCOMPARE(classifyUpgradeButton(false, true, /*haveBoard*/ false, true),
+                 UpgradeButton::Disabled);
+    }
+    void upgradeBtn_nothingConnected_isDisabled()
+    {
+        QCOMPARE(classifyUpgradeButton(false, /*connected*/ false, false, false),
+                 UpgradeButton::Disabled);
+    }
+
+    /* ---- planFlashDispatch ----
+     * A board already in the bootloader must force a recovery flash: never back
+     * up (the bootloader can't serve a config read -- doing so hangs), never
+     * trigger the bootloader again. This must hold even when a STALE params
+     * report (left over from a prior device) makes hasAppParams true -- the
+     * real-hardware bug on an F411 with only the bootloader installed. */
+    void dispatch_bootloaderWithStaleParams_skipsBackup()
+    {
+        const FlashDispatch d = planFlashDispatch(/*inBootloader*/ true,
+                                                  /*hasAppParams*/ true);
+        QVERIFY(!d.deviceInApp);
+        QVERIFY(!d.runBackup);          /* the hang: must NOT read config */
+        QVERIFY(!d.triggerBootloader);  /* already in the bootloader */
+    }
+    void dispatch_bootloaderNoParams_skipsBackup()
+    {
+        const FlashDispatch d = planFlashDispatch(true, false);
+        QVERIFY(!d.deviceInApp);
+        QVERIFY(!d.runBackup);
+        QVERIFY(!d.triggerBootloader);
+    }
+    void dispatch_appMode_backsUpAndTriggers()
+    {
+        const FlashDispatch d = planFlashDispatch(/*inBootloader*/ false,
+                                                  /*hasAppParams*/ true);
+        QVERIFY(d.deviceInApp);
+        QVERIFY(d.runBackup);
+        QVERIFY(d.triggerBootloader);
+    }
+
+    /* ---- showFirmwareForBoard ----
+     * The standard Upgrade Firmware picker hides the OTHER board's firmware once
+     * the connected device's board is known (flashing it is refused anyway).
+     * Unknown-board firmware (id 0: browsed / upstream / undetectable) always
+     * shows, and a recovery / unknown-board device shows everything. */
+    void showFw_f411Device_hidesF103()
+    {
+        QVERIFY(!showFirmwareForBoard(F411, false, F103));
+    }
+    void showFw_f411Device_showsF411()
+    {
+        QVERIFY(showFirmwareForBoard(F411, false, F411));
+    }
+    void showFw_f103Device_hidesF411()
+    {
+        QVERIFY(!showFirmwareForBoard(F103, false, F411));
+    }
+    void showFw_knownDevice_showsUnknownBoardFirmware()
+    {
+        QVERIFY(showFirmwareForBoard(F411, false, /*fwBoard*/ 0));
+    }
+    void showFw_recoveryDevice_showsEverything()
+    {
+        QVERIFY(showFirmwareForBoard(F411, /*recovery*/ true, F103));
+        QVERIFY(showFirmwareForBoard(F411, true, F411));
+    }
+    void showFw_unknownDevice_showsEverything()
+    {
+        QVERIFY(showFirmwareForBoard(/*connected*/ 0, false, F103));
+        QVERIFY(showFirmwareForBoard(0, false, F411));
+    }
 };
 
 QTEST_APPLESS_MAIN(TestFlashVerdict)

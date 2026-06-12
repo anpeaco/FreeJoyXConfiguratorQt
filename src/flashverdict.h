@@ -59,4 +59,44 @@ bool firmwareNewerAvailable(int devMajor, int devMinor, int devPatch,
                             int bundledMajor, int bundledMinor, int bundledPatch,
                             bool sameWireGen);
 
+/* What the device-card firmware button should offer, given the device state. */
+enum class UpgradeButton {
+    Disabled,   /* greyed out -- nothing to do for the connected device */
+    Install,    /* device in the custom HID bootloader (no app / told to flash):
+                   offer a board-agnostic install/recovery flash */
+    Upgrade,    /* app-mode device running older firmware than the configurator */
+};
+
+/* Pure button-state classifier for MainWindow::refreshUpgradeButtonState.
+ * A board in flasher (bootloader) mode reports no params, so deviceConnected /
+ * haveBoard / newerAvailable are all false for it -- but the HID flash path can
+ * still install the app, so flasher mode yields Install and takes precedence
+ * over the version-based Upgrade path. */
+UpgradeButton classifyUpgradeButton(bool inFlasherMode, bool deviceConnected,
+                                    bool haveBoard, bool newerAvailable);
+
+/* Coupled dispatch decisions for a consolidated flash. */
+struct FlashDispatch {
+    bool deviceInApp;        /* treat as a live app-mode device (verdict + restore) */
+    bool runBackup;          /* read + save the current config before flashing */
+    bool triggerBootloader;  /* send the reboot-to-bootloader command first */
+};
+
+/* Plan a flash from the device state. `inBootloader` (the board is already in
+ * the custom HID bootloader) FORCES a recovery flash and wins over a params
+ * report: never back up, never re-trigger the bootloader -- even if
+ * `hasAppParams` is true from a stale report left by a prior device. Backing up
+ * a board in the bootloader hangs (it can't serve a config read), so this
+ * mutual exclusion is the invariant a bootloader-only board relies on. */
+FlashDispatch planFlashDispatch(bool inBootloader, bool hasAppParams);
+
+/* Whether the Upgrade Firmware picker should list firmware targeting
+ * `firmwareBoardId` (a BOARD_ID_*, or 0 when its board is unknown/undetectable)
+ * given the connected device. Once the device's board is known (app mode,
+ * non-zero, not in recovery) the other board's firmware is hidden -- flashing it
+ * is refused anyway, so it's just clutter. Unknown-board firmware (0) always
+ * shows; a recovery / unknown-board device shows everything (we can't tell). */
+bool showFirmwareForBoard(int connectedBoardId, bool deviceInRecoveryMode,
+                          int firmwareBoardId);
+
 #endif // FLASHVERDICT_H

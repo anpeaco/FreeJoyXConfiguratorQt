@@ -257,9 +257,12 @@ private:
         m_lastMultiline = multiline;
 
         if (multiline) {
-            // Icon cell == one text line tall, glyph centred -> the glyph centre
-            // lands on the FIRST line (text/actions are top-aligned).
-            m_icon->setFixedHeight(lineH);
+            // Icon cell as tall as one text line so the glyph rides the FIRST
+            // line -- but never SHORTER than the icon itself. The banner icon is
+            // a fixed size (e.g. an 18px warning triangle); at small fonts one
+            // text line is shorter than that, and forcing the cell to lineH
+            // clipped the glyph's top. Use the larger of the two (top-aligned).
+            m_icon->setFixedHeight(qMax(lineH, m_icon->sizeHint().height()));
         } else {
             m_icon->setMinimumHeight(0);
             m_icon->setMaximumHeight(QWIDGETSIZE_MAX);

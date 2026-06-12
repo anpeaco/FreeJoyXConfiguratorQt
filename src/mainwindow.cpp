@@ -113,6 +113,10 @@ MainWindow::MainWindow(QWidget *parent)
      * bundled upgrade bin when one is present. (Text comes from the .ui.) */
     ui->pushButton_UpgradeFirmware->setVisible(true);
     ui->pushButton_UpgradeFirmware->setEnabled(false);
+    /* Cache the .ui's default label + tooltip so refreshUpgradeButtonState can
+     * restore them after a flasher-mode "Install firmware" relabel. */
+    m_upgradeBtnDefaultText    = ui->pushButton_UpgradeFirmware->text();
+    m_upgradeBtnDefaultToolTip = ui->pushButton_UpgradeFirmware->toolTip();
 
     /* "Fix name in Windows" -- clears the Windows-side cached controller name
      * (joy.cpl / VPC show a stale name keyed by VID+PID) and forces a fresh
@@ -371,6 +375,13 @@ MainWindow::MainWindow(QWidget *parent)
     /* The widget tracks "device in flasher mode" so its Flash button can
      * route a click to recovery-mode flashing (no backup, no BL trigger). */
     connect(m_hidDeviceWorker, &HidDevice::flasherFound, m_advSettings->flasher(), &Flasher::flasherFound);
+    /* Re-evaluate the device-card firmware button when a board enters/leaves
+     * flasher mode: a bootloader-only board reports no params, so the version
+     * gating can't enable it -- refreshUpgradeButtonState special-cases flasher
+     * mode (Install). Connected AFTER Flasher::flasherFound above so the
+     * widget's m_inFlasherMode flag is already updated when this reads it. */
+    connect(m_hidDeviceWorker, &HidDevice::flasherFound,
+            this, [this](bool) { refreshUpgradeButtonState(); });
     // set selected hid device
     connect(ui->comboBox_HidDeviceList, SIGNAL(currentIndexChanged(int)),
                 this, SLOT(hidDeviceListChanged(int)));
@@ -944,8 +955,13 @@ void MainWindow::startConsolidatedFlash(const QString &filePath)
     }
 
     const bool deviceInBootloader = m_advSettings->flasher()->isInFlasherMode();
-    const bool deviceInApp = gEnv.pDeviceConfig
+    const bool hasAppParams = gEnv.pDeviceConfig
         && gEnv.pDeviceConfig->paramsReport.firmware_version != 0;
+    /* Bootloader mode forces a recovery flash (no backup, no BL trigger) even if
+     * a stale params report says an app is present -- backing up a board in the
+     * bootloader hangs on the config read. See planFlashDispatch (tested). */
+    const FlashDispatch dispatch = planFlashDispatch(deviceInBootloader, hasAppParams);
+    const bool deviceInApp = dispatch.deviceInApp;
     if (!deviceInBootloader && !deviceInApp) {
         freejoy_style::alertBox(this, freejoy_style::accentAmber(), tr("No device detected"),
             tr("Connect a FreeJoy device before using the Flash button. "
@@ -1009,8 +1025,8 @@ void MainWindow::startConsolidatedFlash(const QString &filePath)
 
     FlashSession::Params p;
     p.firmwarePath          = filePath;
-    p.runBackup             = deviceInApp;          /* skip for recovery flash */
-    p.triggerBootloader     = !deviceInBootloader;  /* skip when already in BL */
+    p.runBackup             = dispatch.runBackup;        /* skip for recovery flash */
+    p.triggerBootloader     = dispatch.triggerBootloader;/* skip when already in BL */
     p.autoRestoreAfterFlash = autoRestore;
     p.targetFwVersion       = image.fwVersion();
     if (deviceInApp) {
@@ -1633,6 +1649,16 @@ void MainWindow::finalInitialization()
      * a device. The blank dropdown is the "nothing loaded yet" signal. */
     gEnv.pDeviceConfig->resetConfig();
     UiReadFromConfig();
+
+    /* Pristine startup: nothing is selected and no config has been loaded, so
+     * the Advanced-tab VID:PID conflict pill has no write-target and isn't
+     * actionable. UiReadFromConfig() above un-suppresses it (its normal
+     * post-load behaviour), which would spuriously flag the default config's
+     * PID against a plugged-in-but-unselected board that happens to share it
+     * (the default PID matches a board configured with it). Re-suppress here;
+     * it self-corrects -- selecting a device or loading a config both flow back
+     * through UiReadFromConfig, which un-suppresses again. */
+    if (m_advSettings) m_advSettings->setPidConflictSuppressed(true);
 
     /* Load the picked config on EVERY user selection -- including re-selecting
      * the one already shown -- so "load it again" works without first switching
@@ -2400,44 +2426,88 @@ void MainWindow::refreshUpgradeButtonState()
         return;
     }
 
-    if (!gEnv.pDeviceConfig) {
-        ui->pushButton_UpgradeFirmware->setDisabled(true);
-        return;
-    }
-    const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
-    const bool deviceConnected = (devVer != 0);
-    const bool versionMatchesCurrent =
-        (devVer & 0xFFF0) == (FIRMWARE_VERSION & 0xFFF0);
+    /* A board in the custom HID bootloader (no valid app, or an app told to
+     * reboot into the bootloader for a flash) never sends a params report, so
+     * the version-based inputs below stay false for it. But the HID flash path
+     * CAN install the app onto it -- startConsolidatedFlash dispatches a
+     * recovery flash -- so a flasher-mode board classifies as Install, which
+     * takes precedence over the version path. Without this, a bootloader-only
+     * board (e.g. a freshly-bootloadered chip) leaves the button dead and the
+     * only route is the heavier USB-DFU install. */
+    const bool inFlasherMode = m_advSettings->flasher()->isInFlasherMode();
 
-    int boardId = gEnv.pDeviceConfig->paramsReport.board_id;
-    if (boardId == 0 && deviceConnected && !versionMatchesCurrent) {
-        /* Legacy firmware that didn't report board_id -- assume F103. */
-        boardId = BOARD_ID_F103_BLUEPILL;
+    bool deviceConnected = false;
+    bool haveBoard       = false;
+    bool newerAvailable  = false;
+    if (gEnv.pDeviceConfig) {
+        const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
+        deviceConnected = (devVer != 0);
+        const bool versionMatchesCurrent =
+            (devVer & 0xFFF0) == (FIRMWARE_VERSION & 0xFFF0);
+
+        int boardId = gEnv.pDeviceConfig->paramsReport.board_id;
+        if (boardId == 0 && deviceConnected && !versionMatchesCurrent) {
+            /* Legacy firmware that didn't report board_id -- assume F103. */
+            boardId = BOARD_ID_F103_BLUEPILL;
+        }
+        haveBoard = (boardId == BOARD_ID_F103_BLUEPILL ||
+                     boardId == BOARD_ID_F411_BLACKPILL);
+
+        /* "Newer available" = a different wire-gen than the configurator, OR the
+         * same gen but the device's reported FreeJoyX semver is older than the
+         * configurator's (covers point upgrades like 0.1.5 -> 0.1.9). Devices
+         * that don't report a semver (old/upstream, all-zero) read as older, so
+         * they're offered the upgrade too. We deliberately do NOT gate on a
+         * bundled .bin being present -- that only pre-selects it -- so the
+         * button works for F103 and F411 alike; the picker dialog opened on
+         * click finds / browses / downloads the firmware. */
+        const auto &pr = gEnv.pDeviceConfig->paramsReport;
+        newerAvailable = firmwareNewerAvailable(
+            pr.freejoyx_version_major, pr.freejoyx_version_minor, pr.freejoyx_version_patch,
+            FREEJOYX_VERSION_MAJOR, FREEJOYX_VERSION_MINOR, FREEJOYX_VERSION_PATCH,
+            versionMatchesCurrent);
     }
 
-    const bool haveBoard = (boardId == BOARD_ID_F103_BLUEPILL ||
-                            boardId == BOARD_ID_F411_BLACKPILL);
-    /* The "Update Firmware..." button is ALWAYS visible (set in the ctor); here
-     * we just ENABLE it when an upgrade is actually available for the connected
-     * device. "Newer available" = a different wire-gen than the configurator, OR
-     * the same gen but the device's reported FreeJoyX semver is older than the
-     * configurator's (covers point upgrades like 0.1.5 -> 0.1.9). Devices that
-     * don't report a semver (old/upstream, all-zero) read as older, so they're
-     * offered the upgrade too. We deliberately do NOT gate on a bundled .bin
-     * being present -- that only pre-selects it -- so the button works for F103
-     * and F411 alike; the picker dialog opened on click finds / browses /
-     * downloads the firmware. */
-    const auto &pr = gEnv.pDeviceConfig->paramsReport;
-    const bool newerAvailable = firmwareNewerAvailable(
-        pr.freejoyx_version_major, pr.freejoyx_version_minor, pr.freejoyx_version_patch,
-        FREEJOYX_VERSION_MAJOR, FREEJOYX_VERSION_MINOR, FREEJOYX_VERSION_PATCH,
-        versionMatchesCurrent);
-    ui->pushButton_UpgradeFirmware->setEnabled(
-        deviceConnected && haveBoard && newerAvailable);
+    /* The button is ALWAYS visible (set in the ctor); set its enabled state +
+     * label from the pure classifier (unit-tested in test_flashverdict). */
+    switch (classifyUpgradeButton(inFlasherMode, deviceConnected, haveBoard,
+                                  newerAvailable)) {
+    case UpgradeButton::Install:
+        /* "Upgrade" misleads on a bootloader-only board (there's no app to
+         * upgrade) -- present it as an install so the path is discoverable. */
+        ui->pushButton_UpgradeFirmware->setText(tr("Install firmware"));
+        ui->pushButton_UpgradeFirmware->setToolTip(freejoy_style::tipHtml(
+            tr("Install firmware onto the bootloader"),
+            { tr("The board is in its bootloader -- pick a firmware <b>.bin</b> to flash onto it."),
+              tr("No backup is taken (there's no app to read a config from).") }));
+        ui->pushButton_UpgradeFirmware->setEnabled(true);
+        break;
+    case UpgradeButton::Upgrade:
+        ui->pushButton_UpgradeFirmware->setText(m_upgradeBtnDefaultText);
+        ui->pushButton_UpgradeFirmware->setToolTip(m_upgradeBtnDefaultToolTip);
+        ui->pushButton_UpgradeFirmware->setEnabled(true);
+        break;
+    case UpgradeButton::Disabled:
+        ui->pushButton_UpgradeFirmware->setText(m_upgradeBtnDefaultText);
+        ui->pushButton_UpgradeFirmware->setToolTip(m_upgradeBtnDefaultToolTip);
+        ui->pushButton_UpgradeFirmware->setEnabled(false);
+        break;
+    }
 }
 
 void MainWindow::on_pushButton_UpgradeFirmware_clicked()
 {
+    /* Bootloader-only / recovery: the device sits in the custom HID bootloader
+     * and never reported params, so there's no board identity to pre-select a
+     * bundled bin against. Open the picker board-agnostic -- the user picks the
+     * .bin (FirmwareImage detects its board), the confirmation dialog shows a
+     * Recovery verdict, and startConsolidatedFlash runs a recovery flash (no
+     * backup, no bootloader trigger). */
+    if (m_advSettings->flasher()->isInFlasherMode()) {
+        m_advSettings->flasher()->openFlashDialog();
+        return;
+    }
+
     if (!gEnv.pDeviceConfig ||
         gEnv.pDeviceConfig->paramsReport.firmware_version == 0) {
         freejoy_style::alertBox(this, freejoy_style::accentAmber(), tr("No device connected"),
