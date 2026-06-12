@@ -92,7 +92,7 @@
         </sizepolicy>
        </property>
        <property name="toolTip">
-        <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Multi-select mode&lt;/b&gt;&lt;/div&gt;Toggles multi-select (same as holding Ctrl on the curve list).</string>
+        <string>Multi-select mode&#10;&#10;Toggles multi-select (same as holding Ctrl on the curve list).</string>
        </property>
        <property name="text">
         <string notr="true">Ctrl</string>

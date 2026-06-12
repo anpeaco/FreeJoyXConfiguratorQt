@@ -66,6 +66,36 @@ lrelease FreeJoyQt.pro
 
 Don't hand-edit the `.qm` binaries.
 
+## Tooltips
+
+Author instructional tooltips as **plain delimited text**, not inline HTML. The
+tooltip engine (`src/tooltippositioner.h`) runs every tip through
+`freejoy_style::formatTip` (`src/tip_format.h`), which renders the house style
+from one place — so a restyle is a change there, not a sweep across the `.ui`
+files.
+
+Convention (works in a `.ui` `<string>` or a `setToolTip(...)` call):
+
+```
+Heading line
+
+Body paragraph, or:
+- first bullet
+- second bullet
+```
+
+- First line(s) before a blank line = bold heading.
+- Body lines starting with `- ` become a bullet list; otherwise a paragraph.
+- `**word**` = inline bold.
+- A string with no blank line is a plain short label (no heading styling).
+- A string that already contains HTML is passed through untouched, so the
+  `freejoy_style::tipHtml(...)` builders are still available for dynamic,
+  code-built tips (and a few legacy rich tooltips remain as raw HTML).
+
+The formatter is pure and unit-tested headlessly — see `tests/test_tipformat`.
+Changing a tooltip's source text orphans its `.ts` translation; refresh the
+catalogs (see **Translations**) after editing tooltip strings.
+
 ## Reporting bugs
 
 Open an issue on `anpeaco/FreeJoyXConfiguratorQt`. Include:

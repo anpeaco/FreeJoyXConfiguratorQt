@@ -133,7 +133,7 @@
                </sizepolicy>
               </property>
               <property name="maximumSize"><size><width>18</width><height>18</height></size></property>
-              <property name="toolTip"><string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some values may not work on some operating systems (PID 5750 on Ubuntu, for example). After choosing the wrong value, the controller needs to be reflashed with ST-link/UART.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string></property>
+              <property name="toolTip"><string>Some values may not work on some operating systems (PID 5750 on Ubuntu, for example). After choosing the wrong value, the controller needs to be reflashed with ST-link/UART.</string></property>
               <property name="text"><string/></property>
               <property name="pixmap"><pixmap resource="../../resources.qrc">:/Images/icons/lucide/triangle-alert.svg</pixmap></property>
               <property name="scaledContents"><bool>true</bool></property>
@@ -185,7 +185,7 @@
                </sizepolicy>
               </property>
               <property name="maximumSize"><size><width>18</width><height>18</height></size></property>
-              <property name="toolTip"><string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some values may not work on some operating systems (PID 5750 on Ubuntu, for example). After choosing the wrong value, the controller needs to be reflashed with ST-link/UART.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string></property>
+              <property name="toolTip"><string>Some values may not work on some operating systems (PID 5750 on Ubuntu, for example). After choosing the wrong value, the controller needs to be reflashed with ST-link/UART.</string></property>
               <property name="text"><string/></property>
               <property name="pixmap"><pixmap resource="../../resources.qrc">:/Images/icons/lucide/triangle-alert.svg</pixmap></property>
               <property name="scaledContents"><bool>true</bool></property>
@@ -244,13 +244,13 @@
         <property name="spacing"><number>3</number></property>
         <item>
          <widget class="QLabel" name="text_removeName">
-          <property name="toolTip"><string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sometimes Windows does not update the name in gaming devices and needs to be removed from the registry. This happens automatically when the config is written, but manual deletion may be required when the device is disconnected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string></property>
+          <property name="toolTip"><string>Sometimes Windows does not update the name in gaming devices and needs to be removed from the registry. This happens automatically when the config is written, but manual deletion may be required when the device is disconnected.</string></property>
           <property name="text"><string>Remove device name with selected VID/PID from registry</string></property>
          </widget>
         </item>
         <item>
          <widget class="InfoLabel" name="info_removeName">
-          <property name="toolTip"><string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sometimes Windows does not update the name in gaming devices and needs to be removed from the registry. This happens automatically when the config is written, but manual deletion may be required when the device is disconnected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string></property>
+          <property name="toolTip"><string>Sometimes Windows does not update the name in gaming devices and needs to be removed from the registry. This happens automatically when the config is written, but manual deletion may be required when the device is disconnected.</string></property>
           <property name="text"><string/></property>
          </widget>
         </item>
@@ -262,7 +262,7 @@
         </item>
         <item>
          <widget class="QPushButton" name="pushButton_removeName">
-          <property name="toolTip"><string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sometimes Windows does not update the name in gaming devices and needs to be removed from the registry. This happens automatically when the config is written, but manual deletion may be required when the device is disconnected.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string></property>
+          <property name="toolTip"><string>Sometimes Windows does not update the name in gaming devices and needs to be removed from the registry. This happens automatically when the config is written, but manual deletion may be required when the device is disconnected.</string></property>
           <property name="text"><string>Remove name</string></property>
          </widget>
         </item>

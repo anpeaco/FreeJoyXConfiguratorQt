@@ -39,7 +39,7 @@
    <item row="0" column="0" rowspan="4">
     <widget class="QListWidget" name="listWidget_Devices">
      <property name="toolTip">
-      <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Connected FreeJoy devices&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;&lt;b&gt;Select&lt;/b&gt; one to make it the configurator's active device (same effect as the device dropdown in the toolbar).&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Rows tagged RECOVERY are stuck in bootloader mode -- they accept recovery flashes only.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
+      <string>Connected FreeJoy devices&#10;&#10;- **Select** one to make it the configurator's active device (same effect as the device dropdown in the toolbar).&#10;- Rows tagged RECOVERY are stuck in bootloader mode -- they accept recovery flashes only.</string>
      </property>
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
@@ -71,14 +71,14 @@
      <item>
       <widget class="QComboBox" name="comboBox_FlashSource">
        <property name="toolTip">
-        <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Pick a firmware build&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Entries come from auto-fetched GitHub releases and from local files dropped into the recovery folder.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Use the Browse button to pick any .bin from disk.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
+        <string>Pick a firmware build&#10;&#10;- Entries come from auto-fetched GitHub releases and from local files dropped into the recovery folder.&#10;- Use the Browse button to pick any .bin from disk.</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="pushButton_BrowseFirmware">
        <property name="toolTip">
-        <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Browse for a firmware file&lt;/b&gt;&lt;/div&gt;Open a file picker to choose any .bin from disk (e.g. a fresh build at FreeJoyX/armgcc/build/f103/app/FreeJoy.bin).</string>
+        <string>Browse for a firmware file&#10;&#10;Open a file picker to choose any .bin from disk (e.g. a fresh build at FreeJoyX/armgcc/build/f103/app/FreeJoy.bin).</string>
        </property>
        <property name="text">
         <string>Browse...</string>
@@ -88,7 +88,7 @@
      <item>
       <widget class="QToolButton" name="toolButton_OpenRecoveryDir">
        <property name="toolTip">
-        <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Source folder menu&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Open the firmware folder (your dev builds).&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Open the recovery folder (fallback builds).&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Refresh from GitHub.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
+        <string>Source folder menu&#10;&#10;- Open the firmware folder (your dev builds).&#10;- Open the recovery folder (fallback builds).&#10;- Refresh from GitHub.</string>
        </property>
        <property name="text">
         <string notr="true">…</string>
@@ -210,7 +210,7 @@
         </sizepolicy>
        </property>
        <property name="toolTip">
-        <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Flash in one click&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Runs the full backup -&gt; bootloader -&gt; flash -&gt; restore sequence.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Shows a confirmation dialog with the planned steps before any device state changes.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
+        <string>Flash in one click&#10;&#10;- Runs the full backup -&gt; bootloader -&gt; flash -&gt; restore sequence.&#10;- Shows a confirmation dialog with the planned steps before any device state changes.</string>
        </property>
        <property name="text">
         <string>Flash</string>
@@ -250,7 +250,7 @@
       </sizepolicy>
      </property>
      <property name="toolTip">
-      <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Enter flasher mode&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Reboots the device into bootloader (DFU) mode so it can accept a new firmware image.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Required before clicking Flash Firmware.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
+      <string>Enter flasher mode&#10;&#10;- Reboots the device into bootloader (DFU) mode so it can accept a new firmware image.&#10;- Required before clicking Flash Firmware.</string>
      </property>
      <property name="text">
       <string>Enter Flasher Mode</string>
@@ -269,7 +269,7 @@
       </sizepolicy>
      </property>
      <property name="toolTip">
-      <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Flash the selected firmware&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;The device must already be in flasher mode (click Enter Flasher Mode first).&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Source is picked from the dropdown above -- "Browse for file..." opens a file picker; named entries are recovery binaries from the recovery/ folder.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
+      <string>Flash the selected firmware&#10;&#10;- The device must already be in flasher mode (click Enter Flasher Mode first).&#10;- Source is picked from the dropdown above -- "Browse for file..." opens a file picker; named entries are recovery binaries from the recovery/ folder.</string>
      </property>
      <property name="text">
       <string>Flash Firmware</string>
@@ -288,7 +288,7 @@
       </sizepolicy>
      </property>
      <property name="toolTip">
-      <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Abort flasher mode&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Leaves flasher mode without flashing.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Shows instructions for getting the device back to application mode (the bootloader doesn't have a software-abort command; the user has to power-cycle).&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
+      <string>Abort flasher mode&#10;&#10;- Leaves flasher mode without flashing.&#10;- Shows instructions for getting the device back to application mode (the bootloader doesn't have a software-abort command; the user has to power-cycle).</string>
      </property>
      <property name="text">
       <string>Abort</string>

@@ -308,7 +308,7 @@
          <size><width>28</width><height>26</height></size>
         </property>
         <property name="toolTip">
-         <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Invert input&lt;/b&gt;&lt;/div&gt;HIGH becomes pressed, LOW becomes released.</string>
+         <string>Invert input&#10;&#10;HIGH becomes pressed, LOW becomes released.</string>
         </property>
         <property name="text">
          <string/>
@@ -450,7 +450,7 @@
         <item alignment="Qt::AlignVCenter">
          <widget class="QCheckBox" name="checkBox_ShowBoundOnly">
           <property name="toolTip">
-           <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Show only bound rows&lt;/b&gt;&lt;/div&gt;Shows only rows with a physical button assigned, plus one empty row to add the next binding.</string>
+           <string>Show only bound rows&#10;&#10;Shows only rows with a physical button assigned, plus one empty row to add the next binding.</string>
           </property>
           <property name="text">
            <string>Show bound only</string>
@@ -473,7 +473,7 @@
         <property name="maximumSize"><size><width>26</width><height>26</height></size></property>
         <property name="styleSheet"><string notr="true">QPushButton { padding: 0; margin: 0; }</string></property>
         <property name="toolTip">
-         <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Clear all logical buttons&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Clears every logical button slot back to defaults.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Pin, axis, shift register and timer settings are not affected.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
+         <string>Clear all logical buttons&#10;&#10;- Clears every logical button slot back to defaults.&#10;- Pin, axis, shift register and timer settings are not affected.</string>
         </property>
         <property name="text">
          <string notr="true"/>

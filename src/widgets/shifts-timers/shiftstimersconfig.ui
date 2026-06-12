@@ -58,7 +58,7 @@
             <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
             <property name="alignment"><set>Qt::AlignCenter</set></property>
             <property name="maximum"><number>128</number></property>
-            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Shift trigger&lt;/b&gt;&lt;/div&gt;Logical button that holds this shift active.</string></property>
+            <property name="toolTip"><string>Shift trigger&#10;&#10;Logical button that holds this shift active.</string></property>
            </widget>
           </item>
           <item><spacer name="sp_Shift1"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
@@ -79,7 +79,7 @@
             <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
             <property name="alignment"><set>Qt::AlignCenter</set></property>
             <property name="maximum"><number>128</number></property>
-            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Shift trigger&lt;/b&gt;&lt;/div&gt;Logical button that holds this shift active.</string></property>
+            <property name="toolTip"><string>Shift trigger&#10;&#10;Logical button that holds this shift active.</string></property>
            </widget>
           </item>
           <item><spacer name="sp_Shift2"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
@@ -100,7 +100,7 @@
             <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
             <property name="alignment"><set>Qt::AlignCenter</set></property>
             <property name="maximum"><number>128</number></property>
-            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Shift trigger&lt;/b&gt;&lt;/div&gt;Logical button that holds this shift active.</string></property>
+            <property name="toolTip"><string>Shift trigger&#10;&#10;Logical button that holds this shift active.</string></property>
            </widget>
           </item>
           <item><spacer name="sp_Shift3"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
@@ -121,7 +121,7 @@
             <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
             <property name="alignment"><set>Qt::AlignCenter</set></property>
             <property name="maximum"><number>128</number></property>
-            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Shift trigger&lt;/b&gt;&lt;/div&gt;Logical button that holds this shift active.</string></property>
+            <property name="toolTip"><string>Shift trigger&#10;&#10;Logical button that holds this shift active.</string></property>
            </widget>
           </item>
           <item><spacer name="sp_Shift4"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
@@ -144,7 +144,7 @@
             <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
             <property name="alignment"><set>Qt::AlignCenter</set></property>
             <property name="maximum"><number>128</number></property>
-            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Shift trigger&lt;/b&gt;&lt;/div&gt;Logical button that holds this shift active.</string></property>
+            <property name="toolTip"><string>Shift trigger&#10;&#10;Logical button that holds this shift active.</string></property>
            </widget>
           </item>
           <item><spacer name="sp_Shift5"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
@@ -165,7 +165,7 @@
             <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
             <property name="alignment"><set>Qt::AlignCenter</set></property>
             <property name="maximum"><number>128</number></property>
-            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Shift trigger&lt;/b&gt;&lt;/div&gt;Logical button that holds this shift active.</string></property>
+            <property name="toolTip"><string>Shift trigger&#10;&#10;Logical button that holds this shift active.</string></property>
            </widget>
           </item>
           <item><spacer name="sp_Shift6"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
@@ -186,7 +186,7 @@
             <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
             <property name="alignment"><set>Qt::AlignCenter</set></property>
             <property name="maximum"><number>128</number></property>
-            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Shift trigger&lt;/b&gt;&lt;/div&gt;Logical button that holds this shift active.</string></property>
+            <property name="toolTip"><string>Shift trigger&#10;&#10;Logical button that holds this shift active.</string></property>
            </widget>
           </item>
           <item><spacer name="sp_Shift7"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
@@ -207,7 +207,7 @@
             <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
             <property name="alignment"><set>Qt::AlignCenter</set></property>
             <property name="maximum"><number>128</number></property>
-            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Shift trigger&lt;/b&gt;&lt;/div&gt;Logical button that holds this shift active.</string></property>
+            <property name="toolTip"><string>Shift trigger&#10;&#10;Logical button that holds this shift active.</string></property>
            </widget>
           </item>
           <item><spacer name="sp_Shift8"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
@@ -290,7 +290,7 @@
         <item row="0" column="0"><widget class="QLabel" name="text_longPress"><property name="text"><string>Tap cutoff:</string></property></widget></item>
         <item row="0" column="1">
          <widget class="QSpinBox" name="spinBox_LongPressThreshold">
-          <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Tap cutoff&lt;/b&gt;&lt;/div&gt;Press shorter than this counts as a tap; longer is a long-press.</string></property>
+          <property name="toolTip"><string>Tap cutoff&#10;&#10;Press shorter than this counts as a tap; longer is a long-press.</string></property>
           <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
           <property name="alignment"><set>Qt::AlignCenter</set></property>
           <property name="suffix"><string> ms</string></property>
@@ -302,7 +302,7 @@
         <item row="1" column="0"><widget class="QLabel" name="text_doubleTap"><property name="text"><string>Double-tap cutoff:</string></property></widget></item>
         <item row="1" column="1">
          <widget class="QSpinBox" name="spinBox_DoubleTapWindow">
-          <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Double-tap cutoff&lt;/b&gt;&lt;/div&gt;Maximum gap between two taps to register a double-tap.</string></property>
+          <property name="toolTip"><string>Double-tap cutoff&#10;&#10;Maximum gap between two taps to register a double-tap.</string></property>
           <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
           <property name="alignment"><set>Qt::AlignCenter</set></property>
           <property name="suffix"><string> ms</string></property>
@@ -372,7 +372,7 @@
         <item row="0" column="0"><widget class="QLabel" name="text_buttonsPolling"><property name="text"><string>Buttons polling:</string></property></widget></item>
         <item row="0" column="1">
          <widget class="QSpinBox" name="spinBox_ButtonsPolling">
-          <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Polling interval&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;A low value will not improve the operation of the buttons.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Increasing it may improve encoder operation.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string></property>
+          <property name="toolTip"><string>Polling interval&#10;&#10;- A low value will not improve the operation of the buttons.&#10;- Increasing it may improve encoder operation.</string></property>
           <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
           <property name="alignment"><set>Qt::AlignCenter</set></property>
           <property name="suffix"><string> ns</string></property>
@@ -385,7 +385,7 @@
         <item row="1" column="0"><widget class="QLabel" name="text_encoderPolling"><property name="text"><string>Encoders polling:</string></property></widget></item>
         <item row="1" column="1">
          <widget class="QSpinBox" name="spinBox_EncoderPolling">
-          <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Polling interval&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;A low value will not improve the operation of the buttons.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Increasing it may improve encoder operation.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string></property>
+          <property name="toolTip"><string>Polling interval&#10;&#10;- A low value will not improve the operation of the buttons.&#10;- Increasing it may improve encoder operation.</string></property>
           <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
           <property name="alignment"><set>Qt::AlignCenter</set></property>
           <property name="suffix"><string> ns</string></property>
@@ -397,7 +397,7 @@
         <item row="2" column="0"><widget class="QLabel" name="text_encoderPressTimer"><property name="text"><string>Encoder press:</string></property></widget></item>
         <item row="2" column="1">
          <widget class="QSpinBox" name="spinBox_EncoderPressTimer">
-          <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Encoder step hold&lt;/b&gt;&lt;/div&gt;How long an encoder step holds its virtual button pressed.</string></property>
+          <property name="toolTip"><string>Encoder step hold&#10;&#10;How long an encoder step holds its virtual button pressed.</string></property>
           <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
           <property name="alignment"><set>Qt::AlignCenter</set></property>
           <property name="suffix"><string> ms</string></property>

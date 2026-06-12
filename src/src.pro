@@ -136,6 +136,8 @@ SOURCES += \
 
 HEADERS += \
     style_helpers.h \
+    tip_format.h \
+    tooltippositioner.h \
     windowthemehelper.h \
     widgets/altspinbox.h \
     widgets/axes-curves/axescurvesbutton.h \
