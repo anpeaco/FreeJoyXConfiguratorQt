@@ -203,8 +203,8 @@ bool DfuInstallSession::start(const Params &p)
                                "from the application folder.");
         return false;
     }
-    if (p.bootBinPath.isEmpty() || p.appBinPath.isEmpty()) {
-        m_lastErrorDetail = tr("Bootloader and application binaries are both required.");
+    if (p.bootBinPath.isEmpty() && p.appBinPath.isEmpty()) {
+        m_lastErrorDetail = tr("Select at least one of the bootloader / application to install.");
         return false;
     }
 
@@ -230,10 +230,15 @@ bool DfuInstallSession::start(const Params &p)
     connect(m_proc, &QProcess::errorOccurred,
             this, &DfuInstallSession::onProcessErrorOccurred);
 
+    /* --boot / --app are independently optional (the dialog's Boot/App/Both
+     * selection). Send only the region(s) chosen; the helper writes just those
+     * and, for a boot-only install, leaves the running app + its config intact. */
     QStringList args{ QStringLiteral("install"),
-                      QStringLiteral("--board"), p.board,
-                      QStringLiteral("--boot"), p.bootBinPath,
-                      QStringLiteral("--app"),  p.appBinPath };
+                      QStringLiteral("--board"), p.board };
+    if (!p.bootBinPath.isEmpty())
+        args << QStringLiteral("--boot") << p.bootBinPath;
+    if (!p.appBinPath.isEmpty())
+        args << QStringLiteral("--app") << p.appBinPath;
 
     /* DfuSe timing flags from the Advanced section. GATED: the current Rust
      * helper doesn't know these flags and would reject the whole command, so

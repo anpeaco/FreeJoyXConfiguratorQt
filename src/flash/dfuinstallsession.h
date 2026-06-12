@@ -151,8 +151,13 @@ public:
     };
 
     struct Params {
-        QString bootBinPath;            /* required: bootloader .bin */
-        QString appBinPath;             /* required: application .bin */
+        /* bootBinPath / appBinPath are independently optional -- supply one or
+         * both (the dialog's Boot/App/Both selection). At least one is required;
+         * an empty path means "don't touch that region". A boot-only install
+         * leaves the running app + its config intact; an app-only install
+         * factory-resets config but keeps the bootloader. */
+        QString bootBinPath;            /* bootloader .bin, or empty to skip */
+        QString appBinPath;             /* application .bin, or empty to skip */
         QString board = QStringLiteral("f411");  /* only f411 today */
         Timing  timing;                 /* DfuSe timing (Advanced section) */
     };

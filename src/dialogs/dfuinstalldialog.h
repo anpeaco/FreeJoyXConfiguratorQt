@@ -40,6 +40,8 @@ class QPushButton;
 class QToolButton;
 class QComboBox;
 class QSpinBox;
+class QCheckBox;
+class QFrame;
 class QWidget;
 class QTimer;
 class QDialogButtonBox;
@@ -116,6 +118,10 @@ private:
     void buildProgressDialog();              /* the separate progress/log window shown on Install */
     void prefillBundledBinaries();
     void refreshInstallEnabled();
+    /* Rebuild the top erase-warning banner to match the Boot/App selection:
+     * red "config lost" when the app is (re)written, blue "app + config kept"
+     * for a boot-only install. Called on construction and on each toggle. */
+    void updateEraseWarning();
     void appendLog(const QString &line);
     void setControlsLocked(bool locked);     /* lock inputs while a write is in flight */
     /* Swap the detection status banner (shared makeAlertBanner look) -- blue-info
@@ -140,6 +146,12 @@ private:
     DfuInstallSession *m_session = nullptr;
 
     QLabel         *m_instructions = nullptr;  /* manual BOOT0 steps; shown only in the Manual state */
+    /* Boot/App/Both selection: the form-row labels for the two path fields.
+     * Unchecking one disables its path row and drops that region from the
+     * install (the helper writes only the checked region(s)). Default both on
+     * == the previous behaviour. */
+    QCheckBox      *m_bootCheck = nullptr;
+    QCheckBox      *m_appCheck = nullptr;
     QLineEdit      *m_bootEdit = nullptr;
     QLineEdit      *m_appEdit = nullptr;
     QVBoxLayout    *m_detectArea = nullptr;    /* holds the detection status banner */
@@ -152,6 +164,9 @@ private:
     QPushButton    *m_rebootBtn = nullptr;
     QPushButton    *m_installBtn = nullptr;
     QPushButton    *m_closeBtn = nullptr;
+
+    QVBoxLayout    *m_rootLayout = nullptr;   /* the dialog's root layout (for the erase banner) */
+    QFrame         *m_eraseWarn = nullptr;    /* top erase/keep banner; rebuilt by updateEraseWarning */
 
     /* Separate progress/log window, shown on Install. Same design as the
      * Upgrade-Firmware FlashProgressDialog (stage label, byte counter, centred
