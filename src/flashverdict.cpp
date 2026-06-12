@@ -84,3 +84,14 @@ UpgradeButton classifyUpgradeButton(bool inFlasherMode, bool deviceConnected,
     }
     return UpgradeButton::Disabled;
 }
+
+FlashDispatch planFlashDispatch(bool inBootloader, bool hasAppParams)
+{
+    FlashDispatch d;
+    /* Bootloader wins: a stale params report must never make us treat a
+     * board-in-BL as an app-mode device (which would back up + re-trigger). */
+    d.deviceInApp       = hasAppParams && !inBootloader;
+    d.runBackup         = d.deviceInApp;
+    d.triggerBootloader = !inBootloader;
+    return d;
+}

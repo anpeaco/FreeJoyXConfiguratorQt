@@ -955,8 +955,13 @@ void MainWindow::startConsolidatedFlash(const QString &filePath)
     }
 
     const bool deviceInBootloader = m_advSettings->flasher()->isInFlasherMode();
-    const bool deviceInApp = gEnv.pDeviceConfig
+    const bool hasAppParams = gEnv.pDeviceConfig
         && gEnv.pDeviceConfig->paramsReport.firmware_version != 0;
+    /* Bootloader mode forces a recovery flash (no backup, no BL trigger) even if
+     * a stale params report says an app is present -- backing up a board in the
+     * bootloader hangs on the config read. See planFlashDispatch (tested). */
+    const FlashDispatch dispatch = planFlashDispatch(deviceInBootloader, hasAppParams);
+    const bool deviceInApp = dispatch.deviceInApp;
     if (!deviceInBootloader && !deviceInApp) {
         freejoy_style::alertBox(this, freejoy_style::accentAmber(), tr("No device detected"),
             tr("Connect a FreeJoy device before using the Flash button. "
@@ -1020,8 +1025,8 @@ void MainWindow::startConsolidatedFlash(const QString &filePath)
 
     FlashSession::Params p;
     p.firmwarePath          = filePath;
-    p.runBackup             = deviceInApp;          /* skip for recovery flash */
-    p.triggerBootloader     = !deviceInBootloader;  /* skip when already in BL */
+    p.runBackup             = dispatch.runBackup;        /* skip for recovery flash */
+    p.triggerBootloader     = dispatch.triggerBootloader;/* skip when already in BL */
     p.autoRestoreAfterFlash = autoRestore;
     p.targetFwVersion       = image.fwVersion();
     if (deviceInApp) {

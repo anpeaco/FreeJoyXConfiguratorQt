@@ -75,4 +75,19 @@ enum class UpgradeButton {
 UpgradeButton classifyUpgradeButton(bool inFlasherMode, bool deviceConnected,
                                     bool haveBoard, bool newerAvailable);
 
+/* Coupled dispatch decisions for a consolidated flash. */
+struct FlashDispatch {
+    bool deviceInApp;        /* treat as a live app-mode device (verdict + restore) */
+    bool runBackup;          /* read + save the current config before flashing */
+    bool triggerBootloader;  /* send the reboot-to-bootloader command first */
+};
+
+/* Plan a flash from the device state. `inBootloader` (the board is already in
+ * the custom HID bootloader) FORCES a recovery flash and wins over a params
+ * report: never back up, never re-trigger the bootloader -- even if
+ * `hasAppParams` is true from a stale report left by a prior device. Backing up
+ * a board in the bootloader hangs (it can't serve a config read), so this
+ * mutual exclusion is the invariant a bootloader-only board relies on. */
+FlashDispatch planFlashDispatch(bool inBootloader, bool hasAppParams);
+
 #endif // FLASHVERDICT_H

@@ -185,6 +185,36 @@ private slots:
         QCOMPARE(classifyUpgradeButton(false, /*connected*/ false, false, false),
                  UpgradeButton::Disabled);
     }
+
+    /* ---- planFlashDispatch ----
+     * A board already in the bootloader must force a recovery flash: never back
+     * up (the bootloader can't serve a config read -- doing so hangs), never
+     * trigger the bootloader again. This must hold even when a STALE params
+     * report (left over from a prior device) makes hasAppParams true -- the
+     * real-hardware bug on an F411 with only the bootloader installed. */
+    void dispatch_bootloaderWithStaleParams_skipsBackup()
+    {
+        const FlashDispatch d = planFlashDispatch(/*inBootloader*/ true,
+                                                  /*hasAppParams*/ true);
+        QVERIFY(!d.deviceInApp);
+        QVERIFY(!d.runBackup);          /* the hang: must NOT read config */
+        QVERIFY(!d.triggerBootloader);  /* already in the bootloader */
+    }
+    void dispatch_bootloaderNoParams_skipsBackup()
+    {
+        const FlashDispatch d = planFlashDispatch(true, false);
+        QVERIFY(!d.deviceInApp);
+        QVERIFY(!d.runBackup);
+        QVERIFY(!d.triggerBootloader);
+    }
+    void dispatch_appMode_backsUpAndTriggers()
+    {
+        const FlashDispatch d = planFlashDispatch(/*inBootloader*/ false,
+                                                  /*hasAppParams*/ true);
+        QVERIFY(d.deviceInApp);
+        QVERIFY(d.runBackup);
+        QVERIFY(d.triggerBootloader);
+    }
 };
 
 QTEST_APPLESS_MAIN(TestFlashVerdict)
