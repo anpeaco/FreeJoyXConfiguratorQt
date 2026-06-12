@@ -1650,6 +1650,16 @@ void MainWindow::finalInitialization()
     gEnv.pDeviceConfig->resetConfig();
     UiReadFromConfig();
 
+    /* Pristine startup: nothing is selected and no config has been loaded, so
+     * the Advanced-tab VID:PID conflict pill has no write-target and isn't
+     * actionable. UiReadFromConfig() above un-suppresses it (its normal
+     * post-load behaviour), which would spuriously flag the default config's
+     * PID against a plugged-in-but-unselected board that happens to share it
+     * (the default PID matches a board configured with it). Re-suppress here;
+     * it self-corrects -- selecting a device or loading a config both flow back
+     * through UiReadFromConfig, which un-suppresses again. */
+    if (m_advSettings) m_advSettings->setPidConflictSuppressed(true);
+
     /* Load the picked config on EVERY user selection -- including re-selecting
      * the one already shown -- so "load it again" works without first switching
      * to a different entry and back. textActivated fires on any user pick
