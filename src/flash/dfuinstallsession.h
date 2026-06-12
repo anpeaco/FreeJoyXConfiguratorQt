@@ -223,6 +223,14 @@ public:
      * device then disappears from probe(). Coalesced if a session is active. */
     void leaveDfu();
 
+    /* Mass-erase the whole chip (clear-chip recovery): runs `freejoyx-flash
+     * erase`, wiping bootloader + config + app. The board is left blank but
+     * still IN DFU, so an install can follow immediately. DESTRUCTIVE -- the
+     * dialog gates it behind a strong confirmation. Outcome via eraseFinished();
+     * stage/log lines stream through stageChanged()/logLine(). Coalesced if a
+     * session is active. */
+    void eraseChip();
+
 signals:
     /* Result of probe(). */
     void availability(DfuInstallSession::Availability avail);
@@ -236,6 +244,10 @@ signals:
      * rebooting out of DFU). The dialog re-probes / the poll picks up the device
      * leaving on its own. */
     void leaveFinished(bool ok, const QString &detail);
+
+    /* Result of eraseChip(). ok == the erase helper exited cleanly; the chip is
+     * now blank and still in DFU. The dialog re-probes and nudges to install. */
+    void eraseFinished(bool ok, const QString &detail);
 
     void stageChanged(DfuInstallSession::Stage s, const QString &detail);
     void progress(qint64 bytesDone, qint64 bytesTotal);
@@ -263,6 +275,7 @@ private:
     bool      m_probeVerbose = false; /* the in-flight probe was asked to narrate */
     bool      m_binding = false;    /* true while an installDriver() process is in flight */
     bool      m_leaving = false;    /* true while a leaveDfu() process is in flight */
+    bool      m_erasing = false;    /* true while an eraseChip() process is in flight */
     bool      m_sawError = false;   /* an ERROR line was emitted -> don't synthesise another */
     bool      m_verifiedBoot = false; /* helper reported `VERIFY boot ok` this run */
     bool      m_verifiedApp  = false; /* helper reported `VERIFY app ok` this run */

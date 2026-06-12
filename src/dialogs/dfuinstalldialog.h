@@ -78,12 +78,14 @@ private slots:
     void onManualRecheck();    /* user-driven verbose re-check (button) */
     void onInstallDriverClicked();  /* "Install WinUSB driver" (needs-driver state) */
     void onLeaveClicked();          /* "Exit DFU mode" (ready state) -- manifest + reset, no flash */
+    void onEraseClicked();          /* "Erase chip" (Advanced) -- destructive mass-erase, gated */
     void onTimingPresetChanged(int index);  /* Advanced: preset -> fill + lock the spinboxes */
 
     /* DfuInstallSession feeds. */
     void onAvailability(DfuInstallSession::Availability avail);
     void onDriverInstallFinished(bool ok, const QString &detail);
     void onLeaveFinished(bool ok, const QString &detail);
+    void onEraseFinished(bool ok, const QString &detail);
     void onStageChanged(DfuInstallSession::Stage s, const QString &detail);
     void onProgress(qint64 done, qint64 total);
     void onLogLine(const QString &line);
@@ -161,6 +163,7 @@ private:
     QPushButton    *m_detectBtn = nullptr;
     QPushButton    *m_driverBtn = nullptr;     /* "Install WinUSB driver"; shown only when needed */
     QPushButton    *m_leaveBtn = nullptr;      /* "Exit DFU mode"; shown only in the Ready state */
+    QPushButton    *m_eraseBtn = nullptr;      /* "Erase chip (clear all)"; Advanced section, gated */
     QPushButton    *m_rebootBtn = nullptr;
     QPushButton    *m_installBtn = nullptr;
     QPushButton    *m_closeBtn = nullptr;
@@ -215,6 +218,7 @@ private:
     bool    m_installing = false;
     bool    m_bindingDriver = false;  /* an installDriver() run is in flight */
     bool    m_leaving = false;        /* a leaveDfu() run is in flight */
+    bool    m_erasingChip = false;    /* an eraseChip() run is in flight */
     bool    m_firstShow = true;       /* clear the path fields' initial select-all once */
     /* True once the user used the software "Reboot into DFU" button (vs a manual
      * BOOT0 jumper). When DFU was entered by command, BOOT0 was only momentarily

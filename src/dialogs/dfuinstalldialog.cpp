@@ -82,6 +82,8 @@ DfuInstallDialog::DfuInstallDialog(QWidget *parent)
             this, &DfuInstallDialog::onDriverInstallFinished);
     connect(m_session, &DfuInstallSession::leaveFinished,
             this, &DfuInstallDialog::onLeaveFinished);
+    connect(m_session, &DfuInstallSession::eraseFinished,
+            this, &DfuInstallDialog::onEraseFinished);
     connect(m_session, &DfuInstallSession::stageChanged,
             this, &DfuInstallDialog::onStageChanged);
     connect(m_session, &DfuInstallSession::progress,
@@ -271,6 +273,21 @@ void DfuInstallDialog::buildUi()
     advForm->addRow(tr("Transfer timeout:"),     m_spinXfer);
     advForm->addRow(tr("Retries:"),              m_spinRetries);
     advForm->addRow(tr("Post-flash settle:"),    m_spinSettle);
+
+    /* Clear-chip recovery: mass-erase the whole chip (bootloader + config +
+     * app). Destructive -- gated behind a strong confirm in onEraseClicked.
+     * Lives in Advanced (red-tinted) so it's a deliberate recovery action, not
+     * a stray click. Enabled only when a DFU device is present. */
+    m_eraseBtn = new QPushButton(tr("Erase chip (clear all)"), m_advBox);
+    m_eraseBtn->setStyleSheet(freejoy_style::accentButtonQss(freejoy_style::accentRed()));
+    m_eraseBtn->setToolTip(freejoy_style::tipHtml(
+        tr("Erase the entire chip"),
+        { tr("Wipes the bootloader, configuration and application over USB DFU."),
+          tr("The board is left blank but stays in DFU, so you can reinstall "
+             "straight after.") }));
+    connect(m_eraseBtn, &QPushButton::clicked, this, &DfuInstallDialog::onEraseClicked);
+    advForm->addRow(m_eraseBtn);
+
     binLay->addWidget(m_advBox);
 
     connect(m_advToggle, &QToolButton::toggled, this, [this](bool on) {
@@ -637,6 +654,63 @@ void DfuInstallDialog::onLeaveFinished(bool ok, const QString &detail)
     if (!m_installing) m_session->probe(/*verbose=*/false, /*checkDriver=*/true);
 }
 
+void DfuInstallDialog::onEraseClicked()
+{
+    if (m_installing || m_bindingDriver || m_leaving || m_erasingChip) return;
+    if (!DfuInstallSession::helperAvailable()) return;
+
+    /* Stop the background probe before the erase: it opens the WinUSB device for
+     * several seconds, and a concurrent probe opening the same device races
+     * nusb's WinUSB backend into a native crash (same reason as onInstallClicked). */
+    m_detectTimer->stop();
+
+    QMessageBox box(this);
+    box.setWindowTitle(tr("Erase the entire chip?"));
+    box.setTextFormat(Qt::RichText);
+    box.setIconPixmap(freejoy_style::tintedTrianglePixmap(freejoy_style::accentRed(), 40));
+    box.setText(tr("<p>This <b>erases the whole chip</b> over USB DFU — the "
+                   "bootloader, configuration <i>and</i> application.</p>"
+                   "<p>The board will be <b>blank and won't run</b> until you "
+                   "reinstall firmware. It stays in DFU, so you can install "
+                   "straight after.</p>"
+                   "<p>Continue?</p>"));
+    QPushButton *eraseBtn  = box.addButton(tr("Erase chip"), QMessageBox::AcceptRole);
+    QPushButton *cancelBtn = box.addButton(tr("Cancel"), QMessageBox::RejectRole);
+    freejoy_style::setRole(eraseBtn, "role", "primary");
+    box.setDefaultButton(cancelBtn);   // safe default: don't erase on a stray Enter
+    box.setEscapeButton(cancelBtn);
+    box.exec();
+    if (box.clickedButton() != eraseBtn) {
+        m_detectTimer->start();          // cancelled -> resume detection
+        return;
+    }
+
+    m_erasingChip = true;
+    setControlsLocked(true);
+    setDetectStatus(DetectInfo, tr("Erasing the chip — wiping bootloader, config "
+                                   "and app…"));
+    appendLog(tr("Erasing the chip (mass-erase)…"));
+    m_session->eraseChip();
+}
+
+void DfuInstallDialog::onEraseFinished(bool ok, const QString &detail)
+{
+    m_erasingChip = false;
+    setControlsLocked(false);
+    if (!detail.isEmpty()) appendLog(detail);
+    if (ok) {
+        setDetectStatus(DetectInfo, tr("Chip erased — the board is blank. Pick "
+                                       "firmware above and Install to set it up."));
+    } else {
+        freejoy_style::alertBox(this, freejoy_style::accentRed(), tr("Erase failed"),
+            detail.isEmpty() ? tr("The chip erase didn't complete.") : detail);
+    }
+    /* The chip is still in DFU (blank); re-probe so the Install/Ready state
+     * refreshes, and resume the background poll. */
+    m_detectTimer->start();
+    m_session->probe(/*verbose=*/false, /*checkDriver=*/true);
+}
+
 void DfuInstallDialog::onTimingPresetChanged(int index)
 {
     /* Preset -> spinbox values. Normal matches the helper's built-in timing;
@@ -916,6 +990,11 @@ void DfuInstallDialog::setControlsLocked(bool locked)
     m_driverBtn->setEnabled(!locked && m_driverNeeded
                             && DfuInstallSession::helperAvailable());
     m_leaveBtn->setEnabled(!locked && DfuInstallSession::helperAvailable());
+    /* Erase chip (recovery) available whenever a DFU device is present and no op
+     * is in flight. */
+    if (m_eraseBtn)
+        m_eraseBtn->setEnabled(!locked && m_devicePresent
+                               && DfuInstallSession::helperAvailable());
     /* Install eligibility honours the checkbox selection -- defer to the single
      * source of truth rather than re-deriving (the old inline check required
      * BOTH paths and would wrongly block a boot-only / app-only install). */
@@ -954,6 +1033,12 @@ void DfuInstallDialog::refreshInstallEnabled()
                        && (wantBoot || wantApp)
                        && bootOk && appOk;
     m_installBtn->setEnabled(ready);
+
+    /* Erase chip (recovery) is available whenever a DFU device is present and no
+     * op is in flight -- independent of the firmware selection / m_installed. */
+    if (m_eraseBtn)
+        m_eraseBtn->setEnabled(m_devicePresent && !m_erasingChip
+                               && DfuInstallSession::helperAvailable());
 }
 
 void DfuInstallDialog::updateEraseWarning()
