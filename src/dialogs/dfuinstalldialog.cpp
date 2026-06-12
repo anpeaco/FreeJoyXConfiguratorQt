@@ -425,8 +425,8 @@ void DfuInstallDialog::buildProgressDialog()
     m_progButtons = new QDialogButtonBox(QDialogButtonBox::Cancel, m_progressDialog);
     m_progCancelBtn = m_progButtons->button(QDialogButtonBox::Cancel);
     connect(m_progButtons, &QDialogButtonBox::rejected, this, [this]() {
-        if (m_installing) {
-            m_session->cancel();          /* "Cancel" while a write is live */
+        if (m_installing || m_erasingChip) {
+            m_session->cancel();          /* "Cancel" while a write/erase is live */
             return;
         }
         /* "Close" once finished/idle. */
@@ -447,8 +447,9 @@ void DfuInstallDialog::buildProgressDialog()
 
 bool DfuInstallDialog::eventFilter(QObject *obj, QEvent *ev)
 {
-    if (obj == m_progressDialog && ev->type() == QEvent::Close && m_installing) {
-        ev->ignore();                     /* no orphaning the device mid-write */
+    if (obj == m_progressDialog && ev->type() == QEvent::Close
+        && (m_installing || m_erasingChip)) {
+        ev->ignore();                     /* no orphaning the device mid-write/erase */
         return true;
     }
     return QDialog::eventFilter(obj, ev);
@@ -459,8 +460,8 @@ void DfuInstallDialog::reject()
     /* Destroying this dialog mid-write kills the helper (session destructor ->
      * QProcess::kill -> "stopped unexpectedly"). Ignore Escape/programmatic
      * reject while installing; the progress window's Cancel is the way to abort. */
-    if (m_installing) {
-        qWarning() << "DfuInstallDialog::reject() ignored -- install in flight";
+    if (m_installing || m_erasingChip) {
+        qWarning() << "DfuInstallDialog::reject() ignored -- write/erase in flight";
         return;
     }
     QDialog::reject();
@@ -468,8 +469,8 @@ void DfuInstallDialog::reject()
 
 void DfuInstallDialog::closeEvent(QCloseEvent *event)
 {
-    if (m_installing) {
-        qWarning() << "DfuInstallDialog::closeEvent ignored -- install in flight";
+    if (m_installing || m_erasingChip) {
+        qWarning() << "DfuInstallDialog::closeEvent ignored -- write/erase in flight";
         event->ignore();
         return;
     }
@@ -698,28 +699,58 @@ void DfuInstallDialog::onEraseClicked()
 
     m_erasingChip = true;
     setControlsLocked(true);
-    setDetectStatus(DetectInfo, tr("Erasing the chip — wiping bootloader, config "
-                                   "and app…"));
+
+    /* Run it in the progress window, same as an install -- the helper's per-sector
+     * STAGE/LOG lines stream into it so the user sees the erase working, and the
+     * terminal result lands as the shared banner. */
+    m_log->clear();
+    m_progress->setRange(0, 0);           // busy/marquee — erase has no byte progress
+    m_bytesLabel->clear();
+    clearProgressResult();
+    m_stageLabel->show();
+    m_stageLabel->setText(tr("Erasing chip…"));
+    m_stageLabel->setStyleSheet(QStringLiteral("font-weight:600;"));
+    if (m_progCancelBtn) m_progCancelBtn->setText(tr("Cancel"));
     appendLog(tr("Erasing the chip (mass-erase)…"));
+    m_progressDialog->show();
+    m_progressDialog->raise();
+    m_progressDialog->activateWindow();
+
     m_session->eraseChip();
 }
 
 void DfuInstallDialog::onEraseFinished(bool ok, const QString &detail)
 {
     m_erasingChip = false;
-    setControlsLocked(false);
+    setControlsLocked(false);   // flips the progress button back to "Close"
     if (!detail.isEmpty()) appendLog(detail);
+
+    /* Terminal result in the progress window (banner + log), mirroring onFinished;
+     * the stage line is hidden so the banner is the single result element. */
+    m_bytesLabel->clear();
+    m_stageLabel->hide();
+    m_progress->setRange(0, 100);         // back from the busy/marquee bar
     if (ok) {
+        m_progress->setValue(100);
+        showProgressResult(/*success=*/true,
+            tr("Chip erased — the board is blank. Close this, pick firmware, and "
+               "Install to set it up."));
         setDetectStatus(DetectInfo, tr("Chip erased — the board is blank. Pick "
                                        "firmware above and Install to set it up."));
     } else {
-        freejoy_style::alertBox(this, freejoy_style::accentRed(), tr("Erase failed"),
-            detail.isEmpty() ? tr("The chip erase didn't complete.") : detail);
+        showProgressResult(/*success=*/false,
+                           detail.isEmpty() ? tr("The chip erase didn't complete.")
+                                            : detail);
     }
     /* The chip is still in DFU (blank); re-probe so the Install/Ready state
      * refreshes, and resume the background poll. */
     m_detectTimer->start();
     m_session->probe(/*verbose=*/false, /*checkDriver=*/true);
+
+    if (m_progressDialog && m_progressDialog->isVisible()) {
+        m_progressDialog->raise();
+        m_progressDialog->activateWindow();
+    }
 }
 
 void DfuInstallDialog::onTimingPresetChanged(int index)
@@ -875,6 +906,16 @@ void DfuInstallDialog::onInstallClicked()
 
 void DfuInstallDialog::onStageChanged(DfuInstallSession::Stage s, const QString &detail)
 {
+    /* Erase is a single-stage op -- no "Step X of 5" and no byte progress, so it
+     * keeps the busy/marquee bar from onEraseClicked and just labels the stage;
+     * the terminal state is set by onEraseFinished. */
+    if (m_erasingChip) {
+        if (!detail.isEmpty()) appendLog(detail);
+        if (s == DfuInstallSession::Stage::Erasing)
+            m_stageLabel->setText(tr("Erasing chip…"));
+        return;
+    }
+
     /* Step-numbered labels to match the firmware-upgrade dialog's "Step X of Y"
      * format. The install has 5 working stages (bind / erase / write boot /
      * write app / verify); Done / Failed / Idle are terminal/initial, no number. */
