@@ -95,3 +95,19 @@ FlashDispatch planFlashDispatch(bool inBootloader, bool hasAppParams)
     d.triggerBootloader = !inBootloader;
     return d;
 }
+
+bool showFirmwareForBoard(int connectedBoardId, bool deviceInRecoveryMode,
+                          int firmwareBoardId)
+{
+    /* Firmware whose board we couldn't determine (0) is always offered -- it may
+     * be a deliberate browse / upstream image. */
+    if (firmwareBoardId == 0) {
+        return true;
+    }
+    /* If we don't know the device's board (recovery / no params), show all. */
+    if (deviceInRecoveryMode || connectedBoardId == 0) {
+        return true;
+    }
+    /* Known board: only its own firmware. */
+    return firmwareBoardId == connectedBoardId;
+}

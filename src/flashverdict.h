@@ -90,4 +90,13 @@ struct FlashDispatch {
  * mutual exclusion is the invariant a bootloader-only board relies on. */
 FlashDispatch planFlashDispatch(bool inBootloader, bool hasAppParams);
 
+/* Whether the Upgrade Firmware picker should list firmware targeting
+ * `firmwareBoardId` (a BOARD_ID_*, or 0 when its board is unknown/undetectable)
+ * given the connected device. Once the device's board is known (app mode,
+ * non-zero, not in recovery) the other board's firmware is hidden -- flashing it
+ * is refused anyway, so it's just clutter. Unknown-board firmware (0) always
+ * shows; a recovery / unknown-board device shows everything (we can't tell). */
+bool showFirmwareForBoard(int connectedBoardId, bool deviceInRecoveryMode,
+                          int firmwareBoardId);
+
 #endif // FLASHVERDICT_H

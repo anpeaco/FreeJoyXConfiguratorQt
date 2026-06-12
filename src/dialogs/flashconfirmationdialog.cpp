@@ -228,8 +228,15 @@ void FlashConfirmationDialog::setSources(
             if (e.origIndex == selectIndex) rowForSelected = model->rowCount() - 1;
         }
     };
-    addGroup(tr("F103 (Blue Pill)"),  BOARD_ID_F103_BLUEPILL,  f103);
-    addGroup(tr("F411 (Black Pill)"), BOARD_ID_F411_BLACKPILL, f411);
+    /* Hide the other board's firmware once the connected device's board is known
+     * (flashing it is refused anyway -- just clutter). "Other" (undetectable
+     * board) always shows; a recovery / unknown-board device shows everything. */
+    if (showFirmwareForBoard(m_dev.deviceBoardId, m_dev.deviceInRecoveryMode,
+                             BOARD_ID_F103_BLUEPILL))
+        addGroup(tr("F103 (Blue Pill)"),  BOARD_ID_F103_BLUEPILL,  f103);
+    if (showFirmwareForBoard(m_dev.deviceBoardId, m_dev.deviceInRecoveryMode,
+                             BOARD_ID_F411_BLACKPILL))
+        addGroup(tr("F411 (Black Pill)"), BOARD_ID_F411_BLACKPILL, f411);
     addGroup(tr("Other"),             0,                       other);
 
     /* Land selection on a real (non-header) row -- the requested one, else the

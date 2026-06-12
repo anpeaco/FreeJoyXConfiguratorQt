@@ -215,6 +215,38 @@ private slots:
         QVERIFY(d.runBackup);
         QVERIFY(d.triggerBootloader);
     }
+
+    /* ---- showFirmwareForBoard ----
+     * The standard Upgrade Firmware picker hides the OTHER board's firmware once
+     * the connected device's board is known (flashing it is refused anyway).
+     * Unknown-board firmware (id 0: browsed / upstream / undetectable) always
+     * shows, and a recovery / unknown-board device shows everything. */
+    void showFw_f411Device_hidesF103()
+    {
+        QVERIFY(!showFirmwareForBoard(F411, false, F103));
+    }
+    void showFw_f411Device_showsF411()
+    {
+        QVERIFY(showFirmwareForBoard(F411, false, F411));
+    }
+    void showFw_f103Device_hidesF411()
+    {
+        QVERIFY(!showFirmwareForBoard(F103, false, F411));
+    }
+    void showFw_knownDevice_showsUnknownBoardFirmware()
+    {
+        QVERIFY(showFirmwareForBoard(F411, false, /*fwBoard*/ 0));
+    }
+    void showFw_recoveryDevice_showsEverything()
+    {
+        QVERIFY(showFirmwareForBoard(F411, /*recovery*/ true, F103));
+        QVERIFY(showFirmwareForBoard(F411, true, F411));
+    }
+    void showFw_unknownDevice_showsEverything()
+    {
+        QVERIFY(showFirmwareForBoard(/*connected*/ 0, false, F103));
+        QVERIFY(showFirmwareForBoard(0, false, F411));
+    }
 };
 
 QTEST_APPLESS_MAIN(TestFlashVerdict)
