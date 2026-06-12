@@ -4,8 +4,13 @@
 //! ```text
 //! freejoyx-flash probe   --board f411 [--check-driver] [--verbose]
 //! freejoyx-flash install --board f411 [--boot <bootBin>] [--app <appBin>]
+//! freejoyx-flash erase   --board f411
 //! freejoyx-flash bind    --board f411
 //! ```
+//!
+//! `erase` mass-erases the whole chip (bootloader + config + app) and leaves it
+//! blank but still in DFU, so an install can follow immediately. Destructive --
+//! the configurator gates it behind a strong confirmation.
 //!
 //! `probe` reports `present` / `needs-driver` / `absent`. The bare form is the
 //! cheap nusb-only check (the configurator's every-tick poll). `--check-driver`
@@ -54,13 +59,19 @@ fn main() {
 fn real_main() -> i32 {
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args.is_empty() {
-        proto::error("usage", "expected `probe` or `install` subcommand");
+        proto::error(
+            "usage",
+            "expected a subcommand: probe / install / erase / bind / leave",
+        );
         return 2;
     }
 
     match args[0].as_str() {
         "probe" => cmd_probe(&args),
         "install" => cmd_install(&args),
+        // Mass-erase the whole chip (clear-chip recovery / wipe). Destructive --
+        // the configurator gates it behind a strong confirmation.
+        "erase" => cmd_erase(&args),
         // Install/repair the WinUSB binding by itself (the same step `install`
         // runs first). Surfaced by the configurator's "Install WinUSB driver"
         // action when a probe reports `needs-driver`.
@@ -169,6 +180,43 @@ fn cmd_leave(args: &[String]) -> i32 {
         Ok(()) => 0,
         Err(e) => {
             proto::error("leave", &e);
+            1
+        }
+    }
+}
+
+/// Mass-erase the whole chip (bootloader + config + app), leaving it blank but
+/// still in DFU so an install can run straight after. Destructive: the board
+/// won't run until firmware is reinstalled. The ROM DFU bootloader survives (it
+/// lives in system memory, not user flash), so the chip stays recoverable.
+fn cmd_erase(args: &[String]) -> i32 {
+    let board = flag(args, "--board").unwrap_or_default();
+    if board != "f411" {
+        proto::error("board", "only --board f411 is supported");
+        return 2;
+    }
+    let r = (|| -> Result<(), String> {
+        driver::ensure_reachable()?;
+        let dfu = open_with_retry(CliTiming::default())?;
+        dfu.to_idle()?;
+        proto::stage(Stage::Erase);
+        proto::log("mass-erasing the chip (bootloader, config and app)…");
+        dfu.erase_all()?;
+        // Deliberately do NOT leave() -- keep the blank chip in DFU so an install
+        // can follow immediately without re-entering DFU.
+        proto::log(
+            "erase complete — the board is blank and still in DFU; \
+             install firmware to make it usable",
+        );
+        Ok(())
+    })();
+    match r {
+        Ok(()) => {
+            proto::stage(Stage::Done);
+            0
+        }
+        Err(e) => {
+            proto::error("erase", &e);
             1
         }
     }

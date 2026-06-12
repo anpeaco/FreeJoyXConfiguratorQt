@@ -380,6 +380,10 @@ const F411_SECTORS: &[(u32, u32)] = &[
 pub const BOOT_ADDR: u32 = 0x0800_0000;
 pub const APP_ADDR: u32 = 0x0802_0000;
 
+/// Full span of the F411 user flash (S0 base .. S7 end) = 512 KB. Used to
+/// mass-erase the whole chip.
+pub const FLASH_SPAN: u32 = 0x0008_0000;
+
 /// Base addresses of the F411 flash sectors overlapped by `[base, base+len)`.
 /// Pure (no device) so the erase-target selection can be unit-tested — a wrong
 /// answer here either under-erases (write fails) or needlessly erases a sector
@@ -739,6 +743,14 @@ impl Dfu {
         Ok(())
     }
 
+    /// Mass-erase the entire F411 user flash (every sector: bootloader, config
+    /// and app). Leaves the chip blank. The ROM DFU bootloader lives in system
+    /// memory, not user flash, so the board still enters DFU and can be
+    /// reinstalled afterwards.
+    pub fn erase_all(&self) -> Result<(), String> {
+        self.erase_region(BOOT_ADDR, FLASH_SPAN)
+    }
+
     /// Download `data` to flash starting at `base`. Calls `on_progress(done,
     /// total)` after each block so the GUI can render a bar.
     pub fn write_image<F: FnMut(u64, u64)>(
@@ -995,6 +1007,17 @@ mod tests {
     #[test]
     fn config_sector_is_s4() {
         assert_eq!(overlapping_sectors(0x0801_0000, 1), vec![0x0801_0000]);
+    }
+
+    #[test]
+    fn mass_erase_span_covers_every_sector() {
+        // erase_all() erases [BOOT_ADDR, BOOT_ADDR+FLASH_SPAN) -- that must hit
+        // all 8 F411 sectors, leaving nothing behind.
+        assert_eq!(
+            overlapping_sectors(BOOT_ADDR, FLASH_SPAN).len(),
+            F411_SECTORS.len()
+        );
+        assert_eq!(overlapping_sectors(BOOT_ADDR, FLASH_SPAN)[0], BOOT_ADDR);
     }
 
     #[test]
