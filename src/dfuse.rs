@@ -270,14 +270,15 @@ struct Timings {
     /// poll while flash is still programming, then go busy again -- which is
     /// exactly what STALLs the next block's DNLOAD (anpeaco/FreeJoyXConfiguratorQt
     /// #80: a premature idle, then a STALL, then a retry that corrupts the page).
-    /// `FREEJOYX_FLASH_IDLE_CONFIRMATIONS` (default 2).
+    /// Configurator "Idle confirmations" (--idle-confirmations); floored to >= 1.
     idle_confirmations: u32,
     /// Minimum programming window per data block, enforced ONLY when the device
     /// claimed idle without ever reporting a busy state -- a clone lying "done"
     /// instantly (bwPollTimeout 0, immediate DNLOAD-IDLE). Genuine silicon that
     /// reports DNBUSY + a real bwPollTimeout paced us already and is NOT slowed.
     /// Covers the F411 2 KB page-program time with margin so we never fire the
-    /// next block into still-busy flash. `FREEJOYX_FLASH_MIN_BLOCK_MS` (default 20).
+    /// next block into still-busy flash. Configurator "Min block program"
+    /// (--min-block-ms).
     min_block_program_ms: u64,
     /// Pause after each data block download (in addition to the device-paced
     /// status polling). 0 on genuine silicon; a few ms helps flaky hubs.
@@ -301,8 +302,11 @@ impl Timings {
             retry_backoff_ms: env_u64("FREEJOYX_FLASH_RETRY_BACKOFF_MS", 25),
             block_retries: env_u64("FREEJOYX_FLASH_BLOCK_RETRIES", 4) as u32,
             max_polls: env_u64("FREEJOYX_FLASH_MAX_POLLS", 1000) as u32,
-            idle_confirmations: (env_u64("FREEJOYX_FLASH_IDLE_CONFIRMATIONS", 2) as u32).max(1),
-            min_block_program_ms: env_u64("FREEJOYX_FLASH_MIN_BLOCK_MS", 20),
+            // Baseline only -- the configurator drives these two from the
+            // Advanced section's timing preset (--idle-confirmations /
+            // --min-block-ms), NOT from the environment.
+            idle_confirmations: 2,
+            min_block_program_ms: 20,
             dnload_delay_ms: env_u64("FREEJOYX_FLASH_DNLOAD_DELAY_MS", 0),
             transfer_timeout_ms: env_u64("FREEJOYX_FLASH_XFER_TIMEOUT_MS", 5000),
             leave_settle_ms: env_u64("FREEJOYX_FLASH_LEAVE_SETTLE_MS", 0),
@@ -337,6 +341,12 @@ impl Timings {
             // count-bounded loop while honouring the configurator's ms value.
             self.max_polls = (v / self.poll_floor_ms.max(1)).max(1) as u32;
         }
+        if let Some(v) = o.idle_confirmations {
+            self.idle_confirmations = v.max(1); // never disable the idle check
+        }
+        if let Some(v) = o.min_block_program_ms {
+            self.min_block_program_ms = v;
+        }
     }
 }
 
@@ -350,6 +360,8 @@ pub struct CliTiming {
     pub transfer_timeout_ms: Option<u64>,
     pub retries: Option<u32>,
     pub settle_ms: Option<u64>,
+    pub idle_confirmations: Option<u32>,
+    pub min_block_program_ms: Option<u64>,
 }
 
 /// Why a single block download didn't complete, so the caller can decide

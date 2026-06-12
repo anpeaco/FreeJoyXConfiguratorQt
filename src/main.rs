@@ -263,6 +263,8 @@ fn cmd_install(args: &[String]) -> i32 {
         transfer_timeout_ms: flag_u64(args, "--transfer-timeout-ms"),
         retries: flag_u64(args, "--retries").map(|v| v as u32),
         settle_ms: flag_u64(args, "--settle-ms"),
+        idle_confirmations: flag_u64(args, "--idle-confirmations").map(|v| v as u32),
+        min_block_program_ms: flag_u64(args, "--min-block-ms"),
     };
 
     match run_install(boot.as_deref(), app.as_deref(), timing) {
