@@ -40,6 +40,8 @@ class QPushButton;
 class QToolButton;
 class QComboBox;
 class QSpinBox;
+class QCheckBox;
+class QFrame;
 class QWidget;
 class QTimer;
 class QDialogButtonBox;
@@ -76,12 +78,14 @@ private slots:
     void onManualRecheck();    /* user-driven verbose re-check (button) */
     void onInstallDriverClicked();  /* "Install WinUSB driver" (needs-driver state) */
     void onLeaveClicked();          /* "Exit DFU mode" (ready state) -- manifest + reset, no flash */
+    void onEraseClicked();          /* "Erase chip" (Advanced) -- destructive mass-erase, gated */
     void onTimingPresetChanged(int index);  /* Advanced: preset -> fill + lock the spinboxes */
 
     /* DfuInstallSession feeds. */
     void onAvailability(DfuInstallSession::Availability avail);
     void onDriverInstallFinished(bool ok, const QString &detail);
     void onLeaveFinished(bool ok, const QString &detail);
+    void onEraseFinished(bool ok, const QString &detail);
     void onStageChanged(DfuInstallSession::Stage s, const QString &detail);
     void onProgress(qint64 done, qint64 total);
     void onLogLine(const QString &line);
@@ -116,6 +120,10 @@ private:
     void buildProgressDialog();              /* the separate progress/log window shown on Install */
     void prefillBundledBinaries();
     void refreshInstallEnabled();
+    /* Rebuild the top erase-warning banner to match the Boot/App selection:
+     * red "config lost" when the app is (re)written, blue "app + config kept"
+     * for a boot-only install. Called on construction and on each toggle. */
+    void updateEraseWarning();
     void appendLog(const QString &line);
     void setControlsLocked(bool locked);     /* lock inputs while a write is in flight */
     /* Swap the detection status banner (shared makeAlertBanner look) -- blue-info
@@ -140,6 +148,12 @@ private:
     DfuInstallSession *m_session = nullptr;
 
     QLabel         *m_instructions = nullptr;  /* manual BOOT0 steps; shown only in the Manual state */
+    /* Boot/App/Both selection: the form-row labels for the two path fields.
+     * Unchecking one disables its path row and drops that region from the
+     * install (the helper writes only the checked region(s)). Default both on
+     * == the previous behaviour. */
+    QCheckBox      *m_bootCheck = nullptr;
+    QCheckBox      *m_appCheck = nullptr;
     QLineEdit      *m_bootEdit = nullptr;
     QLineEdit      *m_appEdit = nullptr;
     QVBoxLayout    *m_detectArea = nullptr;    /* holds the detection status banner */
@@ -149,9 +163,13 @@ private:
     QPushButton    *m_detectBtn = nullptr;
     QPushButton    *m_driverBtn = nullptr;     /* "Install WinUSB driver"; shown only when needed */
     QPushButton    *m_leaveBtn = nullptr;      /* "Exit DFU mode"; shown only in the Ready state */
+    QPushButton    *m_eraseBtn = nullptr;      /* "Erase chip (clear all)"; Advanced section, gated */
     QPushButton    *m_rebootBtn = nullptr;
     QPushButton    *m_installBtn = nullptr;
     QPushButton    *m_closeBtn = nullptr;
+
+    QVBoxLayout    *m_rootLayout = nullptr;   /* the dialog's root layout (for the erase banner) */
+    QFrame         *m_eraseWarn = nullptr;    /* top erase/keep banner; rebuilt by updateEraseWarning */
 
     /* Separate progress/log window, shown on Install. Same design as the
      * Upgrade-Firmware FlashProgressDialog (stage label, byte counter, centred
@@ -185,6 +203,8 @@ private:
     QSpinBox       *m_spinXfer = nullptr;      /* transfer timeout (ms) */
     QSpinBox       *m_spinRetries = nullptr;   /* per-block retries */
     QSpinBox       *m_spinSettle = nullptr;    /* post-flash settle (ms) */
+    QSpinBox       *m_spinIdleConfirms = nullptr; /* consecutive idle reports (#80) */
+    QSpinBox       *m_spinMinBlock = nullptr;  /* min per-block program window ms (#80) */
 
     QTimer *m_detectTimer = nullptr;  /* periodic re-probe so plugging in is noticed */
     int     m_detectTick = 0;         /* counts background polls; throttles the driver-layer check */
@@ -200,6 +220,7 @@ private:
     bool    m_installing = false;
     bool    m_bindingDriver = false;  /* an installDriver() run is in flight */
     bool    m_leaving = false;        /* a leaveDfu() run is in flight */
+    bool    m_erasingChip = false;    /* an eraseChip() run is in flight */
     bool    m_firstShow = true;       /* clear the path fields' initial select-all once */
     /* True once the user used the software "Reboot into DFU" button (vs a manual
      * BOOT0 jumper). When DFU was entered by command, BOOT0 was only momentarily

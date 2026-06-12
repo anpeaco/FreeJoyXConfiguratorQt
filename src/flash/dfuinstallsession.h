@@ -71,6 +71,8 @@
   *     --transfer-timeout-ms <n>  per USB control transfer (3000)
   *     --retries <n>              per-block retry on error (0)
   *     --settle-ms <n>            wait after leave-DFU (1500)
+  *     --idle-confirmations <n>   consecutive idle reports before the next block (2)
+  *     --min-block-ms <n>         min per-block program window for lying clones (20)
   *   NOTE: these flags do not exist in the helper yet (anpeaco/FreeJoyX-
   *   Configurator#35). DfuInstallSession::start only appends them when
   *   kHelperSupportsTiming (in the .cpp) is flipped on, so the current helper
@@ -148,11 +150,19 @@ public:
         int transferTimeoutMs = 5000;   /* --transfer-timeout-ms : per USB control transfer */
         int retries           = 4;      /* --retries : per-block retry on error (helper built-in) */
         int settleMs          = 1500;   /* --settle-ms : wait after leave-DFU */
+        /* Block-completion robustness (anpeaco/FreeJoyXConfiguratorQt#80). */
+        int idleConfirmations = 2;      /* --idle-confirmations : consecutive idle reports required */
+        int minBlockMs        = 20;     /* --min-block-ms : min per-block program window for lying clones */
     };
 
     struct Params {
-        QString bootBinPath;            /* required: bootloader .bin */
-        QString appBinPath;             /* required: application .bin */
+        /* bootBinPath / appBinPath are independently optional -- supply one or
+         * both (the dialog's Boot/App/Both selection). At least one is required;
+         * an empty path means "don't touch that region". A boot-only install
+         * leaves the running app + its config intact; an app-only install
+         * factory-resets config but keeps the bootloader. */
+        QString bootBinPath;            /* bootloader .bin, or empty to skip */
+        QString appBinPath;             /* application .bin, or empty to skip */
         QString board = QStringLiteral("f411");  /* only f411 today */
         Timing  timing;                 /* DfuSe timing (Advanced section) */
     };
@@ -218,6 +228,14 @@ public:
      * device then disappears from probe(). Coalesced if a session is active. */
     void leaveDfu();
 
+    /* Mass-erase the whole chip (clear-chip recovery): runs `freejoyx-flash
+     * erase`, wiping bootloader + config + app. The board is left blank but
+     * still IN DFU, so an install can follow immediately. DESTRUCTIVE -- the
+     * dialog gates it behind a strong confirmation. Outcome via eraseFinished();
+     * stage/log lines stream through stageChanged()/logLine(). Coalesced if a
+     * session is active. */
+    void eraseChip();
+
 signals:
     /* Result of probe(). */
     void availability(DfuInstallSession::Availability avail);
@@ -231,6 +249,10 @@ signals:
      * rebooting out of DFU). The dialog re-probes / the poll picks up the device
      * leaving on its own. */
     void leaveFinished(bool ok, const QString &detail);
+
+    /* Result of eraseChip(). ok == the erase helper exited cleanly; the chip is
+     * now blank and still in DFU. The dialog re-probes and nudges to install. */
+    void eraseFinished(bool ok, const QString &detail);
 
     void stageChanged(DfuInstallSession::Stage s, const QString &detail);
     void progress(qint64 bytesDone, qint64 bytesTotal);
@@ -258,6 +280,7 @@ private:
     bool      m_probeVerbose = false; /* the in-flight probe was asked to narrate */
     bool      m_binding = false;    /* true while an installDriver() process is in flight */
     bool      m_leaving = false;    /* true while a leaveDfu() process is in flight */
+    bool      m_erasing = false;    /* true while an eraseChip() process is in flight */
     bool      m_sawError = false;   /* an ERROR line was emitted -> don't synthesise another */
     bool      m_verifiedBoot = false; /* helper reported `VERIFY boot ok` this run */
     bool      m_verifiedApp  = false; /* helper reported `VERIFY app ok` this run */

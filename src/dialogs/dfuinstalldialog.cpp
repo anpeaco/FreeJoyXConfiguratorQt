@@ -20,6 +20,7 @@
 #include <QPushButton>
 #include <QToolButton>
 #include <QComboBox>
+#include <QCheckBox>
 #include <QFrame>
 #include <QSpinBox>
 #include <QSignalBlocker>
@@ -81,6 +82,8 @@ DfuInstallDialog::DfuInstallDialog(QWidget *parent)
             this, &DfuInstallDialog::onDriverInstallFinished);
     connect(m_session, &DfuInstallSession::leaveFinished,
             this, &DfuInstallDialog::onLeaveFinished);
+    connect(m_session, &DfuInstallSession::eraseFinished,
+            this, &DfuInstallDialog::onEraseFinished);
     connect(m_session, &DfuInstallSession::stageChanged,
             this, &DfuInstallDialog::onStageChanged);
     connect(m_session, &DfuInstallSession::progress,
@@ -123,6 +126,7 @@ void DfuInstallDialog::buildUi()
 {
     auto *root = new QVBoxLayout(this);
     root->setSpacing(10);
+    m_rootLayout = root;
 
     /* --- Step 1: get the chip into ROM DFU -------------------------- */
     auto *dfuBox = new QGroupBox(tr("Device DFU mode"), this);
@@ -200,13 +204,31 @@ void DfuInstallDialog::buildUi()
         return w;
     };
 
-    binForm->addRow(tr("Bootloader (0x08000000):"),
+    /* The row labels are checkboxes: unchecking one drops that region from the
+     * install (Boot / App / Both). The helper writes only the checked region(s);
+     * a boot-only install leaves the running app + its config untouched. */
+    m_bootCheck = new QCheckBox(tr("Bootloader (0x08000000)"), this);
+    m_appCheck  = new QCheckBox(tr("Application (0x08020000)"), this);
+    m_bootCheck->setChecked(true);
+    m_appCheck->setChecked(true);
+    binForm->addRow(m_bootCheck,
                     makePathRow(m_bootEdit, m_browseBootBtn,
                                 SLOT(onBrowseBoot())));
-    binForm->addRow(tr("Application (0x08020000):"),
+    binForm->addRow(m_appCheck,
                     makePathRow(m_appEdit, m_browseAppBtn,
                                 SLOT(onBrowseApp())));
     binLay->addLayout(binForm);
+
+    auto onRegionToggled = [this]() {
+        m_bootEdit->setEnabled(m_bootCheck->isChecked());
+        m_browseBootBtn->setEnabled(m_bootCheck->isChecked());
+        m_appEdit->setEnabled(m_appCheck->isChecked());
+        m_browseAppBtn->setEnabled(m_appCheck->isChecked());
+        updateEraseWarning();
+        refreshInstallEnabled();
+    };
+    connect(m_bootCheck, &QCheckBox::toggled, this, [onRegionToggled](bool) { onRegionToggled(); });
+    connect(m_appCheck,  &QCheckBox::toggled, this, [onRegionToggled](bool) { onRegionToggled(); });
 
     /* --- Advanced (collapsible): DfuSe flash timing ----------------- */
     /* A cog + chevron toggle reveals a preset-driven set of timing boxes,
@@ -225,13 +247,12 @@ void DfuInstallDialog::buildUi()
     advForm->setContentsMargins(14, 4, 0, 4);          /* indent under the toggle */
 
     m_presetCombo = new QComboBox(m_advBox);
-    m_presetCombo->addItems({ tr("Normal"), tr("Tolerant"),
-                              tr("Maximum compatibility"), tr("Custom") });
+    m_presetCombo->addItems({ tr("Normal"), tr("Compatibility"), tr("Custom") });
     m_presetCombo->setToolTip(freejoy_style::tipHtml(
         tr("Pick a DFU timing preset"),
-        { tr("<b>Normal</b> is fast/tight for a good USB connection."),
-          tr("<b>Tolerant</b> and <b>Maximum compatibility</b> add margins for flaky cables or hubs."),
-          tr("<b>Custom</b> unlocks the boxes.") }));
+        { tr("<b>Normal</b> is fast and tight — for a good USB connection and genuine ST silicon."),
+          tr("<b>Compatibility</b> uses the laxest margins for flaky cables/hubs, slow ports, and clone bootloaders."),
+          tr("<b>Custom</b> unlocks the boxes for manual tuning.") }));
     advForm->addRow(tr("Timing preset:"), m_presetCombo);
 
     auto makeSpin = [this](int lo, int hi, int step, const QString &suffix) {
@@ -241,16 +262,43 @@ void DfuInstallDialog::buildUi()
         if (!suffix.isEmpty()) s->setSuffix(suffix);
         return s;
     };
-    m_spinDelay   = makeSpin(0, 100, 1, tr(" ms"));
-    m_spinPoll    = makeSpin(1000, 30000, 500, tr(" ms"));
-    m_spinXfer    = makeSpin(500, 15000, 250, tr(" ms"));
-    m_spinRetries = makeSpin(0, 10, 1, QString());
-    m_spinSettle  = makeSpin(0, 10000, 250, tr(" ms"));
+    m_spinDelay        = makeSpin(0, 100, 1, tr(" ms"));
+    m_spinPoll         = makeSpin(1000, 30000, 500, tr(" ms"));
+    m_spinXfer         = makeSpin(500, 15000, 250, tr(" ms"));
+    m_spinRetries      = makeSpin(0, 10, 1, QString());
+    m_spinSettle       = makeSpin(0, 10000, 250, tr(" ms"));
+    m_spinIdleConfirms = makeSpin(1, 6, 1, QString());
+    m_spinMinBlock     = makeSpin(0, 200, 5, tr(" ms"));
+    m_spinIdleConfirms->setToolTip(freejoy_style::tipHtml(
+        tr("Idle confirmations"),
+        { tr("Consecutive “idle” reports required before sending the next flash block."),
+          tr("Higher values reject a clone bootloader that briefly reports done while still writing (#80).") }));
+    m_spinMinBlock->setToolTip(freejoy_style::tipHtml(
+        tr("Minimum block program time"),
+        { tr("Minimum time to allow per block when the device claims it finished instantly."),
+          tr("Genuine silicon that paces the write itself is not slowed; raise this for a stubborn clone (#80).") }));
     advForm->addRow(tr("Inter-block delay:"),    m_spinDelay);
     advForm->addRow(tr("Poll / erase timeout:"), m_spinPoll);
     advForm->addRow(tr("Transfer timeout:"),     m_spinXfer);
     advForm->addRow(tr("Retries:"),              m_spinRetries);
     advForm->addRow(tr("Post-flash settle:"),    m_spinSettle);
+    advForm->addRow(tr("Idle confirmations:"),   m_spinIdleConfirms);
+    advForm->addRow(tr("Min block program:"),    m_spinMinBlock);
+
+    /* Clear-chip recovery: mass-erase the whole chip (bootloader + config +
+     * app). Destructive -- gated behind a strong confirm in onEraseClicked.
+     * Lives in Advanced (red-tinted) so it's a deliberate recovery action, not
+     * a stray click. Enabled only when a DFU device is present. */
+    m_eraseBtn = new QPushButton(tr("Erase chip (clear all)"), m_advBox);
+    m_eraseBtn->setStyleSheet(freejoy_style::accentButtonQss(freejoy_style::accentRed()));
+    m_eraseBtn->setToolTip(freejoy_style::tipHtml(
+        tr("Erase the entire chip"),
+        { tr("Wipes the bootloader, configuration and application over USB DFU."),
+          tr("The board is left blank but stays in DFU, so you can reinstall "
+             "straight after.") }));
+    connect(m_eraseBtn, &QPushButton::clicked, this, &DfuInstallDialog::onEraseClicked);
+    advForm->addRow(m_eraseBtn);
+
     binLay->addWidget(m_advBox);
 
     connect(m_advToggle, &QToolButton::toggled, this, [this](bool on) {
@@ -277,15 +325,12 @@ void DfuInstallDialog::buildUi()
     /* Progress + log live in a separate window shown on Install. */
     buildProgressDialog();
 
-    /* --- Erase warning (always visible) ----------------------------- */
-    /* Boxed red "danger" banner: filled + outlined area with a mono Lucide
-     * triangle and legible neutral text. Pinned to the TOP of the dialog (the
-     * convention across the app: warning/message areas sit at the top, ordered
-     * red -> amber -> green). */
-    auto *warn = freejoy_style::makeAlertBanner(freejoy_style::accentRed(),
-        tr("Installing erases the board and restores factory defaults — "
-           "its current configuration is lost."), this);
-    root->insertWidget(0, warn);
+    /* --- Erase warning (always visible, top of dialog) -------------- */
+    /* Boxed banner pinned to the TOP (app convention: messages sit at the top,
+     * ordered red -> amber -> green). Its colour + text track the Boot/App
+     * selection -- red "config lost" when the app is written, blue "app + config
+     * kept" for a boot-only install -- so updateEraseWarning rebuilds it. */
+    updateEraseWarning();
 
     /* --- Action buttons --------------------------------------------- */
     auto *btnRow = new QHBoxLayout();
@@ -380,8 +425,8 @@ void DfuInstallDialog::buildProgressDialog()
     m_progButtons = new QDialogButtonBox(QDialogButtonBox::Cancel, m_progressDialog);
     m_progCancelBtn = m_progButtons->button(QDialogButtonBox::Cancel);
     connect(m_progButtons, &QDialogButtonBox::rejected, this, [this]() {
-        if (m_installing) {
-            m_session->cancel();          /* "Cancel" while a write is live */
+        if (m_installing || m_erasingChip) {
+            m_session->cancel();          /* "Cancel" while a write/erase is live */
             return;
         }
         /* "Close" once finished/idle. */
@@ -402,8 +447,9 @@ void DfuInstallDialog::buildProgressDialog()
 
 bool DfuInstallDialog::eventFilter(QObject *obj, QEvent *ev)
 {
-    if (obj == m_progressDialog && ev->type() == QEvent::Close && m_installing) {
-        ev->ignore();                     /* no orphaning the device mid-write */
+    if (obj == m_progressDialog && ev->type() == QEvent::Close
+        && (m_installing || m_erasingChip)) {
+        ev->ignore();                     /* no orphaning the device mid-write/erase */
         return true;
     }
     return QDialog::eventFilter(obj, ev);
@@ -414,8 +460,8 @@ void DfuInstallDialog::reject()
     /* Destroying this dialog mid-write kills the helper (session destructor ->
      * QProcess::kill -> "stopped unexpectedly"). Ignore Escape/programmatic
      * reject while installing; the progress window's Cancel is the way to abort. */
-    if (m_installing) {
-        qWarning() << "DfuInstallDialog::reject() ignored -- install in flight";
+    if (m_installing || m_erasingChip) {
+        qWarning() << "DfuInstallDialog::reject() ignored -- write/erase in flight";
         return;
     }
     QDialog::reject();
@@ -423,8 +469,8 @@ void DfuInstallDialog::reject()
 
 void DfuInstallDialog::closeEvent(QCloseEvent *event)
 {
-    if (m_installing) {
-        qWarning() << "DfuInstallDialog::closeEvent ignored -- install in flight";
+    if (m_installing || m_erasingChip) {
+        qWarning() << "DfuInstallDialog::closeEvent ignored -- write/erase in flight";
         event->ignore();
         return;
     }
@@ -620,50 +666,145 @@ void DfuInstallDialog::onLeaveFinished(bool ok, const QString &detail)
     if (!m_installing) m_session->probe(/*verbose=*/false, /*checkDriver=*/true);
 }
 
+void DfuInstallDialog::onEraseClicked()
+{
+    if (m_installing || m_bindingDriver || m_leaving || m_erasingChip) return;
+    if (!DfuInstallSession::helperAvailable()) return;
+
+    /* Stop the background probe before the erase: it opens the WinUSB device for
+     * several seconds, and a concurrent probe opening the same device races
+     * nusb's WinUSB backend into a native crash (same reason as onInstallClicked). */
+    m_detectTimer->stop();
+
+    QMessageBox box(this);
+    box.setWindowTitle(tr("Erase the entire chip?"));
+    box.setTextFormat(Qt::RichText);
+    box.setIconPixmap(freejoy_style::tintedTrianglePixmap(freejoy_style::accentRed(), 40));
+    box.setText(tr("<p>This <b>erases the whole chip</b> over USB DFU — the "
+                   "bootloader, configuration <i>and</i> application.</p>"
+                   "<p>The board will be <b>blank and won't run</b> until you "
+                   "reinstall firmware. It stays in DFU, so you can install "
+                   "straight after.</p>"
+                   "<p>Continue?</p>"));
+    QPushButton *eraseBtn  = box.addButton(tr("Erase chip"), QMessageBox::AcceptRole);
+    QPushButton *cancelBtn = box.addButton(tr("Cancel"), QMessageBox::RejectRole);
+    freejoy_style::setRole(eraseBtn, "role", "primary");
+    box.setDefaultButton(cancelBtn);   // safe default: don't erase on a stray Enter
+    box.setEscapeButton(cancelBtn);
+    box.exec();
+    if (box.clickedButton() != eraseBtn) {
+        m_detectTimer->start();          // cancelled -> resume detection
+        return;
+    }
+
+    m_erasingChip = true;
+    setControlsLocked(true);
+
+    /* Run it in the progress window, same as an install -- the helper's per-sector
+     * STAGE/LOG lines stream into it so the user sees the erase working, and the
+     * terminal result lands as the shared banner. */
+    m_log->clear();
+    m_progress->setRange(0, 0);           // busy/marquee — erase has no byte progress
+    m_bytesLabel->clear();
+    clearProgressResult();
+    m_stageLabel->show();
+    m_stageLabel->setText(tr("Erasing chip…"));
+    m_stageLabel->setStyleSheet(QStringLiteral("font-weight:600;"));
+    if (m_progCancelBtn) m_progCancelBtn->setText(tr("Cancel"));
+    appendLog(tr("Erasing the chip (mass-erase)…"));
+    m_progressDialog->show();
+    m_progressDialog->raise();
+    m_progressDialog->activateWindow();
+
+    m_session->eraseChip();
+}
+
+void DfuInstallDialog::onEraseFinished(bool ok, const QString &detail)
+{
+    m_erasingChip = false;
+    setControlsLocked(false);   // flips the progress button back to "Close"
+    if (!detail.isEmpty()) appendLog(detail);
+
+    /* Terminal result in the progress window (banner + log), mirroring onFinished;
+     * the stage line is hidden so the banner is the single result element. */
+    m_bytesLabel->clear();
+    m_stageLabel->hide();
+    m_progress->setRange(0, 100);         // back from the busy/marquee bar
+    if (ok) {
+        m_progress->setValue(100);
+        showProgressResult(/*success=*/true,
+            tr("Chip erased — the board is blank. Close this, pick firmware, and "
+               "Install to set it up."));
+        setDetectStatus(DetectInfo, tr("Chip erased — the board is blank. Pick "
+                                       "firmware above and Install to set it up."));
+    } else {
+        showProgressResult(/*success=*/false,
+                           detail.isEmpty() ? tr("The chip erase didn't complete.")
+                                            : detail);
+    }
+    /* The chip is still in DFU (blank); re-probe so the Install/Ready state
+     * refreshes, and resume the background poll. */
+    m_detectTimer->start();
+    m_session->probe(/*verbose=*/false, /*checkDriver=*/true);
+
+    if (m_progressDialog && m_progressDialog->isVisible()) {
+        m_progressDialog->raise();
+        m_progressDialog->activateWindow();
+    }
+}
+
 void DfuInstallDialog::onTimingPresetChanged(int index)
 {
-    /* Preset -> spinbox values. Normal matches the helper's built-in timing;
-     * Tolerant / Maximum compatibility add progressively larger margins for
-     * flaky USB. Custom (last entry) leaves the values and unlocks the boxes
-     * for manual tuning. */
-    struct Preset { int delay, poll, xfer, retries, settle; };
+    /* Two named presets + Custom. Normal == the helper's built-in timing (a
+     * behavioural no-op vs not passing flags). Compatibility uses the laxest
+     * transport margins (the former "Maximum compatibility" values) for flaky
+     * cables/hubs, slow ports and clone bootloaders, plus the #80 completion-
+     * robustness knobs (more idle confirmations, a larger minimum per-block
+     * program window). Custom (last entry) unlocks the boxes. */
+    struct Preset { int delay, poll, xfer, retries, settle, idleConfirms, minBlock; };
     static const Preset presets[] = {
-        /* Normal == the helper's built-in timing (transfer-timeout 5000ms,
-         * 4 block retries, poll-timeout 5000ms -> ~1000 polls), so selecting it
-         * is a behavioural no-op vs not passing flags at all. Tolerant / Maximum
-         * compatibility widen the margins for flaky cables/hubs. */
-        {  0,  5000,  5000,  4, 1500 },   // Normal
-        {  5,  8000,  8000,  6, 3000 },   // Tolerant
-        { 20, 15000, 12000, 10, 5000 },   // Maximum compatibility
+        {  0,  5000,  5000,  4, 1500, 2, 20 },   // Normal
+        { 20, 15000, 12000, 10, 5000, 3, 80 },   // Compatibility
     };
     const int presetCount = int(sizeof(presets) / sizeof(presets[0]));
     const bool custom = (index >= presetCount);   // last item == Custom
 
+    const QList<QSpinBox *> boxes = {
+        m_spinDelay, m_spinPoll, m_spinXfer, m_spinRetries,
+        m_spinSettle, m_spinIdleConfirms, m_spinMinBlock,
+    };
     if (!custom && index >= 0) {
         const Preset &p = presets[index];
         const QSignalBlocker b1(m_spinDelay),  b2(m_spinPoll), b3(m_spinXfer),
-                             b4(m_spinRetries), b5(m_spinSettle);
+                             b4(m_spinRetries), b5(m_spinSettle),
+                             b6(m_spinIdleConfirms), b7(m_spinMinBlock);
         m_spinDelay->setValue(p.delay);
         m_spinPoll->setValue(p.poll);
         m_spinXfer->setValue(p.xfer);
         m_spinRetries->setValue(p.retries);
         m_spinSettle->setValue(p.settle);
+        m_spinIdleConfirms->setValue(p.idleConfirms);
+        m_spinMinBlock->setValue(p.minBlock);
     }
     /* Boxes are read-only unless Custom is selected. */
-    for (QSpinBox *s : { m_spinDelay, m_spinPoll, m_spinXfer, m_spinRetries, m_spinSettle }) {
-        s->setEnabled(custom);
-    }
+    for (QSpinBox *s : boxes) s->setEnabled(custom);
 }
 
 void DfuInstallDialog::onInstallClicked()
 {
-    const QString boot = m_bootEdit->text();
-    const QString app  = m_appEdit->text();
-    if (boot.isEmpty() || app.isEmpty()
-        || !QFileInfo::exists(boot) || !QFileInfo::exists(app)) {
+    const bool wantBoot = m_bootCheck->isChecked();
+    const bool wantApp  = m_appCheck->isChecked();
+    const QString boot = wantBoot ? m_bootEdit->text() : QString();
+    const QString app  = wantApp  ? m_appEdit->text()  : QString();
+    if (!wantBoot && !wantApp) {
+        freejoy_style::alertBox(this, freejoy_style::accentAmber(), tr("Nothing selected"),
+            tr("Select the bootloader, the application, or both to install."));
+        return;
+    }
+    if ((wantBoot && (boot.isEmpty() || !QFileInfo::exists(boot)))
+        || (wantApp && (app.isEmpty() || !QFileInfo::exists(app)))) {
         freejoy_style::alertBox(this, freejoy_style::accentAmber(), tr("Missing firmware"),
-            tr("Both a bootloader and an application .bin are required, and "
-               "both files must exist."));
+            tr("Browse to a .bin for each selected region; the file must exist."));
         return;
     }
 
@@ -679,15 +820,30 @@ void DfuInstallDialog::onInstallClicked()
     /* Themed confirmation (amber caution triangle + primary confirm button) so
      * this matches the app's dialog style rather than the native warning box. */
     QMessageBox box(this);
-    box.setWindowTitle(tr("Erase and reinstall?"));
     box.setTextFormat(Qt::RichText);
-    box.setText(tr("<p>This erases the chip and writes a fresh bootloader and "
-                   "application over USB DFU.</p>"
-                   "<p><b>Any existing configuration on the board will be lost</b> "
-                   "(the device returns to factory defaults).</p>"
-                   "<p>Continue?</p>"));
     box.setIconPixmap(freejoy_style::tintedTrianglePixmap(freejoy_style::accentAmber(), 40));
-    QPushButton *eraseBtn  = box.addButton(tr("Erase and reinstall"), QMessageBox::AcceptRole);
+    QString confirmLabel;
+    if (wantApp) {
+        /* Writing the app factory-resets config (config layout follows the app). */
+        const QString what = wantBoot ? tr("bootloader and application")
+                                      : tr("application");
+        box.setWindowTitle(tr("Erase and reinstall?"));
+        box.setText(tr("<p>This erases the chip and writes a fresh %1 over "
+                       "USB DFU.</p>"
+                       "<p><b>Any existing configuration on the board will be lost</b> "
+                       "(the device returns to factory defaults).</p>"
+                       "<p>Continue?</p>").arg(what));
+        confirmLabel = tr("Erase and reinstall");
+    } else {
+        /* Boot-only: the running app + its config are preserved. */
+        box.setWindowTitle(tr("Reinstall bootloader?"));
+        box.setText(tr("<p>This writes a fresh bootloader over USB DFU.</p>"
+                       "<p>The current application and its configuration are "
+                       "kept.</p>"
+                       "<p>Continue?</p>"));
+        confirmLabel = tr("Install bootloader");
+    }
+    QPushButton *eraseBtn  = box.addButton(confirmLabel, QMessageBox::AcceptRole);
     QPushButton *cancelBtn = box.addButton(tr("Cancel"), QMessageBox::RejectRole);
     freejoy_style::setRole(eraseBtn, "role", "primary");
     box.setDefaultButton(cancelBtn);   // safe default: don't erase on a stray Enter
@@ -709,6 +865,8 @@ void DfuInstallDialog::onInstallClicked()
     p.timing.transferTimeoutMs = m_spinXfer->value();
     p.timing.retries           = m_spinRetries->value();
     p.timing.settleMs          = m_spinSettle->value();
+    p.timing.idleConfirmations = m_spinIdleConfirms->value();
+    p.timing.minBlockMs        = m_spinMinBlock->value();
 
     if (!m_session->start(p)) {
         freejoy_style::alertBox(this, freejoy_style::accentRed(), tr("Couldn't start"),
@@ -748,6 +906,16 @@ void DfuInstallDialog::onInstallClicked()
 
 void DfuInstallDialog::onStageChanged(DfuInstallSession::Stage s, const QString &detail)
 {
+    /* Erase is a single-stage op -- no "Step X of 5" and no byte progress, so it
+     * keeps the busy/marquee bar from onEraseClicked and just labels the stage;
+     * the terminal state is set by onEraseFinished. */
+    if (m_erasingChip) {
+        if (!detail.isEmpty()) appendLog(detail);
+        if (s == DfuInstallSession::Stage::Erasing)
+            m_stageLabel->setText(tr("Erasing chip…"));
+        return;
+    }
+
     /* Step-numbered labels to match the firmware-upgrade dialog's "Step X of Y"
      * format. The install has 5 working stages (bind / erase / write boot /
      * write app / verify); Done / Failed / Idle are terminal/initial, no number. */
@@ -864,23 +1032,38 @@ void DfuInstallDialog::clearProgressResult()
 
 void DfuInstallDialog::setControlsLocked(bool locked)
 {
-    m_browseBootBtn->setEnabled(!locked);
-    m_browseAppBtn->setEnabled(!locked);
+    /* Browse + path enablement follows the Boot/App selection (and the lock). */
+    const bool wantBoot = m_bootCheck && m_bootCheck->isChecked();
+    const bool wantApp  = m_appCheck && m_appCheck->isChecked();
+    m_bootCheck->setEnabled(!locked);
+    m_appCheck->setEnabled(!locked);
+    m_browseBootBtn->setEnabled(!locked && wantBoot);
+    m_browseAppBtn->setEnabled(!locked && wantApp);
+    m_bootEdit->setEnabled(!locked && wantBoot);
+    m_appEdit->setEnabled(!locked && wantApp);
     m_rebootBtn->setEnabled(!locked);
     m_detectBtn->setEnabled(!locked && DfuInstallSession::helperAvailable());
     m_driverBtn->setEnabled(!locked && m_driverNeeded
                             && DfuInstallSession::helperAvailable());
     m_leaveBtn->setEnabled(!locked && DfuInstallSession::helperAvailable());
-    m_installBtn->setEnabled(!locked && !m_installed && m_devicePresent
-                             && !m_bootEdit->text().isEmpty()
-                             && !m_appEdit->text().isEmpty());
+    /* Erase chip (recovery) available whenever a DFU device is present and no op
+     * is in flight. */
+    if (m_eraseBtn)
+        m_eraseBtn->setEnabled(!locked && m_devicePresent
+                               && DfuInstallSession::helperAvailable());
+    /* Install eligibility honours the checkbox selection -- defer to the single
+     * source of truth rather than re-deriving (the old inline check required
+     * BOTH paths and would wrongly block a boot-only / app-only install). */
+    if (locked) m_installBtn->setEnabled(false);
+    else refreshInstallEnabled();
     /* Advanced timing: frozen while a write is in flight. When unlocking, the
      * spinboxes only re-enable if the preset is Custom (onTimingPresetChanged
      * owns their per-box state). */
     m_advToggle->setEnabled(!locked);
     m_presetCombo->setEnabled(!locked);
     if (locked) {
-        for (QSpinBox *s : { m_spinDelay, m_spinPoll, m_spinXfer, m_spinRetries, m_spinSettle })
+        for (QSpinBox *s : { m_spinDelay, m_spinPoll, m_spinXfer, m_spinRetries,
+                             m_spinSettle, m_spinIdleConfirms, m_spinMinBlock })
             s->setEnabled(false);
     } else {
         onTimingPresetChanged(m_presetCombo->currentIndex());   /* restore Custom lock state */
@@ -895,12 +1078,54 @@ void DfuInstallDialog::refreshInstallEnabled()
 {
     if (m_installing) return;            /* setControlsLocked owns the state then */
     if (!m_bootEdit || !m_appEdit || !m_installBtn) return;  /* called before Step 2 built them */
+    /* Each CHECKED region needs an existing path; unchecked regions are skipped.
+     * At least one region must be selected. */
+    const bool wantBoot = m_bootCheck && m_bootCheck->isChecked();
+    const bool wantApp  = m_appCheck && m_appCheck->isChecked();
+    const bool bootOk = !wantBoot || !m_bootEdit->text().isEmpty();
+    const bool appOk  = !wantApp  || !m_appEdit->text().isEmpty();
     const bool ready = !m_installed
                        && m_devicePresent
                        && DfuInstallSession::helperAvailable()
-                       && !m_bootEdit->text().isEmpty()
-                       && !m_appEdit->text().isEmpty();
+                       && (wantBoot || wantApp)
+                       && bootOk && appOk;
     m_installBtn->setEnabled(ready);
+
+    /* Erase chip (recovery) is available whenever a DFU device is present and no
+     * op is in flight -- independent of the firmware selection / m_installed. */
+    if (m_eraseBtn)
+        m_eraseBtn->setEnabled(m_devicePresent && !m_erasingChip
+                               && DfuInstallSession::helperAvailable());
+}
+
+void DfuInstallDialog::updateEraseWarning()
+{
+    if (!m_rootLayout) return;
+
+    /* Config is erased (factory reset) only when the app is (re)written -- its
+     * layout follows the app's wire format, so a new app must not inherit an old
+     * config. A boot-only install keeps the running app AND its config; this
+     * mirrors the helper's region policy (freejoyx-flash plan_install). */
+    const bool writingApp = !m_appCheck || m_appCheck->isChecked();
+    QColor accent;
+    QString text;
+    if (writingApp) {
+        accent = freejoy_style::accentRed();
+        text = tr("Installing the application erases the board and restores "
+                  "factory defaults — its current configuration is lost.");
+    } else {
+        accent = freejoy_style::accentBlue(true);
+        text = tr("Installing only the bootloader keeps the current application "
+                  "and its configuration.");
+    }
+
+    auto *banner = freejoy_style::makeAlertBanner(accent, text, this);
+    if (m_eraseWarn) {
+        m_rootLayout->removeWidget(m_eraseWarn);
+        m_eraseWarn->deleteLater();
+    }
+    m_rootLayout->insertWidget(0, banner);
+    m_eraseWarn = banner;
 }
 
 void DfuInstallDialog::setDetectStatus(DetectKind kind, const QString &text)

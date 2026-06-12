@@ -191,6 +191,47 @@ void DfuInstallSession::leaveDfu()
                             QStringLiteral("--board"), QStringLiteral("f411") });
 }
 
+void DfuInstallSession::eraseChip()
+{
+    /* Coalesce against any in-flight probe/install/bind/leave/erase. */
+    if (m_proc && m_proc->state() != QProcess::NotRunning) {
+        return;
+    }
+    const QString helper = helperPath();
+    if (helper.isEmpty()) {
+        emit eraseFinished(false,
+            tr("Install helper (freejoyx-flash) is missing from the "
+               "application folder."));
+        return;
+    }
+
+    m_probing = false;
+    m_probeVerbose = false;
+    m_binding = false;
+    m_leaving = false;
+    m_erasing = true;
+    m_sawError = false;
+    m_lastErrorDetail.clear();
+    m_stdoutBuf.clear();
+    m_stderrBuf.clear();
+    setStage(Stage::Erasing, tr("Erasing chip..."));
+
+    m_proc = new QProcess(this);
+    m_proc->setProcessChannelMode(QProcess::SeparateChannels);
+    connect(m_proc, &QProcess::readyReadStandardOutput,
+            this, &DfuInstallSession::onReadyReadStdout);
+    connect(m_proc, &QProcess::readyReadStandardError,
+            this, &DfuInstallSession::onReadyReadStderr);
+    connect(m_proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, &DfuInstallSession::onProcessFinished);
+    connect(m_proc, &QProcess::errorOccurred,
+            this, &DfuInstallSession::onProcessErrorOccurred);
+
+    m_proc->setWorkingDirectory(QFileInfo(helper).absolutePath());
+    m_proc->start(helper, { QStringLiteral("erase"),
+                            QStringLiteral("--board"), QStringLiteral("f411") });
+}
+
 bool DfuInstallSession::start(const Params &p)
 {
     if (m_proc && m_proc->state() != QProcess::NotRunning) {
@@ -203,14 +244,16 @@ bool DfuInstallSession::start(const Params &p)
                                "from the application folder.");
         return false;
     }
-    if (p.bootBinPath.isEmpty() || p.appBinPath.isEmpty()) {
-        m_lastErrorDetail = tr("Bootloader and application binaries are both required.");
+    if (p.bootBinPath.isEmpty() && p.appBinPath.isEmpty()) {
+        m_lastErrorDetail = tr("Select at least one of the bootloader / application to install.");
         return false;
     }
 
     m_probing = false;
     m_probeVerbose = false;
     m_binding = false;
+    m_leaving = false;
+    m_erasing = false;
     m_sawError = false;
     m_verifiedBoot = false;
     m_verifiedApp = false;
@@ -230,10 +273,15 @@ bool DfuInstallSession::start(const Params &p)
     connect(m_proc, &QProcess::errorOccurred,
             this, &DfuInstallSession::onProcessErrorOccurred);
 
+    /* --boot / --app are independently optional (the dialog's Boot/App/Both
+     * selection). Send only the region(s) chosen; the helper writes just those
+     * and, for a boot-only install, leaves the running app + its config intact. */
     QStringList args{ QStringLiteral("install"),
-                      QStringLiteral("--board"), p.board,
-                      QStringLiteral("--boot"), p.bootBinPath,
-                      QStringLiteral("--app"),  p.appBinPath };
+                      QStringLiteral("--board"), p.board };
+    if (!p.bootBinPath.isEmpty())
+        args << QStringLiteral("--boot") << p.bootBinPath;
+    if (!p.appBinPath.isEmpty())
+        args << QStringLiteral("--app") << p.appBinPath;
 
     /* DfuSe timing flags from the Advanced section. GATED: the current Rust
      * helper doesn't know these flags and would reject the whole command, so
@@ -248,7 +296,9 @@ bool DfuInstallSession::start(const Params &p)
              << QStringLiteral("--poll-timeout-ms")     << QString::number(t.pollTimeoutMs)
              << QStringLiteral("--transfer-timeout-ms") << QString::number(t.transferTimeoutMs)
              << QStringLiteral("--retries")             << QString::number(t.retries)
-             << QStringLiteral("--settle-ms")           << QString::number(t.settleMs);
+             << QStringLiteral("--settle-ms")           << QString::number(t.settleMs)
+             << QStringLiteral("--idle-confirmations")  << QString::number(t.idleConfirmations)
+             << QStringLiteral("--min-block-ms")        << QString::number(t.minBlockMs);
     }
 
     /* Surface the chosen advanced timing in the log/debug output, and be honest
@@ -438,6 +488,24 @@ void DfuInstallSession::onProcessFinished(int exitCode, QProcess::ExitStatus sta
         return;
     }
 
+    if (m_erasing) {
+        const bool ok = (!crashed && exitCode == 0);
+        if (!ok && !m_sawError) {
+            m_lastErrorDetail = crashed
+                ? tr("The erase helper stopped unexpectedly.")
+                : tr("The erase helper exited with code %1.").arg(exitCode);
+        }
+        const QString detail = ok
+            ? tr("Chip erased. The board is blank and still in DFU -- install "
+                 "firmware to make it usable.")
+            : m_lastErrorDetail;
+        m_erasing = false;
+        m_proc->deleteLater();
+        m_proc = nullptr;
+        emit eraseFinished(ok, detail);
+        return;
+    }
+
     bool success = (!crashed && exitCode == 0 && m_stage == Stage::Verifying)
                    || (!crashed && exitCode == 0 && m_stage == Stage::Done);
 
@@ -518,6 +586,13 @@ void DfuInstallSession::onProcessErrorOccurred(QProcess::ProcessError error)
             m_leaving = false;
             if (m_proc) { m_proc->deleteLater(); m_proc = nullptr; }
             emit leaveFinished(false,
+                tr("Couldn't launch the install helper (freejoyx-flash)."));
+            return;
+        }
+        if (m_erasing) {
+            m_erasing = false;
+            if (m_proc) { m_proc->deleteLater(); m_proc = nullptr; }
+            emit eraseFinished(false,
                 tr("Couldn't launch the install helper (freejoyx-flash)."));
             return;
         }
