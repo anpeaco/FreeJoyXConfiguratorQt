@@ -75,7 +75,16 @@ void HidDevice::processData()                   /////// bad code, I'll try to re
                         m_hidDevicesList.clear();
                         m_deviceNames.clear();
                         m_deviceNames.append(qMakePair(false, FLASHER_PROD_STR));
-                        emit hidDeviceList(m_deviceNames, -1);
+                        /* Auto-select the flasher (preferredIndex 0). The usual
+                         * -1 ("leave unselected until params arrive") guards
+                         * normal devices against a racy pre-params pick, but a
+                         * bootloader-only board never sends params -- so it would
+                         * sit listed-but-unselected forever. Select it so it reads
+                         * as connected and the device-card Install Firmware button
+                         * is usable. (Delivered under hidDeviceList's signal
+                         * blocker, so this doesn't try to re-open it as a normal
+                         * HID device.) */
+                        emit hidDeviceList(m_deviceNames, 0);
                         emit flasherConnected();
                         emit flasherFound(true);
                         // Surface the bootloader's USB identity so the
