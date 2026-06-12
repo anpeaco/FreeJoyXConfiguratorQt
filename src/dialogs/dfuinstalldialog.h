@@ -203,6 +203,8 @@ private:
     QSpinBox       *m_spinXfer = nullptr;      /* transfer timeout (ms) */
     QSpinBox       *m_spinRetries = nullptr;   /* per-block retries */
     QSpinBox       *m_spinSettle = nullptr;    /* post-flash settle (ms) */
+    QSpinBox       *m_spinIdleConfirms = nullptr; /* consecutive idle reports (#80) */
+    QSpinBox       *m_spinMinBlock = nullptr;  /* min per-block program window ms (#80) */
 
     QTimer *m_detectTimer = nullptr;  /* periodic re-probe so plugging in is noticed */
     int     m_detectTick = 0;         /* counts background polls; throttles the driver-layer check */

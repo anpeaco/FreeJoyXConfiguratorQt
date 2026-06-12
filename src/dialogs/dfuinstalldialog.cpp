@@ -247,13 +247,12 @@ void DfuInstallDialog::buildUi()
     advForm->setContentsMargins(14, 4, 0, 4);          /* indent under the toggle */
 
     m_presetCombo = new QComboBox(m_advBox);
-    m_presetCombo->addItems({ tr("Normal"), tr("Tolerant"),
-                              tr("Maximum compatibility"), tr("Custom") });
+    m_presetCombo->addItems({ tr("Normal"), tr("Relaxed"), tr("Custom") });
     m_presetCombo->setToolTip(freejoy_style::tipHtml(
         tr("Pick a DFU timing preset"),
-        { tr("<b>Normal</b> is fast/tight for a good USB connection."),
-          tr("<b>Tolerant</b> and <b>Maximum compatibility</b> add margins for flaky cables or hubs."),
-          tr("<b>Custom</b> unlocks the boxes.") }));
+        { tr("<b>Normal</b> is fast and tight — for a good USB connection and genuine ST silicon."),
+          tr("<b>Relaxed</b> adds generous margins for flaky cables/hubs, slow ports, and clone bootloaders."),
+          tr("<b>Custom</b> unlocks the boxes for manual tuning.") }));
     advForm->addRow(tr("Timing preset:"), m_presetCombo);
 
     auto makeSpin = [this](int lo, int hi, int step, const QString &suffix) {
@@ -263,16 +262,28 @@ void DfuInstallDialog::buildUi()
         if (!suffix.isEmpty()) s->setSuffix(suffix);
         return s;
     };
-    m_spinDelay   = makeSpin(0, 100, 1, tr(" ms"));
-    m_spinPoll    = makeSpin(1000, 30000, 500, tr(" ms"));
-    m_spinXfer    = makeSpin(500, 15000, 250, tr(" ms"));
-    m_spinRetries = makeSpin(0, 10, 1, QString());
-    m_spinSettle  = makeSpin(0, 10000, 250, tr(" ms"));
+    m_spinDelay        = makeSpin(0, 100, 1, tr(" ms"));
+    m_spinPoll         = makeSpin(1000, 30000, 500, tr(" ms"));
+    m_spinXfer         = makeSpin(500, 15000, 250, tr(" ms"));
+    m_spinRetries      = makeSpin(0, 10, 1, QString());
+    m_spinSettle       = makeSpin(0, 10000, 250, tr(" ms"));
+    m_spinIdleConfirms = makeSpin(1, 6, 1, QString());
+    m_spinMinBlock     = makeSpin(0, 200, 5, tr(" ms"));
+    m_spinIdleConfirms->setToolTip(freejoy_style::tipHtml(
+        tr("Idle confirmations"),
+        { tr("Consecutive “idle” reports required before sending the next flash block."),
+          tr("Higher values reject a clone bootloader that briefly reports done while still writing (#80).") }));
+    m_spinMinBlock->setToolTip(freejoy_style::tipHtml(
+        tr("Minimum block program time"),
+        { tr("Minimum time to allow per block when the device claims it finished instantly."),
+          tr("Genuine silicon that paces the write itself is not slowed; raise this for a stubborn clone (#80).") }));
     advForm->addRow(tr("Inter-block delay:"),    m_spinDelay);
     advForm->addRow(tr("Poll / erase timeout:"), m_spinPoll);
     advForm->addRow(tr("Transfer timeout:"),     m_spinXfer);
     advForm->addRow(tr("Retries:"),              m_spinRetries);
     advForm->addRow(tr("Post-flash settle:"),    m_spinSettle);
+    advForm->addRow(tr("Idle confirmations:"),   m_spinIdleConfirms);
+    advForm->addRow(tr("Min block program:"),    m_spinMinBlock);
 
     /* Clear-chip recovery: mass-erase the whole chip (bootloader + config +
      * app). Destructive -- gated behind a strong confirm in onEraseClicked.
@@ -713,37 +724,38 @@ void DfuInstallDialog::onEraseFinished(bool ok, const QString &detail)
 
 void DfuInstallDialog::onTimingPresetChanged(int index)
 {
-    /* Preset -> spinbox values. Normal matches the helper's built-in timing;
-     * Tolerant / Maximum compatibility add progressively larger margins for
-     * flaky USB. Custom (last entry) leaves the values and unlocks the boxes
-     * for manual tuning. */
-    struct Preset { int delay, poll, xfer, retries, settle; };
+    /* Two named presets + Custom. Normal == the helper's built-in timing (a
+     * behavioural no-op vs not passing flags). Relaxed adds generous margins for
+     * flaky cables/hubs, slow ports and clone bootloaders -- including the #80
+     * completion-robustness knobs (more idle confirmations, a larger minimum
+     * per-block program window). Custom (last entry) unlocks the boxes. */
+    struct Preset { int delay, poll, xfer, retries, settle, idleConfirms, minBlock; };
     static const Preset presets[] = {
-        /* Normal == the helper's built-in timing (transfer-timeout 5000ms,
-         * 4 block retries, poll-timeout 5000ms -> ~1000 polls), so selecting it
-         * is a behavioural no-op vs not passing flags at all. Tolerant / Maximum
-         * compatibility widen the margins for flaky cables/hubs. */
-        {  0,  5000,  5000,  4, 1500 },   // Normal
-        {  5,  8000,  8000,  6, 3000 },   // Tolerant
-        { 20, 15000, 12000, 10, 5000 },   // Maximum compatibility
+        {  0,  5000,  5000, 4, 1500, 2, 20 },   // Normal
+        { 20, 15000, 12000, 8, 3000, 3, 60 },   // Relaxed
     };
     const int presetCount = int(sizeof(presets) / sizeof(presets[0]));
     const bool custom = (index >= presetCount);   // last item == Custom
 
+    const QList<QSpinBox *> boxes = {
+        m_spinDelay, m_spinPoll, m_spinXfer, m_spinRetries,
+        m_spinSettle, m_spinIdleConfirms, m_spinMinBlock,
+    };
     if (!custom && index >= 0) {
         const Preset &p = presets[index];
         const QSignalBlocker b1(m_spinDelay),  b2(m_spinPoll), b3(m_spinXfer),
-                             b4(m_spinRetries), b5(m_spinSettle);
+                             b4(m_spinRetries), b5(m_spinSettle),
+                             b6(m_spinIdleConfirms), b7(m_spinMinBlock);
         m_spinDelay->setValue(p.delay);
         m_spinPoll->setValue(p.poll);
         m_spinXfer->setValue(p.xfer);
         m_spinRetries->setValue(p.retries);
         m_spinSettle->setValue(p.settle);
+        m_spinIdleConfirms->setValue(p.idleConfirms);
+        m_spinMinBlock->setValue(p.minBlock);
     }
     /* Boxes are read-only unless Custom is selected. */
-    for (QSpinBox *s : { m_spinDelay, m_spinPoll, m_spinXfer, m_spinRetries, m_spinSettle }) {
-        s->setEnabled(custom);
-    }
+    for (QSpinBox *s : boxes) s->setEnabled(custom);
 }
 
 void DfuInstallDialog::onInstallClicked()
@@ -821,6 +833,8 @@ void DfuInstallDialog::onInstallClicked()
     p.timing.transferTimeoutMs = m_spinXfer->value();
     p.timing.retries           = m_spinRetries->value();
     p.timing.settleMs          = m_spinSettle->value();
+    p.timing.idleConfirmations = m_spinIdleConfirms->value();
+    p.timing.minBlockMs        = m_spinMinBlock->value();
 
     if (!m_session->start(p)) {
         freejoy_style::alertBox(this, freejoy_style::accentRed(), tr("Couldn't start"),
@@ -1006,7 +1020,8 @@ void DfuInstallDialog::setControlsLocked(bool locked)
     m_advToggle->setEnabled(!locked);
     m_presetCombo->setEnabled(!locked);
     if (locked) {
-        for (QSpinBox *s : { m_spinDelay, m_spinPoll, m_spinXfer, m_spinRetries, m_spinSettle })
+        for (QSpinBox *s : { m_spinDelay, m_spinPoll, m_spinXfer, m_spinRetries,
+                             m_spinSettle, m_spinIdleConfirms, m_spinMinBlock })
             s->setEnabled(false);
     } else {
         onTimingPresetChanged(m_presetCombo->currentIndex());   /* restore Custom lock state */

@@ -296,7 +296,9 @@ bool DfuInstallSession::start(const Params &p)
              << QStringLiteral("--poll-timeout-ms")     << QString::number(t.pollTimeoutMs)
              << QStringLiteral("--transfer-timeout-ms") << QString::number(t.transferTimeoutMs)
              << QStringLiteral("--retries")             << QString::number(t.retries)
-             << QStringLiteral("--settle-ms")           << QString::number(t.settleMs);
+             << QStringLiteral("--settle-ms")           << QString::number(t.settleMs)
+             << QStringLiteral("--idle-confirmations")  << QString::number(t.idleConfirmations)
+             << QStringLiteral("--min-block-ms")        << QString::number(t.minBlockMs);
     }
 
     /* Surface the chosen advanced timing in the log/debug output, and be honest

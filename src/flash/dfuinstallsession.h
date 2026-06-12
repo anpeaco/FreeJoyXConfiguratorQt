@@ -71,6 +71,8 @@
   *     --transfer-timeout-ms <n>  per USB control transfer (3000)
   *     --retries <n>              per-block retry on error (0)
   *     --settle-ms <n>            wait after leave-DFU (1500)
+  *     --idle-confirmations <n>   consecutive idle reports before the next block (2)
+  *     --min-block-ms <n>         min per-block program window for lying clones (20)
   *   NOTE: these flags do not exist in the helper yet (anpeaco/FreeJoyX-
   *   Configurator#35). DfuInstallSession::start only appends them when
   *   kHelperSupportsTiming (in the .cpp) is flipped on, so the current helper
@@ -148,6 +150,9 @@ public:
         int transferTimeoutMs = 5000;   /* --transfer-timeout-ms : per USB control transfer */
         int retries           = 4;      /* --retries : per-block retry on error (helper built-in) */
         int settleMs          = 1500;   /* --settle-ms : wait after leave-DFU */
+        /* Block-completion robustness (anpeaco/FreeJoyXConfiguratorQt#80). */
+        int idleConfirmations = 2;      /* --idle-confirmations : consecutive idle reports required */
+        int minBlockMs        = 20;     /* --min-block-ms : min per-block program window for lying clones */
     };
 
     struct Params {
