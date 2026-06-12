@@ -247,11 +247,11 @@ void DfuInstallDialog::buildUi()
     advForm->setContentsMargins(14, 4, 0, 4);          /* indent under the toggle */
 
     m_presetCombo = new QComboBox(m_advBox);
-    m_presetCombo->addItems({ tr("Normal"), tr("Relaxed"), tr("Custom") });
+    m_presetCombo->addItems({ tr("Normal"), tr("Compatibility"), tr("Custom") });
     m_presetCombo->setToolTip(freejoy_style::tipHtml(
         tr("Pick a DFU timing preset"),
         { tr("<b>Normal</b> is fast and tight — for a good USB connection and genuine ST silicon."),
-          tr("<b>Relaxed</b> adds generous margins for flaky cables/hubs, slow ports, and clone bootloaders."),
+          tr("<b>Compatibility</b> uses the laxest margins for flaky cables/hubs, slow ports, and clone bootloaders."),
           tr("<b>Custom</b> unlocks the boxes for manual tuning.") }));
     advForm->addRow(tr("Timing preset:"), m_presetCombo);
 
@@ -725,14 +725,15 @@ void DfuInstallDialog::onEraseFinished(bool ok, const QString &detail)
 void DfuInstallDialog::onTimingPresetChanged(int index)
 {
     /* Two named presets + Custom. Normal == the helper's built-in timing (a
-     * behavioural no-op vs not passing flags). Relaxed adds generous margins for
-     * flaky cables/hubs, slow ports and clone bootloaders -- including the #80
-     * completion-robustness knobs (more idle confirmations, a larger minimum
-     * per-block program window). Custom (last entry) unlocks the boxes. */
+     * behavioural no-op vs not passing flags). Compatibility uses the laxest
+     * transport margins (the former "Maximum compatibility" values) for flaky
+     * cables/hubs, slow ports and clone bootloaders, plus the #80 completion-
+     * robustness knobs (more idle confirmations, a larger minimum per-block
+     * program window). Custom (last entry) unlocks the boxes. */
     struct Preset { int delay, poll, xfer, retries, settle, idleConfirms, minBlock; };
     static const Preset presets[] = {
-        {  0,  5000,  5000, 4, 1500, 2, 20 },   // Normal
-        { 20, 15000, 12000, 8, 3000, 3, 60 },   // Relaxed
+        {  0,  5000,  5000,  4, 1500, 2, 20 },   // Normal
+        { 20, 15000, 12000, 10, 5000, 3, 60 },   // Compatibility
     };
     const int presetCount = int(sizeof(presets) / sizeof(presets[0]));
     const bool custom = (index >= presetCount);   // last item == Custom
