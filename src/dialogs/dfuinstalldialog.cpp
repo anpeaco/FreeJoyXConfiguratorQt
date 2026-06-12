@@ -733,7 +733,7 @@ void DfuInstallDialog::onTimingPresetChanged(int index)
     struct Preset { int delay, poll, xfer, retries, settle, idleConfirms, minBlock; };
     static const Preset presets[] = {
         {  0,  5000,  5000,  4, 1500, 2, 20 },   // Normal
-        { 20, 15000, 12000, 10, 5000, 3, 60 },   // Compatibility
+        { 20, 15000, 12000, 10, 5000, 3, 80 },   // Compatibility
     };
     const int presetCount = int(sizeof(presets) / sizeof(presets[0]));
     const bool custom = (index >= presetCount);   // last item == Custom
