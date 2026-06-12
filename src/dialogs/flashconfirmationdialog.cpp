@@ -9,8 +9,11 @@
 #include "ui_flashconfirmationdialog.h"
 
 #include <QComboBox>
+#include <QDateTime>
 #include <QDebug>
+#include <QFileInfo>
 #include <QFont>
+#include <QLocale>
 #include <QIcon>
 #include <QLabel>
 #include <QLayout>
@@ -69,7 +72,7 @@ FlashConfirmationDialog::FlashConfirmationDialog(
         ui->label_DeviceNameTag,  ui->label_DeviceSerialTag,
         ui->label_DeviceBoardTag, ui->label_DeviceFwTag,
         ui->label_TargetFileTag,  ui->label_TargetBoardTag,
-        ui->label_TargetFwTag,
+        ui->label_TargetFwTag,    ui->label_TargetDateTag,
     };
     int tagWidth = 0;
     for (QLabel *l : tagLabels) tagWidth = qMax(tagWidth, l->sizeHint().width());
@@ -313,6 +316,7 @@ void FlashConfirmationDialog::clearTarget(const QString &hint)
     ui->label_TargetFile->setText(QStringLiteral("-"));
     ui->label_TargetBoard->setText(QStringLiteral("-")); ui->label_TargetBoardIcon->hide();
     ui->label_TargetFw->setText(QStringLiteral("-"));
+    ui->label_TargetDate->setText(QStringLiteral("-"));
     hideVerdictBanner();
     setInfoBanner(freejoy_style::accentAmber(), hint);
     m_flashBtn->setEnabled(false);
@@ -437,10 +441,22 @@ void FlashConfirmationDialog::renderTargetAndVerdict(const Inputs &in)
                                   : QStringLiteral("FreeJoy %1")).arg(v);
         }
         ui->label_TargetFw->setText(v);
+
+        /* File creation date -- birthTime(), falling back to lastModified() on
+         * filesystems that don't record a birth time. Lets the user gauge how
+         * fresh a build / download is straight from the picker. */
+        const QFileInfo fi(in.image->path());
+        QDateTime created = fi.birthTime();
+        if (!created.isValid()) created = fi.lastModified();
+        ui->label_TargetDate->setText(
+            created.isValid()
+                ? QLocale::system().toString(created, QLocale::ShortFormat)
+                : QStringLiteral("-"));
     } else {
         ui->label_TargetFile->setText(QStringLiteral("-"));
         ui->label_TargetBoard->setText(QStringLiteral("-")); ui->label_TargetBoardIcon->hide();
         ui->label_TargetFw->setText(QStringLiteral("-"));
+        ui->label_TargetDate->setText(QStringLiteral("-"));
     }
 
     /* --- Verdict banner (freejoy_style accents) --- */
