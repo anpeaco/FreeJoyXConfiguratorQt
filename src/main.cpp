@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QIcon>
 #include <QElapsedTimer>
 #include <QFile>
 #include <QTextStream>
@@ -71,6 +72,17 @@ int main(int argc, char *argv[])
     QApplication::setStyle(QStyleFactory::create("Fusion"));
     QApplication::setStyle(new InfoProxyStyle(qApp->style()));
     QApplication a(argc, argv);
+
+    // App-wide window icon so every window -- including dialogs that don't set
+    // their own (e.g. the Upgrade Firmware dialog) -- uses the clean PNG icon
+    // instead of falling back to the .exe's .ico, whose small title-bar variant
+    // renders clipped. Multi-size so the title bar gets a crisp 32px and the
+    // taskbar / Alt-Tab a high-res variant.
+    {
+        QIcon appIcon(QStringLiteral(":/Images/icon-32.png"));
+        appIcon.addFile(QStringLiteral(":/Images/icon.png"));
+        QApplication::setWindowIcon(appIcon);
+    }
 
     // Apply the active theme's title bar (Windows dark mode) to every dialog
     // as it is shown, not just the main window. themeChanged() seeds the
