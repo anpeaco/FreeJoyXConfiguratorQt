@@ -59,4 +59,20 @@ bool firmwareNewerAvailable(int devMajor, int devMinor, int devPatch,
                             int bundledMajor, int bundledMinor, int bundledPatch,
                             bool sameWireGen);
 
+/* What the device-card firmware button should offer, given the device state. */
+enum class UpgradeButton {
+    Disabled,   /* greyed out -- nothing to do for the connected device */
+    Install,    /* device in the custom HID bootloader (no app / told to flash):
+                   offer a board-agnostic install/recovery flash */
+    Upgrade,    /* app-mode device running older firmware than the configurator */
+};
+
+/* Pure button-state classifier for MainWindow::refreshUpgradeButtonState.
+ * A board in flasher (bootloader) mode reports no params, so deviceConnected /
+ * haveBoard / newerAvailable are all false for it -- but the HID flash path can
+ * still install the app, so flasher mode yields Install and takes precedence
+ * over the version-based Upgrade path. */
+UpgradeButton classifyUpgradeButton(bool inFlasherMode, bool deviceConnected,
+                                    bool haveBoard, bool newerAvailable);
+
 #endif // FLASHVERDICT_H

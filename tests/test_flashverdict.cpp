@@ -144,6 +144,47 @@ private slots:
     {
         QVERIFY(firmwareNewerAvailable(0, 0, 0, 0, 1, 9, true));
     }
+
+    /* ---- classifyUpgradeButton ----
+     * Drives the device-card Upgrade/Install button. A board sitting in the
+     * custom HID bootloader (flasher mode) never reports params, so the
+     * version-based path can't enable it -- but the HID flash CAN install the
+     * app onto it, so flasher mode yields Install regardless of the other
+     * inputs. */
+    void upgradeBtn_flasherMode_isInstall()
+    {
+        QCOMPARE(classifyUpgradeButton(/*inFlasher*/ true, /*connected*/ false,
+                                       /*haveBoard*/ false, /*newer*/ false),
+                 UpgradeButton::Install);
+    }
+    void upgradeBtn_flasherMode_winsOverAppInputs()
+    {
+        /* Defensive: if a stale params report and flasher mode disagree, the
+         * bootloader state wins -- never classify a board-in-BL as Upgrade. */
+        QCOMPARE(classifyUpgradeButton(true, true, true, true),
+                 UpgradeButton::Install);
+    }
+    void upgradeBtn_appNewerAvailable_isUpgrade()
+    {
+        QCOMPARE(classifyUpgradeButton(false, /*connected*/ true,
+                                       /*haveBoard*/ true, /*newer*/ true),
+                 UpgradeButton::Upgrade);
+    }
+    void upgradeBtn_appNotNewer_isDisabled()
+    {
+        QCOMPARE(classifyUpgradeButton(false, true, true, /*newer*/ false),
+                 UpgradeButton::Disabled);
+    }
+    void upgradeBtn_appNoBoard_isDisabled()
+    {
+        QCOMPARE(classifyUpgradeButton(false, true, /*haveBoard*/ false, true),
+                 UpgradeButton::Disabled);
+    }
+    void upgradeBtn_nothingConnected_isDisabled()
+    {
+        QCOMPARE(classifyUpgradeButton(false, /*connected*/ false, false, false),
+                 UpgradeButton::Disabled);
+    }
 };
 
 QTEST_APPLESS_MAIN(TestFlashVerdict)

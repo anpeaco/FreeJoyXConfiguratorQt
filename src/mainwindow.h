@@ -288,6 +288,13 @@ private:
     void    refreshUpgradeButtonState(); /* enables/disables based on connection + version + firmware availability */
     QString findUpgradeFirmwarePath(int boardId, QString *outVersion) const;
 
+    /* The .ui's default label + tooltip for pushButton_UpgradeFirmware,
+     * captured at construction. refreshUpgradeButtonState swaps in an
+     * "Install firmware" label while a board sits in the bootloader (flasher
+     * mode), then restores these for an app-mode device. */
+    QString m_upgradeBtnDefaultText;
+    QString m_upgradeBtnDefaultToolTip;
+
     /* The progress dialog is owned by MainWindow for the duration of a
      * flash session. Constructed in startConsolidatedFlash() and torn
      * down on dialog close. */

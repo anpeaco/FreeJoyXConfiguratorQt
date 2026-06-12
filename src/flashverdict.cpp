@@ -69,3 +69,18 @@ bool firmwareNewerAvailable(int devMajor, int devMinor, int devPatch,
                                      : (devPatch < bundledPatch);
     return !sameWireGen || olderSemver;
 }
+
+UpgradeButton classifyUpgradeButton(bool inFlasherMode, bool deviceConnected,
+                                    bool haveBoard, bool newerAvailable)
+{
+    /* Bootloader state wins: a board in the HID bootloader can be flashed even
+     * though it reports no params/board, and a stale params report must never
+     * make us treat a board-in-BL as a plain Upgrade. */
+    if (inFlasherMode) {
+        return UpgradeButton::Install;
+    }
+    if (deviceConnected && haveBoard && newerAvailable) {
+        return UpgradeButton::Upgrade;
+    }
+    return UpgradeButton::Disabled;
+}
