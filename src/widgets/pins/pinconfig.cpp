@@ -171,9 +171,16 @@ void PinConfig::applyBoardSpecificRoleFilters()
     // Slot 20 (PB9): only F411 has the I2C SDA cap. On other boards strip it.
     m_pinCBoxPtrList[20]->setExcludedRoles(
         isF411 ? QSet<int>() : QSet<int>{I2C_SDA});
-    // Slot 22 (PB11 on F103, PB2 on F411): I2C SDA cap only on F103. Strip on F411.
+    /* Slot 22 (PB11 on F103, PB2 on F411). On F411 strip:
+     *   - I2C_SDA   : PB2 has no I2C cap.
+     *   - BUTTON_GND: PB2 is BOOT1 and the WeAct BlackPill ties it to a board
+     *     pull-down, which overpowers the MCU's internal pull-up. A "Button to
+     *     Gnd" there reads LOW (stuck ON) and never releases -- the user can't
+     *     fix it in firmware (the pull-up is already applied). Hardware
+     *     limitation (anpeaco/FreeJoyXConfiguratorQt#98); "Button to Vcc" works,
+     *     so only the pull-up direction is removed. */
     m_pinCBoxPtrList[22]->setExcludedRoles(
-        isF411 ? QSet<int>{I2C_SDA} : QSet<int>());
+        isF411 ? QSet<int>{I2C_SDA, BUTTON_GND} : QSet<int>());
 }
 
 void PinConfig::retranslateUi()
@@ -957,6 +964,14 @@ void PinConfig::readFromConfig(){
      * SDA on PB9 with the displaced-pin confirmation dialog in front. */
     pin_t *pins = gEnv.pDeviceConfig->config.pins;
     if (m_lastBoard == 2 && pins[22] == I2C_SDA) {
+        pins[22] = NOT_USED;
+    }
+    /* Same idea for a "Button to Gnd" stranded on F411 slot 22 (PB2 / BOOT1):
+     * the board pull-down beats the internal pull-up, so it reads as a
+     * permanently-pressed button. Clearing it removes a stuck-ON input rather
+     * than leaving the user with a button they can never release
+     * (anpeaco/FreeJoyXConfiguratorQt#98). "Button to Vcc" still works there. */
+    if (m_lastBoard == 2 && pins[22] == BUTTON_GND) {
         pins[22] = NOT_USED;
     }
 
