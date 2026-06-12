@@ -26,7 +26,7 @@ permissions:
 # the default job token has read access) rather than rebuilt here -- that keeps
 # the Rust toolchain + libwdi/WDK mess out of this Qt workflow.
 env:
-  FLASH_HELPER_TAG: flash-v0.1.7   # pinned freejoyx-flash helper release tag
+  FLASH_HELPER_TAG: flash-v0.1.8   # pinned freejoyx-flash helper release tag
 
 jobs:
   build-linux:
