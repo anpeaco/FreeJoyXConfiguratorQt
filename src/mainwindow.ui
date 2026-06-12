@@ -327,8 +327,8 @@
              <property name="bottomMargin"><number>6</number></property>
              <property name="horizontalSpacing"><number>8</number></property>
              <property name="verticalSpacing"><number>2</number></property>
-             <item row="0" column="0"><widget class="QLabel" name="label_VersionKey"><property name="text"><string>Version:</string></property><property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Firmware version&lt;/b&gt;&lt;/div&gt;Reported live by the firmware. FreeJoyX devices show their FREEJOYX_VERSION; upstream FreeJoy devices show their nibble-encoded version (e.g. v1.7.8).</string></property></widget></item>
-             <item row="0" column="1"><widget class="QLabel" name="label_VersionVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Firmware version&lt;/b&gt;&lt;/div&gt;Reported live by the firmware. FreeJoyX devices show their FREEJOYX_VERSION; upstream FreeJoy devices show their nibble-encoded version (e.g. v1.7.8).</string></property></widget></item>
+             <item row="0" column="0"><widget class="QLabel" name="label_VersionKey"><property name="text"><string>Version:</string></property><property name="toolTip"><string>Firmware version&#10;&#10;Reported live by the firmware. FreeJoyX devices show their FREEJOYX_VERSION; upstream FreeJoy devices show their nibble-encoded version (e.g. v1.7.8).</string></property></widget></item>
+             <item row="0" column="1"><widget class="QLabel" name="label_VersionVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="toolTip"><string>Firmware version&#10;&#10;Reported live by the firmware. FreeJoyX devices show their FREEJOYX_VERSION; upstream FreeJoy devices show their nibble-encoded version (e.g. v1.7.8).</string></property></widget></item>
              <item row="1" column="0"><widget class="QLabel" name="label_VidPidKey"><property name="text"><string>VID:PID</string></property></widget></item>
              <item row="1" column="1"><widget class="QLabel" name="label_VidPidVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property></widget></item>
              <item row="2" column="0"><widget class="QLabel" name="label_SerialKey"><property name="text"><string>Serial:</string></property></widget></item>
@@ -342,10 +342,10 @@
                <item><widget class="QLabel" name="label_BoardVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignVCenter</set></property></widget></item>
               </layout>
              </item>
-             <item row="4" column="0"><widget class="QLabel" name="label_PacketsKey"><property name="text"><string>Packets:</string></property><property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Packets received&lt;/b&gt;&lt;/div&gt;USB report packets received from the device since it connected.</string></property></widget></item>
-             <item row="4" column="1"><widget class="QLabel" name="label_PacketsVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Packets received&lt;/b&gt;&lt;/div&gt;USB report packets received from the device since it connected.</string></property></widget></item>
-             <item row="5" column="0"><widget class="QLabel" name="label_RateKey"><property name="text"><string>Rate:</string></property><property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Packet rate&lt;/b&gt;&lt;/div&gt;Average time between received packets, sampled over 5 s.</string></property></widget></item>
-             <item row="5" column="1"><widget class="QLabel" name="label_RateVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Packet rate&lt;/b&gt;&lt;/div&gt;Average time between received packets, sampled over 5 s.</string></property></widget></item>
+             <item row="4" column="0"><widget class="QLabel" name="label_PacketsKey"><property name="text"><string>Packets:</string></property><property name="toolTip"><string>Packets received&#10;&#10;USB report packets received from the device since it connected.</string></property></widget></item>
+             <item row="4" column="1"><widget class="QLabel" name="label_PacketsVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="toolTip"><string>Packets received&#10;&#10;USB report packets received from the device since it connected.</string></property></widget></item>
+             <item row="5" column="0"><widget class="QLabel" name="label_RateKey"><property name="text"><string>Rate:</string></property><property name="toolTip"><string>Packet rate&#10;&#10;Average time between received packets, sampled over 5 s.</string></property></widget></item>
+             <item row="5" column="1"><widget class="QLabel" name="label_RateVal"><property name="text"><string notr="true">—</string></property><property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property><property name="toolTip"><string>Packet rate&#10;&#10;Average time between received packets, sampled over 5 s.</string></property></widget></item>
             </layout>
            </widget>
           </item>
@@ -368,7 +368,7 @@
             <property name="enabled"><bool>false</bool></property>
             <property name="minimumSize"><size><width>165</width><height>37</height></size></property>
             <property name="text"><string>Upgrade firmware</string></property>
-            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Upgrade firmware in one click&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Reads your current config.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Flashes the latest matching firmware.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Writes the config back.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string></property>
+            <property name="toolTip"><string>Upgrade firmware in one click&#10;&#10;- Reads your current config.&#10;- Flashes the latest matching firmware.&#10;- Writes the config back.</string></property>
            </widget>
           </item>
           <item>
@@ -407,7 +407,7 @@
            <widget class="QPushButton" name="pushButton_ResetAllPins">
             <property name="minimumSize"><size><width>165</width><height>37</height></size></property>
             <property name="text"><string>Reset All Settings</string></property>
-            <property name="toolTip"><string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Reset all settings to factory defaults&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Resets every setting (pins, axes, buttons, encoders, sensors, USB identity, gestures, logic, LEDs, shifts &amp; timers).&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;The change is in-memory only — click &lt;b&gt;Write Config&lt;/b&gt; to apply it to the connected device.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string></property>
+            <property name="toolTip"><string>Reset all settings to factory defaults&#10;&#10;- Resets every setting (pins, axes, buttons, encoders, sensors, USB identity, gestures, logic, LEDs, shifts &amp; timers).&#10;- The change is in-memory only — click **Write Config** to apply it to the connected device.</string></property>
             <property name="checked"><bool>false</bool></property>
            </widget>
           </item>

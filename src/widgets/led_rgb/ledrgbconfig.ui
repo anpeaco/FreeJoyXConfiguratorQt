@@ -145,7 +145,7 @@
         <item>
          <widget class="AltSpinBox" name="spinBox_RBBrightness">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Rainbow effect brightness&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>Rainbow effect brightness</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>

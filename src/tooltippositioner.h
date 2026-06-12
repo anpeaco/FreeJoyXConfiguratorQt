@@ -46,6 +46,8 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+#include "tip_format.h"   // freejoy_style::formatTip -- plain-text -> canonical markup
+
 namespace freejoy_ui {
 
 // Frameless, non-focus-stealing tooltip surface. The window is translucent (for a
@@ -58,7 +60,7 @@ namespace freejoy_ui {
 class FloatingTip : public QWidget
 {
 public:
-    static constexpr int kMargin = 18;        // shadow room around the box
+    static constexpr int kMargin = 34;        // shadow room around the box
     static constexpr int kPadH = 8;           // box interior padding (text inset)
     static constexpr int kPadV = 5;
     static constexpr int kMaxCardWidth = 300; // wrap only beyond this
@@ -112,12 +114,16 @@ protected:
 
         // Soft drop shadow: layered translucent rounded rects, nudged down and
         // expanding outward so the overlap density fades to nothing at the edge.
-        const int blur = 11;
-        const qreal dy = 2.0;
+        // Tuned (deeper + larger spread) to read like the native Windows dialog
+        // shadow rather than a faint hint -- bigger blur, stronger near-edge
+        // density, and a larger downward nudge. kMargin must stay >= blur + dy
+        // so the bottom band isn't clipped.
+        const int blur = 26;
+        const qreal dy = 4.0;
         p.setPen(Qt::NoPen);
         for (int i = blur; i >= 1; --i) {
             QColor c(0, 0, 0);
-            c.setAlphaF(0.20 / blur);
+            c.setAlphaF(0.32 / blur);
             p.setBrush(c);
             p.drawRoundedRect(box.adjusted(-i, -i + dy, i, i + dy), 5 + i, 5 + i);
         }
@@ -209,7 +215,10 @@ private:
         if (m_tip == nullptr) {
             m_tip = new FloatingTip();
         }
-        m_tip->setTipText(tip);              // sizes the card (smart wrap)
+        // Author tooltips as plain delimited text (see tip_format.h); formatTip
+        // turns them into the canonical heading/body/bullet markup at display
+        // time. Strings that are already HTML pass through untouched.
+        m_tip->setTipText(freejoy_style::formatTip(tip));   // sizes the card (smart wrap)
         const QSize cs = m_tip->cardSize();  // the box, excluding shadow margin
         const int m = m_tip->margin();
 

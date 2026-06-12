@@ -438,7 +438,7 @@
       <item row="3" column="3" colspan="2">
        <widget class="QSlider" name="sliderH_Filter">
         <property name="toolTip">
-         <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Input smoothing&lt;/b&gt;&lt;/div&gt;0 = off; higher = more filtering (smoother but slower response).</string>
+         <string>Input smoothing&#10;&#10;0 = off; higher = more filtering (smoother but slower response).</string>
         </property>
         <property name="maximum">
          <number>7</number>

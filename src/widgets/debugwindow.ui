@@ -65,7 +65,7 @@
         <item>
          <widget class="QPushButton" name="pushButton_LogMarker">
           <property name="toolTip">
-           <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Add a log marker&lt;/b&gt;&lt;/div&gt;Writes a timestamped marker line to the log so you can find this moment quickly when reviewing later.</string>
+           <string>Add a log marker&#10;&#10;Writes a timestamped marker line to the log so you can find this moment quickly when reviewing later.</string>
           </property>
           <property name="text">
            <string/>
@@ -91,7 +91,7 @@
         <item>
          <widget class="QPushButton" name="pushButton_LogClear">
           <property name="toolTip">
-           <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Clear the log view&lt;/b&gt;&lt;/div&gt;Does not touch the on-disk log file.</string>
+           <string>Clear the log view&#10;&#10;Does not touch the on-disk log file.</string>
           </property>
           <property name="text">
            <string/>

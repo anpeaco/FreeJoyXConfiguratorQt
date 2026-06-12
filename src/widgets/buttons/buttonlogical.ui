@@ -129,7 +129,7 @@
      <property name="autoDefault"><bool>false</bool></property>
      <property name="default"><bool>false</bool></property>
      <property name="toolTip">
-      <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Assign a physical button&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;&lt;b&gt;Click&lt;/b&gt;, then press a physical button to bind it to this slot.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;&lt;b&gt;Double-click&lt;/b&gt;, then press a physical button to bind it, and auto-arm the next row (adding one if needed).&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Press &lt;b&gt;Esc&lt;/b&gt; to cancel.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Times out after 5 seconds.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
+      <string>Assign a physical button&#10;&#10;- **Click**, then press a physical button to bind it to this slot.&#10;- **Double-click**, then press a physical button to bind it, and auto-arm the next row (adding one if needed).&#10;- Press **Esc** to cancel.&#10;- Times out after 5 seconds.</string>
      </property>
     </widget>
    </item>
@@ -259,7 +259,7 @@
       </size>
      </property>
      <property name="toolTip">
-      <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Invert input&lt;/b&gt;&lt;/div&gt;HIGH becomes pressed, LOW becomes released.</string>
+      <string>Invert input&#10;&#10;HIGH becomes pressed, LOW becomes released.</string>
      </property>
      <property name="text">
       <string/>
@@ -330,7 +330,7 @@
       <bool>true</bool>
      </property>
      <property name="toolTip">
-      <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Logic operator&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;The boolean operation applied to Source A (this button) and Source B.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Only used when this slot's Function is set to Logic.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
+      <string>Logic operator&#10;&#10;- The boolean operation applied to Source A (this button) and Source B.&#10;- Only used when this slot's Function is set to Logic.</string>
      </property>
     </widget>
    </item>
@@ -359,7 +359,7 @@
      <property name="autoDefault"><bool>false</bool></property>
      <property name="default"><bool>false</bool></property>
      <property name="toolTip">
-      <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Assign Source B&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;&lt;b&gt;Click&lt;/b&gt;, then press a physical button to bind it to Source B.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Press &lt;b&gt;Esc&lt;/b&gt; to cancel.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Times out after 5 seconds.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Only used when Function is set to Logic.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
+      <string>Assign Source B&#10;&#10;- **Click**, then press a physical button to bind it to Source B.&#10;- Press **Esc** to cancel.&#10;- Times out after 5 seconds.&#10;- Only used when Function is set to Logic.</string>
      </property>
     </widget>
    </item>
@@ -369,7 +369,7 @@
       <bool>false</bool>
      </property>
      <property name="toolTip">
-      <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Source B&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;The second input (button number) for the logic operation.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Only used when this slot's Function is set to Logic.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
+      <string>Source B&#10;&#10;- The second input (button number) for the logic operation.&#10;- Only used when this slot's Function is set to Logic.</string>
      </property>
      <property name="sizePolicy">
       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -517,7 +517,7 @@
      <property name="autoDefault"><bool>false</bool></property>
      <property name="default"><bool>false</bool></property>
      <property name="toolTip">
-      <string>&lt;div style="margin-bottom:11px;"&gt;&lt;b&gt;Clear row&lt;/b&gt;&lt;/div&gt;&lt;table cellspacing="0" cellpadding="0" style="margin:0 0 0 4px;"&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;Removes this slot's binding and resets all its settings.&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td valign="top" style="padding:0 8px 4px 0;"&gt;&amp;bull;&lt;/td&gt;&lt;td style="padding:0 0 4px 0;"&gt;In &lt;b&gt;Show bound only&lt;/b&gt;, the row drops out of the list.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</string>
+      <string>Clear row&#10;&#10;- Removes this slot's binding and resets all its settings.&#10;- In **Show bound only**, the row drops out of the list.</string>
      </property>
     </widget>
    </item>
