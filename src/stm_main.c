@@ -18,15 +18,24 @@ dev_config_t InitConfig (void)
     dev_config_t init_config =
         {
             .firmware_version = FIRMWARE_VERSION,	// auto-syncs with the compiled version. Same fix as FreeJoyX/application/Inc/main.h: hardcoding here meant a fresh InitConfig() always seeded the legacy v1730 value, which then triggered the version-mismatch path on the device.
-            /* Default device name shown in the OS dispatcher. Auto-
-               syncs to FREEJOYX_VERSION (semver) so a factory-reset
-               device reports the project's user-facing version, not
-               the wire-format hex it used to. Mirror of
+            /* Default device name shown in the OS dispatcher. Plain
+               "FreeJoyX" (no version suffix) so the iProduct string
+               never goes stale across upgrades. Mirror of
                FreeJoyX/application/Inc/main.h's init_config.device_name
                -- both copies must change together (this one drives the
                configurator's "Reset All" and fresh-session defaults;
                the firmware's drives the device's own factory-reset
-               behaviour). */
+               behaviour).
+
+               Previously this embedded FREEJOYX_VERSION one ASCII digit
+               per component ('0' + component). That diverged from the
+               firmware (which dropped the version suffix for issue
+               anpeaco/FreeJoyX#45 -- embedded versions caused stale
+               joy.cpl names) AND broke outright once any component
+               reached 10: '0' + 10 = ':' and '0' + 11 = ';', so v0.1.11
+               seeded the name "FreeJoyX 0.1.;". The version is surfaced
+               through params_report_t.freejoyx_version_* (sidebar) and
+               the binary filename, never iProduct. */
             .device_name[0] =  'F',
             .device_name[1] =  'r',
             .device_name[2] =  'e',
@@ -35,12 +44,12 @@ dev_config_t InitConfig (void)
             .device_name[5] =  'o',
             .device_name[6] =  'y',
             .device_name[7] =  'X',
-            .device_name[8] =  ' ',
-            .device_name[9] =  '0' + FREEJOYX_VERSION_MAJOR,
-            .device_name[10] = '.',
-            .device_name[11] = '0' + FREEJOYX_VERSION_MINOR,
-            .device_name[12] = '.',
-            .device_name[13] = '0' + FREEJOYX_VERSION_PATCH,
+            .device_name[8] =  0,
+            .device_name[9] =  0,
+            .device_name[10] = 0,
+            .device_name[11] = 0,
+            .device_name[12] = 0,
+            .device_name[13] = 0,
             .device_name[14] = 0,
             .device_name[15] = 0,
             .device_name[16] = 0,
