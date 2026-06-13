@@ -47,6 +47,10 @@ Check the upstream [FreeJoy wiki](https://github.com/FreeJoy-Team/FreeJoyWiki) f
 
 Full history on the [Releases](https://github.com/anpeaco/FreeJoyXConfiguratorQt/releases) page.
 
+### v0.1.12
+- **Fixed the default USB device name corrupting to `FreeJoyX 0.1.;`.** The default config built the name one ASCII char per version component (`'0' + patch`), which overflowed past `'9'` once a component hit 10 (`'0'+11 = ';'`, `'0'+10 = ':'`). It now seeds a plain `"FreeJoyX"`, mirroring the firmware (the version is shown in the sidebar + filename, never iProduct). A buggy name already stored on a device clears on the next **Write Config**. (ConfiguratorQt#101)
+- Pairs with firmware **v0.1.12** (F411 timer clock-base fixes). Flasher helper pinned to **flash-v0.1.9**.
+
 ### v0.1.10
 - **Release bundle now ships F103 *and* F411 firmware** — the Windows zip / Linux archive carry `boot` + `app` `.bin`s for **both** boards under `firmware/` (previously F411 only), so a download has current firmware for either target. Flasher helper bumped to the pinned `flash-v0.1.7` (reliable post-install DFU leave + timing flags).
 - Pairs with firmware **v0.1.10** (F411 joystick-report freeze fix). App version 0.1.9 → 0.1.10 (from the release tag); `FREEJOYX_VERSION` synced 0.1.9 → 0.1.10 with the firmware repo.
