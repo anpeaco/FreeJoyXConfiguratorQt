@@ -214,6 +214,14 @@ private:
         }
         if (m_tip == nullptr) {
             m_tip = new FloatingTip();
+        } else if (m_tip->isVisible()) {
+            // Rapid grace-path switch (e.g. Source B -> Operator): the tip window
+            // is still shown at the PREVIOUS tip's size. Resizing a visible
+            // top-level window to taller content makes Qt log a "setGeometry
+            // override" warning (its cached minimumSize is stale). Hide first so
+            // setTipText's adjustSize happens off-screen and the correct size is
+            // applied once on show() below -- no override, no warning.
+            m_tip->hide();
         }
         // Author tooltips as plain delimited text (see tip_format.h); formatTip
         // turns them into the canonical heading/body/bullet markup at display
