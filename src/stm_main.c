@@ -64,7 +64,7 @@ dev_config_t InitConfig (void)
              * FreeJoyX/application/Inc/main.h's init_config.pid. */
             .pid = 0x5760,
 
-            .button_debounce_ms = 50,					// debounce time for all buttons
+            .button_debounce_ms = 20,					// debounce time for all buttons (default 20 ms; window resets on bounce so this is a min settle time)
 
             .encoder_press_time_ms = 20,			// amount of milliseconds virtual button
             // will be pressed at encoder increment/decrement
