@@ -8,6 +8,7 @@
 #include "buttonlogical.h"
 #include "buttonphysical.h"
 #include "physref.h"
+#include "reordermath.h"
 
 #include "common_defines.h"
 #include "common_types.h"
@@ -179,6 +180,12 @@ private:
      * sized to the contents widget's full width. */
     void showDropIndicatorAtY(int y);
 
+    /* The geometry of the currently VISIBLE logical rows, top-to-bottom, for
+     * the drag-reorder hit-testing (reordermath.h). Skips rows hidden by the
+     * "Show bound only" filter -- those keep stale geometry and would corrupt
+     * the drop target / indicator math. */
+    QVector<freejoy::RowGeom> visibleRowGeom() const;
+
     QFrame *m_dropIndicator;
 
 private slots:
@@ -290,6 +297,15 @@ private:
      * when it has advanced further down the list (i.e. a slot was just bound);
      * passed only from the interactive binding path, not toggle/load/clear. */
     void applyBoundFilter(bool revealTrailing = false);
+
+    /* Recompute and push the host HID button number onto every logical row's
+     * "#" badge. Mirrors the firmware's enabled-slot compaction (see
+     * hostbuttonnum.h): bound + non-disabled + non-directional-POV slots are
+     * numbered 1..N in slot order; everything else shows an en-dash. Cheap
+     * (one pass over the 128 rows); called from applyBoundFilter and on
+     * type / disable changes that affect the count. */
+    void refreshReportNumbers();
+
     bool m_showBoundOnly = false;
     int  m_trailingSlot  = -1;  // current trailing "add" row index (filter on), -1 otherwise
 

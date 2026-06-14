@@ -193,6 +193,8 @@ HEADERS += \
     widgets/buttons/buttonlogical.h \
     widgets/buttons/buttonphysical.h \
     widgets/buttons/physref.h \
+    widgets/buttons/hostbuttonnum.h \
+    widgets/buttons/reordermath.h \
     widgets/pins/currentconfig.h \
     widgets/debugwindow.h \
     widgets/encoders/encoders.h \

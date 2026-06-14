@@ -1,6 +1,7 @@
 #include "buttonconfig.h"
 #include "ui_buttonconfig.h"
 #include "style_helpers.h"
+#include "hostbuttonnum.h"
 #include <QApplication>
 #include <QHideEvent>
 #include <QMouseEvent>
@@ -463,6 +464,13 @@ void ButtonConfig::functionTypeChanged(button_type_t current, button_type_t prev
         emit encoderInputChanged(0, (buttonIndex + 1) * -1);
     }
     typeLimit(current, previous);  // updates cap state and reapplies the dropdown filter
+
+    // A type change can flip whether the slot is a reported button (e.g. into
+    // or out of a POV direction), shifting the host HID numbers. Skip during a
+    // bulk load -- readFromConfig's trailing applyBoundFilter refreshes once.
+    if (!m_configLoadInProgress) {
+        refreshReportNumbers();
+    }
 }
 
 // typeLimit only updates the global cap-tracking state; the actual dropdown
@@ -708,6 +716,11 @@ void ButtonConfig::readFromConfig()
 
 void ButtonConfig::applyBoundFilter(bool revealTrailing)
 {
+    // Keep the host HID button numbers current. applyBoundFilter is the common
+    // hook for the binding-affecting paths (bind change, filter toggle, load,
+    // clear, move), so refreshing here covers them all in one place.
+    refreshReportNumbers();
+
     if (!m_showBoundOnly) {
         // Filter off: every slot is visible (today's behaviour).
         for (ButtonLogical *row : m_logicButtonPtrList) {
@@ -752,6 +765,20 @@ void ButtonConfig::applyBoundFilter(bool revealTrailing)
     // clear (revealTrailing == false) or on an unbind (trailing retreats up).
     if (revealTrailing && trailing >= 0 && trailing > prevTrailing) {
         scrollRowIntoView(trailing);
+    }
+}
+
+void ButtonConfig::refreshReportNumbers()
+{
+    QVector<freejoy::ReportSlot> rows;
+    rows.reserve(m_logicButtonPtrList.size());
+    for (ButtonLogical *row : m_logicButtonPtrList) {
+        rows.append({ row->currentPhysicalNum() >= 0,
+                      row->currentButtonType() });
+    }
+    const QVector<int> numbers = freejoy::computeReportNumbers(rows);
+    for (int i = 0; i < m_logicButtonPtrList.size(); ++i) {
+        m_logicButtonPtrList[i]->setReportNumber(numbers[i]);
     }
 }
 
@@ -836,11 +863,10 @@ bool ButtonConfig::eventFilter(QObject *obj, QEvent *event)
             // k-1, not k. Without this adjustment a downward drop lands
             // one row too low. Skipped for the "below the last row's
             // midline" tail, where the user genuinely wants the final
-            // slot (n-1) and the same removal-shift makes that work.
-            const int n = m_logicButtonPtrList.size();
-            QWidget *last = n > 0 ? m_logicButtonPtrList.last() : nullptr;
-            const bool belowLast = last
-                && de->pos().y() > last->y() + last->height() / 2;
+            // slot and the same removal-shift makes that work. Uses the
+            // last VISIBLE row (the filter can hide the literal last row).
+            const bool belowLast = freejoy::isBelowLastRow(visibleRowGeom(),
+                                                           de->pos().y());
             if (!belowLast && srcSlot < dstSlot) {
                 dstSlot--;
             }
@@ -855,56 +881,41 @@ bool ButtonConfig::eventFilter(QObject *obj, QEvent *event)
     return QWidget::eventFilter(obj, event);
 }
 
+QVector<freejoy::RowGeom> ButtonConfig::visibleRowGeom() const
+{
+    // VISIBLE rows only, in slot (== top-to-bottom) order. Rows hidden by the
+    // "Show bound only" filter keep stale geometry, so feeding them to the hit
+    // test made the midline sequence non-monotonic and collapsed every drop
+    // onto one (hidden) slot -- the reorder bug. m_logicButtonPtrList index ==
+    // config slot, so .slot is just i.
+    QVector<freejoy::RowGeom> rows;
+    for (int i = 0; i < m_logicButtonPtrList.size(); ++i) {
+        QWidget *w = m_logicButtonPtrList[i];
+        if (!w->isVisible()) continue;
+        rows.append({ i, w->y(), w->height() });
+    }
+    return rows;
+}
+
 int ButtonConfig::targetSlotForY(int yPos) const
 {
-    // Walk visible button rows; first row whose midline is below cursor
-    // wins -- meaning "drop above row i's midline -> target slot i".
-    // Cursor below all rows lands at the last slot.
-    const int n = m_logicButtonPtrList.size();
-    if (n == 0) return -1;
-    for (int i = 0; i < n; ++i) {
-        QWidget *w = m_logicButtonPtrList[i];
-        const int mid = w->y() + w->height() / 2;
-        if (yPos < mid) return i;
-    }
-    return n - 1;
+    return freejoy::dropTargetSlot(visibleRowGeom(), yPos);
 }
 
 int ButtonConfig::indicatorYForCursor(int yPos) const
 {
-    // For drops above row 0's midline, line goes at row 0's top.
-    // For drops below the last row's midline, line goes at last row's bottom.
-    // Otherwise line goes at the top of the row whose midline is just
-    // below the cursor (= the gap between that row and the previous).
-    const int n = m_logicButtonPtrList.size();
-    if (n == 0) return 0;
-    QWidget *first = m_logicButtonPtrList[0];
-    QWidget *last  = m_logicButtonPtrList[n - 1];
-    if (yPos < first->y() + first->height() / 2) {
-        return first->y();
-    }
-    if (yPos > last->y() + last->height() / 2) {
-        return last->y() + last->height();
-    }
-    for (int i = 1; i < n; ++i) {
-        QWidget *w = m_logicButtonPtrList[i];
-        if (yPos < w->y() + w->height() / 2) {
-            return w->y();
-        }
-    }
-    return last->y() + last->height();
+    return freejoy::dropIndicatorY(visibleRowGeom(), yPos);
 }
 
 void ButtonConfig::showDropIndicatorAtY(int y)
 {
     const int width = ui->scrollAreaWidgetContents->width();
-    // Match the live row height so the ghost reads as a placeholder
-    // for the row about to be inserted; fall back to 32 (the static
-    // ButtonLogical row height from buttonlogical.ui) before any rows
-    // are realised.
-    const int rowH = m_logicButtonPtrList.isEmpty()
-                     ? 32
-                     : m_logicButtonPtrList.first()->height();
+    // Match the live row height so the ghost reads as a placeholder for the
+    // row about to be inserted; use a VISIBLE row (the filter can hide the
+    // first list row, whose stale height would be wrong). Fall back to 32
+    // (the static ButtonLogical row height from buttonlogical.ui).
+    const QVector<freejoy::RowGeom> vis = visibleRowGeom();
+    const int rowH = vis.isEmpty() ? 32 : vis.first().height;
     m_dropIndicator->setGeometry(0, y - rowH / 2, width, rowH);
     m_dropIndicator->raise();
     m_dropIndicator->show();

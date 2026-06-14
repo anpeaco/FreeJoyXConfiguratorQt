@@ -419,6 +419,20 @@ void ButtonLogical::setSlotDisabled(bool disabled)
     }
 }
 
+void ButtonLogical::setReportNumber(int hidNumber)
+{
+    if (hidNumber >= 1) {
+        ui->label_LogicalButtonNumber->setNum(hidNumber);
+    } else {
+        // Not reported as a joystick button (unbound / disabled / POV
+        // direction). Show an en-dash rather than a misleading number.
+        ui->label_LogicalButtonNumber->setText(QStringLiteral("–"));
+    }
+    // The badge now shows the host HID button number; keep the raw config
+    // slot discoverable (drag-reorder, debug, error messages all use it).
+    ui->label_LogicalButtonNumber->setToolTip(tr("Config slot %1").arg(m_buttonIndex + 1));
+}
+
 void ButtonLogical::setButtonState(bool state)
 {
     if (state != m_currentState) {
@@ -455,11 +469,14 @@ void ButtonLogical::setButtonState(bool state)
     if (state != m_debugState) {
         if (state) {
             if (gEnv.pDebugWindow) {
-                gEnv.pDebugWindow->logicalButtonState(ui->label_LogicalButtonNumber->text().toInt(), true);
+                // Key by the config slot (m_buttonIndex+1), not the badge text:
+                // the badge now shows the host HID button number (and may be an
+                // en-dash), while the debug window is indexed by logical slot.
+                gEnv.pDebugWindow->logicalButtonState(m_buttonIndex + 1, true);
             }
         } else {
             if (gEnv.pDebugWindow) {
-                gEnv.pDebugWindow->logicalButtonState(ui->label_LogicalButtonNumber->text().toInt(), false);
+                gEnv.pDebugWindow->logicalButtonState(m_buttonIndex + 1, false);
             }
         }
         m_debugState = state;

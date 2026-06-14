@@ -53,6 +53,14 @@ public:
 
     void setButtonState(bool setState);
 
+    /* Set the row's "#" badge to the HID button number the host actually
+     * sees (the compacted, contiguous number -- ButtonConfig computes it via
+     * freejoy::computeReportNumbers). hidNumber < 1 means this slot is not
+     * reported as a joystick button (unbound, disabled, or a POV direction):
+     * the badge shows an en-dash. The raw config slot stays available as the
+     * badge tooltip for power users. */
+    void setReportNumber(int hidNumber);
+
     void setPhysicButton(int buttonIndex);
     void setSourceBButton(int buttonIndex);
     /* Issue #39: Sequential Assign uses this to move keyboard/UI
