@@ -116,6 +116,10 @@ signals:
      * listing them so the reassignment isn't silent (#57). Each line is
      * "<pin> -- was <role>". */
     void pinRolesAutoDisplaced(const QStringList &lines);
+    /* Board-correct names of the pins set to the SPI_GPIO_CS role, in pin
+     * (config index) order -- so the GPIO-expander table can show which CS pin
+     * each SPI chip gets, matched in slot order (same as the firmware). */
+    void gpioExpCsPinsChanged(const QStringList &csPinNames);
     //void pinTypeSelected(Pin pin, pin_types_t type, bool selected);
 
     //protected:
@@ -161,6 +165,7 @@ private:
     int m_tleGenCount = 0;
 
     void signalsForWidgets(int currentDeviceEnum, int previousDeviceEnum, int pinNumber, QString pinName);
+    void emitGpioExpCsPins();   // recompute + emit gpioExpCsPinsChanged (SPI_GPIO_CS pins, in order)
     void pinTypeLimit(int currentDeviceEnum, int previousDeviceEnum);
     void setCurrentConfig(int currentDeviceEnum, int previousDeviceEnum, int pinNumber, QString pinName);
     void blockPA8PWM(int currentDeviceEnum, int previousDeviceEnum);

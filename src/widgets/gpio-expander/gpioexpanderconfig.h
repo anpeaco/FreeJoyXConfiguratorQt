@@ -9,6 +9,7 @@
 
 #include <QWidget>
 #include <QList>
+#include <QStringList>
 
 class QComboBox;
 class QSpinBox;
@@ -34,12 +35,20 @@ signals:
      * Buttons tab can sub-divide the expander section by chip. */
     void gpioExpBreakdownChanged(const QList<int> &perChip);
 
+public slots:
+    /* Ordered names of the pins set to the SPI_GPIO_CS role in Pin Config
+     * (pin order). The configurator pushes these (board-correct labels) so the
+     * CS column can show which CS pin each SPI expander gets, matched in slot
+     * order -- mirrors how the shift registers display their pins. */
+    void onCsPinsChanged(const QStringList &csPinNames);
+
 private slots:
     void onRowChanged();
 
 private:
     struct Row {
         QComboBox *type;      // 0 = Disabled, 1 = MCP23017 (I2C), 2 = MCP23S17 (SPI)
+        QLabel    *csPin;     // read-only: matched SPI_GPIO_CS pin (SPI rows), else "-"
         QComboBox *address;   // I2C only: index 0..7 = 0x20..0x27
         QComboBox *wiring;    // 0 = buttons to GND (pull-up), 1 = to VCC (ext pull-down)
         QSpinBox  *count;     // 0..16
@@ -47,11 +56,13 @@ private:
     enum { T_DISABLED = 0, T_I2C = 1, T_SPI = 2 };
     enum { W_GND = 0, W_VCC = 1 };
     QList<Row> m_rows;
+    QStringList m_csPinNames;             // CS-role pins from Pin Config, in pin order
     QFrame    *m_warnBanner = nullptr;   // shared alert-banner look (triangle-alert icon)
     QLabel    *m_warnText   = nullptr;   // its message label (updated by validate())
 
     void emitCounts();
     void validate();
+    void updatePinDisplays();         // fill the CS column from m_csPinNames (in-order)
     int  addressOfRow(int i) const;   // 0 (disabled) or 0x20..0x27
 };
 

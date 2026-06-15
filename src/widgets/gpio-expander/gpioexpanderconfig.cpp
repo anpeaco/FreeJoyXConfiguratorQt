@@ -28,9 +28,10 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
 
     int r = 0;
     grid->addWidget(new QLabel(tr("Type"),    this), r, 1);
-    grid->addWidget(new QLabel(tr("Address"), this), r, 2);
-    grid->addWidget(new QLabel(tr("Wiring"),  this), r, 3);
-    grid->addWidget(new QLabel(tr("Buttons"), this), r, 4);
+    grid->addWidget(new QLabel(tr("CS pin"),  this), r, 2);
+    grid->addWidget(new QLabel(tr("Address"), this), r, 3);
+    grid->addWidget(new QLabel(tr("Wiring"),  this), r, 4);
+    grid->addWidget(new QLabel(tr("Buttons"), this), r, 5);
     ++r;
 
     for (int i = 0; i < MAX_GPIO_EXPANDER_NUM; ++i, ++r) {
@@ -43,19 +44,25 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
         row.type->addItem(tr("MCP23S17 (SPI)"));
         grid->addWidget(row.type, r, 1);
 
+        // Read-only: the SPI chip's matched chip-select pin (assigned in Pin
+        // Config), like the shift registers show their latch/clk/data pins.
+        row.csPin = new QLabel(QStringLiteral("-"), this);
+        row.csPin->setAlignment(Qt::AlignCenter);
+        grid->addWidget(row.csPin, r, 2);
+
         row.address = new QComboBox(this);
         for (int a = kAddrLo; a <= kAddrHi; ++a)
             row.address->addItem(QString("0x%1").arg(a, 2, 16, QChar('0')));
-        grid->addWidget(row.address, r, 2);
+        grid->addWidget(row.address, r, 3);
 
         row.wiring = new QComboBox(this);
         row.wiring->addItem(tr("Buttons to GND"));   // internal pull-up, default polarity
         row.wiring->addItem(tr("Buttons to VCC"));   // external pull-down, inverted polarity
-        grid->addWidget(row.wiring, r, 3);
+        grid->addWidget(row.wiring, r, 4);
 
         row.count = new QSpinBox(this);
         row.count->setRange(0, 16);
-        grid->addWidget(row.count, r, 4);
+        grid->addWidget(row.count, r, 5);
 
         connect(row.type, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 this, &GpioExpanderConfig::onRowChanged);
@@ -76,7 +83,29 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
     for (QLabel *l : m_warnBanner->findChildren<QLabel *>())
         if (l->wordWrap()) { m_warnText = l; break; }
     m_warnBanner->setVisible(false);
-    grid->addWidget(m_warnBanner, r, 0, 1, 5);
+    grid->addWidget(m_warnBanner, r, 0, 1, 6);
+}
+
+void GpioExpanderConfig::onCsPinsChanged(const QStringList &csPinNames)
+{
+    m_csPinNames = csPinNames;
+    updatePinDisplays();
+}
+
+void GpioExpanderConfig::updatePinDisplays()
+{
+    // SPI expanders take the SPI_GPIO_CS pins in slot order (matching the
+    // firmware). Walk the rows; each SPI row consumes the next CS pin.
+    int next = 0;
+    for (const Row &row : m_rows) {
+        if (row.type->currentIndex() == T_SPI) {
+            row.csPin->setText(next < m_csPinNames.size() ? m_csPinNames.at(next)
+                                                          : tr("(none)"));
+            ++next;
+        } else {
+            row.csPin->setText(QStringLiteral("-"));
+        }
+    }
 }
 
 int GpioExpanderConfig::addressOfRow(int i) const
@@ -106,6 +135,7 @@ void GpioExpanderConfig::readFromConfig()
         row.wiring->setCurrentIndex((c.flags & FLAG_INVERT) ? W_VCC : W_GND);
         row.address->setEnabled(type == T_I2C);
     }
+    updatePinDisplays();
     validate();
     emitCounts();
 }
@@ -137,6 +167,7 @@ void GpioExpanderConfig::onRowChanged()
 {
     for (const Row &row : m_rows)
         row.address->setEnabled(row.type->currentIndex() == T_I2C);
+    updatePinDisplays();
     validate();
     emitCounts();
 }

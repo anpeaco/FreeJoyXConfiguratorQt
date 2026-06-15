@@ -398,6 +398,18 @@ void PinConfig::pinIndexChanged(int currentDeviceEnum, int previousDeviceEnum, i
 
     // keep the I2C / SPI quick-setup toggles in sync with the live pin roles
     refreshBusToggles();
+
+    // refresh the GPIO-expander CS-pin column (a CS role may have changed)
+    emitGpioExpCsPins();
+}
+
+void PinConfig::emitGpioExpCsPins()
+{
+    QStringList names;
+    for (int p = 1; p <= USED_PINS_NUM; ++p)
+        if (pinRole(p) == SPI_GPIO_CS)
+            names << pinGuiName(p);
+    emit gpioExpCsPinsChanged(names);
 }
 
 
@@ -1007,6 +1019,9 @@ void PinConfig::readFromConfig(){
      * polish (e.g. bus-pin enable/disable in refreshBusToggles), so repaint
      * from the cache or the pins revert to black after a Read / auto-read. */
     reapplyAllRoleColors();
+
+    // populate the GPIO-expander CS-pin column for the freshly loaded config
+    emitGpioExpCsPins();
 }
 
 void PinConfig::writeToConfig(){
