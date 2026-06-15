@@ -8,7 +8,7 @@
 #include "global.h"
 
 #define PINS_COUNT 30
-#define PIN_TYPE_COUNT 32
+#define PIN_TYPE_COUNT 33
 enum // split out into a separate file?                 // move all structs into global.h?
 {
   ANALOG_IN = 100,
@@ -359,6 +359,13 @@ private:
 
         {AS5048A_CS,    tr("AS5048A encoder"),
         tr("Chip-select for an AMS AS5048A 14-bit magnetic rotary encoder on SPI. Auto-assigns the shared SPI SCK/MISO/MOSI lines; the angle reads out as an axis."),
+        GRP_SPI_SENSOR,
+        {ALL},
+        {SPI1_SCK, SPI1_MOSI, SPI1_MISO},
+        {SPI_SCK, SPI_MOSI, SPI_MISO}, {QColor(53, 153, 120)}},
+
+        {SPI_GPIO_CS,   tr("MCP23S17 expander CS"),
+        tr("Chip-select for an MCP23S17 16-bit SPI GPIO button expander. Auto-assigns the shared SPI SCK/MISO/MOSI lines. Set the expander's button count etc. on the Shift Registers tab; CS pins map to SPI expander slots in pin order."),
         GRP_SPI_SENSOR,
         {ALL},
         {SPI1_SCK, SPI1_MOSI, SPI1_MISO},

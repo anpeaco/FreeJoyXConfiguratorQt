@@ -38,11 +38,13 @@ private slots:
 
 private:
     struct Row {
-        QComboBox *address;   // index 0 = Disabled, 1..8 = 0x20..0x27
+        QComboBox *type;      // 0 = Disabled, 1 = MCP23017 (I2C), 2 = MCP23S17 (SPI)
+        QComboBox *address;   // I2C only: index 0..7 = 0x20..0x27
         QSpinBox  *count;     // 0..16
         QCheckBox *pullups;   // GPPU
         QCheckBox *invert;    // IPOL
     };
+    enum { T_DISABLED = 0, T_I2C = 1, T_SPI = 2 };
     QList<Row> m_rows;
     QLabel    *m_warning = nullptr;
 
