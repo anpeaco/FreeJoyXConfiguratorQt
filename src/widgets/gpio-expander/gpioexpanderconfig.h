@@ -41,11 +41,11 @@ private:
     struct Row {
         QComboBox *type;      // 0 = Disabled, 1 = MCP23017 (I2C), 2 = MCP23S17 (SPI)
         QComboBox *address;   // I2C only: index 0..7 = 0x20..0x27
+        QComboBox *wiring;    // 0 = buttons to GND (pull-up), 1 = to VCC (ext pull-down)
         QSpinBox  *count;     // 0..16
-        QCheckBox *pullups;   // GPPU
-        QCheckBox *invert;    // IPOL
     };
     enum { T_DISABLED = 0, T_I2C = 1, T_SPI = 2 };
+    enum { W_GND = 0, W_VCC = 1 };
     QList<Row> m_rows;
     QFrame    *m_warnBanner = nullptr;   // shared alert-banner look (triangle-alert icon)
     QLabel    *m_warnText   = nullptr;   // its message label (updated by validate())

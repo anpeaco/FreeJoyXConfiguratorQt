@@ -27,11 +27,10 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
     grid->setContentsMargins(0, 0, 0, 0);
 
     int r = 0;
-    grid->addWidget(new QLabel(tr("Type"),     this), r, 1);
-    grid->addWidget(new QLabel(tr("Address"),  this), r, 2);
-    grid->addWidget(new QLabel(tr("Buttons"),  this), r, 3);
-    grid->addWidget(new QLabel(tr("Pull-ups"), this), r, 4);
-    grid->addWidget(new QLabel(tr("Invert"),   this), r, 5);
+    grid->addWidget(new QLabel(tr("Type"),    this), r, 1);
+    grid->addWidget(new QLabel(tr("Address"), this), r, 2);
+    grid->addWidget(new QLabel(tr("Wiring"),  this), r, 3);
+    grid->addWidget(new QLabel(tr("Buttons"), this), r, 4);
     ++r;
 
     for (int i = 0; i < MAX_GPIO_EXPANDER_NUM; ++i, ++r) {
@@ -49,25 +48,23 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
             row.address->addItem(QString("0x%1").arg(a, 2, 16, QChar('0')));
         grid->addWidget(row.address, r, 2);
 
+        row.wiring = new QComboBox(this);
+        row.wiring->addItem(tr("Buttons to GND"));   // internal pull-up, default polarity
+        row.wiring->addItem(tr("Buttons to VCC"));   // external pull-down, inverted polarity
+        grid->addWidget(row.wiring, r, 3);
+
         row.count = new QSpinBox(this);
         row.count->setRange(0, 16);
-        grid->addWidget(row.count, r, 3);
-
-        row.pullups = new QCheckBox(this);
-        row.pullups->setChecked(true);
-        grid->addWidget(row.pullups, r, 4, Qt::AlignCenter);
-
-        row.invert = new QCheckBox(this);
-        grid->addWidget(row.invert, r, 5, Qt::AlignCenter);
+        grid->addWidget(row.count, r, 4);
 
         connect(row.type, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 this, &GpioExpanderConfig::onRowChanged);
         connect(row.address, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 this, &GpioExpanderConfig::onRowChanged);
+        connect(row.wiring, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                this, &GpioExpanderConfig::onRowChanged);
         connect(row.count, QOverload<int>::of(&QSpinBox::valueChanged),
                 this, &GpioExpanderConfig::onRowChanged);
-        connect(row.pullups, &QCheckBox::toggled, this, &GpioExpanderConfig::onRowChanged);
-        connect(row.invert,  &QCheckBox::toggled, this, &GpioExpanderConfig::onRowChanged);
 
         m_rows.append(row);
     }
@@ -79,7 +76,7 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
     for (QLabel *l : m_warnBanner->findChildren<QLabel *>())
         if (l->wordWrap()) { m_warnText = l; break; }
     m_warnBanner->setVisible(false);
-    grid->addWidget(m_warnBanner, r, 0, 1, 6);
+    grid->addWidget(m_warnBanner, r, 0, 1, 5);
 }
 
 int GpioExpanderConfig::addressOfRow(int i) const
@@ -94,8 +91,7 @@ void GpioExpanderConfig::readFromConfig()
         const gpio_expander_t &c = gEnv.pDeviceConfig->config.gpio_expanders[i];
         const Row &row = m_rows[i];
 
-        QSignalBlocker b1(row.type), b2(row.address), b3(row.count),
-                       b4(row.pullups), b5(row.invert);
+        QSignalBlocker b1(row.type), b2(row.address), b3(row.count), b4(row.wiring);
 
         int type = T_DISABLED;
         if (c.type == GPIO_EXP_MCP23S17) {
@@ -106,8 +102,8 @@ void GpioExpanderConfig::readFromConfig()
         }
         row.type->setCurrentIndex(type);
         row.count->setValue(c.button_cnt > 16 ? 16 : c.button_cnt);
-        row.pullups->setChecked((c.flags & FLAG_PULLUPS) != 0);
-        row.invert->setChecked((c.flags & FLAG_INVERT) != 0);
+        // Invert flag set -> active-high (VCC) wiring; otherwise GND (pull-up).
+        row.wiring->setCurrentIndex((c.flags & FLAG_INVERT) ? W_VCC : W_GND);
         row.address->setEnabled(type == T_I2C);
     }
     validate();
@@ -131,9 +127,9 @@ void GpioExpanderConfig::writeToConfig()
             c.address = 0;                                  // disabled
         }
         c.button_cnt = (type == T_DISABLED) ? 0 : static_cast<uint8_t>(m_rows[i].count->value());
-        c.flags      = static_cast<uint8_t>(
-                           (m_rows[i].pullups->isChecked() ? FLAG_PULLUPS : 0) |
-                           (m_rows[i].invert->isChecked()  ? FLAG_INVERT  : 0));
+        // Wiring -> register flags: GND = internal pull-up + default polarity;
+        // VCC = external pull-down + inverted polarity (IPOL).
+        c.flags      = (m_rows[i].wiring->currentIndex() == W_VCC) ? FLAG_INVERT : FLAG_PULLUPS;
     }
 }
 
