@@ -223,6 +223,8 @@ MainWindow::MainWindow(QWidget *parent)
     // add shift registers widget
     m_shiftRegConfig = new ShiftRegistersConfig(this);
     ui->layoutV_tabShiftRegistersConfig->addWidget(m_shiftRegConfig);
+    m_i2cGpioConfig = new I2cGpioConfig(this);
+    ui->layoutV_tabShiftRegistersConfig->addWidget(m_i2cGpioConfig);
     qDebug()<<"shift config load time ="<< timer.restart() << "ms";
     // add encoders widget
     m_encoderConfig = new EncodersConfig(this);
@@ -300,6 +302,8 @@ MainWindow::MainWindow(QWidget *parent)
     m_pinConfig->setButtonConfig(m_buttonConfig);
     connect(m_shiftRegConfig, &ShiftRegistersConfig::shiftRegBreakdownChanged,
             m_buttonConfig, &ButtonConfig::onShiftRegBreakdownChanged);
+    connect(m_i2cGpioConfig, &I2cGpioConfig::i2cGpioBreakdownChanged,
+            m_buttonConfig, &ButtonConfig::onI2cGpioBreakdownChanged);
     connect(m_axesConfig, &AxesConfig::a2bBreakdownChanged,
             m_buttonConfig, &ButtonConfig::onA2bBreakdownChanged);
     connect(m_pinConfig, &PinConfig::totalButtonsValueChanged, m_buttonConfig, &ButtonConfig::setUiOnOff);
@@ -331,6 +335,8 @@ MainWindow::MainWindow(QWidget *parent)
     // shift reg buttons count shiftRegsButtonsCount
     connect(m_shiftRegConfig, &ShiftRegistersConfig::shiftRegButtonsCountChanged,
             m_pinConfig, &PinConfig::shiftRegButtonsCountChanged);
+    connect(m_i2cGpioConfig, &I2cGpioConfig::i2cGpioButtonsCountChanged,
+            m_pinConfig, &PinConfig::i2cGpioButtonsCountChanged);
     // #57: warn when a sensor's auto-assign overwrote user-assigned pin roles.
     connect(m_pinConfig, &PinConfig::pinRolesAutoDisplaced, this,
             [this](const QStringList &lines) {
@@ -1369,6 +1375,7 @@ void MainWindow::UiReadFromConfig(bool resetDirtyBaseline)
     m_axesCurvesConfig->readFromConfig();
     // read shift registers config
     m_shiftRegConfig->readFromConfig();
+    m_i2cGpioConfig->readFromConfig();
     // read encoder config
     m_encoderConfig->readFromConfig();
     // read LED config
@@ -1414,6 +1421,7 @@ void MainWindow::flushUiToConfig()
     m_axesCurvesConfig->writeToConfig();
     // write shift registers config
     m_shiftRegConfig->writeToConfig();
+    m_i2cGpioConfig->writeToConfig();
     // write encoder config
     m_encoderConfig->writeToConfig();
     // write LED config
@@ -2126,6 +2134,7 @@ void MainWindow::languageChanged(const QString &language)
     m_ledConfig->retranslateUi();
     m_encoderConfig->retranslateUi();
     m_shiftRegConfig->retranslateUi();
+    m_i2cGpioConfig->retranslateUi();
     m_axesConfig->retranslateUi();
     m_axesCurvesConfig->retranslateUi();
     m_advSettings->retranslateUi();

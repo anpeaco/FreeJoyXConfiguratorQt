@@ -698,6 +698,11 @@ void PinConfig::shiftRegButtonsCountChanged(int count)
     ui->widget_currConfig->shiftRegButtonsCountChanged(count);
 }
 
+void PinConfig::i2cGpioButtonsCountChanged(int count)
+{
+    ui->widget_currConfig->i2cGpioButtonsCountChanged(count);
+}
+
 void PinConfig::a2bCountChanged(int count)
 {
     ui->widget_currConfig->a2bCountChanged(count);

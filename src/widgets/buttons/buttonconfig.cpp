@@ -319,6 +319,15 @@ QList<ButtonConfig::ButtonGroup> ButtonConfig::computeButtonGroups()
         groups.append({tr("Shift registers"), m_groupShiftRegs});
     }
 
+    // I2C GPIO expanders (MCP23017) -- after shift registers, before
+    // axis-to-buttons, matching buttons.c::ButtonsReadPhysical.
+    for (int i = 0; i < m_i2cGpioBreakdown.size(); ++i) {
+        const int n = m_i2cGpioBreakdown[i];
+        if (n > 0) {
+            groups.append({tr("I2C expander %1").arg(i + 1), n});
+        }
+    }
+
     // Same fallback pattern for axis-to-buttons.
     int axisSum = 0;
     for (int n : m_axisBreakdown) axisSum += n;
@@ -349,6 +358,11 @@ void ButtonConfig::onPhysicalButtonBreakdownChanged(int matrix, int shiftRegs, i
 void ButtonConfig::onShiftRegBreakdownChanged(const QList<int> &perRegister)
 {
     m_shiftRegBreakdown = perRegister;
+}
+
+void ButtonConfig::onI2cGpioBreakdownChanged(const QList<int> &perChip)
+{
+    m_i2cGpioBreakdown = perChip;
 }
 
 void ButtonConfig::onA2bBreakdownChanged(const QList<int> &perAxis)
