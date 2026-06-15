@@ -1,6 +1,9 @@
 #include "shiftregistersconfig.h"
 #include "ui_shiftregistersconfig.h"
 #include <QDebug>
+#include <QWidget>
+#include <QGridLayout>
+#include <QLabel>
 
 ShiftRegistersConfig::ShiftRegistersConfig(QWidget *parent) :
     QWidget(parent),
@@ -10,6 +13,28 @@ ShiftRegistersConfig::ShiftRegistersConfig(QWidget *parent) :
     m_shiftButtonsCount = 0;
 
     ui->layoutV_ShiftRegisters->setAlignment(Qt::AlignTop);
+
+    // One shared column header for all registers (each register's own headers
+    // are hidden). Same 7-column equal-stretch grid as a register row so the
+    // headers line up, matching the Port Expanders table below.
+    {
+        auto *header = new QWidget(this);
+        auto *hg = new QGridLayout(header);
+        hg->setContentsMargins(9, 0, 9, 2);
+        m_headerLabels = {
+            new QLabel(tr("Latch pin"),           header),
+            new QLabel(tr("CLK pin"),             header),
+            new QLabel(tr("Data pin"),            header),
+            new QLabel(tr("Shift register type"), header),
+            new QLabel(tr("Registers count"),     header),
+            new QLabel(tr("Button count"),        header),
+        };
+        for (int c = 0; c < m_headerLabels.size(); ++c)
+            hg->addWidget(m_headerLabels[c], 0, c + 1, Qt::AlignCenter);
+        for (int c = 0; c < 7; ++c) hg->setColumnStretch(c, 1);
+        ui->layoutV_ShiftRegisters->addWidget(header);
+    }
+
     // shift registers spawn
     for (int i = 0; i < MAX_SHIFT_REG_NUM; i++)
     {
@@ -32,6 +57,11 @@ void ShiftRegistersConfig::retranslateUi()
     for (int i = 0; i < m_shiftRegsPtrList.size(); ++i) {
         m_shiftRegsPtrList[i]->retranslateUi();
     }
+    const QStringList hdr = { tr("Latch pin"), tr("CLK pin"), tr("Data pin"),
+                             tr("Shift register type"), tr("Registers count"),
+                             tr("Button count") };
+    for (int i = 0; i < m_headerLabels.size() && i < hdr.size(); ++i)
+        m_headerLabels[i]->setText(hdr[i]);
 }
 
 

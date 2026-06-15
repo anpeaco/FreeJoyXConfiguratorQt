@@ -29,6 +29,15 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
     ui->groupBox->setStyleSheet(QStringLiteral(
         "QGroupBox { border: none; margin-top: 0px; padding: 2px 0px; }"));
 
+    // Column headers move to a single shared header row in ShiftRegistersConfig;
+    // hide each register's own headers so the register is just its value row.
+    ui->text_latchPin->hide();
+    ui->text_clkPin->hide();
+    ui->text_dataPin->hide();
+    ui->text_shiftRegisterType->hide();
+    ui->text_registersCount->hide();
+    ui->text_buttonCount->hide();
+
     for (int i = 0; i < SHIFT_REG_TYPES; ++i) {
         ui->comboBox_ShiftRegType->addItem(m_shiftRegistersList[i].guiName);
         ui->label_DataPin->setText(m_notDefined);
