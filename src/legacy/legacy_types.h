@@ -33,6 +33,23 @@
 namespace legacy {
 
 /* ============================================================================
+ * NOTE: pre-0x0030 shape (FreeJoyX 0x0010 / 0x0020, and upstream-lineage
+ * 0x1780) -- NO inline snapshot, intentionally.
+ *
+ * The 0x0020 -> 0x0030 bump (MCP23017 support) only APPENDED
+ * i2c_gpio[MAX_I2C_GPIO_NUM] to the END of dev_config_t. A pure append cannot
+ * reorder or resize any earlier field, so the outgoing 0x0020 shape is the
+ * byte-exact prefix of the current struct: its size is exactly
+ * offsetof(dev_config_t, i2c_gpio) (== 1580). legacy_migrator.cpp reads it via
+ * that offset (migrate_pre0030_to_current) rather than a frozen struct copy --
+ * offsetof is computed from the live struct, so it can never drift, which is a
+ * stronger guarantee than a hand-copied snapshot. The next bump that actually
+ * changes an EARLIER field (reorders / resizes) must inline-archive the 0x0030
+ * shape here as namespace legacy::v0030 before bumping. See MCP23017_PLAN.md.
+ * ============================================================================
+ */
+
+/* ============================================================================
  * v1710 -- upstream FreeJoy v1.7.0b0 .. v1.7.1b3 (firmware_version 0x1700..0x1713)
  *
  * Source: github.com/FreeJoy-Team/FreeJoy at tag v1.7.1b3, commit 441e0099,
