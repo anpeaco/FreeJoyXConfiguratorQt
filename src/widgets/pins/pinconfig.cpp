@@ -399,17 +399,22 @@ void PinConfig::pinIndexChanged(int currentDeviceEnum, int previousDeviceEnum, i
     // keep the I2C / SPI quick-setup toggles in sync with the live pin roles
     refreshBusToggles();
 
-    // refresh the GPIO-expander CS-pin column (a CS role may have changed)
-    emitGpioExpCsPins();
+    // refresh the GPIO-expander CS-pin column + validation (a CS or bus role
+    // may have changed) -- so the "enable the bus" warning clears live.
+    emitGpioExpPinContext();
 }
 
-void PinConfig::emitGpioExpCsPins()
+void PinConfig::emitGpioExpPinContext()
 {
-    QStringList names;
-    for (int p = 1; p <= USED_PINS_NUM; ++p)
-        if (pinRole(p) == SPI_GPIO_CS)
-            names << pinGuiName(p);
-    emit gpioExpCsPinsChanged(names);
+    QStringList csNames;
+    bool i2cOn = false, spiOn = false;
+    for (int p = 1; p <= USED_PINS_NUM; ++p) {
+        const int role = pinRole(p);
+        if (role == SPI_GPIO_CS)                    csNames << pinGuiName(p);
+        else if (role == I2C_SCL)                   i2cOn = true;
+        else if (role == SPI_SCK || role == SPI_MOSI) spiOn = true;
+    }
+    emit gpioExpPinContextChanged(csNames, i2cOn, spiOn);
 }
 
 
@@ -912,6 +917,7 @@ void PinConfig::onBusToggleRequested(int bus, bool enable)
     // setPinRole -> pinIndexChanged -> refreshBusToggles already runs, but call
     // again so the toggle settles even if a role was rejected (setPinRole false).
     refreshBusToggles();
+    emitGpioExpPinContext();   // refresh the expander bus-state validation
 }
 
 void PinConfig::refreshBusToggles()
@@ -1020,8 +1026,8 @@ void PinConfig::readFromConfig(){
      * from the cache or the pins revert to black after a Read / auto-read. */
     reapplyAllRoleColors();
 
-    // populate the GPIO-expander CS-pin column for the freshly loaded config
-    emitGpioExpCsPins();
+    // populate the GPIO-expander CS-pin column + bus state for the loaded config
+    emitGpioExpPinContext();
 }
 
 void PinConfig::writeToConfig(){

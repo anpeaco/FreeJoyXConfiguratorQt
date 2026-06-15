@@ -314,8 +314,8 @@ MainWindow::MainWindow(QWidget *parent)
             m_buttonConfig, &ButtonConfig::onShiftRegBreakdownChanged);
     connect(m_gpioExpConfig, &GpioExpanderConfig::gpioExpBreakdownChanged,
             m_buttonConfig, &ButtonConfig::onGpioExpBreakdownChanged);
-    connect(m_pinConfig, &PinConfig::gpioExpCsPinsChanged,
-            m_gpioExpConfig, &GpioExpanderConfig::onCsPinsChanged);
+    connect(m_pinConfig, &PinConfig::gpioExpPinContextChanged,
+            m_gpioExpConfig, &GpioExpanderConfig::onPinContextChanged);
     connect(m_axesConfig, &AxesConfig::a2bBreakdownChanged,
             m_buttonConfig, &ButtonConfig::onA2bBreakdownChanged);
     connect(m_pinConfig, &PinConfig::totalButtonsValueChanged, m_buttonConfig, &ButtonConfig::setUiOnOff);

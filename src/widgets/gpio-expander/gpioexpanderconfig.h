@@ -36,11 +36,11 @@ signals:
     void gpioExpBreakdownChanged(const QList<int> &perChip);
 
 public slots:
-    /* Ordered names of the pins set to the SPI_GPIO_CS role in Pin Config
-     * (pin order). The configurator pushes these (board-correct labels) so the
-     * CS column can show which CS pin each SPI expander gets, matched in slot
-     * order -- mirrors how the shift registers display their pins. */
-    void onCsPinsChanged(const QStringList &csPinNames);
+    /* Live pin context from Pin Config: ordered SPI_GPIO_CS pin names (for the
+     * CS column + SPI CS validation) and whether the I2C / SPI buses are
+     * enabled. Refreshes the CS column and re-runs validation, so the "enable
+     * the bus" warning clears the moment the bus is set up. */
+    void onPinContextChanged(const QStringList &csPinNames, bool i2cBusOn, bool spiBusOn);
 
 private slots:
     void onRowChanged();
@@ -57,6 +57,8 @@ private:
     enum { W_GND = 0, W_VCC = 1 };
     QList<Row> m_rows;
     QStringList m_csPinNames;             // CS-role pins from Pin Config, in pin order
+    bool m_i2cBusOn = false;              // live: an I2C_SCL role exists in Pin Config
+    bool m_spiBusOn = false;              // live: an SPI_SCK/MOSI role exists in Pin Config
     QFrame    *m_warnBanner = nullptr;   // shared alert-banner look (triangle-alert icon)
     QLabel    *m_warnText   = nullptr;   // its message label (updated by validate())
 

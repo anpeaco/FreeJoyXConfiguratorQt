@@ -86,10 +86,13 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
     grid->addWidget(m_warnBanner, r, 0, 1, 6);
 }
 
-void GpioExpanderConfig::onCsPinsChanged(const QStringList &csPinNames)
+void GpioExpanderConfig::onPinContextChanged(const QStringList &csPinNames, bool i2cBusOn, bool spiBusOn)
 {
     m_csPinNames = csPinNames;
+    m_i2cBusOn   = i2cBusOn;
+    m_spiBusOn   = spiBusOn;
     updatePinDisplays();
+    validate();   // bus state changed -> the "enable the bus" warning may clear
 }
 
 void GpioExpanderConfig::updatePinDisplays()
@@ -172,14 +175,6 @@ void GpioExpanderConfig::onRowChanged()
     emitCounts();
 }
 
-static int countPinRole(int role)
-{
-    int n = 0;
-    for (int p = 0; p < USED_PINS_NUM; ++p)
-        if (gEnv.pDeviceConfig->config.pins[p] == role) ++n;
-    return n;
-}
-
 void GpioExpanderConfig::validate()
 {
     QStringList warnings;
@@ -205,13 +200,15 @@ void GpioExpanderConfig::validate()
     if (!dup.isEmpty())
         warnings << tr("Two I2C expanders share an address — give each a unique 0x20–0x27.");
 
-    // Bus / CS prerequisites (the firmware brings up a bus from its pin roles).
-    if (i2cCount > 0 && countPinRole(I2C_SCL) == 0)
+    // Bus / CS prerequisites, checked against the LIVE pin roles pushed by
+    // PinConfig (config.pins[] isn't written until writeToConfig, so reading it
+    // here would be stale -- the warning wouldn't clear when you enable the bus).
+    if (i2cCount > 0 && !m_i2cBusOn)
         warnings << tr("Enable the I2C bus in Pin Config (SCL/SDA) for the I2C expander(s).");
     if (spiCount > 0) {
-        if (countPinRole(SPI_SCK) == 0 && countPinRole(SPI_MOSI) == 0)
+        if (!m_spiBusOn)
             warnings << tr("Enable the SPI bus in Pin Config (SCK/MISO/MOSI) for the SPI expander(s).");
-        const int cs = countPinRole(SPI_GPIO_CS);
+        const int cs = m_csPinNames.size();
         if (cs < spiCount)
             warnings << tr("Assign %1 'MCP23S17 expander CS' pin(s) in Pin Config — %2 set, %3 SPI expander(s).")
                         .arg(spiCount).arg(cs).arg(spiCount);
