@@ -483,8 +483,8 @@ static MigrateResult migrate_v1770_to_current(const uint8_t *raw, size_t len, de
  * the byte-exact PREFIX of the current struct -- i.e. current minus the appended
  * i2c_gpio[]. Covers FreeJoyX 0x0010 and 0x0020, plus upstream-lineage 0x1780
  * (byte-identical to 0x0020). The 0x0030 bump only APPENDED
- * i2c_gpio[MAX_I2C_GPIO_NUM] at the end of dev_config_t, so the old config size
- * is exactly offsetof(dev_config_t, i2c_gpio) and the migration is: seed current
+ * i2c_gpio[MAX_GPIO_EXPANDER_NUM] at the end of dev_config_t, so the old config size
+ * is exactly offsetof(dev_config_t, gpio_expanders) and the migration is: seed current
  * factory defaults (so the appended field is sane), overlay the old prefix
  * bytes, then re-stamp the version.
  *
@@ -495,7 +495,7 @@ static MigrateResult migrate_v1770_to_current(const uint8_t *raw, size_t len, de
  * (0x0030) and it was a pure append, so the prefix copy stays correct.
  * ============================================================================
  */
-static const size_t kPre0030ConfigSize = offsetof(dev_config_t, i2c_gpio);
+static const size_t kPre0030ConfigSize = offsetof(dev_config_t, gpio_expanders);
 
 static MigrateResult migrate_pre0030_to_current(const uint8_t *raw, size_t len, dev_config_t &out)
 {

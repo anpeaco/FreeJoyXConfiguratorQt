@@ -5,7 +5,7 @@
  * MCP23017_PLAN.md (Slice 3). Mirrors ShiftRegistersConfig: each enabled chip
  * contributes up to 16 buttons to the physical-button scan, surfaced in the
  * Buttons tab after the shift registers. Programmatic UI (no .ui) -- one row per
- * MAX_I2C_GPIO_NUM slot: I2C address, button count, internal pull-ups, invert. */
+ * MAX_GPIO_EXPANDER_NUM slot: I2C address, button count, internal pull-ups, invert. */
 
 #include <QWidget>
 #include <QList>

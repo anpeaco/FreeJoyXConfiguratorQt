@@ -1,5 +1,5 @@
 /* Unit tests for the 0x0020 -> 0x0030 wire-format bump that appended
- * i2c_gpio[MAX_I2C_GPIO_NUM] (MCP23017 button expanders) to the END of
+ * i2c_gpio[MAX_GPIO_EXPANDER_NUM] (MCP23017 button expanders) to the END of
  * dev_config_t, plus the legacy migrator that reads pre-0x0030 configs via the
  * shared prefix path. See MCP23017_PLAN.md. Links legacy_migrator.cpp +
  * stm_main.c (InitConfig); no GUI / FirmwareImage. */
@@ -26,16 +26,16 @@ private slots:
     void devConfigSize_matchesConstant()
     {
         QCOMPARE(sizeof(dev_config_t), static_cast<size_t>(FREEJOY_DEV_CONFIG_SIZE));
-        QCOMPARE(static_cast<int>(FREEJOY_DEV_CONFIG_SIZE), 1596);
+        QCOMPARE(static_cast<int>(FREEJOY_DEV_CONFIG_SIZE), 1612);
     }
     void i2cGpio_isAppendedAtEnd()
     {
         /* The old (0x0020) shape is exactly the prefix up to i2c_gpio: a pure
          * append adds the member size with no padding (alignment-1 member onto
          * an even-sized, alignment-2 struct). */
-        QCOMPARE(offsetof(dev_config_t, i2c_gpio), static_cast<size_t>(1580));
-        QCOMPARE(sizeof(i2c_gpio_t), static_cast<size_t>(4));
-        QCOMPARE(static_cast<int>(MAX_I2C_GPIO_NUM), 4);
+        QCOMPARE(offsetof(dev_config_t, gpio_expanders), static_cast<size_t>(1580));
+        QCOMPARE(sizeof(gpio_expander_t), static_cast<size_t>(4));
+        QCOMPARE(static_cast<int>(MAX_GPIO_EXPANDER_NUM), 8);
     }
     void firmwareVersion_isGen3()
     {
@@ -51,7 +51,7 @@ private slots:
     void legacyConfigSize_gen2_isOldPrefixSize()
     {
         QCOMPARE(legacy::legacyConfigSize(0x0020),
-                 offsetof(dev_config_t, i2c_gpio));
+                 offsetof(dev_config_t, gpio_expanders));
         QCOMPARE(legacy::legacyConfigSize(0x0020), static_cast<size_t>(1580));
         /* the current generation reports the full struct */
         QCOMPARE(legacy::legacyConfigSize(FIRMWARE_VERSION), sizeof(dev_config_t));
@@ -60,7 +60,7 @@ private slots:
     /* ---- 0x0020 -> 0x0030 round-trip ---- */
     void migrateGen2_preservesPrefix_zeroesExpanders_stampsVersion()
     {
-        const size_t oldSize = offsetof(dev_config_t, i2c_gpio);
+        const size_t oldSize = offsetof(dev_config_t, gpio_expanders);
 
         /* Build a 0x0020 raw config: current defaults, stamped gen 2, with a
          * recognisable preserved field, truncated to the old prefix size (no
@@ -86,11 +86,11 @@ private slots:
         QCOMPARE(out.button_debounce_ms, static_cast<uint16_t>(0xABCD));
         QCOMPARE(QByteArray(out.device_name), QByteArray("Gen2Cfg"));
 
-        for (int i = 0; i < MAX_I2C_GPIO_NUM; ++i) {
-            QCOMPARE(out.i2c_gpio[i].type,       static_cast<uint8_t>(0));
-            QCOMPARE(out.i2c_gpio[i].address,    static_cast<uint8_t>(0));
-            QCOMPARE(out.i2c_gpio[i].button_cnt, static_cast<uint8_t>(0));
-            QCOMPARE(out.i2c_gpio[i].flags,      static_cast<uint8_t>(0));
+        for (int i = 0; i < MAX_GPIO_EXPANDER_NUM; ++i) {
+            QCOMPARE(out.gpio_expanders[i].type,       static_cast<uint8_t>(0));
+            QCOMPARE(out.gpio_expanders[i].address,    static_cast<uint8_t>(0));
+            QCOMPARE(out.gpio_expanders[i].button_cnt, static_cast<uint8_t>(0));
+            QCOMPARE(out.gpio_expanders[i].flags,      static_cast<uint8_t>(0));
         }
     }
 

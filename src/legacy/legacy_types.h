@@ -37,10 +37,10 @@ namespace legacy {
  * 0x1780) -- NO inline snapshot, intentionally.
  *
  * The 0x0020 -> 0x0030 bump (MCP23017 support) only APPENDED
- * i2c_gpio[MAX_I2C_GPIO_NUM] to the END of dev_config_t. A pure append cannot
+ * i2c_gpio[MAX_GPIO_EXPANDER_NUM] to the END of dev_config_t. A pure append cannot
  * reorder or resize any earlier field, so the outgoing 0x0020 shape is the
  * byte-exact prefix of the current struct: its size is exactly
- * offsetof(dev_config_t, i2c_gpio) (== 1580). legacy_migrator.cpp reads it via
+ * offsetof(dev_config_t, gpio_expanders) (== 1580). legacy_migrator.cpp reads it via
  * that offset (migrate_pre0030_to_current) rather than a frozen struct copy --
  * offsetof is computed from the live struct, so it can never drift, which is a
  * stronger guarantee than a hand-copied snapshot. The next bump that actually

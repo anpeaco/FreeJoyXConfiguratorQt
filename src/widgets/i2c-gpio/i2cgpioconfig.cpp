@@ -2,8 +2,8 @@
 
 #include "deviceconfig.h"
 #include "global.h"
-#include "common_defines.h"   // MAX_I2C_GPIO_NUM
-#include "common_types.h"     // I2C_GPIO_MCP23017, I2C_GPIO_FLAG_* live in mcp23017.h on the
+#include "common_defines.h"   // MAX_GPIO_EXPANDER_NUM
+#include "common_types.h"     // GPIO_EXP_MCP23017, I2C_GPIO_FLAG_* live in mcp23017.h on the
                               // firmware side; the bit meanings are mirrored here.
 
 #include <QGridLayout>
@@ -32,7 +32,7 @@ I2cGpioConfig::I2cGpioConfig(QWidget *parent)
     grid->addWidget(new QLabel(tr("Invert"),   this), r, 4);
     ++r;
 
-    for (int i = 0; i < MAX_I2C_GPIO_NUM; ++i, ++r) {
+    for (int i = 0; i < MAX_GPIO_EXPANDER_NUM; ++i, ++r) {
         Row row;
         grid->addWidget(new QLabel(QString::number(i + 1), this), r, 0);
 
@@ -77,8 +77,8 @@ int I2cGpioConfig::addressOfRow(int i) const
 
 void I2cGpioConfig::readFromConfig()
 {
-    for (int i = 0; i < m_rows.size() && i < MAX_I2C_GPIO_NUM; ++i) {
-        const i2c_gpio_t &c = gEnv.pDeviceConfig->config.i2c_gpio[i];
+    for (int i = 0; i < m_rows.size() && i < MAX_GPIO_EXPANDER_NUM; ++i) {
+        const gpio_expander_t &c = gEnv.pDeviceConfig->config.gpio_expanders[i];
         const Row &row = m_rows[i];
 
         QSignalBlocker b1(row.address), b2(row.count), b3(row.pullups), b4(row.invert);
@@ -96,11 +96,11 @@ void I2cGpioConfig::readFromConfig()
 
 void I2cGpioConfig::writeToConfig()
 {
-    for (int i = 0; i < m_rows.size() && i < MAX_I2C_GPIO_NUM; ++i) {
-        i2c_gpio_t &c = gEnv.pDeviceConfig->config.i2c_gpio[i];
+    for (int i = 0; i < m_rows.size() && i < MAX_GPIO_EXPANDER_NUM; ++i) {
+        gpio_expander_t &c = gEnv.pDeviceConfig->config.gpio_expanders[i];
         const int addr = addressOfRow(i);
 
-        c.type       = I2C_GPIO_MCP23017;
+        c.type       = GPIO_EXP_MCP23017;
         c.address    = static_cast<uint8_t>(addr);
         c.button_cnt = (addr == 0) ? 0 : static_cast<uint8_t>(m_rows[i].count->value());
         c.flags      = static_cast<uint8_t>(
