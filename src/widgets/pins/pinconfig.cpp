@@ -319,7 +319,15 @@ void PinConfig::pinInteraction(int index, int senderIndex, int pin)
                          * name is still readable. The warning is flushed once,
                          * deferred, by warnAutoAssignDisplaced. */
                         const int priorRole = m_pinCBoxPtrList[i]->currentDevEnum();
-                        if (priorRole != NOT_USED && !m_pinCBoxPtrList[i]->isInteracts()
+                        // A shared bus line (SPI SCK/MISO/MOSI, I2C SCL/SDA) being
+                        // adopted by another bus device isn't a displacement -- it's
+                        // normal bus sharing, and the role doesn't actually change.
+                        // Only warn when a real (button / sensor) role would be lost.
+                        const bool priorIsBusLine =
+                            priorRole == SPI_SCK || priorRole == SPI_MOSI || priorRole == SPI_MISO ||
+                            priorRole == I2C_SCL || priorRole == I2C_SDA;
+                        if (priorRole != NOT_USED && !priorIsBusLine
+                            && !m_pinCBoxPtrList[i]->isInteracts()
                             && !m_configLoadInProgress) {
                             if (m_autoAssignDisplaced.isEmpty()) {
                                 QTimer::singleShot(0, this, &PinConfig::warnAutoAssignDisplaced);
