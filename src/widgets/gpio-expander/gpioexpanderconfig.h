@@ -1,11 +1,11 @@
 #ifndef GPIOEXPANDERCONFIG_H
 #define GPIOEXPANDERCONFIG_H
 
-/* I2C GPIO expander (MCP23017) configuration -- the configurator side of
- * MCP23017_PLAN.md (Slice 3). Mirrors ShiftRegistersConfig: each enabled chip
- * contributes up to 16 buttons to the physical-button scan, surfaced in the
- * Buttons tab after the shift registers. Programmatic UI (no .ui) -- one row per
- * MAX_GPIO_EXPANDER_NUM slot: I2C address, button count, internal pull-ups, invert. */
+/* GPIO port expander configuration (MCP23017 I2C / MCP23S17 SPI) -- see
+ * MCP23017_PLAN.md. Mirrors ShiftRegistersConfig: each enabled chip contributes
+ * up to 16 buttons to the physical-button scan, surfaced in the Buttons tab
+ * after the shift registers. Programmatic UI (no .ui) -- one row per
+ * MAX_GPIO_EXPANDER_NUM slot: type, I2C address, button count, pull-ups, invert. */
 
 #include <QWidget>
 #include <QList>
@@ -14,6 +14,7 @@ class QComboBox;
 class QSpinBox;
 class QCheckBox;
 class QLabel;
+class QFrame;
 
 class GpioExpanderConfig : public QWidget
 {
@@ -46,7 +47,8 @@ private:
     };
     enum { T_DISABLED = 0, T_I2C = 1, T_SPI = 2 };
     QList<Row> m_rows;
-    QLabel    *m_warning = nullptr;
+    QFrame    *m_warnBanner = nullptr;   // shared alert-banner look (triangle-alert icon)
+    QLabel    *m_warnText   = nullptr;   // its message label (updated by validate())
 
     void emitCounts();
     void validate();

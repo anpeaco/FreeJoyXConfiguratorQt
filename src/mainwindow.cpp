@@ -8,6 +8,7 @@
 #include <QDialogButtonBox>
 #include <QLabel>
 #include <QVBoxLayout>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QSpinBox>
@@ -221,10 +222,19 @@ MainWindow::MainWindow(QWidget *parent)
             m_axesCurvesConfig, &AxesCurvesConfig::setAxisInUse);
     qDebug()<<"curves config load time ="<< timer.restart() << "ms";
     // add shift registers widget
+    // Two titled groups on the Shift Registers tab: the shift registers, and
+    // the GPIO port expanders (MCP23017 / MCP23S17) below them.
     m_shiftRegConfig = new ShiftRegistersConfig(this);
-    ui->layoutV_tabShiftRegistersConfig->addWidget(m_shiftRegConfig);
+    m_shiftRegGroup = new QGroupBox(tr("Shift Registers"), this);
+    { auto *l = new QVBoxLayout(m_shiftRegGroup); l->setContentsMargins(6, 6, 6, 6);
+      l->addWidget(m_shiftRegConfig); }
+    ui->layoutV_tabShiftRegistersConfig->addWidget(m_shiftRegGroup);
+
     m_gpioExpConfig = new GpioExpanderConfig(this);
-    ui->layoutV_tabShiftRegistersConfig->addWidget(m_gpioExpConfig);
+    m_expanderGroup = new QGroupBox(tr("Port Expanders"), this);
+    { auto *l = new QVBoxLayout(m_expanderGroup); l->setContentsMargins(6, 6, 6, 6);
+      l->addWidget(m_gpioExpConfig); }
+    ui->layoutV_tabShiftRegistersConfig->addWidget(m_expanderGroup);
     qDebug()<<"shift config load time ="<< timer.restart() << "ms";
     // add encoders widget
     m_encoderConfig = new EncodersConfig(this);
@@ -2135,6 +2145,8 @@ void MainWindow::languageChanged(const QString &language)
     m_encoderConfig->retranslateUi();
     m_shiftRegConfig->retranslateUi();
     m_gpioExpConfig->retranslateUi();
+    if (m_shiftRegGroup) m_shiftRegGroup->setTitle(tr("Shift Registers"));
+    if (m_expanderGroup) m_expanderGroup->setTitle(tr("Port Expanders"));
     m_axesConfig->retranslateUi();
     m_axesCurvesConfig->retranslateUi();
     m_advSettings->retranslateUi();

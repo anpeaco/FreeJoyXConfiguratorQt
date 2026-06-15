@@ -2,6 +2,7 @@
 
 #include "deviceconfig.h"
 #include "global.h"
+#include "style_helpers.h"    // makeAlertBanner / accentAmber (shared alert-banner look)
 #include "common_defines.h"   // MAX_GPIO_EXPANDER_NUM, USED_PINS_NUM
 #include "common_types.h"     // GPIO_EXP_*, pin roles (I2C_SCL, SPI_SCK, SPI_GPIO_CS, ...)
 
@@ -10,6 +11,7 @@
 #include <QSpinBox>
 #include <QCheckBox>
 #include <QLabel>
+#include <QFrame>
 
 /* flags bits -- mirror firmware gpio_expander.h */
 static const uint8_t FLAG_PULLUPS = 0x01;
@@ -70,11 +72,14 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
         m_rows.append(row);
     }
 
-    m_warning = new QLabel(this);
-    m_warning->setStyleSheet("color: #d9534f;");   // alert red
-    m_warning->setWordWrap(true);
-    m_warning->setVisible(false);
-    grid->addWidget(m_warning, r, 0, 1, 6);
+    // Shared alert-banner look (triangle-alert icon + amber box), matching the
+    // axes pending-pin banner and the dialog warning bars. Text is updated by
+    // validate(); the message label is the word-wrapped one inside the banner.
+    m_warnBanner = freejoy_style::makeAlertBanner(freejoy_style::accentAmber(), QString(), this);
+    for (QLabel *l : m_warnBanner->findChildren<QLabel *>())
+        if (l->wordWrap()) { m_warnText = l; break; }
+    m_warnBanner->setVisible(false);
+    grid->addWidget(m_warnBanner, r, 0, 1, 6);
 }
 
 int GpioExpanderConfig::addressOfRow(int i) const
@@ -186,10 +191,10 @@ void GpioExpanderConfig::validate()
     }
 
     if (warnings.isEmpty()) {
-        m_warning->setVisible(false);
+        m_warnBanner->setVisible(false);
     } else {
-        m_warning->setText(warnings.join('\n'));
-        m_warning->setVisible(true);
+        if (m_warnText) m_warnText->setText(warnings.join('\n'));
+        m_warnBanner->setVisible(true);
     }
 }
 
