@@ -22,6 +22,13 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
     m_shiftRegNumber = shiftRegNumber;
     ui->label_ShiftIndex->setNum(shiftRegNumber + 1);
 
+    // Flatten the per-register box: the "Shift Registers" group already frames
+    // the section, so a nested box per register reads as 4 separate groups.
+    // Drop the border + title margin so the registers are flat rows, matching
+    // the Port Expanders table below.
+    ui->groupBox->setStyleSheet(QStringLiteral(
+        "QGroupBox { border: none; margin-top: 0px; padding: 2px 0px; }"));
+
     for (int i = 0; i < SHIFT_REG_TYPES; ++i) {
         ui->comboBox_ShiftRegType->addItem(m_shiftRegistersList[i].guiName);
         ui->label_DataPin->setText(m_notDefined);
