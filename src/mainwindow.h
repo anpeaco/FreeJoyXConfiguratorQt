@@ -19,7 +19,7 @@
 #include "ledconfig.h"
 #include "pinconfig.h"
 #include "shiftregistersconfig.h"
-#include "i2cgpioconfig.h"
+#include "gpioexpanderconfig.h"
 #include "shiftstimersconfig.h"
 #include "loadingoverlay.h"
 
@@ -188,7 +188,7 @@ private:
     LedConfig *m_ledConfig;
     EncodersConfig *m_encoderConfig;
     ShiftRegistersConfig *m_shiftRegConfig;
-    I2cGpioConfig *m_i2cGpioConfig;
+    GpioExpanderConfig *m_gpioExpConfig;
     AxesConfig *m_axesConfig;
     AxesCurvesConfig *m_axesCurvesConfig;
     AdvancedSettings *m_advSettings = nullptr;

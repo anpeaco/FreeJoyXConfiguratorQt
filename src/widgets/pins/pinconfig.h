@@ -124,7 +124,7 @@ signals:
 public slots:
     void a2bCountChanged(int);
     void shiftRegButtonsCountChanged(int count);
-    void i2cGpioButtonsCountChanged(int count);
+    void gpioExpButtonsCountChanged(int count);
     void highlightPins(pin_t pinType, bool enable);
 private slots:
     void pinInteraction(int index, int senderIndex, int pin);

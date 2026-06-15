@@ -1,4 +1,4 @@
-#include "i2cgpioconfig.h"
+#include "gpioexpanderconfig.h"
 
 #include "deviceconfig.h"
 #include "global.h"
@@ -18,7 +18,7 @@ static const uint8_t FLAG_INVERT  = 0x02;
 static const int kAddrLo = 0x20;   // MCP2301x strap range 0x20..0x27
 static const int kAddrHi = 0x27;
 
-I2cGpioConfig::I2cGpioConfig(QWidget *parent)
+GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
     : QWidget(parent)
 {
     auto *grid = new QGridLayout(this);
@@ -59,13 +59,13 @@ I2cGpioConfig::I2cGpioConfig(QWidget *parent)
         grid->addWidget(row.invert, r, 5, Qt::AlignCenter);
 
         connect(row.type, QOverload<int>::of(&QComboBox::currentIndexChanged),
-                this, &I2cGpioConfig::onRowChanged);
+                this, &GpioExpanderConfig::onRowChanged);
         connect(row.address, QOverload<int>::of(&QComboBox::currentIndexChanged),
-                this, &I2cGpioConfig::onRowChanged);
+                this, &GpioExpanderConfig::onRowChanged);
         connect(row.count, QOverload<int>::of(&QSpinBox::valueChanged),
-                this, &I2cGpioConfig::onRowChanged);
-        connect(row.pullups, &QCheckBox::toggled, this, &I2cGpioConfig::onRowChanged);
-        connect(row.invert,  &QCheckBox::toggled, this, &I2cGpioConfig::onRowChanged);
+                this, &GpioExpanderConfig::onRowChanged);
+        connect(row.pullups, &QCheckBox::toggled, this, &GpioExpanderConfig::onRowChanged);
+        connect(row.invert,  &QCheckBox::toggled, this, &GpioExpanderConfig::onRowChanged);
 
         m_rows.append(row);
     }
@@ -77,13 +77,13 @@ I2cGpioConfig::I2cGpioConfig(QWidget *parent)
     grid->addWidget(m_warning, r, 0, 1, 6);
 }
 
-int I2cGpioConfig::addressOfRow(int i) const
+int GpioExpanderConfig::addressOfRow(int i) const
 {
     // Only meaningful for an I2C row; 0x20 + the address-combo index.
     return kAddrLo + m_rows[i].address->currentIndex();
 }
 
-void I2cGpioConfig::readFromConfig()
+void GpioExpanderConfig::readFromConfig()
 {
     for (int i = 0; i < m_rows.size() && i < MAX_GPIO_EXPANDER_NUM; ++i) {
         const gpio_expander_t &c = gEnv.pDeviceConfig->config.gpio_expanders[i];
@@ -109,7 +109,7 @@ void I2cGpioConfig::readFromConfig()
     emitCounts();
 }
 
-void I2cGpioConfig::writeToConfig()
+void GpioExpanderConfig::writeToConfig()
 {
     for (int i = 0; i < m_rows.size() && i < MAX_GPIO_EXPANDER_NUM; ++i) {
         gpio_expander_t &c = gEnv.pDeviceConfig->config.gpio_expanders[i];
@@ -132,7 +132,7 @@ void I2cGpioConfig::writeToConfig()
     }
 }
 
-void I2cGpioConfig::onRowChanged()
+void GpioExpanderConfig::onRowChanged()
 {
     for (const Row &row : m_rows)
         row.address->setEnabled(row.type->currentIndex() == T_I2C);
@@ -148,7 +148,7 @@ static int countPinRole(int role)
     return n;
 }
 
-void I2cGpioConfig::validate()
+void GpioExpanderConfig::validate()
 {
     QStringList warnings;
 
@@ -193,7 +193,7 @@ void I2cGpioConfig::validate()
     }
 }
 
-void I2cGpioConfig::emitCounts()
+void GpioExpanderConfig::emitCounts()
 {
     QList<int> perChip;
     int total = 0;
@@ -203,11 +203,11 @@ void I2cGpioConfig::emitCounts()
         perChip.append(n);
         total += n;
     }
-    emit i2cGpioBreakdownChanged(perChip);
-    emit i2cGpioButtonsCountChanged(total);
+    emit gpioExpBreakdownChanged(perChip);
+    emit gpioExpButtonsCountChanged(total);
 }
 
-void I2cGpioConfig::retranslateUi()
+void GpioExpanderConfig::retranslateUi()
 {
     validate();   // refreshes the (translatable) warning text
 }

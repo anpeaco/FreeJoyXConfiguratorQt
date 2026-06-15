@@ -1,5 +1,5 @@
-#ifndef I2CGPIOCONFIG_H
-#define I2CGPIOCONFIG_H
+#ifndef GPIOEXPANDERCONFIG_H
+#define GPIOEXPANDERCONFIG_H
 
 /* I2C GPIO expander (MCP23017) configuration -- the configurator side of
  * MCP23017_PLAN.md (Slice 3). Mirrors ShiftRegistersConfig: each enabled chip
@@ -15,12 +15,12 @@ class QSpinBox;
 class QCheckBox;
 class QLabel;
 
-class I2cGpioConfig : public QWidget
+class GpioExpanderConfig : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit I2cGpioConfig(QWidget *parent = nullptr);
+    explicit GpioExpanderConfig(QWidget *parent = nullptr);
 
     void readFromConfig();
     void writeToConfig();
@@ -28,10 +28,10 @@ public:
 
 signals:
     /* Combined button count across all enabled expanders (-> CurrentConfig total). */
-    void i2cGpioButtonsCountChanged(int buttonsCount);
+    void gpioExpButtonsCountChanged(int buttonsCount);
     /* Per-chip button counts (index = slot, value = buttons; 0 if disabled) so the
      * Buttons tab can sub-divide the expander section by chip. */
-    void i2cGpioBreakdownChanged(const QList<int> &perChip);
+    void gpioExpBreakdownChanged(const QList<int> &perChip);
 
 private slots:
     void onRowChanged();
@@ -53,4 +53,4 @@ private:
     int  addressOfRow(int i) const;   // 0 (disabled) or 0x20..0x27
 };
 
-#endif // I2CGPIOCONFIG_H
+#endif // GPIOEXPANDERCONFIG_H

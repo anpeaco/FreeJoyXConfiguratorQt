@@ -13,7 +13,7 @@ CurrentConfig::CurrentConfig(QWidget *parent) :
     m_axisSources = 0;
     m_buttonsFromAxes = 0;
     m_buttonsFromShiftRegs = 0;
-    m_buttonsFromI2cGpio = 0;
+    m_buttonsFromExpanders = 0;
     m_singleButtons = 0;
     m_rowsOfButtons = 0;
     m_columnsOfButtons = 0;
@@ -44,22 +44,22 @@ void CurrentConfig::setConfig(int type, int changedHowMuch)
     else if (type == SINGLE_BUTTON){
         m_singleButtons += changedHowMuch;
         ui->label_SingleButtons->setNum(m_singleButtons);
-        ui->label_TotalButtons->setNum(m_buttonsFromShiftRegs + m_buttonsFromI2cGpio + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons));
-        totalButtonsChanged(m_buttonsFromShiftRegs + m_buttonsFromI2cGpio + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons));
+        ui->label_TotalButtons->setNum(m_buttonsFromShiftRegs + m_buttonsFromExpanders + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons));
+        totalButtonsChanged(m_buttonsFromShiftRegs + m_buttonsFromExpanders + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons));
     }
     else if (type == ROW_OF_BUTTONS){
         m_rowsOfButtons += changedHowMuch;
         ui->label_RowsOfButtons->setNum(m_rowsOfButtons);
         ui->label_ButtonsFromMatrix->setNum(m_columnsOfButtons * m_rowsOfButtons);
-        ui->label_TotalButtons->setNum(m_buttonsFromShiftRegs + m_buttonsFromI2cGpio + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons));
-        totalButtonsChanged(m_buttonsFromShiftRegs + m_buttonsFromI2cGpio + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons));
+        ui->label_TotalButtons->setNum(m_buttonsFromShiftRegs + m_buttonsFromExpanders + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons));
+        totalButtonsChanged(m_buttonsFromShiftRegs + m_buttonsFromExpanders + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons));
     }
     else if (type == COLUMN_OF_BUTTONS){
         m_columnsOfButtons += changedHowMuch;
         ui->label_ColumnsOfButtons->setNum(m_columnsOfButtons);
         ui->label_ButtonsFromMatrix->setNum(m_columnsOfButtons * m_rowsOfButtons);
-        ui->label_TotalButtons->setNum(m_buttonsFromShiftRegs + m_buttonsFromI2cGpio + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons));
-        totalButtonsChanged(m_buttonsFromShiftRegs + m_buttonsFromI2cGpio + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons));
+        ui->label_TotalButtons->setNum(m_buttonsFromShiftRegs + m_buttonsFromExpanders + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons));
+        totalButtonsChanged(m_buttonsFromShiftRegs + m_buttonsFromExpanders + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons));
     }
     else if (type == SINGLE_LED){
         m_singleLed += changedHowMuch;
@@ -82,7 +82,7 @@ void CurrentConfig::a2bCountChanged(int count)
 {
     m_buttonsFromAxes = count;
     ui->label_ButtonFromAxes->setNum(m_buttonsFromAxes);
-    int totalButtons = m_buttonsFromShiftRegs + m_buttonsFromI2cGpio + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons);
+    int totalButtons = m_buttonsFromShiftRegs + m_buttonsFromExpanders + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons);
     ui->label_TotalButtons->setNum(totalButtons);
     totalButtonsChanged(totalButtons);
 }
@@ -91,15 +91,15 @@ void CurrentConfig::shiftRegButtonsCountChanged(int count)
 {
     m_buttonsFromShiftRegs = count;
     ui->label_ButtonsFromShiftRegs->setNum(m_buttonsFromShiftRegs);
-    int totalButtons = m_buttonsFromShiftRegs + m_buttonsFromI2cGpio + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons);
+    int totalButtons = m_buttonsFromShiftRegs + m_buttonsFromExpanders + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons);
     ui->label_TotalButtons->setNum(totalButtons);
     totalButtonsChanged(totalButtons);
 }
 
-void CurrentConfig::i2cGpioButtonsCountChanged(int count)
+void CurrentConfig::gpioExpButtonsCountChanged(int count)
 {
-    m_buttonsFromI2cGpio = count;
-    int totalButtons = m_buttonsFromShiftRegs + m_buttonsFromI2cGpio + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons);
+    m_buttonsFromExpanders = count;
+    int totalButtons = m_buttonsFromShiftRegs + m_buttonsFromExpanders + m_buttonsFromAxes + m_singleButtons + (m_columnsOfButtons * m_rowsOfButtons);
     ui->label_TotalButtons->setNum(totalButtons);
     totalButtonsChanged(totalButtons);
 }

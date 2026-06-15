@@ -127,7 +127,7 @@ public slots:
      * grid (e.g. "Shift register 1" + "Shift register 2" rather than a
      * combined "Shift registers"). */
     void onShiftRegBreakdownChanged(const QList<int> &perRegister);
-    void onI2cGpioBreakdownChanged(const QList<int> &perChip);
+    void onGpioExpBreakdownChanged(const QList<int> &perChip);
     void onA2bBreakdownChanged(const QList<int> &perAxis);
 
 private slots:
@@ -239,7 +239,7 @@ private:
     int m_groupAxes      = 0;
     int m_groupDirect    = 0;
     QList<int> m_shiftRegBreakdown;	// per-register button counts (empty until first emit)
-    QList<int> m_i2cGpioBreakdown;	// per-MCP23017 button counts (empty until first emit)
+    QList<int> m_expanderBreakdown;	// per-MCP23017 button counts (empty until first emit)
     QList<int> m_axisBreakdown;		// per-axis a2b button counts (empty until first emit)
 
     /* Snapshot of the breakdown at the moment of the last load (or
