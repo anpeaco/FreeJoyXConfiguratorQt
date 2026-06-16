@@ -23,17 +23,10 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
     m_shiftRegNumber = shiftRegNumber;
     ui->label_ShiftIndex->setNum(shiftRegNumber + 1);
 
-    // Flatten the per-register box: the "Shift Registers" group already frames
-    // the section, so a nested box per register reads as 4 separate groups.
-    // Drop the border + title margin so the registers are flat rows, matching
-    // the Port Expanders table below.
-    ui->groupBox->setStyleSheet(QStringLiteral(
-        "QGroupBox { border: none; margin: 0px; padding: 0px; }"));
-
-    // Cap the per-register height so a row is just its value widgets, matching
-    // the compact single-row pitch of the Port Expanders table below (otherwise
-    // the QGroupBox reserves extra vertical space and the rows read spread out).
-    setMaximumHeight(28);
+    // The per-register container is a plain QWidget (not a QGroupBox) so it adds
+    // no title/frame overhead: each register is a single flat value row, matching
+    // the compact pitch of the Port Expanders table below. The "Shift Registers"
+    // group box around the whole table provides the only frame.
 
     // Column headers move to a single shared header row in ShiftRegistersConfig;
     // hide each register's own headers so the register is just its value row.
@@ -43,6 +36,11 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
     ui->text_shiftRegisterType->hide();
     ui->text_registersCount->hide();
     ui->text_buttonCount->hide();
+
+    // Count spinboxes share a fixed width with the Port Expanders' Button-count
+    // box so the two tables' count columns look identical (60px, centered).
+    ui->spinBox_RegistersCount->setFixedWidth(60);
+    ui->spinBox_ButtonCount->setFixedWidth(60);
 
     for (int i = 0; i < SHIFT_REG_TYPES; ++i) {
         ui->comboBox_ShiftRegType->addItem(m_shiftRegistersList[i].guiName);

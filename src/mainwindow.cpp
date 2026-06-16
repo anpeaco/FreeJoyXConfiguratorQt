@@ -226,15 +226,20 @@ MainWindow::MainWindow(QWidget *parent)
     // the GPIO port expanders (MCP23017 / MCP23S17) below them.
     m_shiftRegConfig = new ShiftRegistersConfig(this);
     m_shiftRegGroup = new QGroupBox(tr("Shift Registers"), this);
+    m_shiftRegGroup->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
     { auto *l = new QVBoxLayout(m_shiftRegGroup); l->setContentsMargins(6, 6, 6, 6);
       l->addWidget(m_shiftRegConfig); }
     ui->layoutV_tabShiftRegistersConfig->addWidget(m_shiftRegGroup);
 
     m_gpioExpConfig = new GpioExpanderConfig(this);
     m_expanderGroup = new QGroupBox(tr("Port Expanders"), this);
+    m_expanderGroup->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
     { auto *l = new QVBoxLayout(m_expanderGroup); l->setContentsMargins(6, 6, 6, 6);
       l->addWidget(m_gpioExpConfig); }
     ui->layoutV_tabShiftRegistersConfig->addWidget(m_expanderGroup);
+    // Both tables size to their content; spare height falls below them so the
+    // two groups sit compact at the top (instead of the SR group filling).
+    ui->layoutV_tabShiftRegistersConfig->addStretch(1);
     qDebug()<<"shift config load time ="<< timer.restart() << "ms";
     // add encoders widget
     m_encoderConfig = new EncodersConfig(this);

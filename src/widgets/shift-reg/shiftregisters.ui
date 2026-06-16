@@ -33,12 +33,9 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QGroupBox" name="groupBox">
+    <widget class="QWidget" name="groupBox">
      <property name="enabled">
       <bool>false</bool>
-     </property>
-     <property name="title">
-      <string/>
      </property>
      <layout class="QGridLayout" name="gridLayout" rowstretch="0,0" columnstretch="1,1,1,1,1,1,1" columnminimumwidth="0,0,0,0,0,0,0">
       <item row="1" column="1">

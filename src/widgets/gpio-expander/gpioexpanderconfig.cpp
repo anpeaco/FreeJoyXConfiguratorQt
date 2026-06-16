@@ -20,6 +20,10 @@ static const uint8_t FLAG_INVERT  = 0x02;
 static const int kAddrLo = 0x20;   // MCP2301x strap range 0x20..0x27
 static const int kAddrHi = 0x27;
 
+// Shared count-spinbox width, kept equal to the shift registers' count boxes so
+// the two tables' button-count columns read identically.
+static const int kCountWidth = 60;
+
 GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
     : QWidget(parent)
 {
@@ -31,11 +35,14 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
     for (int c = 0; c < 7; ++c) grid->setColumnStretch(c, 1);
 
     int r = 0;
-    grid->addWidget(new QLabel(tr("Type"),    this), r, 1, Qt::AlignCenter);
-    grid->addWidget(new QLabel(tr("CS pin"),  this), r, 2, Qt::AlignCenter);
-    grid->addWidget(new QLabel(tr("Address"), this), r, 3, Qt::AlignCenter);
-    grid->addWidget(new QLabel(tr("Wiring"),  this), r, 4, Qt::AlignCenter);
-    grid->addWidget(new QLabel(tr("Buttons"), this), r, 5, Qt::AlignCenter);
+    grid->addWidget(new QLabel(tr("Type"),         this), r, 1, Qt::AlignCenter);
+    grid->addWidget(new QLabel(tr("CS pin"),       this), r, 2, Qt::AlignCenter);
+    grid->addWidget(new QLabel(tr("Address"),      this), r, 3, Qt::AlignCenter);
+    grid->addWidget(new QLabel(tr("Wiring"),       this), r, 4, Qt::AlignCenter);
+    // Button-count header sits in the last column (col 6) so it lines up with the
+    // shift registers' "Button count" column; col 5 (their "Registers count") has
+    // no expander equivalent and stays empty. Same name as the SR table.
+    grid->addWidget(new QLabel(tr("Button count"), this), r, 6, Qt::AlignCenter);
     ++r;
 
     for (int i = 0; i < MAX_GPIO_EXPANDER_NUM; ++i, ++r) {
@@ -66,7 +73,9 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
 
         row.count = new QSpinBox(this);
         row.count->setRange(0, 16);
-        grid->addWidget(row.count, r, 5);
+        row.count->setAlignment(Qt::AlignCenter);
+        row.count->setFixedWidth(kCountWidth);   // match the SR count-box width
+        grid->addWidget(row.count, r, 6, Qt::AlignCenter);
 
         connect(row.type, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 this, &GpioExpanderConfig::onRowChanged);
@@ -89,7 +98,7 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
     for (QLabel *l : m_warnBanner->findChildren<QLabel *>())
         if (l->wordWrap()) { m_warnText = l; break; }
     m_warnBanner->setVisible(false);
-    grid->addWidget(m_warnBanner, r, 0, 1, 6);
+    grid->addWidget(m_warnBanner, r, 0, 1, 7);
 }
 
 void GpioExpanderConfig::onPinContextChanged(const QStringList &csPinNames, bool i2cBusOn, bool spiBusOn)
