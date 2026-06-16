@@ -24,19 +24,23 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
     : QWidget(parent)
 {
     auto *grid = new QGridLayout(this);
-    grid->setContentsMargins(0, 0, 0, 0);
+    // Same 7-column equal-stretch grid + left margin as the Shift Registers
+    // table above, so the index column and the data columns line up between the
+    // two tables (the expander has one fewer field, leaving col 6 empty).
+    grid->setContentsMargins(9, 0, 9, 2);
+    for (int c = 0; c < 7; ++c) grid->setColumnStretch(c, 1);
 
     int r = 0;
-    grid->addWidget(new QLabel(tr("Type"),    this), r, 1);
-    grid->addWidget(new QLabel(tr("CS pin"),  this), r, 2);
-    grid->addWidget(new QLabel(tr("Address"), this), r, 3);
-    grid->addWidget(new QLabel(tr("Wiring"),  this), r, 4);
-    grid->addWidget(new QLabel(tr("Buttons"), this), r, 5);
+    grid->addWidget(new QLabel(tr("Type"),    this), r, 1, Qt::AlignCenter);
+    grid->addWidget(new QLabel(tr("CS pin"),  this), r, 2, Qt::AlignCenter);
+    grid->addWidget(new QLabel(tr("Address"), this), r, 3, Qt::AlignCenter);
+    grid->addWidget(new QLabel(tr("Wiring"),  this), r, 4, Qt::AlignCenter);
+    grid->addWidget(new QLabel(tr("Buttons"), this), r, 5, Qt::AlignCenter);
     ++r;
 
     for (int i = 0; i < MAX_GPIO_EXPANDER_NUM; ++i, ++r) {
         Row row;
-        grid->addWidget(new QLabel(QString::number(i + 1), this), r, 0);
+        grid->addWidget(new QLabel(QString::number(i + 1), this), r, 0, Qt::AlignCenter);
 
         row.type = new QComboBox(this);
         row.type->addItem(tr("Disabled"));
@@ -75,6 +79,8 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
 
         m_rows.append(row);
     }
+
+    applyRowEnableStates();   // grey out the disabled rows from the start
 
     // Shared alert-banner look (triangle-alert icon + amber box), matching the
     // axes pending-pin banner and the dialog warning bars. Text is updated by
@@ -136,8 +142,8 @@ void GpioExpanderConfig::readFromConfig()
         row.count->setValue(c.button_cnt > 16 ? 16 : c.button_cnt);
         // Invert flag set -> active-high (VCC) wiring; otherwise GND (pull-up).
         row.wiring->setCurrentIndex((c.flags & FLAG_INVERT) ? W_VCC : W_GND);
-        row.address->setEnabled(type == T_I2C);
     }
+    applyRowEnableStates();
     updatePinDisplays();
     validate();
     emitCounts();
@@ -166,10 +172,24 @@ void GpioExpanderConfig::writeToConfig()
     }
 }
 
+void GpioExpanderConfig::applyRowEnableStates()
+{
+    // Mirror the Shift Registers table: a row whose type is Disabled greys out
+    // its editable cells (the type combo stays live so it can be re-enabled).
+    // Address is additionally only meaningful for an I2C chip.
+    for (const Row &row : m_rows) {
+        const int t = row.type->currentIndex();
+        const bool active = t != T_DISABLED;
+        row.address->setEnabled(t == T_I2C);
+        row.wiring->setEnabled(active);
+        row.count->setEnabled(active);
+        row.csPin->setEnabled(active);
+    }
+}
+
 void GpioExpanderConfig::onRowChanged()
 {
-    for (const Row &row : m_rows)
-        row.address->setEnabled(row.type->currentIndex() == T_I2C);
+    applyRowEnableStates();
     updatePinDisplays();
     validate();
     emitCounts();

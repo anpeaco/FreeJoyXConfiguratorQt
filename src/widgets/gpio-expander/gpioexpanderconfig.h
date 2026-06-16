@@ -64,6 +64,7 @@ private:
 
     void emitCounts();
     void validate();
+    void applyRowEnableStates();      // grey out Disabled rows (mirror Shift Registers)
     void updatePinDisplays();         // fill the CS column from m_csPinNames (in-order)
     int  addressOfRow(int i) const;   // 0 (disabled) or 0x20..0x27
 };

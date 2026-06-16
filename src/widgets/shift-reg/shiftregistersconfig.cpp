@@ -13,6 +13,7 @@ ShiftRegistersConfig::ShiftRegistersConfig(QWidget *parent) :
     m_shiftButtonsCount = 0;
 
     ui->layoutV_ShiftRegisters->setAlignment(Qt::AlignTop);
+    ui->layoutV_ShiftRegisters->setSpacing(2);   // tight inter-row pitch, like the expander table
 
     // One shared column header for all registers (each register's own headers
     // are hidden). Same 7-column equal-stretch grid as a register row so the

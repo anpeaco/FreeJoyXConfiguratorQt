@@ -10,9 +10,10 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
 {
     ui->setupUi(this);
 
-    // populated for translation at app start; must be set up after the translator initialises
+    // Placeholder for an unassigned pin. A bare dash matches the Port Expanders
+    // table's "-" convention so the top and bottom tables read the same.
     if (m_notDefined == nullptr) {
-        m_notDefined = tr("Not defined");
+        m_notDefined = QStringLiteral("-");
     }
 
     m_buttonsCount = 0;
@@ -27,7 +28,12 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
     // Drop the border + title margin so the registers are flat rows, matching
     // the Port Expanders table below.
     ui->groupBox->setStyleSheet(QStringLiteral(
-        "QGroupBox { border: none; margin-top: 0px; padding: 2px 0px; }"));
+        "QGroupBox { border: none; margin: 0px; padding: 0px; }"));
+
+    // Cap the per-register height so a row is just its value widgets, matching
+    // the compact single-row pitch of the Port Expanders table below (otherwise
+    // the QGroupBox reserves extra vertical space and the rows read spread out).
+    setMaximumHeight(28);
 
     // Column headers move to a single shared header row in ShiftRegistersConfig;
     // hide each register's own headers so the register is just its value row.
