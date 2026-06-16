@@ -22,13 +22,16 @@ ShiftRegistersConfig::ShiftRegistersConfig(QWidget *parent) :
         auto *header = new QWidget(this);
         auto *hg = new QGridLayout(header);
         hg->setContentsMargins(9, 0, 9, 2);
+        // Type leads (aligned above the Port Expanders' Type column), then the
+        // register's pins, then the counts -- so both tables read
+        // "# | Type | ... | Button count".
         m_headerLabels = {
-            new QLabel(tr("Latch pin"),           header),
-            new QLabel(tr("CLK pin"),             header),
-            new QLabel(tr("Data pin"),            header),
-            new QLabel(tr("Shift register type"), header),
-            new QLabel(tr("Registers count"),     header),
-            new QLabel(tr("Button count"),        header),
+            new QLabel(tr("Type"),            header),
+            new QLabel(tr("Latch pin"),       header),
+            new QLabel(tr("CLK pin"),         header),
+            new QLabel(tr("Data pin"),        header),
+            new QLabel(tr("Registers count"), header),
+            new QLabel(tr("Button count"),    header),
         };
         for (int c = 0; c < m_headerLabels.size(); ++c)
             hg->addWidget(m_headerLabels[c], 0, c + 1, Qt::AlignCenter);
@@ -58,8 +61,8 @@ void ShiftRegistersConfig::retranslateUi()
     for (int i = 0; i < m_shiftRegsPtrList.size(); ++i) {
         m_shiftRegsPtrList[i]->retranslateUi();
     }
-    const QStringList hdr = { tr("Latch pin"), tr("CLK pin"), tr("Data pin"),
-                             tr("Shift register type"), tr("Registers count"),
+    const QStringList hdr = { tr("Type"), tr("Latch pin"), tr("CLK pin"),
+                             tr("Data pin"), tr("Registers count"),
                              tr("Button count") };
     for (int i = 0; i < m_headerLabels.size() && i < hdr.size(); ++i)
         m_headerLabels[i]->setText(hdr[i]);
