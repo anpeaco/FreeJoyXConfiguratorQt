@@ -21,8 +21,8 @@ static const int kAddrLo = 0x20;   // MCP2301x strap range 0x20..0x27
 static const int kAddrHi = 0x27;
 
 // Shared count-spinbox width, kept equal to the shift registers' count boxes so
-// the two tables' button-count columns read identically.
-static const int kCountWidth = 60;
+// the two tables' button-count columns read identically (fits a 3-digit value).
+static const int kCountWidth = 64;
 
 GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
     : QWidget(parent)
@@ -140,6 +140,11 @@ void GpioExpanderConfig::readFromConfig()
 
         QSignalBlocker b1(row.type), b2(row.address), b3(row.count), b4(row.wiring);
 
+        // An MCP23017 with an address outside the 0x20..0x27 strap range can
+        // only arrive from a corrupt or externally-authored config (the UI
+        // dropdown can't produce it). We deliberately fall through to Disabled
+        // rather than guess a valid address -- a factory-reset slot is exactly
+        // type=0/address=0, which is the common, correct hit of this branch.
         int type = T_DISABLED;
         if (c.type == GPIO_EXP_MCP23S17) {
             type = T_SPI;

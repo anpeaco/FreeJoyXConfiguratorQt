@@ -38,9 +38,10 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
     ui->text_buttonCount->hide();
 
     // Count spinboxes share a fixed width with the Port Expanders' Button-count
-    // box so the two tables' count columns look identical (60px, centered).
-    ui->spinBox_RegistersCount->setFixedWidth(60);
-    ui->spinBox_ButtonCount->setFixedWidth(60);
+    // box so the two tables' count columns look identical (64px fits a 3-digit
+    // "128" plus the up/down arrows, centered).
+    ui->spinBox_RegistersCount->setFixedWidth(64);
+    ui->spinBox_ButtonCount->setFixedWidth(64);
 
     for (int i = 0; i < SHIFT_REG_TYPES; ++i) {
         ui->comboBox_ShiftRegType->addItem(m_shiftRegistersList[i].guiName);

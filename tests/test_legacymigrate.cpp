@@ -26,16 +26,20 @@ private slots:
     void devConfigSize_matchesConstant()
     {
         QCOMPARE(sizeof(dev_config_t), static_cast<size_t>(FREEJOY_DEV_CONFIG_SIZE));
-        QCOMPARE(static_cast<int>(FREEJOY_DEV_CONFIG_SIZE), 1612);
+        QCOMPARE(static_cast<int>(FREEJOY_DEV_CONFIG_SIZE), 1620);
     }
     void i2cGpio_isAppendedAtEnd()
     {
-        /* The old (0x0020) shape is exactly the prefix up to i2c_gpio: a pure
-         * append adds the member size with no padding (alignment-1 member onto
-         * an even-sized, alignment-2 struct). */
+        /* The old (0x0020) shape is exactly the prefix up to gpio_expanders: a
+         * pure append adds the member size with no padding (alignment-1 member
+         * onto an even-sized, alignment-2 struct). saved_per_exp[8] was appended
+         * AFTER gpio_expanders (1612 -> 1620) so offsetof(gpio_expanders) -- the
+         * 0x0020 migration boundary -- is unchanged. */
         QCOMPARE(offsetof(dev_config_t, gpio_expanders), static_cast<size_t>(1580));
         QCOMPARE(sizeof(gpio_expander_t), static_cast<size_t>(4));
         QCOMPARE(static_cast<int>(MAX_GPIO_EXPANDER_NUM), 8);
+        /* saved_per_exp sits after the 8 x 4B expander slots. */
+        QCOMPARE(offsetof(dev_config_t, saved_per_exp), static_cast<size_t>(1580 + 32));
     }
     void firmwareVersion_isGen3()
     {
@@ -91,6 +95,8 @@ private slots:
             QCOMPARE(out.gpio_expanders[i].address,    static_cast<uint8_t>(0));
             QCOMPARE(out.gpio_expanders[i].button_cnt, static_cast<uint8_t>(0));
             QCOMPARE(out.gpio_expanders[i].flags,      static_cast<uint8_t>(0));
+            /* The appended remap snapshot must also clear (it was 0xFF). */
+            QCOMPARE(out.saved_per_exp[i],             static_cast<uint8_t>(0));
         }
     }
 

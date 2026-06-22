@@ -963,6 +963,7 @@ ButtonConfig::PhysBreakdown ButtonConfig::currentBreakdown() const
     PhysBreakdown b;
     b.matrix  = m_groupMatrix;
     b.perSR   = m_shiftRegBreakdown;
+    b.perExp  = m_expanderBreakdown;
     b.perA2b  = m_axisBreakdown;
     b.direct  = m_groupDirect;
     return b;
@@ -987,6 +988,16 @@ void ButtonConfig::captureBreakdownToConfig()
         dst.per_a2b[i] = static_cast<uint8_t>(qBound(0, n, 255));
     }
     dst.direct = static_cast<uint8_t>(qBound(0, live.direct, 255));
+    // Companion per-expander snapshot (appended to dev_config_t after
+    // gpio_expanders so the 0x0020 prefix migration stays intact). Kept in
+    // lockstep with saved_breakdown so load-time drift detection is symmetric
+    // -- without it, adding the expander category to currentBreakdown() would
+    // make every saved config look drifted on load and wrongly remap a2b/direct.
+    uint8_t *exp = gEnv.pDeviceConfig->config.saved_per_exp;
+    for (int i = 0; i < MAX_GPIO_EXPANDER_NUM; ++i) {
+        const int n = (i < live.perExp.size()) ? live.perExp[i] : 0;
+        exp[i] = static_cast<uint8_t>(qBound(0, n, 255));
+    }
 }
 
 ButtonConfig::PhysBreakdown ButtonConfig::breakdownFromConfig() const
@@ -996,6 +1007,9 @@ ButtonConfig::PhysBreakdown ButtonConfig::breakdownFromConfig() const
     b.matrix = src.matrix;
     b.perSR.reserve(MAX_SHIFT_REG_NUM);
     for (int i = 0; i < MAX_SHIFT_REG_NUM; ++i) b.perSR.append(src.per_sr[i]);
+    b.perExp.reserve(MAX_GPIO_EXPANDER_NUM);
+    for (int i = 0; i < MAX_GPIO_EXPANDER_NUM; ++i)
+        b.perExp.append(gEnv.pDeviceConfig->config.saved_per_exp[i]);
     b.perA2b.reserve(MAX_AXIS_NUM);
     for (int i = 0; i < MAX_AXIS_NUM; ++i) b.perA2b.append(src.per_a2b[i]);
     b.direct = src.direct;
