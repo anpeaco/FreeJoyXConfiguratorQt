@@ -289,6 +289,35 @@ private slots:
                  "B6 combobox must unlock when the sensor's CS is cleared");
     }
 
+    // ---- #65 direct-reassign: setting TLE5011_GEN on B6 MANUALLY (no sensor CS
+    //      to auto-claim it, so the combobox stays enabled) must leave EVERY
+    //      role selectable, so the user can reassign B6 in one step instead of
+    //      being forced to clear it to Not Used first. There's no sensor clock
+    //      to protect when GEN was picked by hand. The genuine Encoder-2<->GEN
+    //      TIM4 mutex on B7 still applies and self-releases once B6 leaves GEN.
+    void manualGen_allowsDirectReassign()
+    {
+        m_pc->setPinRole(PB_6, TLE5011_GEN);            // pick GEN by hand, no sensor
+        QCOMPARE(m_pc->pinRole(PB_6), int(TLE5011_GEN));
+        QVERIFY2(m_pc->isPinEditable(PB_6),
+                 "manual GEN leaves the combobox enabled (no interaction lock)");
+        // Every role stays selectable -- no clear-to-Not-Used dance.
+        QVERIFY2(m_pc->isPinRoleOptionEnabled(PB_6, NOT_USED),
+                 "\"Not Used\" stays selectable");
+        QVERIFY2(m_pc->isPinRoleOptionEnabled(PB_6, SHIFT_REG_DATA),
+                 "other roles stay selectable while GEN is set manually");
+        // ...but the real TIM4 mutex is preserved: B7 FAST_ENCODER is locked
+        // while B6 holds GEN (they'd both want TIM4).
+        QVERIFY2(!m_pc->isPinRoleOptionEnabled(PB_7, FAST_ENCODER),
+                 "Encoder-2<->GEN TIM4 mutex still locks B7 FAST_ENCODER while B6=GEN");
+        // Switch straight to another role in ONE step (no NOT_USED in between).
+        m_pc->setPinRole(PB_6, SHIFT_REG_DATA);
+        QCOMPARE(m_pc->pinRole(PB_6), int(SHIFT_REG_DATA));
+        // GEN released -> the encoder-2 side of the TIM4 mutex frees again.
+        QVERIFY2(m_pc->isPinRoleOptionEnabled(PB_7, FAST_ENCODER),
+                 "B7 FAST_ENCODER unlocks once B6 leaves GEN");
+    }
+
     // ---- #58: adding an SPI sensor auto-claims the SPI bus; removing the last
     //      one must clear SCK/MISO/MOSI AND drop the SPI bus checkbox. ----
     void spiCheckbox_clearsAfterLastSensorRemoved()

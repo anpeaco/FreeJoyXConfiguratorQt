@@ -682,16 +682,23 @@ void PinConfig::blockEncoder2TLE5011(int currentDeviceEnum, int previousDeviceEn
         if (m_pinCBoxPtrList[PB7Index]->currentDevEnum() == FAST_ENCODER) {
             m_pinCBoxPtrList[PB7Index]->resetPin();
         }
-        /* #65: GEN is auto-assigned to PB6 and PB6 is the only pin it can use,
-         * so while a TLE owns it, lock B6 to GEN -- disable every OTHER role
-         * option there so the user can't overwrite the clock and silently break
-         * the sensor. (GEN's own status is managed by the encoder2 branch above;
-         * we only touch non-GEN options.) B6 frees when the sensor's CS -> Not
-         * Used releases GEN and m_tleGenCount drops. */
+        /* #65 / direct-reassign: while a TLE owns GEN we protect the clock, but
+         * HOW depends on whether a real sensor actually claimed the pin:
+         *   - Sensor auto-claim (isInteracts): B6's whole combobox is already
+         *     disabled by setIndex_iteraction. Grey the non-GEN options too as
+         *     belt-and-suspenders (keeps isPinRoleOptionEnabled() honest).
+         *   - Manual GEN (box still editable, no sensor to protect): leave every
+         *     role selectable so the user can reassign B6 in ONE step. Picking a
+         *     new role replaces GEN and drops m_tleGenCount, releasing the lock.
+         *     Locking the other roles here only traps the user -- there's no
+         *     sensor clock to break.
+         * "Not Used" always stays selectable, and the B7 FAST_ENCODER lock below
+         * (the genuine Encoder-2 <-> GEN TIM4 mutex) applies in both cases. */
+        const bool sensorOwned = m_pinCBoxPtrList[PB6Index]->isInteracts();
         const QVector<int> &b6on = m_pinCBoxPtrList[PB6Index]->enumIndex();
         for (int i = 0; i < b6on.size(); ++i) {
-            if (b6on[i] >= 0 && b6on[i] != TLE5011_GEN) {
-                m_pinCBoxPtrList[PB6Index]->setIndexStatus(i, false);
+            if (b6on[i] >= 0 && b6on[i] != TLE5011_GEN && b6on[i] != NOT_USED) {
+                m_pinCBoxPtrList[PB6Index]->setIndexStatus(i, !sensorOwned);
             }
         }
         for (int i = 0; i < m_pinCBoxPtrList[PB7Index]->enumIndex().size(); ++i) {

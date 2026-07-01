@@ -28,6 +28,7 @@ SOURCES += \
     test_pinconfig_stubs.cpp \
     ../src/widgets/pins/pinconfig.cpp \
     ../src/widgets/pins/pincombobox.cpp \
+    ../src/widgets/groupedcombo.cpp \
     ../src/widgets/pins/pinsbluepill.cpp \
     ../src/widgets/pins/pinsblackpill.cpp \
     ../src/widgets/pins/pinscontrlite.cpp \
