@@ -11,7 +11,7 @@
 
 //#define DEBUG
 
-#define FIRMWARE_VERSION					0x0030			// FreeJoyX wire-format generation 3: added gpio_expanders[MAX_GPIO_EXPANDER_NUM] (MCP23017 I2C + MCP23S17 SPI GPIO button expanders, 8 slots, any mix) appended to the END of dev_config_t; old shape is the byte-exact prefix, so 0x0020->0x0030 migration is prefix-copy + zero(i2c_gpio), and offsetof(dev_config_t, i2c_gpio) == the old size (1580). Crosses &0xFFF0 -> factory reset on first flash. MCP23017_PLAN.md. --- Gen 2 note (0x0020): shape unchanged from 0x0010; SEMANTIC drift (LONG_PRESS -> TAP). See firmware-side comment for the full rationale.
+#define FIRMWARE_VERSION					0x0030			// FreeJoyX wire-format generation 3: added gpio_expanders[MAX_GPIO_EXPANDER_NUM] (MCP23017 I2C + MCP23S17 SPI GPIO button expanders, 8 slots, any mix) appended to the END of dev_config_t; old shape is the byte-exact prefix, so 0x0020->0x0030 migration is prefix-copy + zero(gpio_expanders), and offsetof(dev_config_t, gpio_expanders) == the old size (1580). Crosses &0xFFF0 -> factory reset on first flash. MCP23017_PLAN.md. --- Gen 2 note (0x0020): shape unchanged from 0x0010; SEMANTIC drift (LONG_PRESS -> TAP). See firmware-side comment for the full rationale.
 
 /* FREEJOYX_VERSION is the user-facing project version (semver). It's
  * decoupled from FIRMWARE_VERSION above -- FIRMWARE_VERSION is the
