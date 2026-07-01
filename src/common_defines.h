@@ -11,7 +11,7 @@
 
 //#define DEBUG
 
-#define FIRMWARE_VERSION					0x0020			// FreeJoyX wire-format generation 2. dev_config_t shape unchanged from 0x0010; the bump is for SEMANTIC drift (LONG_PRESS -> TAP enum reinterpretation). See firmware-side comment for the full rationale.
+#define FIRMWARE_VERSION					0x0030			// FreeJoyX wire-format generation 3: added gpio_expanders[MAX_GPIO_EXPANDER_NUM] (MCP23017 I2C + MCP23S17 SPI GPIO button expanders, 8 slots, any mix) appended to the END of dev_config_t; old shape is the byte-exact prefix, so 0x0020->0x0030 migration is prefix-copy + zero(i2c_gpio), and offsetof(dev_config_t, i2c_gpio) == the old size (1580). Crosses &0xFFF0 -> factory reset on first flash. MCP23017_PLAN.md. --- Gen 2 note (0x0020): shape unchanged from 0x0010; SEMANTIC drift (LONG_PRESS -> TAP). See firmware-side comment for the full rationale.
 
 /* FREEJOYX_VERSION is the user-facing project version (semver). It's
  * decoupled from FIRMWARE_VERSION above -- FIRMWARE_VERSION is the
@@ -37,7 +37,7 @@
  * fail the build if the struct shape drifts between the firmware and
  * configurator toolchains (arm-none-eabi-gcc vs MinGW g++). Sister rule
  * lives in CLAUDE.md ("Wire-format archival rule"). */
-#define FREEJOY_DEV_CONFIG_SIZE				1580
+#define FREEJOY_DEV_CONFIG_SIZE				1620			/* 1580 -> 1612: +32 for gpio_expanders[MAX_GPIO_EXPANDER_NUM] (8 x 4B MCP23017/MCP23S17 expander slots); 1612 -> 1620: +8 for saved_per_exp[MAX_GPIO_EXPANDER_NUM] (per-expander remap snapshot). Both appended at the end of dev_config_t, so the old (0x0020) size 1580 still == offsetof(dev_config_t, gpio_expanders) and the prefix migration is unchanged. Still 0x0030 -- the 1612 shape was never released. */
 /* 72 -> 88: params_report_t gained detect_axis_raw[MAX_AXIS_NUM] (8 * int16)
  * for axis auto-detect (AXIS_DETECT_PLAN.md). params-report-only change --
  * dev_config_t untouched, so no FIRMWARE_VERSION 0xFFF0 cross / factory
@@ -64,6 +64,7 @@
 #define MAX_ENCODERS_NUM					16					// max 64
 #define MAX_FAST_ENCODER_NUM			2						// hardware-quadrature encoders (Enc 1 = TIM1/PA8/PA9, Enc 2 = TIM4/PB6/PB7).
 #define MAX_SHIFT_REG_NUM					4						// max 4
+#define MAX_GPIO_EXPANDER_NUM				8						// GPIO expanders (MCP23017 I2C / MCP23S17 SPI), any mix, up to 16 buttons each -- MCP23017_PLAN.md
 #define MAX_LEDS_NUM							24
 #define NUM_RGB_LEDS    					50					// if increase dont forget calc config size CONFIG_PAGE_COUNT
 #define NUM_RGB_LEDS_SH						20

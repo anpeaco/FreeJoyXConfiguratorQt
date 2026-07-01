@@ -21,6 +21,7 @@
 #include "legacy_types.h"
 
 #include <string.h>
+#include <stddef.h>          /* offsetof -- pre-0x0030 prefix size */
 #include <QtGlobal>
 #include <QDebug>
 
@@ -478,30 +479,47 @@ static MigrateResult migrate_v1770_to_current(const uint8_t *raw, size_t len, de
 }
 
 /* ============================================================================
+ * Shared prefix migrator for every pre-0x0030 generation whose dev_config_t is
+ * the byte-exact PREFIX of the current struct -- i.e. current minus the appended
+ * i2c_gpio[]. Covers FreeJoyX 0x0010 and 0x0020, plus upstream-lineage 0x1780
+ * (byte-identical to 0x0020). The 0x0030 bump only APPENDED
+ * i2c_gpio[MAX_GPIO_EXPANDER_NUM] at the end of dev_config_t, so the old config size
+ * is exactly offsetof(dev_config_t, gpio_expanders) and the migration is: seed current
+ * factory defaults (so the appended field is sane), overlay the old prefix
+ * bytes, then re-stamp the version.
+ *
+ * No inline struct snapshot is needed: an append cannot reorder or resize any
+ * earlier field, and offsetof is read from the live struct so it can never
+ * drift. This resolves the "inline-archive on the next shape change" note the
+ * v1780 / v0010 shortcuts previously carried -- the next change DID arrive
+ * (0x0030) and it was a pure append, so the prefix copy stays correct.
+ * ============================================================================
+ */
+static const size_t kPre0030ConfigSize = offsetof(dev_config_t, gpio_expanders);
+
+static MigrateResult migrate_pre0030_to_current(const uint8_t *raw, size_t len, dev_config_t &out)
+{
+    if (len < kPre0030ConfigSize) {
+        return MigrateResult::BufferTooSmall;
+    }
+    /* Seed current factory defaults so the appended i2c_gpio[] holds its
+     * disabled default, then overlay the old prefix bytes verbatim. */
+    out = ::InitConfig();
+    memcpy(&out, raw, kPre0030ConfigSize);
+    /* Re-stamp so a write-back / device mismatch check stops firing legacy. */
+    out.firmware_version = FIRMWARE_VERSION;
+    return MigrateResult::Ok;
+}
+
+/* ============================================================================
  * v1780 -> current
- * Source: current dev_config_t (NOT archived inline). The 0x1780 -> 0x1790
- * bump added freejoyx_version_*_major/minor/patch to params_report_t but
- * left dev_config_t byte-identical to current's shape. The forward
- * migrator is therefore a memcpy + a version-stamp update; the legacy
- * archive rule (memory: feedback_wire_format_archival.md) would normally
- * require an inline copy of the v1780 shape under legacy::v1780::, but
- * with no shape divergence the archive would just be a duplicate of
- * common_types.h. If the next bump DOES change dev_config_t we'll then
- * need to inline-archive the v1780 shape under namespace v1780; for now
- * we take the byte-identical shortcut.
+ * dev_config_t was byte-identical to 0x0020 until the 0x0030 append; the
+ * shared prefix migrator above handles it.
  * ============================================================================
  */
 static MigrateResult migrate_v1780_to_current(const uint8_t *raw, size_t len, dev_config_t &out)
 {
-    if (len < sizeof(dev_config_t)) {
-        return MigrateResult::BufferTooSmall;
-    }
-    /* Shape is identical -- direct copy. */
-    memcpy(&out, raw, sizeof(dev_config_t));
-    /* Update the stamp so the device-side mismatch check stops firing
-     * the legacy branch on the migrated config. */
-    out.firmware_version = FIRMWARE_VERSION;
-    return MigrateResult::Ok;
+    return migrate_pre0030_to_current(raw, len, out);
 }
 
 /* ============================================================================
@@ -520,13 +538,23 @@ static MigrateResult migrate_v1780_to_current(const uint8_t *raw, size_t len, de
  */
 static MigrateResult migrate_v0010_to_current(const uint8_t *raw, size_t len, dev_config_t &out)
 {
-    if (len < sizeof(dev_config_t)) {
-        return MigrateResult::BufferTooSmall;
-    }
-    /* Shape identical -- direct copy. */
-    memcpy(&out, raw, sizeof(dev_config_t));
-    out.firmware_version = FIRMWARE_VERSION;
-    return MigrateResult::Ok;
+    /* Shape is the pre-0x0030 prefix (the 0x0010->0x0020 bump was semantic-only
+     * and kept the layout byte-identical). The LONG_PRESS->TAP caveat is logged
+     * by the dispatch in migrateLegacyConfig(). */
+    return migrate_pre0030_to_current(raw, len, out);
+}
+
+/* ============================================================================
+ * v0020 -> current
+ * 0x0020 is the immediately-previous FreeJoyX generation. The 0x0030 bump
+ * appended i2c_gpio[] at the end of dev_config_t, so 0x0020 is the byte-exact
+ * prefix -- migrate via the shared prefix path. Defaults seed the new expander
+ * slots to disabled; the user's existing mapping is preserved verbatim.
+ * ============================================================================
+ */
+static MigrateResult migrate_v0020_to_current(const uint8_t *raw, size_t len, dev_config_t &out)
+{
+    return migrate_pre0030_to_current(raw, len, out);
 }
 
 /* ============================================================================
@@ -543,6 +571,7 @@ bool canMigrate(uint16_t firmware_version)
         case 0x1770:  /* v1.7.7 -- FreeJoyX previous-outgoing shape */
         case 0x1780:  /* v1.7.8 -- prior FreeJoyX, dev_config shape identical */
         case 0x0010:  /* FreeJoyX v0.0.x -- LONG_PRESS hold-style semantics */
+        case 0x0020:  /* FreeJoyX gen 2 -- pre-0x0030 (no i2c_gpio[]) */
             return true;
         default:
             return false;
@@ -560,9 +589,11 @@ size_t legacyConfigSize(uint16_t firmware_version)
         case 0x1770:
             return sizeof(v1770::dev_config_t);
         case 0x1780:
-            return sizeof(dev_config_t);   /* shape identical to current */
         case 0x0010:
-            return sizeof(dev_config_t);   /* shape identical to current; semantic-only bump */
+        case 0x0020:
+            /* pre-0x0030 shape == current dev_config_t minus the appended
+             * i2c_gpio[]; the device sends exactly this many bytes. */
+            return kPre0030ConfigSize;
         default:
             return sizeof(dev_config_t);
     }
@@ -631,6 +662,13 @@ MigrateResult migrateLegacyConfig(const uint8_t *raw, size_t len, dev_config_t &
                     << "FIRMWARE_VERSION 0x" << QString::number(FIRMWARE_VERSION, 16)
                     << "(TAP release-within-cutoff semantics). Re-verify gesture-typed buttons.";
             return migrate_v0010_to_current(raw, len, out);
+
+        case 0x0020:
+            qInfo() << "Migrating dev_config_t from" << describeVersion(version)
+                    << "to current FIRMWARE_VERSION 0x"
+                    << QString::number(FIRMWARE_VERSION, 16)
+                    << "(append-only: i2c_gpio[] expander slots default to disabled)";
+            return migrate_v0020_to_current(raw, len, out);
 
         default:
             qWarning() << "No migrator for firmware version 0x"

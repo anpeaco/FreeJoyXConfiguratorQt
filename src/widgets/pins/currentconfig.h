@@ -31,6 +31,7 @@ signals:
 public slots:
     void a2bCountChanged(int count);
     void shiftRegButtonsCountChanged(int count);
+    void gpioExpButtonsCountChanged(int count);
     void totalButtonsChanged(int count);
     void totalLEDsChanged(int count);
 
@@ -41,6 +42,7 @@ private:
     int m_axisSources;
     int m_buttonsFromAxes;
     int m_buttonsFromShiftRegs;
+    int m_buttonsFromExpanders;
     int m_singleButtons;
     int m_rowsOfButtons;
     int m_columnsOfButtons;

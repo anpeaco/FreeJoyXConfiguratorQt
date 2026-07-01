@@ -8,6 +8,8 @@
 #include "deviceconfig.h"
 #include "global.h"
 
+class QLabel;
+
 namespace Ui {
 class ShiftRegistersConfig;
 }
@@ -57,6 +59,7 @@ private:
     std::array<ShiftRegData_t, MAX_SHIFT_REG_NUM + 1> m_dataPinsArray{};
 
     QList<ShiftRegisters *> m_shiftRegsPtrList;
+    QList<QLabel *> m_headerLabels;   // the single shared column header
 };
 
 #endif // SHIFTREGISTERSCONFIG_H

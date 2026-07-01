@@ -116,6 +116,13 @@ signals:
      * listing them so the reassignment isn't silent (#57). Each line is
      * "<pin> -- was <role>". */
     void pinRolesAutoDisplaced(const QStringList &lines);
+    /* Live pin context for the GPIO-expander table: the board-correct names of
+     * the SPI_GPIO_CS pins (pin order, for the CS column + SPI CS validation),
+     * and whether the I2C / SPI buses are enabled (an I2C_SCL / SPI_SCK|MOSI
+     * role exists). Emitted on every pin change + on load, so the expander's
+     * validation banner clears the moment you enable the bus. Computed from the
+     * LIVE combobox roles (config.pins[] isn't written until writeToConfig). */
+    void gpioExpPinContextChanged(const QStringList &csPinNames, bool i2cBusOn, bool spiBusOn);
     //void pinTypeSelected(Pin pin, pin_types_t type, bool selected);
 
     //protected:
@@ -124,6 +131,7 @@ signals:
 public slots:
     void a2bCountChanged(int);
     void shiftRegButtonsCountChanged(int count);
+    void gpioExpButtonsCountChanged(int count);
     void highlightPins(pin_t pinType, bool enable);
 private slots:
     void pinInteraction(int index, int senderIndex, int pin);
@@ -160,6 +168,7 @@ private:
     int m_tleGenCount = 0;
 
     void signalsForWidgets(int currentDeviceEnum, int previousDeviceEnum, int pinNumber, QString pinName);
+    void emitGpioExpPinContext();   // recompute + emit gpioExpPinContextChanged (live CS pins + bus state)
     void pinTypeLimit(int currentDeviceEnum, int previousDeviceEnum);
     void setCurrentConfig(int currentDeviceEnum, int previousDeviceEnum, int pinNumber, QString pinName);
     void blockPA8PWM(int currentDeviceEnum, int previousDeviceEnum);

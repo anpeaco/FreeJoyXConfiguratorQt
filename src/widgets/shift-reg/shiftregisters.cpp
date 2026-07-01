@@ -10,9 +10,10 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
 {
     ui->setupUi(this);
 
-    // populated for translation at app start; must be set up after the translator initialises
+    // Placeholder for an unassigned pin. A bare dash matches the Port Expanders
+    // table's "-" convention so the top and bottom tables read the same.
     if (m_notDefined == nullptr) {
-        m_notDefined = tr("Not defined");
+        m_notDefined = QStringLiteral("-");
     }
 
     m_buttonsCount = 0;
@@ -21,6 +22,26 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
     m_dataPin = 0;
     m_shiftRegNumber = shiftRegNumber;
     ui->label_ShiftIndex->setNum(shiftRegNumber + 1);
+
+    // The per-register container is a plain QWidget (not a QGroupBox) so it adds
+    // no title/frame overhead: each register is a single flat value row, matching
+    // the compact pitch of the Port Expanders table below. The "Shift Registers"
+    // group box around the whole table provides the only frame.
+
+    // Column headers move to a single shared header row in ShiftRegistersConfig;
+    // hide each register's own headers so the register is just its value row.
+    ui->text_latchPin->hide();
+    ui->text_clkPin->hide();
+    ui->text_dataPin->hide();
+    ui->text_shiftRegisterType->hide();
+    ui->text_registersCount->hide();
+    ui->text_buttonCount->hide();
+
+    // Count spinboxes share a fixed width with the Port Expanders' Button-count
+    // box so the two tables' count columns look identical (64px fits a 3-digit
+    // "128" plus the up/down arrows, centered).
+    ui->spinBox_RegistersCount->setFixedWidth(64);
+    ui->spinBox_ButtonCount->setFixedWidth(64);
 
     for (int i = 0; i < SHIFT_REG_TYPES; ++i) {
         ui->comboBox_ShiftRegType->addItem(m_shiftRegistersList[i].guiName);

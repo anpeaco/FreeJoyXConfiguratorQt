@@ -19,6 +19,7 @@
 #include "ledconfig.h"
 #include "pinconfig.h"
 #include "shiftregistersconfig.h"
+#include "gpioexpanderconfig.h"
 #include "shiftstimersconfig.h"
 #include "loadingoverlay.h"
 
@@ -28,6 +29,7 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
+class QGroupBox;
 class FlashProgressDialog;
 class FlashSession;
 
@@ -187,6 +189,9 @@ private:
     LedConfig *m_ledConfig;
     EncodersConfig *m_encoderConfig;
     ShiftRegistersConfig *m_shiftRegConfig;
+    GpioExpanderConfig *m_gpioExpConfig;
+    QGroupBox *m_shiftRegGroup = nullptr;   // "Shift Registers" group on the SR tab
+    QGroupBox *m_expanderGroup = nullptr;   // "Port Expanders" group on the SR tab
     AxesConfig *m_axesConfig;
     AxesCurvesConfig *m_axesCurvesConfig;
     AdvancedSettings *m_advSettings = nullptr;

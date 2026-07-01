@@ -8,6 +8,7 @@
 #include <QDialogButtonBox>
 #include <QLabel>
 #include <QVBoxLayout>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QSpinBox>
@@ -221,8 +222,24 @@ MainWindow::MainWindow(QWidget *parent)
             m_axesCurvesConfig, &AxesCurvesConfig::setAxisInUse);
     qDebug()<<"curves config load time ="<< timer.restart() << "ms";
     // add shift registers widget
+    // Two titled groups on the Shift Registers tab: the shift registers, and
+    // the GPIO port expanders (MCP23017 / MCP23S17) below them.
     m_shiftRegConfig = new ShiftRegistersConfig(this);
-    ui->layoutV_tabShiftRegistersConfig->addWidget(m_shiftRegConfig);
+    m_shiftRegGroup = new QGroupBox(tr("Shift Registers"), this);
+    m_shiftRegGroup->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    { auto *l = new QVBoxLayout(m_shiftRegGroup); l->setContentsMargins(6, 6, 6, 6);
+      l->addWidget(m_shiftRegConfig); }
+    ui->layoutV_tabShiftRegistersConfig->addWidget(m_shiftRegGroup);
+
+    m_gpioExpConfig = new GpioExpanderConfig(this);
+    m_expanderGroup = new QGroupBox(tr("Port Expanders"), this);
+    m_expanderGroup->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    { auto *l = new QVBoxLayout(m_expanderGroup); l->setContentsMargins(6, 6, 6, 6);
+      l->addWidget(m_gpioExpConfig); }
+    ui->layoutV_tabShiftRegistersConfig->addWidget(m_expanderGroup);
+    // Both tables size to their content; spare height falls below them so the
+    // two groups sit compact at the top (instead of the SR group filling).
+    ui->layoutV_tabShiftRegistersConfig->addStretch(1);
     qDebug()<<"shift config load time ="<< timer.restart() << "ms";
     // add encoders widget
     m_encoderConfig = new EncodersConfig(this);
@@ -300,6 +317,10 @@ MainWindow::MainWindow(QWidget *parent)
     m_pinConfig->setButtonConfig(m_buttonConfig);
     connect(m_shiftRegConfig, &ShiftRegistersConfig::shiftRegBreakdownChanged,
             m_buttonConfig, &ButtonConfig::onShiftRegBreakdownChanged);
+    connect(m_gpioExpConfig, &GpioExpanderConfig::gpioExpBreakdownChanged,
+            m_buttonConfig, &ButtonConfig::onGpioExpBreakdownChanged);
+    connect(m_pinConfig, &PinConfig::gpioExpPinContextChanged,
+            m_gpioExpConfig, &GpioExpanderConfig::onPinContextChanged);
     connect(m_axesConfig, &AxesConfig::a2bBreakdownChanged,
             m_buttonConfig, &ButtonConfig::onA2bBreakdownChanged);
     connect(m_pinConfig, &PinConfig::totalButtonsValueChanged, m_buttonConfig, &ButtonConfig::setUiOnOff);
@@ -331,6 +352,8 @@ MainWindow::MainWindow(QWidget *parent)
     // shift reg buttons count shiftRegsButtonsCount
     connect(m_shiftRegConfig, &ShiftRegistersConfig::shiftRegButtonsCountChanged,
             m_pinConfig, &PinConfig::shiftRegButtonsCountChanged);
+    connect(m_gpioExpConfig, &GpioExpanderConfig::gpioExpButtonsCountChanged,
+            m_pinConfig, &PinConfig::gpioExpButtonsCountChanged);
     // #57: warn when a sensor's auto-assign overwrote user-assigned pin roles.
     connect(m_pinConfig, &PinConfig::pinRolesAutoDisplaced, this,
             [this](const QStringList &lines) {
@@ -1369,6 +1392,7 @@ void MainWindow::UiReadFromConfig(bool resetDirtyBaseline)
     m_axesCurvesConfig->readFromConfig();
     // read shift registers config
     m_shiftRegConfig->readFromConfig();
+    m_gpioExpConfig->readFromConfig();
     // read encoder config
     m_encoderConfig->readFromConfig();
     // read LED config
@@ -1414,6 +1438,7 @@ void MainWindow::flushUiToConfig()
     m_axesCurvesConfig->writeToConfig();
     // write shift registers config
     m_shiftRegConfig->writeToConfig();
+    m_gpioExpConfig->writeToConfig();
     // write encoder config
     m_encoderConfig->writeToConfig();
     // write LED config
@@ -2126,6 +2151,9 @@ void MainWindow::languageChanged(const QString &language)
     m_ledConfig->retranslateUi();
     m_encoderConfig->retranslateUi();
     m_shiftRegConfig->retranslateUi();
+    m_gpioExpConfig->retranslateUi();
+    if (m_shiftRegGroup) m_shiftRegGroup->setTitle(tr("Shift Registers"));
+    if (m_expanderGroup) m_expanderGroup->setTitle(tr("Port Expanders"));
     m_axesConfig->retranslateUi();
     m_axesCurvesConfig->retranslateUi();
     m_advSettings->retranslateUi();

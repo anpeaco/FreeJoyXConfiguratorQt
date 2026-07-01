@@ -58,6 +58,7 @@ INCLUDEPATH +="widgets" \
     "widgets/led" \
     "widgets/pins" \
     "widgets/shift-reg" \
+    "widgets/gpio-expander" \
     "widgets/shifts-timers" \
     "widgets/color" \
     "widgets/led_rgb"
@@ -128,6 +129,7 @@ SOURCES += \
     widgets/pins/pinscontrlite.cpp \
     widgets/shift-reg/shiftregisters.cpp \
     widgets/shift-reg/shiftregistersconfig.cpp \
+    widgets/gpio-expander/gpioexpanderconfig.cpp \
     widgets/shifts-timers/shiftstimersconfig.cpp \
     legacy/legacy_migrator.cpp \
     legacy/legacy_reverse_migrator.cpp \
@@ -210,6 +212,7 @@ HEADERS += \
     widgets/pins/pinscontrlite.h \
     widgets/shift-reg/shiftregisters.h \
     widgets/shift-reg/shiftregistersconfig.h \
+    widgets/gpio-expander/gpioexpanderconfig.h \
     widgets/shifts-timers/shiftstimersconfig.h \
     legacy/legacy_types.h \
     legacy/legacy_migrator.h \

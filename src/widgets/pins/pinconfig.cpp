@@ -319,7 +319,15 @@ void PinConfig::pinInteraction(int index, int senderIndex, int pin)
                          * name is still readable. The warning is flushed once,
                          * deferred, by warnAutoAssignDisplaced. */
                         const int priorRole = m_pinCBoxPtrList[i]->currentDevEnum();
-                        if (priorRole != NOT_USED && !m_pinCBoxPtrList[i]->isInteracts()
+                        // A shared bus line (SPI SCK/MISO/MOSI, I2C SCL/SDA) being
+                        // adopted by another bus device isn't a displacement -- it's
+                        // normal bus sharing, and the role doesn't actually change.
+                        // Only warn when a real (button / sensor) role would be lost.
+                        const bool priorIsBusLine =
+                            priorRole == SPI_SCK || priorRole == SPI_MOSI || priorRole == SPI_MISO ||
+                            priorRole == I2C_SCL || priorRole == I2C_SDA;
+                        if (priorRole != NOT_USED && !priorIsBusLine
+                            && !m_pinCBoxPtrList[i]->isInteracts()
                             && !m_configLoadInProgress) {
                             if (m_autoAssignDisplaced.isEmpty()) {
                                 QTimer::singleShot(0, this, &PinConfig::warnAutoAssignDisplaced);
@@ -390,6 +398,23 @@ void PinConfig::pinIndexChanged(int currentDeviceEnum, int previousDeviceEnum, i
 
     // keep the I2C / SPI quick-setup toggles in sync with the live pin roles
     refreshBusToggles();
+
+    // refresh the GPIO-expander CS-pin column + validation (a CS or bus role
+    // may have changed) -- so the "enable the bus" warning clears live.
+    emitGpioExpPinContext();
+}
+
+void PinConfig::emitGpioExpPinContext()
+{
+    QStringList csNames;
+    bool i2cOn = false, spiOn = false;
+    for (int p = 1; p <= USED_PINS_NUM; ++p) {
+        const int role = pinRole(p);
+        if (role == SPI_GPIO_CS)                    csNames << pinGuiName(p);
+        else if (role == I2C_SCL)                   i2cOn = true;
+        else if (role == SPI_SCK || role == SPI_MOSI) spiOn = true;
+    }
+    emit gpioExpPinContextChanged(csNames, i2cOn, spiOn);
 }
 
 
@@ -657,16 +682,23 @@ void PinConfig::blockEncoder2TLE5011(int currentDeviceEnum, int previousDeviceEn
         if (m_pinCBoxPtrList[PB7Index]->currentDevEnum() == FAST_ENCODER) {
             m_pinCBoxPtrList[PB7Index]->resetPin();
         }
-        /* #65: GEN is auto-assigned to PB6 and PB6 is the only pin it can use,
-         * so while a TLE owns it, lock B6 to GEN -- disable every OTHER role
-         * option there so the user can't overwrite the clock and silently break
-         * the sensor. (GEN's own status is managed by the encoder2 branch above;
-         * we only touch non-GEN options.) B6 frees when the sensor's CS -> Not
-         * Used releases GEN and m_tleGenCount drops. */
+        /* #65 / direct-reassign: while a TLE owns GEN we protect the clock, but
+         * HOW depends on whether a real sensor actually claimed the pin:
+         *   - Sensor auto-claim (isInteracts): B6's whole combobox is already
+         *     disabled by setIndex_iteraction. Grey the non-GEN options too as
+         *     belt-and-suspenders (keeps isPinRoleOptionEnabled() honest).
+         *   - Manual GEN (box still editable, no sensor to protect): leave every
+         *     role selectable so the user can reassign B6 in ONE step. Picking a
+         *     new role replaces GEN and drops m_tleGenCount, releasing the lock.
+         *     Locking the other roles here only traps the user -- there's no
+         *     sensor clock to break.
+         * "Not Used" always stays selectable, and the B7 FAST_ENCODER lock below
+         * (the genuine Encoder-2 <-> GEN TIM4 mutex) applies in both cases. */
+        const bool sensorOwned = m_pinCBoxPtrList[PB6Index]->isInteracts();
         const QVector<int> &b6on = m_pinCBoxPtrList[PB6Index]->enumIndex();
         for (int i = 0; i < b6on.size(); ++i) {
-            if (b6on[i] >= 0 && b6on[i] != TLE5011_GEN) {
-                m_pinCBoxPtrList[PB6Index]->setIndexStatus(i, false);
+            if (b6on[i] >= 0 && b6on[i] != TLE5011_GEN && b6on[i] != NOT_USED) {
+                m_pinCBoxPtrList[PB6Index]->setIndexStatus(i, !sensorOwned);
             }
         }
         for (int i = 0; i < m_pinCBoxPtrList[PB7Index]->enumIndex().size(); ++i) {
@@ -696,6 +728,11 @@ void PinConfig::blockEncoder2TLE5011(int currentDeviceEnum, int previousDeviceEn
 void PinConfig::shiftRegButtonsCountChanged(int count)
 {
     ui->widget_currConfig->shiftRegButtonsCountChanged(count);
+}
+
+void PinConfig::gpioExpButtonsCountChanged(int count)
+{
+    ui->widget_currConfig->gpioExpButtonsCountChanged(count);
 }
 
 void PinConfig::a2bCountChanged(int count)
@@ -887,6 +924,7 @@ void PinConfig::onBusToggleRequested(int bus, bool enable)
     // setPinRole -> pinIndexChanged -> refreshBusToggles already runs, but call
     // again so the toggle settles even if a role was rejected (setPinRole false).
     refreshBusToggles();
+    emitGpioExpPinContext();   // refresh the expander bus-state validation
 }
 
 void PinConfig::refreshBusToggles()
@@ -994,6 +1032,9 @@ void PinConfig::readFromConfig(){
      * polish (e.g. bus-pin enable/disable in refreshBusToggles), so repaint
      * from the cache or the pins revert to black after a Read / auto-read. */
     reapplyAllRoleColors();
+
+    // populate the GPIO-expander CS-pin column + bus state for the loaded config
+    emitGpioExpPinContext();
 }
 
 void PinConfig::writeToConfig(){
