@@ -450,6 +450,13 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::onConsolidatedFlashRequested);
     connect(m_advSettings->flasher(), &Flasher::systemDfuRebootRequested,
             this, &MainWindow::doEnterSystemDfu);
+    /* Tab's "Reinstall firmware" button: reuse the device-card Upgrade handler.
+     * It resolves the bundled current-version binary for the connected board and
+     * opens the flash dialog pre-selected on it; unlike the card button it isn't
+     * gated on a newer version being available, so it works for a same-version
+     * reflash (recover a bad flash, apply a rebuilt binary). */
+    connect(m_advSettings->flasher(), &Flasher::reinstallRequested,
+            this, &MainWindow::on_pushButton_UpgradeFirmware_clicked);
 
     /* FlashSession -> HidDevice plumbing. Active only while a session
      * is in progress; the slots themselves no-op when m_flashSession is

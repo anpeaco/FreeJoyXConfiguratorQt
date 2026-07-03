@@ -210,10 +210,10 @@
         </sizepolicy>
        </property>
        <property name="toolTip">
-        <string>Flash in one click&#10;&#10;- Runs the full backup -&gt; bootloader -&gt; flash -&gt; restore sequence.&#10;- Shows a confirmation dialog with the planned steps before any device state changes.</string>
+        <string>&lt;p&gt;Reinstall the current firmware on the connected device, even when it already reports the latest version.&lt;/p&gt;&lt;p&gt;Runs the same backup -&gt; bootloader -&gt; flash -&gt; restore sequence as an upgrade. Use it to recover a bad flash or to apply a rebuilt same-version binary.&lt;/p&gt;</string>
        </property>
        <property name="text">
-        <string>Flash</string>
+        <string>Reinstall firmware</string>
        </property>
        <property name="styleSheet">
         <string notr="true">font-weight:600;</string>

@@ -168,10 +168,14 @@ Flasher::Flasher(QWidget *parent)
     ui->groupBox_FirmwareInfo->setVisible(false);
 
     /* The HID "Update Firmware..." entry point lives on the device card now
-     * (MainWindow's button -> Flasher::openFlashDialog). Hide the tab's button
-     * and the duplicate device sidebar; the tab keeps the USB-DFU install path
-     * (pushButton_DfuInstall) as the recovery / blank-chip route. */
-    ui->pushButton_FlashConsolidated->setVisible(false);
+     * (MainWindow's button -> Flasher::openFlashDialog), so the tab's own flash
+     * button is repurposed as "Reinstall firmware": it force-flashes the current
+     * firmware through the same dialog even when the device already reports the
+     * latest version -- the case where the device-card button greys out. Left
+     * disabled until a device is connected (updated in setConnectedDeviceInfo /
+     * flasherFound). The duplicate device sidebar stays hidden; the tab keeps
+     * the USB-DFU install path (pushButton_DfuInstall) as the recovery /
+     * blank-chip route. */
     ui->listWidget_Devices->setVisible(false);
 }
 
@@ -200,6 +204,10 @@ void Flasher::flasherFound(bool isFound)
     if (isFound) {
         qDebug() << "Flasher found";
     }
+
+    /* Reinstall is available whenever there's something to flash onto -- an
+     * app-mode device or a board sitting in the bootloader. */
+    ui->pushButton_FlashConsolidated->setEnabled(m_inFlasherMode || !m_connectedName.isEmpty());
 }
 
 void Flasher::onFlasherDeviceInfo(const QString &manufacturer,
@@ -390,6 +398,10 @@ void Flasher::setConnectedDeviceInfo(bool isF411, const QString &name,
         ui->frame_FlasherDeviceInfo->setVisible(false);
         ui->label_FlasherDeviceInfo->clear();
     }
+
+    /* Enable Reinstall once an app-mode device is present (or a bootloader-mode
+     * board is, per m_inFlasherMode); disable when nothing is connected. */
+    ui->pushButton_FlashConsolidated->setEnabled(!m_connectedName.isEmpty() || m_inFlasherMode);
 }
 
 void Flasher::on_pushButton_DfuInstall_clicked()
@@ -466,7 +478,12 @@ void Flasher::on_pushButton_BrowseFirmware_clicked()
 
 void Flasher::on_pushButton_FlashConsolidated_clicked()
 {
-    openFlashDialog();
+    /* "Reinstall firmware": route through MainWindow, which resolves the bundled
+     * current-version binary for the connected board and opens the flash dialog
+     * with it pre-selected -- the same path as the device-card Upgrade button,
+     * but reachable even when the installed and available versions match (that
+     * button greys out in that case). */
+    emit reinstallRequested();
 }
 
 void Flasher::openFlashDialog(const QString &preferredPath,

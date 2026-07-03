@@ -57,6 +57,13 @@ signals:
      * ROM USB DFU (jumper-free reinstall, anpeaco/FreeJoyX#55). */
     void systemDfuRebootRequested();
 
+    /* "Reinstall firmware" button on the tab. MainWindow handles it exactly like
+     * the device-card Upgrade button (resolve the bundled current-version binary
+     * for the connected board, open the flash dialog pre-selected on it) -- the
+     * difference is only that this entry point is reachable when the device
+     * already runs the latest version, where the Upgrade button greys out. */
+    void reinstallRequested();
+
     /* Sidebar row click. Asks MainWindow to set the toolbar's
      * comboBox_HidDeviceList index -- single-source-of-truth stays on
      * the main combobox; the sidebar is just a more visible re-render
