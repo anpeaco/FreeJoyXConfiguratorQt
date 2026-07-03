@@ -321,6 +321,27 @@ void GpioExpanderConfig::validate()
         }
     }
 
+    // Red-highlight the specific unset/invalid required fields on a typed row
+    // (mirrors the address-clash borders above): an SPI row whose CS pin isn't
+    // validly assigned, and any enabled row still left at 0 buttons.
+    const int csAssigned = m_csPinNames.size();
+    bool anyCountMissing = false;
+    for (int i = 0; i < m_rows.size(); ++i) {
+        const int t = m_rows[i].type->currentIndex();
+        const bool csBad = (t == T_SPI) &&
+                           (csAssigned == 0 || m_rows[i].csIndex >= csAssigned ||
+                            m_rows[i].csPin->currentIndex() < 0);
+        m_rows[i].csPin->setStyleSheet(csBad ? QStringLiteral("border: 1px solid #d9534f;")
+                                             : QString());
+
+        const bool countMissing = (t != T_DISABLED) && m_rows[i].count->value() <= 0;
+        m_rows[i].count->setStyleSheet(countMissing ? QStringLiteral("border: 1px solid #d9534f;")
+                                                     : QString());
+        if (countMissing) anyCountMissing = true;
+    }
+    if (anyCountMissing)
+        warnings << tr("Set a button count for the highlighted expander(s).");
+
     if (warnings.isEmpty()) {
         m_warnBanner->setVisible(false);
     } else {
