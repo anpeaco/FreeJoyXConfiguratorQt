@@ -66,6 +66,7 @@ ShiftRegistersConfig::ShiftRegistersConfig(QWidget *parent) :
     for (QLabel *l : m_warnBanner->findChildren<QLabel *>())
         if (l->wordWrap()) { m_warnText = l; break; }
     m_warnBanner->setVisible(false);
+    ui->layoutV_ShiftRegisters->addSpacing(12);   // breathing room above the banner
     ui->layoutV_ShiftRegisters->addWidget(m_warnBanner);
 }
 
