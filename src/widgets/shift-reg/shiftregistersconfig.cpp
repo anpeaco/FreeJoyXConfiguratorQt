@@ -191,6 +191,39 @@ void ShiftRegistersConfig::shiftRegSelected(int latchPin, int clkPin, int dataPi
         }
 
     }
+
+    // The positional (Auto) pins above give each SR its default; layer the full
+    // distinct role-pin lists on top so any SR can override to a specific pin.
+    feedChoices();
+}
+
+void ShiftRegistersConfig::collectDistinct(const std::array<ShiftRegData_t, MAX_SHIFT_REG_NUM + 1> &arr,
+                                           QVector<int> &pins, QStringList &names)
+{
+    // arr is sorted ascending with a trailing-duplicate fill (see addPinAndSort);
+    // taking each pin only when it differs from the last collected one yields the
+    // distinct list in pin order -- the firmware's role-pin scan order.
+    for (const ShiftRegData_t &e : arr) {
+        if (e.pinNumber > 0 && (pins.isEmpty() || pins.back() != e.pinNumber)) {
+            pins.append(e.pinNumber);
+            names.append(e.guiName);
+        }
+    }
+}
+
+void ShiftRegistersConfig::feedChoices()
+{
+    QVector<int> dPins, lPins, cPins;
+    QStringList  dNames, lNames, cNames;
+    collectDistinct(m_dataPinsArray,  dPins, dNames);
+    collectDistinct(m_latchPinsArray, lPins, lNames);
+    collectDistinct(m_clkPinsArray,   cPins, cNames);
+
+    for (ShiftRegisters *w : m_shiftRegsPtrList) {
+        w->setDataPinChoices(dPins, dNames);
+        w->setLatchPinChoices(lPins, lNames);
+        w->setClkPinChoices(cPins, cNames);
+    }
 }
 
 void ShiftRegistersConfig::readFromConfig()

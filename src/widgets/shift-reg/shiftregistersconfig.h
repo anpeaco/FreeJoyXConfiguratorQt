@@ -54,6 +54,17 @@ private:
     static bool sortByPinNumberAndNullLast(const ShiftRegData_t &lhs, const ShiftRegData_t &rhs);
     void addPinAndSort(int pin, const QString &pinGuiName, std::array<ShiftRegData_t, MAX_SHIFT_REG_NUM + 1> &arr);
 
+    /* Reduce one of the positional pin arrays to the DISTINCT ordered role-pin
+     * list (dropping the trailing-duplicate fill addPinAndSort leaves behind).
+     * The result is in ascending pin order == the firmware's pins[] scan order,
+     * so the k-th entry is firmware selection nibble k+1. */
+    static void collectDistinct(const std::array<ShiftRegData_t, MAX_SHIFT_REG_NUM + 1> &arr,
+                                QVector<int> &pins, QStringList &names);
+    /* Push the three distinct role-pin lists to every SR widget so each can
+     * offer the explicit-override dropdown. Layered on top of the existing
+     * positional (Auto) feed. */
+    void feedChoices();
+
     std::array<ShiftRegData_t, MAX_SHIFT_REG_NUM + 1> m_latchPinsArray{};
     std::array<ShiftRegData_t, MAX_SHIFT_REG_NUM + 1> m_clkPinsArray{};
     std::array<ShiftRegData_t, MAX_SHIFT_REG_NUM + 1> m_dataPinsArray{};

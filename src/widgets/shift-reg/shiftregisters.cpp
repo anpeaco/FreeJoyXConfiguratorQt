@@ -1,6 +1,9 @@
 #include "shiftregisters.h"
 #include "ui_shiftregisters.h"
 #include <cmath>
+#include <QComboBox>
+#include <QLabel>
+#include <QSignalBlocker>
 
 QString ShiftRegisters::m_notDefined = nullptr;
 
@@ -17,11 +20,28 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
     }
 
     m_buttonsCount = 0;
-    m_latchPin = 0;
-    m_clkPin = 0;
-    m_dataPin = 0;
     m_shiftRegNumber = shiftRegNumber;
     ui->label_ShiftIndex->setNum(shiftRegNumber + 1);
+
+    /* Swap the read-only pin labels for Auto/<pin> dropdowns. The labels lived
+     * at grid (row 1) cols 2/3/4 = latch/clk/data (matching the shared header
+     * row). Remove each label and drop a combo into the same cell; the combo is
+     * the explicit per-SR pin override, defaulting to Auto (= legacy positional
+     * mapping). Created before the setUiOnOff() below, which references them. */
+    struct { QLabel *label; PinSelect *sel; int col; } slots_[] = {
+        { ui->label_LatchPin, &m_latch, 2 },
+        { ui->label_ClkPin,   &m_clk,   3 },
+        { ui->label_DataPin,  &m_data,  4 },
+    };
+    for (auto &s : slots_) {
+        ui->gridLayout->removeWidget(s.label);
+        s.label->hide();
+        s.sel->combo = new QComboBox(ui->groupBox);
+        ui->gridLayout->addWidget(s.sel->combo, 1, s.col);
+        rebuildCombo(*s.sel);   // seeds the single "Auto" item
+        connect(s.sel->combo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                this, &ShiftRegisters::onPinSelectionChanged);
+    }
 
     // The per-register container is a plain QWidget (not a QGroupBox) so it adds
     // no title/frame overhead: each register is a single flat value row, matching
@@ -45,9 +65,6 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
 
     for (int i = 0; i < SHIFT_REG_TYPES; ++i) {
         ui->comboBox_ShiftRegType->addItem(m_shiftRegistersList[i].guiName);
-        ui->label_DataPin->setText(m_notDefined);
-        ui->label_ClkPin->setText(m_notDefined);
-        ui->label_LatchPin->setText(m_notDefined);
     }
 
     connect(ui->spinBox_ButtonCount, SIGNAL(valueChanged(int)), this, SLOT(onButtonCountChanged(int)));
@@ -110,37 +127,82 @@ void ShiftRegisters::onRegistersCountChanged(int chips)
 
 void ShiftRegisters::setLatchPin(int latchPin, QString pinGuiName)
 {
-    if (latchPin != 0) {
-        m_latchPin = latchPin;
-        ui->label_LatchPin->setText(pinGuiName);
-    } else {
-        m_latchPin = 0;
-        ui->label_LatchPin->setText(m_notDefined);
-    }
+    m_latch.positionalPin  = (latchPin != 0) ? latchPin : 0;
+    m_latch.positionalName = (latchPin != 0) ? pinGuiName : m_notDefined;
+    rebuildCombo(m_latch);   // refreshes the "Auto (<pin>)" item
     setUiOnOff();
 }
 
 void ShiftRegisters::setClkPin(int clkPin, QString pinGuiName)
 {
-    if (clkPin != 0) {
-        m_clkPin = clkPin;
-        ui->label_ClkPin->setText(pinGuiName);
-    } else {
-        m_clkPin = 0;
-        ui->label_ClkPin->setText(m_notDefined);
-    }
+    m_clk.positionalPin  = (clkPin != 0) ? clkPin : 0;
+    m_clk.positionalName = (clkPin != 0) ? pinGuiName : m_notDefined;
+    rebuildCombo(m_clk);
     setUiOnOff();
 }
 
 void ShiftRegisters::setDataPin(int dataPin, QString pinGuiName)
 {
-    if (dataPin != 0) {
-        m_dataPin = dataPin;
-        ui->label_DataPin->setText(pinGuiName);
-    } else {
-        m_dataPin = 0;
-        ui->label_DataPin->setText(m_notDefined);
-    }
+    m_data.positionalPin  = (dataPin != 0) ? dataPin : 0;
+    m_data.positionalName = (dataPin != 0) ? pinGuiName : m_notDefined;
+    rebuildCombo(m_data);
+    setUiOnOff();
+}
+
+void ShiftRegisters::setLatchPinChoices(const QVector<int> &pins, const QStringList &names)
+{
+    m_latch.choicePins = pins;
+    m_latch.choiceNames = names;
+    rebuildCombo(m_latch);
+    setUiOnOff();
+}
+
+void ShiftRegisters::setClkPinChoices(const QVector<int> &pins, const QStringList &names)
+{
+    m_clk.choicePins = pins;
+    m_clk.choiceNames = names;
+    rebuildCombo(m_clk);
+    setUiOnOff();
+}
+
+void ShiftRegisters::setDataPinChoices(const QVector<int> &pins, const QStringList &names)
+{
+    m_data.choicePins = pins;
+    m_data.choiceNames = names;
+    rebuildCombo(m_data);
+    setUiOnOff();
+}
+
+void ShiftRegisters::rebuildCombo(PinSelect &sel)
+{
+    if (!sel.combo) return;
+    /* Preserve the selection index (the firmware nibble) across a rebuild so a
+     * pin-list refresh -- or a positional-pin change -- doesn't silently drop
+     * the user's explicit pick. Signals blocked: rebuilding must not look like a
+     * user edit (which would churn the button-count accounting). */
+    QSignalBlocker block(sel.combo);
+    const int keep = qMax(0, sel.combo->currentIndex());
+    sel.combo->clear();
+    // Item 0 = Auto, annotated with the positional pin it resolves to so the
+    // default still shows which physical pin is in play (the old label's info).
+    sel.combo->addItem(sel.positionalPin > 0 ? tr("Auto (%1)").arg(sel.positionalName)
+                                             : tr("Auto"));
+    for (const QString &name : sel.choiceNames)
+        sel.combo->addItem(name);
+    sel.combo->setCurrentIndex(keep < sel.combo->count() ? keep : 0);
+}
+
+int ShiftRegisters::effectivePin(const PinSelect &sel) const
+{
+    if (!sel.combo) return sel.positionalPin;
+    const int idx = sel.combo->currentIndex();
+    if (idx <= 0) return sel.positionalPin;          // Auto
+    const int k = idx - 1;                           // explicit pick
+    return (k < sel.choicePins.size()) ? sel.choicePins[k] : 0;
+}
+
+void ShiftRegisters::onPinSelectionChanged()
+{
     setUiOnOff();
 }
 
@@ -153,12 +215,27 @@ void ShiftRegisters::setUiOnOff()
      * while the widget is disabled (buttonCount() reads isEnabled()), and
      * comes back unchanged when the pins return. The transition emits below
      * replace the old setValue(0) trick the destructive version relied on
-     * to fire buttonCountChanged via the spinbox's valueChanged side effect. */
-    const bool nowEnabled = (m_latchPin > 0 && m_clkPin > 0 && m_dataPin > 0);
+     * to fire buttonCountChanged via the spinbox's valueChanged side effect.
+     *
+     * Gating uses the RESOLVED effective pin (Auto -> positional; explicit ->
+     * the chosen pin), so an explicit override can enable a register that has
+     * no positional pin of its own. */
+    const bool nowEnabled = (effectivePin(m_latch) > 0 &&
+                             effectivePin(m_clk)   > 0 &&
+                             effectivePin(m_data)  > 0);
     const bool wasEnabled = ui->spinBox_ButtonCount->isEnabled();
 
+    /* The pin dropdowns stay live even while the register is disabled, so a
+     * register with no positional pin can still be given an explicit one to
+     * turn it on. Skip the three combos (and their container ancestor, whose
+     * disabled state would otherwise cascade down and grey them out anyway). */
     for (auto &&child : this->findChildren<QWidget *>()) {
-        child->setEnabled(nowEnabled);
+        const bool keepLive =
+            child == m_data.combo  || m_data.combo->isAncestorOf(child)  ||
+            child == m_latch.combo || m_latch.combo->isAncestorOf(child) ||
+            child == m_clk.combo   || m_clk.combo->isAncestorOf(child)   ||
+            child->isAncestorOf(m_data.combo);   // groupBox / any container above the combos
+        child->setEnabled(keepLive ? true : nowEnabled);
     }
 
     if (wasEnabled && !nowEnabled) {
@@ -187,12 +264,43 @@ int ShiftRegisters::buttonCount() const
 
 void ShiftRegisters::readFromConfig()
 {
-    ui->comboBox_ShiftRegType->setCurrentIndex(gEnv.pDeviceConfig->config.shift_registers[m_shiftRegNumber].type);
-    ui->spinBox_ButtonCount->setValue(gEnv.pDeviceConfig->config.shift_registers[m_shiftRegNumber].button_cnt);
+    const shift_reg_config_t &c = gEnv.pDeviceConfig->config.shift_registers[m_shiftRegNumber];
+    ui->comboBox_ShiftRegType->setCurrentIndex(c.type);
+    ui->spinBox_ButtonCount->setValue(c.button_cnt);
+
+    /* Restore the per-pin selection nibbles (0 = Auto). PinConfig::readFromConfig
+     * runs earlier in the load fan-out, so the choice lists are already populated
+     * here. A stored pick past the available items (stale / externally authored
+     * config) clamps back to Auto rather than silently sticking at the old index.
+     * Signals blocked so restoring doesn't churn the button-count accounting;
+     * setUiOnOff() below re-gates once from the final state. */
+    const uint8_t sel_data  =  (uint8_t)c.reserved[0]       & 0x0F;
+    const uint8_t sel_latch = ((uint8_t)c.reserved[0] >> 4) & 0x0F;
+    const uint8_t sel_clk   =  (uint8_t)c.reserved[1]       & 0x0F;
+    const struct { PinSelect *sel; uint8_t idx; } picks[] = {
+        { &m_data, sel_data }, { &m_latch, sel_latch }, { &m_clk, sel_clk },
+    };
+    for (auto &p : picks) {
+        if (!p.sel->combo) continue;
+        QSignalBlocker block(p.sel->combo);
+        p.sel->combo->setCurrentIndex(p.idx < p.sel->combo->count() ? p.idx : 0);
+    }
+    setUiOnOff();
 }
 
 void ShiftRegisters::writeToConfig()
 {
-    gEnv.pDeviceConfig->config.shift_registers[m_shiftRegNumber].type = ui->comboBox_ShiftRegType->currentIndex();
-    gEnv.pDeviceConfig->config.shift_registers[m_shiftRegNumber].button_cnt = ui->spinBox_ButtonCount->value();
+    shift_reg_config_t &c = gEnv.pDeviceConfig->config.shift_registers[m_shiftRegNumber];
+    c.type = ui->comboBox_ShiftRegType->currentIndex();
+    c.button_cnt = ui->spinBox_ButtonCount->value();
+
+    /* Pack the dropdown picks into the reserved nibbles the firmware reads:
+     *   reserved[0] lo = data, hi = latch;  reserved[1] lo = clk (hi free).
+     * Combo index 0 = Auto = nibble 0, matching a factory-reset config, so an
+     * all-Auto board writes reserved = {0,0} == today's behaviour. */
+    const int sel_data  = m_data.combo  ? qMax(0, m_data.combo->currentIndex())  : 0;
+    const int sel_latch = m_latch.combo ? qMax(0, m_latch.combo->currentIndex()) : 0;
+    const int sel_clk   = m_clk.combo   ? qMax(0, m_clk.combo->currentIndex())   : 0;
+    c.reserved[0] = (int8_t)((sel_data & 0x0F) | ((sel_latch & 0x0F) << 4));
+    c.reserved[1] = (int8_t)(sel_clk & 0x0F);
 }

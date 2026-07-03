@@ -2,11 +2,15 @@
 #define SHIFTREGISTERS_H
 
 #include <QWidget>
+#include <QVector>
+#include <QStringList>
 
 #include "deviceconfig.h"
 #include "global.h"
 
 #define SHIFT_REG_TYPES 4
+
+class QComboBox;
 
 namespace Ui {
 class ShiftRegisters;
@@ -25,9 +29,19 @@ public:
 
     void retranslateUi();
 
+    /* The positional ("Auto") pin for this register index -- what Auto resolves
+     * to, matching the firmware's slot-order assignment. Drives the "Auto (<pin>)"
+     * label and the effective-pin gating when the dropdown is left on Auto. */
     void setLatchPin(int latchPin, QString pinGuiName);
     void setClkPin(int clkPin, QString pinGuiName);
     void setDataPin(int dataPin, QString pinGuiName);
+
+    /* The full ordered list of pins tagged with each role (in pin-index order,
+     * matching the firmware's scan of pins[]). These populate the explicit picks
+     * in each dropdown; index N in the list == firmware selection nibble N+1. */
+    void setLatchPinChoices(const QVector<int> &pins, const QStringList &names);
+    void setClkPinChoices(const QVector<int> &pins, const QStringList &names);
+    void setDataPinChoices(const QVector<int> &pins, const QStringList &names);
 
     const QString &defaultText() const;
 
@@ -43,10 +57,33 @@ signals:
 private slots:
     void onButtonCountChanged(int buttonCount);
     void onRegistersCountChanged(int chips);
+    /* A pin-select dropdown changed -> the resolved (effective) pin may have
+     * gained/lost the register, so re-run the enable gating. */
+    void onPinSelectionChanged();
 
 private:
     Ui::ShiftRegisters *ui;
     void setUiOnOff();
+
+    /* One pin role's dropdown + the state feeding it. m_positionalPin/Name is
+     * the Auto target (from setLatchPin/etc); m_choicePins/Names is the ordered
+     * explicit-pick list (from setLatchPinChoices/etc). The combo item indices
+     * are the firmware selection nibble: 0 = Auto, N = the (N-1)-th choice. */
+    struct PinSelect {
+        QComboBox *combo = nullptr;
+        int         positionalPin = 0;
+        QString     positionalName;
+        QVector<int> choicePins;
+        QStringList  choiceNames;
+    };
+    PinSelect m_data, m_latch, m_clk;
+
+    /* Rebuild a dropdown from its PinSelect state, preserving the current
+     * selection index where still valid. Signals blocked during the rebuild. */
+    void rebuildCombo(PinSelect &sel);
+    /* The pin a role currently resolves to: Auto -> positional; explicit -> the
+     * chosen choice pin (0 if the pick is out of range). Drives setUiOnOff. */
+    int effectivePin(const PinSelect &sel) const;
 
     /* Inputs per chip. All four supported types (HC165 / CD4021,
      * pull-up + pull-down variants) are 8-bit shift registers, so a
@@ -62,9 +99,6 @@ private:
     static QString m_notDefined;
     int m_buttonsCount;
     int m_shiftRegNumber;
-    int m_latchPin;
-    int m_clkPin;
-    int m_dataPin;
 
     const deviceEnum_guiName_t m_shiftRegistersList[SHIFT_REG_TYPES] = // order MUST match common_types.h!
     {
