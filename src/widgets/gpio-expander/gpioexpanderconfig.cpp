@@ -5,6 +5,7 @@
 #include "style_helpers.h"    // makeAlertBanner / accentAmber (shared alert-banner look)
 #include "common_defines.h"   // MAX_GPIO_EXPANDER_NUM, USED_PINS_NUM
 #include "common_types.h"     // GPIO_EXP_*, pin roles (I2C_SCL, SPI_SCK, SPI_GPIO_CS, ...)
+#include "centered_cbox.h"    // centred combo (matches the app-wide dropdown look)
 
 #include <QGridLayout>
 #include <QComboBox>
@@ -57,13 +58,13 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
         Row row;
         grid->addWidget(new QLabel(QString::number(i + 1), this), r, 0, Qt::AlignCenter);
 
-        row.type = new QComboBox(this);
+        row.type = new CenteredCBox(this);
         row.type->addItem(tr("Disabled"));
         row.type->addItem(tr("MCP23017 (I2C)"));
         row.type->addItem(tr("MCP23S17 (SPI)"));
         grid->addWidget(row.type, r, 1);
 
-        row.wiring = new QComboBox(this);
+        row.wiring = new CenteredCBox(this);
         row.wiring->addItem(tr("Buttons to GND"));   // internal pull-up, default polarity
         row.wiring->addItem(tr("Buttons to VCC"));   // external pull-down, inverted polarity
         grid->addWidget(row.wiring, r, 2);           // right after Type
@@ -71,10 +72,10 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
         // SPI: which assigned SPI_GPIO_CS pin this chip is wired to. Two rows
         // picking the same CS share it (HAEN + the address DIP strap tell them
         // apart). Populated from Pin Config context in updatePinDisplays.
-        row.csPin = new QComboBox(this);
+        row.csPin = new CenteredCBox(this);
         grid->addWidget(row.csPin, r, 3);
 
-        row.address = new QComboBox(this);
+        row.address = new CenteredCBox(this);
         for (int a = kAddrLo; a <= kAddrHi; ++a)
             row.address->addItem(QString("0x%1").arg(a, 2, 16, QChar('0')));
         grid->addWidget(row.address, r, 4);
