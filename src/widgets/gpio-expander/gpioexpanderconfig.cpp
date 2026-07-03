@@ -37,7 +37,10 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
     // the two tables (the expander has fewer middle fields, leaving cols 5-6
     // empty). Wiring sits right after Type in both tables.
     grid->setContentsMargins(9, 0, 9, 2);
-    for (int c = 0; c < 8; ++c) grid->setColumnStretch(c, 1);
+    // Narrow index column (col 0): no stretch + a 30px minimum, matching the
+    // Shift Registers grids so the "#" numbers don't take an eighth of the width.
+    grid->setColumnMinimumWidth(0, 30);
+    for (int c = 0; c < 8; ++c) grid->setColumnStretch(c, c == 0 ? 0 : 1);
 
     int r = 0;
     grid->addWidget(new QLabel(tr("Type"),         this), r, 1, Qt::AlignCenter);
