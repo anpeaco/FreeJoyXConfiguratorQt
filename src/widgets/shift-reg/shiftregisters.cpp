@@ -28,10 +28,11 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
      * row). Remove each label and drop a combo into the same cell; the combo is
      * the explicit per-SR pin override, defaulting to Auto (= legacy positional
      * mapping). Created before the setUiOnOff() below, which references them. */
+    // Columns: 1 = Type, 2 = Wiring (added below), 3/4/5 = Latch/CLK/Data.
     struct { QLabel *label; PinSelect *sel; int col; } slots_[] = {
-        { ui->label_LatchPin, &m_latch, 2 },
-        { ui->label_ClkPin,   &m_clk,   3 },
-        { ui->label_DataPin,  &m_data,  4 },
+        { ui->label_LatchPin, &m_latch, 3 },
+        { ui->label_ClkPin,   &m_clk,   4 },
+        { ui->label_DataPin,  &m_data,  5 },
     };
     for (auto &s : slots_) {
         ui->gridLayout->removeWidget(s.label);
@@ -42,6 +43,17 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
         connect(s.sel->combo, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 this, &ShiftRegisters::onPinSelectionChanged);
     }
+
+    // Wiring column (right after Type, mirroring the Port Expanders): the
+    // pull-up/pull-down polarity, split out of the Type name. GND = internal
+    // pull-up; VCC = external pull-down (inverted read). Combined with the chip
+    // it maps onto the wire config's four-value type enum in read/writeToConfig.
+    m_wiring = new QComboBox(ui->groupBox);
+    m_wiring->addItem(tr("Buttons to GND"));   // pull-up
+    m_wiring->addItem(tr("Buttons to VCC"));   // pull-down
+    ui->gridLayout->addWidget(m_wiring, 1, 2);
+    connect(m_wiring, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &ShiftRegisters::onPinSelectionChanged);
 
     // The per-register container is a plain QWidget (not a QGroupBox) so it adds
     // no title/frame overhead: each register is a single flat value row, matching
@@ -67,9 +79,11 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
     // (the default), then the four chip types. A row is "wanted" once its Type is
     // a chip; Disabled rows blank their config cells. Populate before connecting
     // so the initial index doesn't fire onTypeChanged.
+    // Type = Disabled + the two chip families; the pull-up/down polarity lives in
+    // the Wiring column now, not the Type name.
     ui->comboBox_ShiftRegType->addItem(tr("Disabled"));
-    for (int i = 0; i < SHIFT_REG_TYPES; ++i)
-        ui->comboBox_ShiftRegType->addItem(m_shiftRegistersList[i].guiName);
+    ui->comboBox_ShiftRegType->addItem(tr("HC165"));
+    ui->comboBox_ShiftRegType->addItem(tr("CD4021"));
     ui->comboBox_ShiftRegType->setCurrentIndex(0);
     connect(ui->comboBox_ShiftRegType, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &ShiftRegisters::onTypeChanged);
@@ -261,6 +275,7 @@ void ShiftRegisters::setUiOnOff()
      * Expander row). The row itself stays enabled -- it's show/hide, not grey. */
     const bool shown = isEnabledRow();
 
+    m_wiring->setVisible(shown);
     m_data.combo->setVisible(shown);
     m_latch.combo->setVisible(shown);
     m_clk.combo->setVisible(shown);
@@ -312,10 +327,18 @@ void ShiftRegisters::readFromConfig()
      * count > 0 -- keeping legacy configs enabled with their chip type. Type
      * combo item 0 is Disabled, so a chip enum maps to index enum+1. */
     const bool enabled = (((uint8_t)c.reserved[1] & 0x10) != 0) || (c.button_cnt > 0);
-    const int  chip    = (c.type < SHIFT_REG_TYPES) ? c.type : 0;
+    // Split the 4-value pull-up/down enum into chip + wiring: enum bit0 = chip
+    // (0 HC165 / 1 CD4021), enum >= 2 = the _PULL_UP (Buttons to GND) variants.
+    const int  wtype   = (c.type < 4) ? c.type : 0;
+    const int  chipIdx = wtype % 2;
+    const bool pullUp  = wtype >= 2;
     {
         QSignalBlocker block(ui->comboBox_ShiftRegType);
-        ui->comboBox_ShiftRegType->setCurrentIndex(enabled ? chip + 1 : 0);
+        ui->comboBox_ShiftRegType->setCurrentIndex(enabled ? chipIdx + 1 : 0);  // +1: item 0 = Disabled
+    }
+    {
+        QSignalBlocker block(m_wiring);
+        m_wiring->setCurrentIndex(pullUp ? 0 : 1);   // 0 = Buttons to GND (pull-up)
     }
     ui->spinBox_ButtonCount->setValue(c.button_cnt);
 
@@ -346,7 +369,11 @@ void ShiftRegisters::writeToConfig()
     // writes a benign type=0 + count=0 so the firmware ignores it.
     const int  idx     = ui->comboBox_ShiftRegType->currentIndex();
     const bool enabled = (idx != 0);
-    c.type       = enabled ? (idx - 1) : 0;
+    // Recombine chip (Type) + polarity (Wiring) into the 4-value type enum:
+    // chip index 0/1 = HC165/CD4021; Buttons to GND (pull-up) adds 2.
+    const int  chipIdx = enabled ? (idx - 1) : 0;
+    const bool pullUp  = (m_wiring->currentIndex() == 0);   // Buttons to GND
+    c.type       = enabled ? (chipIdx + (pullUp ? 2 : 0)) : 0;
     c.button_cnt = enabled ? ui->spinBox_ButtonCount->value() : 0;
 
     /* Pack the dropdown picks into the reserved nibbles the firmware reads:

@@ -28,6 +28,7 @@ ShiftRegistersConfig::ShiftRegistersConfig(QWidget *parent) :
         // "# | Type | ... | Button count".
         m_headerLabels = {
             new QLabel(tr("Type"),            header),
+            new QLabel(tr("Wiring"),          header),
             new QLabel(tr("Latch pin"),       header),
             new QLabel(tr("CLK pin"),         header),
             new QLabel(tr("Data pin"),        header),
@@ -36,7 +37,7 @@ ShiftRegistersConfig::ShiftRegistersConfig(QWidget *parent) :
         };
         for (int c = 0; c < m_headerLabels.size(); ++c)
             hg->addWidget(m_headerLabels[c], 0, c + 1, Qt::AlignCenter);
-        for (int c = 0; c < 7; ++c) hg->setColumnStretch(c, 1);
+        for (int c = 0; c < 8; ++c) hg->setColumnStretch(c, 1);
         ui->layoutV_ShiftRegisters->addWidget(header);
     }
 
@@ -75,7 +76,7 @@ void ShiftRegistersConfig::retranslateUi()
     for (int i = 0; i < m_shiftRegsPtrList.size(); ++i) {
         m_shiftRegsPtrList[i]->retranslateUi();
     }
-    const QStringList hdr = { tr("Type"), tr("Latch pin"), tr("CLK pin"),
+    const QStringList hdr = { tr("Type"), tr("Wiring"), tr("Latch pin"), tr("CLK pin"),
                              tr("Data pin"), tr("Registers count"),
                              tr("Button count") };
     for (int i = 0; i < m_headerLabels.size() && i < hdr.size(); ++i)

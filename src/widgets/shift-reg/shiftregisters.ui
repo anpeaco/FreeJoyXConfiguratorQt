@@ -37,7 +37,7 @@
      <property name="enabled">
       <bool>false</bool>
      </property>
-     <layout class="QGridLayout" name="gridLayout" rowstretch="0,0" columnstretch="1,1,1,1,1,1,1" columnminimumwidth="0,0,0,0,0,0,0">
+     <layout class="QGridLayout" name="gridLayout" rowstretch="0,0" columnstretch="1,1,1,1,1,1,1,1" columnminimumwidth="0,0,0,0,0,0,0,0">
       <item row="1" column="2">
        <widget class="QLabel" name="label_LatchPin">
         <property name="enabled">
@@ -67,7 +67,7 @@
       <!-- Registers count is editable. Changing it auto-fills the
            Button count to chips * 8 (and vice versa). See
            shiftregisters.cpp for the sync logic. -->
-      <item row="1" column="5">
+      <item row="1" column="6">
        <layout class="QGridLayout" name="gridLayout_RegisterCount" columnstretch="1,0,1">
         <item row="1" column="0">
          <spacer name="horizontalSpacer_RC1">
@@ -100,7 +100,7 @@
         </item>
        </layout>
       </item>
-      <item row="1" column="6">
+      <item row="1" column="7">
        <layout class="QGridLayout" name="gridLayout_3" columnstretch="1,0,1">
         <item row="1" column="2">
          <spacer name="horizontalSpacer_2">

@@ -106,6 +106,12 @@ private:
     };
     PinSelect m_data, m_latch, m_clk;
 
+    /* Wiring combo (Buttons to GND = pull-up, Buttons to VCC = pull-down),
+     * created programmatically in the column after Type -- mirrors the Port
+     * Expanders. Combined with the Type (HC165 / CD4021) it maps onto the wire
+     * config's 4-value pull-up/down type enum. */
+    QComboBox *m_wiring = nullptr;
+
     /* Tracks whether the register was last FUNCTIONAL (enabled Type AND all
      * three pins resolved) so setUiOnOff only emits buttonCountChanged on a real
      * transition -- an enabled-but-unconfigured register never counts phantom
