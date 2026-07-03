@@ -2071,6 +2071,10 @@ void MainWindow::blockWRConfigToDevice(bool block)
     } else {
         refreshUpgradeButtonState();
     }
+    /* The Flasher tab's Reinstall button routes to the same flash handler, so
+     * mirror the guard: block it during R/W, restore its device-driven state on
+     * unblock. */
+    m_advSettings->flasher()->setActionsBlocked(block);
 }
 
 void MainWindow::setConfigTabsEnabled(bool enabled)

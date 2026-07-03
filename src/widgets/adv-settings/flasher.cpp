@@ -205,9 +205,23 @@ void Flasher::flasherFound(bool isFound)
         qDebug() << "Flasher found";
     }
 
-    /* Reinstall is available whenever there's something to flash onto -- an
-     * app-mode device or a board sitting in the bootloader. */
-    ui->pushButton_FlashConsolidated->setEnabled(m_inFlasherMode || !m_connectedName.isEmpty());
+    updateReinstallEnabled();
+}
+
+/* Reinstall is available whenever there's something to flash onto -- an app-mode
+ * device or a board sitting in the bootloader -- unless a config R/W or flash is
+ * in progress (m_actionsBlocked), mirroring the device-card Upgrade button's
+ * guard so the tab button can't kick off a flash mid-transfer. */
+void Flasher::updateReinstallEnabled()
+{
+    ui->pushButton_FlashConsolidated->setEnabled(
+        !m_actionsBlocked && (!m_connectedName.isEmpty() || m_inFlasherMode));
+}
+
+void Flasher::setActionsBlocked(bool blocked)
+{
+    m_actionsBlocked = blocked;
+    updateReinstallEnabled();
 }
 
 void Flasher::onFlasherDeviceInfo(const QString &manufacturer,
@@ -399,9 +413,7 @@ void Flasher::setConnectedDeviceInfo(bool isF411, const QString &name,
         ui->label_FlasherDeviceInfo->clear();
     }
 
-    /* Enable Reinstall once an app-mode device is present (or a bootloader-mode
-     * board is, per m_inFlasherMode); disable when nothing is connected. */
-    ui->pushButton_FlashConsolidated->setEnabled(!m_connectedName.isEmpty() || m_inFlasherMode);
+    updateReinstallEnabled();
 }
 
 void Flasher::on_pushButton_DfuInstall_clicked()

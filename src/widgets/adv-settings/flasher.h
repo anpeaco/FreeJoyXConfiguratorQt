@@ -45,6 +45,12 @@ public:
                          const QString &deviceSerial = QString(),
                          const QString &deviceVersionText = QString());
 
+    /* Disable the tab's Reinstall button while a config Read/Write or a flash is
+     * in progress (mirrors the device-card Upgrade button's guard), then restore
+     * it to its device-driven state on unblock. Called by MainWindow's
+     * blockWRConfigToDevice(). */
+    void setActionsBlocked(bool blocked);
+
 signals:
     /* Consolidated one-click flash. Emitted by the Flash button after the
      * user accepts the FlashConfirmationDialog. Carries the resolved
@@ -172,6 +178,13 @@ private:
     bool m_connectedIsF411 = false;
     QString m_connectedName;
     QString m_connectedVidPid;
+
+    /* True while a config R/W or flash is in progress; suppresses the Reinstall
+     * button regardless of device presence. Re-evaluated by updateReinstallEnabled(). */
+    bool m_actionsBlocked = false;
+    /* Re-evaluate the Reinstall button's enabled state from device presence
+     * (m_connectedName / m_inFlasherMode) gated by m_actionsBlocked. */
+    void updateReinstallEnabled();
 
     /* Refresh the per-row "Selected firmware" info card from the picked
      * file path. */
