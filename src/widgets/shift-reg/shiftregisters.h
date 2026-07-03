@@ -8,8 +8,6 @@
 #include "deviceconfig.h"
 #include "global.h"
 
-#define SHIFT_REG_TYPES 4
-
 class QComboBox;
 
 namespace Ui {
@@ -93,14 +91,15 @@ private:
      * resolved). Named setUiOnOff for continuity with the old pin-driven gate. */
     void setUiOnOff();
 
-    /* One pin role's dropdown + the state feeding it. m_positionalPin/Name is
-     * the Auto target (from setLatchPin/etc); m_choicePins/Names is the ordered
-     * explicit-pick list (from setLatchPinChoices/etc). The combo item indices
-     * are the firmware selection nibble: 0 = Auto, N = the (N-1)-th choice. */
+    /* One pin role's dropdown + the state feeding it. positionalPin is the Auto
+     * target (from setLatchPin/etc), which the combo selects by default;
+     * choicePins/choiceNames is the ordered role-pin list (from
+     * setLatchPinChoices/etc). The combo lists the role pins by name; selecting
+     * the positional pin encodes as the firmware Auto nibble (0), any other as an
+     * explicit nibble (role-pin index + 1). */
     struct PinSelect {
         QComboBox *combo = nullptr;
         int         positionalPin = 0;
-        QString     positionalName;
         QVector<int> choicePins;
         QStringList  choiceNames;
     };
@@ -139,14 +138,6 @@ private:
     static QString m_notDefined;
     int m_buttonsCount;
     int m_shiftRegNumber;
-
-    const deviceEnum_guiName_t m_shiftRegistersList[SHIFT_REG_TYPES] = // order MUST match common_types.h!
-    {
-        {HC165_PULL_DOWN,   tr("HC165 Pull Down")},
-        {CD4021_PULL_DOWN,  tr("CD4021 Pull Down")},
-        {HC165_PULL_UP,     tr("HC165 Pull Up")},
-        {CD4021_PULL_UP,    tr("CD4021 Pull Up")},
-    };
 };
 
 #endif // SHIFTREGISTERS_H

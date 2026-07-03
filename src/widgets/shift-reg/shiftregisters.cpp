@@ -1,6 +1,7 @@
 #include "shiftregisters.h"
 #include "ui_shiftregisters.h"
 #include "centered_cbox.h"   // centred combo (matches the app-wide dropdown look)
+#include "style_helpers.h"   // fieldClashQss (shared conflict-red border)
 #include <cmath>
 #include <QComboBox>
 #include <QLabel>
@@ -178,26 +179,23 @@ void ShiftRegisters::onRegistersCountChanged(int chips)
     m_syncing = false;
 }
 
-void ShiftRegisters::setLatchPin(int latchPin, QString pinGuiName)
+void ShiftRegisters::setLatchPin(int latchPin, QString /*pinGuiName*/)
 {
-    m_latch.positionalPin  = (latchPin != 0) ? latchPin : 0;
-    m_latch.positionalName = (latchPin != 0) ? pinGuiName : m_notDefined;
-    rebuildCombo(m_latch);   // refreshes the "Auto (<pin>)" item
+    m_latch.positionalPin = (latchPin != 0) ? latchPin : 0;
+    rebuildCombo(m_latch);   // re-selects the default (positional) pin
     setUiOnOff();
 }
 
-void ShiftRegisters::setClkPin(int clkPin, QString pinGuiName)
+void ShiftRegisters::setClkPin(int clkPin, QString /*pinGuiName*/)
 {
-    m_clk.positionalPin  = (clkPin != 0) ? clkPin : 0;
-    m_clk.positionalName = (clkPin != 0) ? pinGuiName : m_notDefined;
+    m_clk.positionalPin = (clkPin != 0) ? clkPin : 0;
     rebuildCombo(m_clk);
     setUiOnOff();
 }
 
-void ShiftRegisters::setDataPin(int dataPin, QString pinGuiName)
+void ShiftRegisters::setDataPin(int dataPin, QString /*pinGuiName*/)
 {
-    m_data.positionalPin  = (dataPin != 0) ? dataPin : 0;
-    m_data.positionalName = (dataPin != 0) ? pinGuiName : m_notDefined;
+    m_data.positionalPin = (dataPin != 0) ? dataPin : 0;
     rebuildCombo(m_data);
     setUiOnOff();
 }
@@ -243,12 +241,17 @@ void ShiftRegisters::rebuildCombo(PinSelect &sel)
     sel.combo->clear();
     for (const QString &name : sel.choiceNames)
         sel.combo->addItem(name);
-    // Keep the same pin selected across a list refresh; if it's gone (or none was
-    // set), fall back to this register's default (positional) pin, else the first.
+    // Keep the same pin selected across a list refresh; if it's gone, fall back to
+    // this register's default (positional) pin. If the register has NO positional
+    // pin (more enabled registers than assigned role pins), leave it UNSELECTED
+    // (index -1) rather than grabbing the first pin -- selecting a neighbouring
+    // register's pin would make this row falsely functional, count phantom buttons
+    // on a shared line, and persist an explicit override the user never chose. An
+    // unselected combo reads as effective-pin 0, so the container red-flags it as
+    // "assign a pin" instead.
     int newIdx = sel.choicePins.indexOf(selectedPin);
     if (newIdx < 0) newIdx = sel.choicePins.indexOf(sel.positionalPin);
-    if (newIdx < 0 && sel.combo->count() > 0) newIdx = 0;
-    if (newIdx >= 0) sel.combo->setCurrentIndex(newIdx);
+    sel.combo->setCurrentIndex(newIdx);   // newIdx == -1 -> intentionally unselected
 }
 
 int ShiftRegisters::effectivePin(const PinSelect &sel) const
@@ -283,7 +286,7 @@ int ShiftRegisters::buttonCountRaw()    const { return ui->spinBox_ButtonCount->
 
 void ShiftRegisters::setFieldClash(bool data, bool latch, bool clk, bool count)
 {
-    static const QString red = QStringLiteral("border: 1px solid #d9534f;");
+    const QString red = freejoy_style::fieldClashQss();
     if (m_data.combo)  m_data.combo->setStyleSheet(data  ? red : QString());
     if (m_latch.combo) m_latch.combo->setStyleSheet(latch ? red : QString());
     if (m_clk.combo)   m_clk.combo->setStyleSheet(clk   ? red : QString());
@@ -366,7 +369,19 @@ void ShiftRegisters::readFromConfig()
         // actual polarity.
         m_wiring->setCurrentIndex(enabled ? (pullUp ? 0 : 1) : 0);   // 0 = Buttons to GND
     }
-    ui->spinBox_ButtonCount->setValue(c.button_cnt);
+    {
+        // Blocked like the sibling combos: an unblocked setValue mid-load fires
+        // onButtonCountChanged before the pin combos are restored / setUiOnOff
+        // runs, pushing a transient wrong per-register breakdown to the Buttons
+        // tab. The trailing setUiOnOff()/recomputeCounts settle the final state.
+        // Because the button-count valueChanged is blocked, its usual side effect
+        // of syncing the Registers-count spinbox won't run, so set that here too.
+        QSignalBlocker bCount(ui->spinBox_ButtonCount);
+        QSignalBlocker bRegs(ui->spinBox_RegistersCount);
+        ui->spinBox_ButtonCount->setValue(c.button_cnt);
+        ui->spinBox_RegistersCount->setValue(
+            static_cast<int>(ceil(c.button_cnt / static_cast<double>(kInputsPerChip))));
+    }
 
     /* Restore the per-pin selection from the reserved nibbles (0 = Auto).
      * PinConfig::readFromConfig runs earlier in the load fan-out, so the choice

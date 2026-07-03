@@ -110,6 +110,11 @@ inline QColor warningColor()      { return QColor(0xD0, 0x80, 0x10); }
 // transient error flash.
 inline QColor conflictColor()     { return QColor(0xCC, 0x33, 0x33); }
 
+// Stylesheet for a form field flagged as conflicting/incomplete (a red border in
+// the shared conflictColor). One source so every table's clash highlight matches
+// the Advanced Settings duplicate-PID field. Pass "" to clear.
+inline QString fieldClashQss()    { return QStringLiteral("border: 1px solid %1;").arg(conflictColor().name()); }
+
 // Hyperlink blue for rich-text labels (about box, info notes).
 inline QColor linkColor()         { return QColor(0x03, 0xA9, 0xF4); }
 

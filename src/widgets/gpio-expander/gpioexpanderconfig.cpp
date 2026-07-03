@@ -135,18 +135,19 @@ void GpioExpanderConfig::onPinContextChanged(const QStringList &csPinNames, bool
 void GpioExpanderConfig::updatePinDisplays()
 {
     // Rebuild each SPI row's CS dropdown from the assigned SPI_GPIO_CS pins (in
-    // pin order). row.csIndex is authoritative -- restore it (clamped) after the
-    // rebuild so a late Pin Config update doesn't drop the loaded selection.
+    // pin order). row.csIndex is authoritative.
     for (Row &row : m_rows) {
         QSignalBlocker b(row.csPin);
         row.csPin->clear();
         const int t = row.type->currentIndex();
         if (t == T_SPI) {
             row.csPin->addItems(m_csPinNames);
-            if (row.csPin->count() > 0) {
-                if (row.csIndex < 0 || row.csIndex >= row.csPin->count()) row.csIndex = 0;
-                row.csPin->setCurrentIndex(row.csIndex);
-            }
+            // Select the stored CS index; if it's out of range (a CS pin was
+            // removed in Pin Config) leave the combo UNSELECTED and keep csIndex
+            // as-is, so validate() red-flags "points at an unassigned CS pin"
+            // rather than silently snapping the chip to CS #0.
+            row.csPin->setCurrentIndex((row.csIndex >= 0 && row.csIndex < row.csPin->count())
+                                       ? row.csIndex : -1);
         } else if (t == T_I2C) {
             // I2C has no chip-select -- show a greyed "-" so the cell reads as
             // N/A rather than being blank/hidden.
@@ -214,6 +215,25 @@ void GpioExpanderConfig::readFromConfig()
         // enable" auto-fill doesn't fire for a row that loaded already active.
         row.wasActive = (type != T_DISABLED);
     }
+
+    // Legacy migration: a config saved before shared-CS stored no CS index (flags
+    // CS bits = 0) and address 0 for every SPI chip -- the old build assigned CS
+    // positionally at runtime. If two or more SPI rows all load at CS 0 / strap 0
+    // (indistinguishable, and unusable as-is), restore the positional CS order so
+    // they don't all collapse onto the first CS pin. A genuine new config either
+    // uses distinct CS indices or distinct straps, so it won't match this.
+    int spiRows = 0, atCs0Strap0 = 0;
+    for (const Row &row : m_rows) {
+        if (row.type->currentIndex() != T_SPI) continue;
+        ++spiRows;
+        if (row.csIndex == 0 && row.address->currentIndex() == 0) ++atCs0Strap0;
+    }
+    if (spiRows >= 2 && atCs0Strap0 == spiRows) {
+        int cs = 0;
+        for (Row &row : m_rows)
+            if (row.type->currentIndex() == T_SPI) row.csIndex = cs++;
+    }
+
     applyRowEnableStates();
     updatePinDisplays();
     validate();
@@ -280,8 +300,12 @@ void GpioExpanderConfig::onRowChanged()
 
     // Capture each SPI row's CS pick from its combo (authoritative) and relabel
     // the address combo for the current type, before repopulating the CS lists.
+    // Skip a combo still showing the I2C "-" placeholder: on a just-flipped
+    // I2C -> SPI row the combo hasn't been rebuilt with CS pins yet, and reading
+    // its index 0 would clobber a real csIndex to 0.
     for (Row &row : m_rows) {
-        if (row.type->currentIndex() == T_SPI && row.csPin->currentIndex() >= 0)
+        if (row.type->currentIndex() == T_SPI && row.csPin->currentIndex() >= 0
+            && row.csPin->currentText() != QLatin1String("-"))
             row.csIndex = row.csPin->currentIndex();
         refreshAddressItems(row);
     }
@@ -335,7 +359,7 @@ void GpioExpanderConfig::validate()
         warnings << tr("Two SPI expanders share a CS pin and address — give chips on one CS distinct DIP straps.");
 
     for (int i = 0; i < m_rows.size(); ++i)
-        m_rows[i].address->setStyleSheet(clashRows.contains(i) ? "border: 1px solid #d9534f;" : QString());
+        m_rows[i].address->setStyleSheet(clashRows.contains(i) ? freejoy_style::fieldClashQss() : QString());
 
     // Bus / CS prerequisites, checked against the LIVE pin roles pushed by
     // PinConfig (config.pins[] isn't written until writeToConfig, so reading it
@@ -367,11 +391,11 @@ void GpioExpanderConfig::validate()
         const bool csBad = (t == T_SPI) &&
                            (csAssigned == 0 || m_rows[i].csIndex >= csAssigned ||
                             m_rows[i].csPin->currentIndex() < 0);
-        m_rows[i].csPin->setStyleSheet(csBad ? QStringLiteral("border: 1px solid #d9534f;")
+        m_rows[i].csPin->setStyleSheet(csBad ? freejoy_style::fieldClashQss()
                                              : QString());
 
         const bool countMissing = (t != T_DISABLED) && m_rows[i].count->value() <= 0;
-        m_rows[i].count->setStyleSheet(countMissing ? QStringLiteral("border: 1px solid #d9534f;")
+        m_rows[i].count->setStyleSheet(countMissing ? freejoy_style::fieldClashQss()
                                                      : QString());
         if (countMissing) anyCountMissing = true;
     }
