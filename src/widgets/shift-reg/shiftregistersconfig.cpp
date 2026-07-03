@@ -1,5 +1,6 @@
 #include "shiftregistersconfig.h"
 #include "ui_shiftregistersconfig.h"
+#include "style_helpers.h"   // makeAlertBanner / accentAmber (shared alert-banner look)
 #include <QDebug>
 #include <QWidget>
 #include <QGridLayout>
@@ -26,16 +27,25 @@ ShiftRegistersConfig::ShiftRegistersConfig(QWidget *parent) :
         // register's pins, then the counts -- so both tables read
         // "# | Type | ... | Button count".
         m_headerLabels = {
-            new QLabel(tr("Type"),            header),
-            new QLabel(tr("Latch pin"),       header),
-            new QLabel(tr("CLK pin"),         header),
-            new QLabel(tr("Data pin"),        header),
-            new QLabel(tr("Registers count"), header),
-            new QLabel(tr("Button count"),    header),
+            new QLabel(tr("Type"),      header),
+            new QLabel(tr("Wiring"),    header),
+            new QLabel(tr("Latch pin"), header),
+            new QLabel(tr("CLK pin"),   header),
+            new QLabel(tr("Data pin"),  header),
+            new QLabel(tr("Registers"), header),
+            new QLabel(tr("Buttons"),   header),
         };
         for (int c = 0; c < m_headerLabels.size(); ++c)
             hg->addWidget(m_headerLabels[c], 0, c + 1, Qt::AlignCenter);
-        for (int c = 0; c < 7; ++c) hg->setColumnStretch(c, 1);
+        // Column widths must match the register row grid (shiftregisters.ui) and
+        // the Port Expanders grid: narrow index (col 0), stretchy middle, and the
+        // two count columns (6,7 = Registers/Buttons) fixed-width so they pack
+        // tight together on the right instead of floating in wide columns.
+        hg->setColumnMinimumWidth(0, 30);
+        hg->setColumnMinimumWidth(6, 70);
+        hg->setColumnMinimumWidth(7, 70);
+        for (int c = 0; c < 8; ++c)
+            hg->setColumnStretch(c, (c == 0 || c == 6 || c == 7) ? 0 : 1);
         ui->layoutV_ShiftRegisters->addWidget(header);
     }
 
@@ -47,7 +57,23 @@ ShiftRegistersConfig::ShiftRegistersConfig(QWidget *parent) :
         m_shiftRegsPtrList.append(shift_register);
         connect(shift_register, &ShiftRegisters::buttonCountChanged,
                 this, &ShiftRegistersConfig::shiftRegButtonsCalc);
+        // A pin/type/count change also recomputes the breakdown + total, not just
+        // the validation: a register can become functional on a setUiOnOff that
+        // doesn't emit buttonCountChanged (its m_buttonsCount already matched), so
+        // relying on buttonCountChanged alone left that register out of the
+        // per-register breakdown -> its buttons showed under "Other".
+        connect(shift_register, &ShiftRegisters::pinSelectionChanged,
+                this, &ShiftRegistersConfig::recomputeCounts);
     }
+
+    // Amber alert bar under the table (same look as the expander / axes banners),
+    // shown only when two active registers resolve to the same Data pin.
+    m_warnBanner = freejoy_style::makeAlertBanner(freejoy_style::accentAmber(), QString(), this);
+    for (QLabel *l : m_warnBanner->findChildren<QLabel *>())
+        if (l->wordWrap()) { m_warnText = l; break; }
+    m_warnBanner->setVisible(false);
+    ui->layoutV_ShiftRegisters->addSpacing(12);   // breathing room above the banner
+    ui->layoutV_ShiftRegisters->addWidget(m_warnBanner);
 }
 
 ShiftRegistersConfig::~ShiftRegistersConfig()
@@ -61,29 +87,94 @@ void ShiftRegistersConfig::retranslateUi()
     for (int i = 0; i < m_shiftRegsPtrList.size(); ++i) {
         m_shiftRegsPtrList[i]->retranslateUi();
     }
-    const QStringList hdr = { tr("Type"), tr("Latch pin"), tr("CLK pin"),
-                             tr("Data pin"), tr("Registers count"),
-                             tr("Button count") };
+    const QStringList hdr = { tr("Type"), tr("Wiring"), tr("Latch pin"), tr("CLK pin"),
+                             tr("Data pin"), tr("Registers"),
+                             tr("Buttons") };
     for (int i = 0; i < m_headerLabels.size() && i < hdr.size(); ++i)
         m_headerLabels[i]->setText(hdr[i]);
+
+    validateDataPins();   // refresh the (translatable) warning text
 }
 
 
-void ShiftRegistersConfig::shiftRegButtonsCalc(int currentCount, int previousCount)
+void ShiftRegistersConfig::shiftRegButtonsCalc(int /*currentCount*/, int /*previousCount*/)
 {
-    m_shiftButtonsCount += currentCount - previousCount;
+    recomputeCounts();
+}
 
-    // Per-register breakdown alongside the total -- emit FIRST so anyone
-    // grouping UI off the breakdown has fresh data when the total triggers
-    // a rebuild.
+void ShiftRegistersConfig::recomputeCounts()
+{
+    // Recompute the total from the live per-register counts instead of
+    // accumulating deltas. An accumulated running total can drift out of step
+    // with the fresh breakdown (an enable/disable edge whose paired emit didn't
+    // net to zero), leaving the total AHEAD of the breakdown. The Buttons tab
+    // only rebuilds its physical-button panel when the total changes, so a
+    // late-enabled register's breakdown update then arrives with the total
+    // unchanged -- no rebuild -- and that register's buttons land under "Other"
+    // (counted in the total but missing from the per-register sections). Summing
+    // the fresh counts keeps total and breakdown consistent, so they move
+    // together and the panel always rebuilds with the matching breakdown.
     QList<int> perRegister;
     perRegister.reserve(m_shiftRegsPtrList.size());
+    int total = 0;
     for (auto *r : m_shiftRegsPtrList) {
-        perRegister.append(r->buttonCount());
+        const int n = r->buttonCount();
+        perRegister.append(n);
+        total += n;
     }
+    m_shiftButtonsCount = total;
+
+    // Emit the breakdown FIRST so a subscriber grouping off it has fresh data
+    // when the total change triggers a rebuild.
     emit shiftRegBreakdownChanged(perRegister);
 
     emit shiftRegButtonsCountChanged(m_shiftButtonsCount);
+
+    validateDataPins();   // an enable transition may have created/cleared a clash
+}
+
+void ShiftRegistersConfig::validateDataPins()
+{
+    // Duplicate Data pins among ENABLED rows: each active register needs its own
+    // data line (shift registers have no addressing to tell two apart, unlike
+    // expander CS + HAEN). Shared Latch / CLK is fine -- the daisy-chain case.
+    QList<int> seenData, dupData;
+    for (ShiftRegisters *w : m_shiftRegsPtrList) {
+        if (!w->isEnabledRow()) continue;
+        const int d = w->effectiveDataPin();
+        if (d <= 0) continue;
+        if (seenData.contains(d)) { if (!dupData.contains(d)) dupData.append(d); }
+        else seenData.append(d);
+    }
+
+    // Per-row: red-highlight the cells an enabled register is still missing.
+    bool anyMissingPin = false, anyMissingCount = false;
+    const bool anyDup = !dupData.isEmpty();
+    for (ShiftRegisters *w : m_shiftRegsPtrList) {
+        if (!w->isEnabledRow()) { w->setFieldClash(false, false, false, false); continue; }
+        const int  d       = w->effectiveDataPin();
+        const bool dMiss   = d <= 0;
+        const bool lMiss   = w->effectiveLatchPin() <= 0;
+        const bool cMiss   = w->effectiveClkPin()   <= 0;
+        const bool dDup    = d > 0 && dupData.contains(d);
+        const bool cntMiss = w->buttonCountRaw() <= 0;
+        w->setFieldClash(dMiss || dDup, lMiss, cMiss, cntMiss);
+        if (dMiss || lMiss || cMiss) anyMissingPin = true;
+        if (cntMiss) anyMissingCount = true;
+    }
+
+    QStringList warnings;
+    if (anyMissingPin)
+        warnings << tr("Assign the highlighted Data / CLK / Latch pins in Pin Config "
+                       "(add more shift-register role pins if there aren't enough).");
+    if (anyDup)
+        warnings << tr("Two shift registers share a Data pin — each needs its own data "
+                       "line (shared Latch / CLK is fine).");
+    if (anyMissingCount)
+        warnings << tr("Set a button count for the highlighted shift registers.");
+
+    if (m_warnText)   m_warnText->setText(warnings.join('\n'));
+    if (m_warnBanner) m_warnBanner->setVisible(!warnings.isEmpty());
 }
 
 
@@ -191,6 +282,42 @@ void ShiftRegistersConfig::shiftRegSelected(int latchPin, int clkPin, int dataPi
         }
 
     }
+
+    // The positional (Auto) pins above give each SR its default; layer the full
+    // distinct role-pin lists on top so any SR can override to a specific pin.
+    feedChoices();
+}
+
+void ShiftRegistersConfig::collectDistinct(const std::array<ShiftRegData_t, MAX_SHIFT_REG_NUM + 1> &arr,
+                                           QVector<int> &pins, QStringList &names)
+{
+    // arr is sorted ascending with a trailing-duplicate fill (see addPinAndSort);
+    // taking each pin only when it differs from the last collected one yields the
+    // distinct list in pin order -- the firmware's role-pin scan order.
+    for (const ShiftRegData_t &e : arr) {
+        if (e.pinNumber > 0 && (pins.isEmpty() || pins.back() != e.pinNumber)) {
+            pins.append(e.pinNumber);
+            names.append(e.guiName);
+        }
+    }
+}
+
+void ShiftRegistersConfig::feedChoices()
+{
+    QVector<int> dPins, lPins, cPins;
+    QStringList  dNames, lNames, cNames;
+    collectDistinct(m_dataPinsArray,  dPins, dNames);
+    collectDistinct(m_latchPinsArray, lPins, lNames);
+    collectDistinct(m_clkPinsArray,   cPins, cNames);
+
+    for (ShiftRegisters *w : m_shiftRegsPtrList) {
+        w->setDataPinChoices(dPins, dNames);
+        w->setLatchPinChoices(lPins, lNames);
+        w->setClkPinChoices(cPins, cNames);
+    }
+
+    recomputeCounts();   // a choice refresh can change what Auto resolves to (and
+                         // whether a register is functional), so refresh counts too
 }
 
 void ShiftRegistersConfig::readFromConfig()
@@ -198,6 +325,7 @@ void ShiftRegistersConfig::readFromConfig()
     for (int i = 0; i < m_shiftRegsPtrList.size(); ++i) {
         m_shiftRegsPtrList[i]->readFromConfig();
     }
+    recomputeCounts();   // reflect the loaded state in the breakdown + highlights
 }
 
 void ShiftRegistersConfig::writeToConfig()

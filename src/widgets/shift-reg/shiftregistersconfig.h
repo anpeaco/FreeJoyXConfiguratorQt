@@ -39,6 +39,15 @@ public slots:
     void shiftRegSelected(int latchPin, int clkPin, int dataPin, const QString &pinGuiName);
 private slots:
     void shiftRegButtonsCalc(int currentCount, int previousCount);
+    /* Recompute the per-register breakdown + combined total from the live counts
+     * and emit them, then validate. Driven by both buttonCountChanged and
+     * pinSelectionChanged so a register that becomes functional without a
+     * buttonCountChanged edge still lands in the breakdown. */
+    void recomputeCounts();
+    /* Flag two active registers resolving to the same Data pin (shift registers
+     * have no addressing to distinguish them). Shared Latch/CLK is fine -- that's
+     * the normal daisy-chain -- so only Data is checked. */
+    void validateDataPins();
 
 private:
     Ui::ShiftRegistersConfig *ui;
@@ -54,12 +63,26 @@ private:
     static bool sortByPinNumberAndNullLast(const ShiftRegData_t &lhs, const ShiftRegData_t &rhs);
     void addPinAndSort(int pin, const QString &pinGuiName, std::array<ShiftRegData_t, MAX_SHIFT_REG_NUM + 1> &arr);
 
+    /* Reduce one of the positional pin arrays to the DISTINCT ordered role-pin
+     * list (dropping the trailing-duplicate fill addPinAndSort leaves behind).
+     * The result is in ascending pin order == the firmware's pins[] scan order,
+     * so the k-th entry is firmware selection nibble k+1. */
+    static void collectDistinct(const std::array<ShiftRegData_t, MAX_SHIFT_REG_NUM + 1> &arr,
+                                QVector<int> &pins, QStringList &names);
+    /* Push the three distinct role-pin lists to every SR widget so each can
+     * offer the explicit-override dropdown. Layered on top of the existing
+     * positional (Auto) feed. */
+    void feedChoices();
+
     std::array<ShiftRegData_t, MAX_SHIFT_REG_NUM + 1> m_latchPinsArray{};
     std::array<ShiftRegData_t, MAX_SHIFT_REG_NUM + 1> m_clkPinsArray{};
     std::array<ShiftRegData_t, MAX_SHIFT_REG_NUM + 1> m_dataPinsArray{};
 
     QList<ShiftRegisters *> m_shiftRegsPtrList;
     QList<QLabel *> m_headerLabels;   // the single shared column header
+
+    QWidget *m_warnBanner = nullptr;  // amber alert bar (hidden unless a clash)
+    QLabel  *m_warnText   = nullptr;  // the word-wrapped message inside it
 };
 
 #endif // SHIFTREGISTERSCONFIG_H

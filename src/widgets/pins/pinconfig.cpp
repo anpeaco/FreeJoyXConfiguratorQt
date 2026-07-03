@@ -10,6 +10,7 @@
 #include "pinsblackpill.h"
 #include "common_defines.h"
 #include "pintypehelper.h"
+#include "pinboardnames.h"   // pinDisplayName -- per-board silkscreen (B11 -> B2 on F411)
 #include "global.h"
 #include "style_helpers.h"
 #include "dialogs/busremapconfirmationdialog.h"
@@ -148,9 +149,13 @@ QString PinConfig::pinGuiName(int pin) const
 {
     const int idx = pin - 1;
     if (idx < 0 || idx >= m_pinCBoxPtrList.size()) return QString();
-    // The static pin table is shared across boards; the active widget's copy
-    // gives the board-correct label (e.g. PB11 vs PB2 on slot 22).
-    return m_pinCBoxPtrList[idx]->pinList()[idx].guiName;
+    // The pin table is a shared static holding the internal (F103 silkscreen)
+    // names, so translate to the connected board's label -- e.g. slot 22 reads
+    // "B11" on F103 but "B2" on the F411 BlackPill. (m_lastBoard is a board
+    // INDEX: 0 BluePill, 1 ContrLite, 2 BlackPill.)
+    const int boardId = (m_lastBoard == 2) ? BOARD_ID_F411_BLACKPILL
+                                           : BOARD_ID_F103_BLUEPILL;
+    return pinDisplayName(boardId, m_pinCBoxPtrList[idx]->pinList()[idx].guiName);
 }
 
 void PinConfig::applyBoardSpecificRoleFilters()
@@ -424,33 +429,33 @@ void PinConfig::signalsForWidgets(int currentDeviceEnum, int previousDeviceEnum,
     int pinIndex = pinNumber - PA_0;
     //fast encoder selected
     if (currentDeviceEnum == FAST_ENCODER){
-        emit fastEncoderSelected(m_pinCBoxPtrList[0]->pinList()[pinIndex].guiName, true);    // hz
+        emit fastEncoderSelected(pinGuiName(pinIndex + 1), true);    // hz
     } else if (previousDeviceEnum == FAST_ENCODER){
-        emit fastEncoderSelected(m_pinCBoxPtrList[0]->pinList()[pinIndex].guiName, false);    // hz
+        emit fastEncoderSelected(pinGuiName(pinIndex + 1), false);    // hz
     }
     // shift register latch selected
     if (currentDeviceEnum == SHIFT_REG_LATCH){
         m_shiftLatchCount++;
-        emit shiftRegSelected(pinNumber, 0, 0, m_pinCBoxPtrList[0]->pinList()[pinIndex].guiName);    // hz
+        emit shiftRegSelected(pinNumber, 0, 0, pinGuiName(pinIndex + 1));    // hz
     } else if (previousDeviceEnum == SHIFT_REG_LATCH){
         m_shiftLatchCount--;
-        emit shiftRegSelected((pinNumber)*-1, 0, 0, m_pinCBoxPtrList[0]->pinList()[pinIndex].guiName);    // hz
+        emit shiftRegSelected((pinNumber)*-1, 0, 0, pinGuiName(pinIndex + 1));    // hz
     }
     // shift register CLK selected
     if (currentDeviceEnum == SHIFT_REG_CLK){
         m_shiftClkCount++;
-        emit shiftRegSelected(0, pinNumber, 0, m_pinCBoxPtrList[0]->pinList()[pinIndex].guiName);    // hz
+        emit shiftRegSelected(0, pinNumber, 0, pinGuiName(pinIndex + 1));    // hz
     } else if (previousDeviceEnum == SHIFT_REG_CLK){
         m_shiftClkCount--;
-        emit shiftRegSelected(0, (pinNumber)*-1, 0, m_pinCBoxPtrList[0]->pinList()[pinIndex].guiName);    // hz
+        emit shiftRegSelected(0, (pinNumber)*-1, 0, pinGuiName(pinIndex + 1));    // hz
     }
     // shift register data selected
     if (currentDeviceEnum == SHIFT_REG_DATA){
         m_shiftDataCount++;
-        emit shiftRegSelected(0, 0, pinNumber, m_pinCBoxPtrList[0]->pinList()[pinIndex].guiName);    // hz
+        emit shiftRegSelected(0, 0, pinNumber, pinGuiName(pinIndex + 1));    // hz
     } else if (previousDeviceEnum == SHIFT_REG_DATA){
         m_shiftDataCount--;
-        emit shiftRegSelected(0, 0, (pinNumber)*-1, m_pinCBoxPtrList[0]->pinList()[pinIndex].guiName);    // hz
+        emit shiftRegSelected(0, 0, (pinNumber)*-1, pinGuiName(pinIndex + 1));    // hz
     }
     // I2C selected
     if (currentDeviceEnum == I2C_SCL){// || current_device_enum == I2C_SDA){

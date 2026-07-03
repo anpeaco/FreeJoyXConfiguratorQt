@@ -183,6 +183,11 @@ void ConfigToFile::loadDeviceConfigFromFile(QWidget *parent, const QString &file
 
         devC.shift_registers[i].type = uint8_t(deviceSettings.value("ShiftType", devC.shift_registers[i].type).toInt());
         devC.shift_registers[i].button_cnt = uint8_t(deviceSettings.value("ButtonCnt", devC.shift_registers[i].button_cnt).toInt());
+        // Per-SR data/latch/clk pin-select nibbles (0 = Auto). Absent in files
+        // written before per-SR selection landed -> default to the current value
+        // (0 after a reset), so an old config reads back as all-Auto == legacy.
+        devC.shift_registers[i].reserved[0] = int8_t(deviceSettings.value("Reserved0", devC.shift_registers[i].reserved[0]).toInt());
+        devC.shift_registers[i].reserved[1] = int8_t(deviceSettings.value("Reserved1", devC.shift_registers[i].reserved[1]).toInt());
         deviceSettings.endGroup();
     }
 
@@ -573,6 +578,9 @@ void ConfigToFile::saveDeviceConfigToFile(const QString &fileName, dev_config_t 
 
         deviceSettings.setValue("ShiftType", devC.shift_registers[i].type);
         deviceSettings.setValue("ButtonCnt", devC.shift_registers[i].button_cnt);
+        // Per-SR data/latch/clk pin-select nibbles (0 = Auto); see load side.
+        deviceSettings.setValue("Reserved0", devC.shift_registers[i].reserved[0]);
+        deviceSettings.setValue("Reserved1", devC.shift_registers[i].reserved[1]);
         deviceSettings.endGroup();
     }
 
