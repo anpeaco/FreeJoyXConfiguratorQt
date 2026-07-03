@@ -140,12 +140,17 @@ void GpioExpanderConfig::updatePinDisplays()
     for (Row &row : m_rows) {
         QSignalBlocker b(row.csPin);
         row.csPin->clear();
-        if (row.type->currentIndex() == T_SPI) {
+        const int t = row.type->currentIndex();
+        if (t == T_SPI) {
             row.csPin->addItems(m_csPinNames);
             if (row.csPin->count() > 0) {
                 if (row.csIndex < 0 || row.csIndex >= row.csPin->count()) row.csIndex = 0;
                 row.csPin->setCurrentIndex(row.csIndex);
             }
+        } else if (t == T_I2C) {
+            // I2C has no chip-select -- show a greyed "-" so the cell reads as
+            // N/A rather than being blank/hidden.
+            row.csPin->addItem(QStringLiteral("-"));
         }
     }
 }
@@ -242,16 +247,17 @@ void GpioExpanderConfig::applyRowEnableStates()
 {
     // Mirror the Shift Registers table: a Disabled row HIDES its config cells so
     // it reads as just "Type: Disabled" (rather than greyed-out empty dropdowns).
-    // On an active row the cells show; CS is only shown for an SPI chip (I2C has
-    // no chip-select), and the Type combo always stays live so a row can be
-    // (re-)enabled.
+    // On an active row the cells show. CS is a live dropdown only for an SPI chip;
+    // an I2C row shows a greyed "-" (N/A) instead of hiding the cell. The Type
+    // combo always stays live so a row can be (re-)enabled.
     for (const Row &row : m_rows) {
         const int t = row.type->currentIndex();
         const bool active = t != T_DISABLED;
         row.wiring->setVisible(active);
         row.address->setVisible(active);
         row.count->setVisible(active);
-        row.csPin->setVisible(t == T_SPI);   // hidden for I2C + Disabled
+        row.csPin->setVisible(active);          // I2C shows a greyed "-", not hidden
+        row.csPin->setEnabled(t == T_SPI);      // interactive only for SPI
     }
 }
 
