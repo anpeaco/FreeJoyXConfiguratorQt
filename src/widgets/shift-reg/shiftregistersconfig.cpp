@@ -57,11 +57,13 @@ ShiftRegistersConfig::ShiftRegistersConfig(QWidget *parent) :
         m_shiftRegsPtrList.append(shift_register);
         connect(shift_register, &ShiftRegisters::buttonCountChanged,
                 this, &ShiftRegistersConfig::shiftRegButtonsCalc);
-        // A pin-dropdown change (that doesn't flip the enable state, so it
-        // wouldn't fire buttonCountChanged) still needs a re-check for a
-        // now-shared Data pin.
+        // A pin/type/count change also recomputes the breakdown + total, not just
+        // the validation: a register can become functional on a setUiOnOff that
+        // doesn't emit buttonCountChanged (its m_buttonsCount already matched), so
+        // relying on buttonCountChanged alone left that register out of the
+        // per-register breakdown -> its buttons showed under "Other".
         connect(shift_register, &ShiftRegisters::pinSelectionChanged,
-                this, &ShiftRegistersConfig::validateDataPins);
+                this, &ShiftRegistersConfig::recomputeCounts);
     }
 
     // Amber alert bar under the table (same look as the expander / axes banners),
@@ -96,6 +98,11 @@ void ShiftRegistersConfig::retranslateUi()
 
 
 void ShiftRegistersConfig::shiftRegButtonsCalc(int /*currentCount*/, int /*previousCount*/)
+{
+    recomputeCounts();
+}
+
+void ShiftRegistersConfig::recomputeCounts()
 {
     // Recompute the total from the live per-register counts instead of
     // accumulating deltas. An accumulated running total can drift out of step
@@ -309,7 +316,8 @@ void ShiftRegistersConfig::feedChoices()
         w->setClkPinChoices(cPins, cNames);
     }
 
-    validateDataPins();   // the choice refresh may change what Auto resolves to
+    recomputeCounts();   // a choice refresh can change what Auto resolves to (and
+                         // whether a register is functional), so refresh counts too
 }
 
 void ShiftRegistersConfig::readFromConfig()
@@ -317,7 +325,7 @@ void ShiftRegistersConfig::readFromConfig()
     for (int i = 0; i < m_shiftRegsPtrList.size(); ++i) {
         m_shiftRegsPtrList[i]->readFromConfig();
     }
-    validateDataPins();   // reflect the loaded state in the highlights + banner
+    recomputeCounts();   // reflect the loaded state in the breakdown + highlights
 }
 
 void ShiftRegistersConfig::writeToConfig()

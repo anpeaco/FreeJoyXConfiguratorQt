@@ -39,6 +39,11 @@ public slots:
     void shiftRegSelected(int latchPin, int clkPin, int dataPin, const QString &pinGuiName);
 private slots:
     void shiftRegButtonsCalc(int currentCount, int previousCount);
+    /* Recompute the per-register breakdown + combined total from the live counts
+     * and emit them, then validate. Driven by both buttonCountChanged and
+     * pinSelectionChanged so a register that becomes functional without a
+     * buttonCountChanged edge still lands in the breakdown. */
+    void recomputeCounts();
     /* Flag two active registers resolving to the same Data pin (shift registers
      * have no addressing to distinguish them). Shared Latch/CLK is fine -- that's
      * the normal daisy-chain -- so only Data is checked. */
