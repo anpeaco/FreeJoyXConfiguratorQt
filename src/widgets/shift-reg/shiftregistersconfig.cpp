@@ -95,18 +95,30 @@ void ShiftRegistersConfig::retranslateUi()
 }
 
 
-void ShiftRegistersConfig::shiftRegButtonsCalc(int currentCount, int previousCount)
+void ShiftRegistersConfig::shiftRegButtonsCalc(int /*currentCount*/, int /*previousCount*/)
 {
-    m_shiftButtonsCount += currentCount - previousCount;
-
-    // Per-register breakdown alongside the total -- emit FIRST so anyone
-    // grouping UI off the breakdown has fresh data when the total triggers
-    // a rebuild.
+    // Recompute the total from the live per-register counts instead of
+    // accumulating deltas. An accumulated running total can drift out of step
+    // with the fresh breakdown (an enable/disable edge whose paired emit didn't
+    // net to zero), leaving the total AHEAD of the breakdown. The Buttons tab
+    // only rebuilds its physical-button panel when the total changes, so a
+    // late-enabled register's breakdown update then arrives with the total
+    // unchanged -- no rebuild -- and that register's buttons land under "Other"
+    // (counted in the total but missing from the per-register sections). Summing
+    // the fresh counts keeps total and breakdown consistent, so they move
+    // together and the panel always rebuilds with the matching breakdown.
     QList<int> perRegister;
     perRegister.reserve(m_shiftRegsPtrList.size());
+    int total = 0;
     for (auto *r : m_shiftRegsPtrList) {
-        perRegister.append(r->buttonCount());
+        const int n = r->buttonCount();
+        perRegister.append(n);
+        total += n;
     }
+    m_shiftButtonsCount = total;
+
+    // Emit the breakdown FIRST so a subscriber grouping off it has fresh data
+    // when the total change triggers a rebuild.
     emit shiftRegBreakdownChanged(perRegister);
 
     emit shiftRegButtonsCountChanged(m_shiftButtonsCount);
