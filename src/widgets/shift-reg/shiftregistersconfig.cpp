@@ -1,5 +1,6 @@
 #include "shiftregistersconfig.h"
 #include "ui_shiftregistersconfig.h"
+#include "style_helpers.h"   // makeAlertBanner / accentAmber (shared alert-banner look)
 #include <QDebug>
 #include <QWidget>
 #include <QGridLayout>
@@ -47,7 +48,20 @@ ShiftRegistersConfig::ShiftRegistersConfig(QWidget *parent) :
         m_shiftRegsPtrList.append(shift_register);
         connect(shift_register, &ShiftRegisters::buttonCountChanged,
                 this, &ShiftRegistersConfig::shiftRegButtonsCalc);
+        // A pin-dropdown change (that doesn't flip the enable state, so it
+        // wouldn't fire buttonCountChanged) still needs a re-check for a
+        // now-shared Data pin.
+        connect(shift_register, &ShiftRegisters::pinSelectionChanged,
+                this, &ShiftRegistersConfig::validateDataPins);
     }
+
+    // Amber alert bar under the table (same look as the expander / axes banners),
+    // shown only when two active registers resolve to the same Data pin.
+    m_warnBanner = freejoy_style::makeAlertBanner(freejoy_style::accentAmber(), QString(), this);
+    for (QLabel *l : m_warnBanner->findChildren<QLabel *>())
+        if (l->wordWrap()) { m_warnText = l; break; }
+    m_warnBanner->setVisible(false);
+    ui->layoutV_ShiftRegisters->addWidget(m_warnBanner);
 }
 
 ShiftRegistersConfig::~ShiftRegistersConfig()
@@ -66,6 +80,8 @@ void ShiftRegistersConfig::retranslateUi()
                              tr("Button count") };
     for (int i = 0; i < m_headerLabels.size() && i < hdr.size(); ++i)
         m_headerLabels[i]->setText(hdr[i]);
+
+    validateDataPins();   // refresh the (translatable) warning text
 }
 
 
@@ -84,6 +100,31 @@ void ShiftRegistersConfig::shiftRegButtonsCalc(int currentCount, int previousCou
     emit shiftRegBreakdownChanged(perRegister);
 
     emit shiftRegButtonsCountChanged(m_shiftButtonsCount);
+
+    validateDataPins();   // an enable transition may have created/cleared a clash
+}
+
+void ShiftRegistersConfig::validateDataPins()
+{
+    // Collect each active register's resolved Data pin; a value seen twice is a
+    // clash (two registers reading the same line with no way to tell them apart).
+    QList<int> seen, clash;
+    for (ShiftRegisters *w : m_shiftRegsPtrList) {
+        const int pin = w->activeDataPin();
+        if (pin <= 0) continue;
+        if (seen.contains(pin)) { if (!clash.contains(pin)) clash.append(pin); }
+        else seen.append(pin);
+    }
+
+    // Red-border the offending Data dropdowns; clear the rest.
+    for (ShiftRegisters *w : m_shiftRegsPtrList)
+        w->setDataPinClash(clash.contains(w->activeDataPin()) && w->activeDataPin() > 0);
+
+    if (m_warnText)
+        m_warnText->setText(tr("Two shift registers share a Data pin — each register "
+                               "needs its own data line (shared Latch/CLK is fine)."));
+    if (m_warnBanner)
+        m_warnBanner->setVisible(!clash.isEmpty());
 }
 
 
@@ -224,6 +265,8 @@ void ShiftRegistersConfig::feedChoices()
         w->setLatchPinChoices(lPins, lNames);
         w->setClkPinChoices(cPins, cNames);
     }
+
+    validateDataPins();   // the choice refresh may change what Auto resolves to
 }
 
 void ShiftRegistersConfig::readFromConfig()

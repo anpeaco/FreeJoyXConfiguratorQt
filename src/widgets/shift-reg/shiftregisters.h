@@ -51,8 +51,21 @@ public:
      * the firmware ignores registers without all three pins assigned. */
     int buttonCount() const;
 
+    /* The resolved Data pin of this register when it is active (all three
+     * effective pins present), else 0. Two active registers sharing a Data pin
+     * is a conflict -- shift registers have no addressing to tell them apart
+     * (unlike expander CS + HAEN) -- so the container flags duplicates. */
+    int activeDataPin() const;
+
+    /* Red-border the Data dropdown to flag a duplicate-Data-pin clash (mirrors
+     * the expander's clashing-address highlight). */
+    void setDataPinClash(bool clash);
+
 signals:
     void buttonCountChanged(int currentCount, int previousCount);
+    /* A Data/CLK/Latch dropdown pick changed -- the container re-runs its
+     * duplicate-Data-pin validation. */
+    void pinSelectionChanged();
 
 private slots:
     void onButtonCountChanged(int buttonCount);
@@ -60,6 +73,8 @@ private slots:
     /* A pin-select dropdown changed -> the resolved (effective) pin may have
      * gained/lost the register, so re-run the enable gating. */
     void onPinSelectionChanged();
+    /* User picked a chip type on an active row -> remember it. */
+    void onTypeChanged(int idx);
 
 private:
     Ui::ShiftRegisters *ui;
@@ -77,6 +92,20 @@ private:
         QStringList  choiceNames;
     };
     PinSelect m_data, m_latch, m_clk;
+
+    /* The chip type the user has chosen (HC165/CD4021 enum, 0..3), tracked
+     * separately from the Type combo because the combo shows a "Disabled"
+     * placeholder while the register is inactive (no complete pin set) and the
+     * real chip types only while it's active. This is what round-trips to the
+     * wire config -- the Disabled display is derived from the pin state, not
+     * stored. */
+    int m_userType = 0;
+
+    /* Repopulate the Type combo for the current active state: the four chip
+     * types (showing m_userType) when active, or a single greyed "Disabled"
+     * item when inactive -- so an unconfigured row reads like a disabled
+     * expander row instead of a greyed chip type. */
+    void rebuildTypeCombo(bool active);
 
     /* Rebuild a dropdown from its PinSelect state, preserving the current
      * selection index where still valid. Signals blocked during the rebuild. */

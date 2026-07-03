@@ -63,9 +63,11 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
     ui->spinBox_RegistersCount->setFixedWidth(64);
     ui->spinBox_ButtonCount->setFixedWidth(64);
 
-    for (int i = 0; i < SHIFT_REG_TYPES; ++i) {
-        ui->comboBox_ShiftRegType->addItem(m_shiftRegistersList[i].guiName);
-    }
+    // The Type combo is (re)populated by rebuildTypeCombo() from the active
+    // state -- chip types when active, a "Disabled" placeholder when not -- so
+    // it isn't pre-filled here. setUiOnOff() below seeds it.
+    connect(ui->comboBox_ShiftRegType, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &ShiftRegisters::onTypeChanged);
 
     connect(ui->spinBox_ButtonCount, SIGNAL(valueChanged(int)), this, SLOT(onButtonCountChanged(int)));
     connect(ui->spinBox_RegistersCount, SIGNAL(valueChanged(int)), this, SLOT(onRegistersCountChanged(int)));
@@ -183,9 +185,11 @@ void ShiftRegisters::rebuildCombo(PinSelect &sel)
     QSignalBlocker block(sel.combo);
     const int keep = qMax(0, sel.combo->currentIndex());
     sel.combo->clear();
-    // Item 0 = Auto, annotated with the positional pin it resolves to so the
-    // default still shows which physical pin is in play (the old label's info).
-    sel.combo->addItem(sel.positionalPin > 0 ? tr("Auto (%1)").arg(sel.positionalName)
+    // Item 0 = Auto, shown as "<pin> (auto)" so the default reads as the pin it
+    // resolves to while the "(auto)" suffix still marks it as auto-tracking (vs an
+    // explicit pick, which shows the bare pin name). Plain "Auto" when there's no
+    // positional pin to resolve to.
+    sel.combo->addItem(sel.positionalPin > 0 ? tr("%1 (auto)").arg(sel.positionalName)
                                              : tr("Auto"));
     for (const QString &name : sel.choiceNames)
         sel.combo->addItem(name);
@@ -204,6 +208,60 @@ int ShiftRegisters::effectivePin(const PinSelect &sel) const
 void ShiftRegisters::onPinSelectionChanged()
 {
     setUiOnOff();
+    emit pinSelectionChanged();   // container re-validates duplicate Data pins
+}
+
+int ShiftRegisters::activeDataPin() const
+{
+    const bool active = effectivePin(m_latch) > 0 &&
+                        effectivePin(m_clk)   > 0 &&
+                        effectivePin(m_data)  > 0;
+    return active ? effectivePin(m_data) : 0;
+}
+
+void ShiftRegisters::setDataPinClash(bool clash)
+{
+    if (m_data.combo)
+        m_data.combo->setStyleSheet(clash ? QStringLiteral("border: 1px solid #d9534f;")
+                                           : QString());
+}
+
+void ShiftRegisters::onTypeChanged(int idx)
+{
+    // Capture the pick only while the combo holds the chip types (active row).
+    // The "Disabled" placeholder is a single item on an inactive, greyed row --
+    // never a genuine user choice -- so ignore that mode.
+    if (idx >= 0 && idx < SHIFT_REG_TYPES &&
+        ui->comboBox_ShiftRegType->count() == SHIFT_REG_TYPES)
+        m_userType = idx;
+}
+
+void ShiftRegisters::rebuildTypeCombo(bool active)
+{
+    QComboBox *c = ui->comboBox_ShiftRegType;
+    if (active && c->count() == SHIFT_REG_TYPES) {
+        // Already in chip-type mode; just keep the shown type in sync.
+        if (c->currentIndex() != m_userType) {
+            QSignalBlocker block(c);
+            c->setCurrentIndex(m_userType);
+        }
+        return;
+    }
+    if (!active && c->count() == 1) return;   // already showing the Disabled item
+
+    QSignalBlocker block(c);
+    c->clear();
+    if (active) {
+        for (int i = 0; i < SHIFT_REG_TYPES; ++i)
+            c->addItem(m_shiftRegistersList[i].guiName);
+        c->setCurrentIndex((m_userType >= 0 && m_userType < SHIFT_REG_TYPES) ? m_userType : 0);
+    } else {
+        // Inactive register -> read like a disabled expander row: a single greyed
+        // "Disabled" entry (the sweep in setUiOnOff greys it) instead of a stale
+        // chip type. The real m_userType is preserved for when it re-activates.
+        c->addItem(tr("Disabled"));
+        c->setCurrentIndex(0);
+    }
 }
 
 void ShiftRegisters::setUiOnOff()
@@ -224,6 +282,14 @@ void ShiftRegisters::setUiOnOff()
                              effectivePin(m_clk)   > 0 &&
                              effectivePin(m_data)  > 0);
     const bool wasEnabled = ui->spinBox_ButtonCount->isEnabled();
+
+    /* Inactive row -> Type shows a greyed "Disabled", and the two count cells
+     * are hidden so they read blank, mirroring a disabled Port Expander row.
+     * The pin dropdowns deliberately stay visible + live (below) since they're
+     * how a pin-less register is overridden back on. */
+    rebuildTypeCombo(nowEnabled);
+    ui->spinBox_RegistersCount->setVisible(nowEnabled);
+    ui->spinBox_ButtonCount->setVisible(nowEnabled);
 
     /* The pin dropdowns stay live even while the register is disabled, so a
      * register with no positional pin can still be given an explicit one to
@@ -265,7 +331,9 @@ int ShiftRegisters::buttonCount() const
 void ShiftRegisters::readFromConfig()
 {
     const shift_reg_config_t &c = gEnv.pDeviceConfig->config.shift_registers[m_shiftRegNumber];
-    ui->comboBox_ShiftRegType->setCurrentIndex(c.type);
+    // The Type combo shows Disabled/chip based on active state; store the chip
+    // type in m_userType and let setUiOnOff() below render it.
+    m_userType = (c.type < SHIFT_REG_TYPES) ? c.type : 0;
     ui->spinBox_ButtonCount->setValue(c.button_cnt);
 
     /* Restore the per-pin selection nibbles (0 = Auto). PinConfig::readFromConfig
@@ -291,7 +359,9 @@ void ShiftRegisters::readFromConfig()
 void ShiftRegisters::writeToConfig()
 {
     shift_reg_config_t &c = gEnv.pDeviceConfig->config.shift_registers[m_shiftRegNumber];
-    c.type = ui->comboBox_ShiftRegType->currentIndex();
+    // Persist the tracked chip type, not the combo index -- the combo may be
+    // showing the "Disabled" placeholder (inactive row), which is display-only.
+    c.type = m_userType;
     c.button_cnt = ui->spinBox_ButtonCount->value();
 
     /* Pack the dropdown picks into the reserved nibbles the firmware reads:

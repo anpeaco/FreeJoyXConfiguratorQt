@@ -39,6 +39,10 @@ public slots:
     void shiftRegSelected(int latchPin, int clkPin, int dataPin, const QString &pinGuiName);
 private slots:
     void shiftRegButtonsCalc(int currentCount, int previousCount);
+    /* Flag two active registers resolving to the same Data pin (shift registers
+     * have no addressing to distinguish them). Shared Latch/CLK is fine -- that's
+     * the normal daisy-chain -- so only Data is checked. */
+    void validateDataPins();
 
 private:
     Ui::ShiftRegistersConfig *ui;
@@ -71,6 +75,9 @@ private:
 
     QList<ShiftRegisters *> m_shiftRegsPtrList;
     QList<QLabel *> m_headerLabels;   // the single shared column header
+
+    QWidget *m_warnBanner = nullptr;  // amber alert bar (hidden unless a clash)
+    QLabel  *m_warnText   = nullptr;  // the word-wrapped message inside it
 };
 
 #endif // SHIFTREGISTERSCONFIG_H
