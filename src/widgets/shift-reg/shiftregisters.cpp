@@ -216,12 +216,12 @@ void ShiftRegisters::rebuildCombo(PinSelect &sel)
     QSignalBlocker block(sel.combo);
     const int keep = qMax(0, sel.combo->currentIndex());
     sel.combo->clear();
-    // Item 0 = Auto, shown as "<pin> (auto)" so the default reads as the pin it
-    // resolves to while the "(auto)" suffix still marks it as auto-tracking (vs an
-    // explicit pick, which shows the bare pin name). Plain "Auto" when there's no
-    // positional pin to resolve to.
-    sel.combo->addItem(sel.positionalPin > 0 ? tr("%1 (auto)").arg(sel.positionalName)
-                                             : tr("Auto"));
+    // Item 0 = "Auto" (the positional/default pin for this register). Kept as a
+    // plain word rather than annotated with the resolved pin: showing the pin
+    // name here would duplicate the same pin's explicit entry in the list below.
+    // The explicit picks read as the bare pin name ("Pin A7"); "Auto" reads as
+    // Auto.
+    sel.combo->addItem(tr("Auto"));
     for (const QString &name : sel.choiceNames)
         sel.combo->addItem(name);
     sel.combo->setCurrentIndex(keep < sel.combo->count() ? keep : 0);
@@ -338,7 +338,11 @@ void ShiftRegisters::readFromConfig()
     }
     {
         QSignalBlocker block(m_wiring);
-        m_wiring->setCurrentIndex(pullUp ? 0 : 1);   // 0 = Buttons to GND (pull-up)
+        // A fresh / unconfigured (disabled) register defaults to Buttons to GND
+        // (pull-up) rather than the wire enum's 0 = HC165_PULL_DOWN (= VCC), so a
+        // newly enabled register starts on GND. A configured register shows its
+        // actual polarity.
+        m_wiring->setCurrentIndex(enabled ? (pullUp ? 0 : 1) : 0);   // 0 = Buttons to GND
     }
     ui->spinBox_ButtonCount->setValue(c.button_cnt);
 
