@@ -76,6 +76,19 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
     ui->spinBox_RegistersCount->setFixedWidth(64);
     ui->spinBox_ButtonCount->setFixedWidth(64);
 
+    // The count cells wrap their spinbox in a nested layout with "Preferred"
+    // spacers to centre it. Those spacers inflated the fixed count columns (6/7)
+    // past 70px, so the row's stretch columns came out narrower than the shared
+    // header's and every control drifted left of its header. Drop the spacers --
+    // the nested layout's own stretch columns still centre the fixed-width
+    // spinbox within the 70px cell, and the column now sizes to 70px as intended.
+    auto stripSpacers = [](QGridLayout *l) {
+        for (int i = l->count() - 1; i >= 0; --i)
+            if (l->itemAt(i)->spacerItem()) delete l->takeAt(i);
+    };
+    stripSpacers(ui->gridLayout_RegisterCount);
+    stripSpacers(ui->gridLayout_3);
+
     // Type-driven activation (mirrors the Port Expanders): index 0 = "Disabled"
     // (the default), then the four chip types. A row is "wanted" once its Type is
     // a chip; Disabled rows blank their config cells. Populate before connecting
