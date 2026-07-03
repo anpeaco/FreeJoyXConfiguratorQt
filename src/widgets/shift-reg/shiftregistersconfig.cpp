@@ -27,21 +27,25 @@ ShiftRegistersConfig::ShiftRegistersConfig(QWidget *parent) :
         // register's pins, then the counts -- so both tables read
         // "# | Type | ... | Button count".
         m_headerLabels = {
-            new QLabel(tr("Type"),            header),
-            new QLabel(tr("Wiring"),          header),
-            new QLabel(tr("Latch pin"),       header),
-            new QLabel(tr("CLK pin"),         header),
-            new QLabel(tr("Data pin"),        header),
-            new QLabel(tr("Registers count"), header),
-            new QLabel(tr("Button count"),    header),
+            new QLabel(tr("Type"),      header),
+            new QLabel(tr("Wiring"),    header),
+            new QLabel(tr("Latch pin"), header),
+            new QLabel(tr("CLK pin"),   header),
+            new QLabel(tr("Data pin"),  header),
+            new QLabel(tr("Registers"), header),
+            new QLabel(tr("Buttons"),   header),
         };
         for (int c = 0; c < m_headerLabels.size(); ++c)
             hg->addWidget(m_headerLabels[c], 0, c + 1, Qt::AlignCenter);
-        // Narrow index column (col 0): no stretch + a small fixed minimum, so
-        // the "#" numbers don't eat an eighth of the width. Must match the
-        // register row grid (shiftregisters.ui) and the Port Expanders grid.
+        // Column widths must match the register row grid (shiftregisters.ui) and
+        // the Port Expanders grid: narrow index (col 0), stretchy middle, and the
+        // two count columns (6,7 = Registers/Buttons) fixed-width so they pack
+        // tight together on the right instead of floating in wide columns.
         hg->setColumnMinimumWidth(0, 30);
-        for (int c = 0; c < 8; ++c) hg->setColumnStretch(c, c == 0 ? 0 : 1);
+        hg->setColumnMinimumWidth(6, 70);
+        hg->setColumnMinimumWidth(7, 70);
+        for (int c = 0; c < 8; ++c)
+            hg->setColumnStretch(c, (c == 0 || c == 6 || c == 7) ? 0 : 1);
         ui->layoutV_ShiftRegisters->addWidget(header);
     }
 
@@ -82,8 +86,8 @@ void ShiftRegistersConfig::retranslateUi()
         m_shiftRegsPtrList[i]->retranslateUi();
     }
     const QStringList hdr = { tr("Type"), tr("Wiring"), tr("Latch pin"), tr("CLK pin"),
-                             tr("Data pin"), tr("Registers count"),
-                             tr("Button count") };
+                             tr("Data pin"), tr("Registers"),
+                             tr("Buttons") };
     for (int i = 0; i < m_headerLabels.size() && i < hdr.size(); ++i)
         m_headerLabels[i]->setText(hdr[i]);
 
