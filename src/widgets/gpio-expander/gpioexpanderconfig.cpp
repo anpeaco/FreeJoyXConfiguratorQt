@@ -111,6 +111,9 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
     for (QLabel *l : m_warnBanner->findChildren<QLabel *>())
         if (l->wordWrap()) { m_warnText = l; break; }
     m_warnBanner->setVisible(false);
+    // Breathing room between the last expander row and the banner.
+    grid->addItem(new QSpacerItem(0, 12, QSizePolicy::Minimum, QSizePolicy::Fixed), r, 0);
+    ++r;
     grid->addWidget(m_warnBanner, r, 0, 1, 8);
 }
 
