@@ -48,10 +48,12 @@ private slots:
 private:
     struct Row {
         QComboBox *type;      // 0 = Disabled, 1 = MCP23017 (I2C), 2 = MCP23S17 (SPI)
-        QLabel    *csPin;     // read-only: matched SPI_GPIO_CS pin (SPI rows), else "-"
-        QComboBox *address;   // I2C only: index 0..7 = 0x20..0x27
+        QComboBox *csPin;     // SPI: which SPI_GPIO_CS pin this chip uses (same pick on two rows = shared CS); disabled otherwise
+        QComboBox *address;   // index 0..7 = I2C 0x20..0x27, or SPI A2:A0 DIP strap 0..7
         QComboBox *wiring;    // 0 = buttons to GND (pull-up), 1 = to VCC (ext pull-down)
         QSpinBox  *count;     // 0..16
+        int        csIndex = 0;  // SPI CS index (flags bits 4:2); authoritative across CS-pin list repopulation
+        bool       wasActive = false;  // last type != Disabled; used to default the count on a fresh enable
     };
     enum { T_DISABLED = 0, T_I2C = 1, T_SPI = 2 };
     enum { W_GND = 0, W_VCC = 1 };
@@ -65,8 +67,9 @@ private:
     void emitCounts();
     void validate();
     void applyRowEnableStates();      // grey out Disabled rows (mirror Shift Registers)
-    void updatePinDisplays();         // fill the CS column from m_csPinNames (in-order)
-    int  addressOfRow(int i) const;   // 0 (disabled) or 0x20..0x27
+    void updatePinDisplays();         // rebuild each SPI row's CS dropdown from m_csPinNames
+    void refreshAddressItems(const Row &row);  // relabel the address combo: I2C 0x20.. vs SPI strap 0..7
+    int  addressOfRow(int i) const;   // I2C: 0x20 + combo index
 };
 
 #endif // GPIOEXPANDERCONFIG_H
