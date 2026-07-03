@@ -120,6 +120,19 @@ private slots:
         w.writeToConfig();
         QCOMPARE(csOf(m_dc->config.gpio_expanders[0]), 0);
     }
+
+    // A stored CS index that no longer fits the assigned CS pins must be
+    // PRESERVED (not silently clamped to 0), so it round-trips and validate()
+    // can red-flag it instead of the chip snapping to CS #0.
+    void outOfRangeCsPreservedNotClamped()
+    {
+        mkSpi(0, 0, 2);                                   // chip wired to CS index 2
+        GpioExpanderConfig w;
+        w.readFromConfig();
+        w.onPinContextChanged(QStringList{"B6", "B7"}, false, true);  // only 2 CS pins
+        w.writeToConfig();
+        QCOMPARE(csOf(m_dc->config.gpio_expanders[0]), 2);   // preserved, not clamped to 0
+    }
 };
 
 QTEST_MAIN(TestExpanderCs)
