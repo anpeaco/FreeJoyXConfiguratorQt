@@ -32,21 +32,22 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
     : QWidget(parent)
 {
     auto *grid = new QGridLayout(this);
-    // Same 7-column equal-stretch grid + left margin as the Shift Registers
-    // table above, so the index column and the data columns line up between the
-    // two tables (the expander has one fewer field, leaving col 6 empty).
+    // Same 8-column equal-stretch grid + left margin as the Shift Registers table
+    // above, so the index / Type / Wiring / Button-count columns line up between
+    // the two tables (the expander has fewer middle fields, leaving cols 5-6
+    // empty). Wiring sits right after Type in both tables.
     grid->setContentsMargins(9, 0, 9, 2);
-    for (int c = 0; c < 7; ++c) grid->setColumnStretch(c, 1);
+    for (int c = 0; c < 8; ++c) grid->setColumnStretch(c, 1);
 
     int r = 0;
     grid->addWidget(new QLabel(tr("Type"),         this), r, 1, Qt::AlignCenter);
-    grid->addWidget(new QLabel(tr("CS pin"),       this), r, 2, Qt::AlignCenter);
-    grid->addWidget(new QLabel(tr("Address"),      this), r, 3, Qt::AlignCenter);
-    grid->addWidget(new QLabel(tr("Wiring"),       this), r, 4, Qt::AlignCenter);
-    // Button-count header sits in the last column (col 6) so it lines up with the
-    // shift registers' "Button count" column; col 5 (their "Registers count") has
-    // no expander equivalent and stays empty. Same name as the SR table.
-    grid->addWidget(new QLabel(tr("Button count"), this), r, 6, Qt::AlignCenter);
+    grid->addWidget(new QLabel(tr("Wiring"),       this), r, 2, Qt::AlignCenter);
+    grid->addWidget(new QLabel(tr("CS pin"),       this), r, 3, Qt::AlignCenter);
+    grid->addWidget(new QLabel(tr("Address"),      this), r, 4, Qt::AlignCenter);
+    // Button-count header sits in the last column (col 7) so it lines up with the
+    // shift registers' "Button count" column; cols 5-6 have no expander
+    // equivalent and stay empty. Same name as the SR table.
+    grid->addWidget(new QLabel(tr("Button count"), this), r, 7, Qt::AlignCenter);
     ++r;
 
     for (int i = 0; i < MAX_GPIO_EXPANDER_NUM; ++i, ++r) {
@@ -59,27 +60,27 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
         row.type->addItem(tr("MCP23S17 (SPI)"));
         grid->addWidget(row.type, r, 1);
 
+        row.wiring = new QComboBox(this);
+        row.wiring->addItem(tr("Buttons to GND"));   // internal pull-up, default polarity
+        row.wiring->addItem(tr("Buttons to VCC"));   // external pull-down, inverted polarity
+        grid->addWidget(row.wiring, r, 2);           // right after Type
+
         // SPI: which assigned SPI_GPIO_CS pin this chip is wired to. Two rows
         // picking the same CS share it (HAEN + the address DIP strap tell them
         // apart). Populated from Pin Config context in updatePinDisplays.
         row.csPin = new QComboBox(this);
-        grid->addWidget(row.csPin, r, 2);
+        grid->addWidget(row.csPin, r, 3);
 
         row.address = new QComboBox(this);
         for (int a = kAddrLo; a <= kAddrHi; ++a)
             row.address->addItem(QString("0x%1").arg(a, 2, 16, QChar('0')));
-        grid->addWidget(row.address, r, 3);
-
-        row.wiring = new QComboBox(this);
-        row.wiring->addItem(tr("Buttons to GND"));   // internal pull-up, default polarity
-        row.wiring->addItem(tr("Buttons to VCC"));   // external pull-down, inverted polarity
-        grid->addWidget(row.wiring, r, 4);
+        grid->addWidget(row.address, r, 4);
 
         row.count = new QSpinBox(this);
         row.count->setRange(0, 16);
         row.count->setAlignment(Qt::AlignCenter);
         row.count->setFixedWidth(kCountWidth);   // match the SR count-box width
-        grid->addWidget(row.count, r, 6, Qt::AlignCenter);
+        grid->addWidget(row.count, r, 7, Qt::AlignCenter);
 
         connect(row.type, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 this, &GpioExpanderConfig::onRowChanged);
@@ -107,7 +108,7 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
     for (QLabel *l : m_warnBanner->findChildren<QLabel *>())
         if (l->wordWrap()) { m_warnText = l; break; }
     m_warnBanner->setVisible(false);
-    grid->addWidget(m_warnBanner, r, 0, 1, 7);
+    grid->addWidget(m_warnBanner, r, 0, 1, 8);
 }
 
 void GpioExpanderConfig::onPinContextChanged(const QStringList &csPinNames, bool i2cBusOn, bool spiBusOn)
@@ -227,16 +228,18 @@ void GpioExpanderConfig::writeToConfig()
 
 void GpioExpanderConfig::applyRowEnableStates()
 {
-    // Mirror the Shift Registers table: a row whose type is Disabled greys out
-    // its editable cells (the type combo stays live so it can be re-enabled).
-    // Address is additionally only meaningful for an I2C chip.
+    // Mirror the Shift Registers table: a Disabled row HIDES its config cells so
+    // it reads as just "Type: Disabled" (rather than greyed-out empty dropdowns).
+    // On an active row the cells show; CS is only shown for an SPI chip (I2C has
+    // no chip-select), and the Type combo always stays live so a row can be
+    // (re-)enabled.
     for (const Row &row : m_rows) {
         const int t = row.type->currentIndex();
         const bool active = t != T_DISABLED;
-        row.address->setEnabled(t == T_I2C || t == T_SPI);
-        row.wiring->setEnabled(active);
-        row.count->setEnabled(active);
-        row.csPin->setEnabled(t == T_SPI);
+        row.wiring->setVisible(active);
+        row.address->setVisible(active);
+        row.count->setVisible(active);
+        row.csPin->setVisible(t == T_SPI);   // hidden for I2C + Disabled
     }
 }
 
