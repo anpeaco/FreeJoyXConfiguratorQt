@@ -1,5 +1,6 @@
 #include "shiftregisters.h"
 #include "ui_shiftregisters.h"
+#include "centered_cbox.h"   // centred combo (matches the app-wide dropdown look)
 #include <cmath>
 #include <QComboBox>
 #include <QLabel>
@@ -37,7 +38,7 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
     for (auto &s : slots_) {
         ui->gridLayout->removeWidget(s.label);
         s.label->hide();
-        s.sel->combo = new QComboBox(ui->groupBox);
+        s.sel->combo = new CenteredCBox(ui->groupBox);
         ui->gridLayout->addWidget(s.sel->combo, 1, s.col);
         rebuildCombo(*s.sel);   // seeds the single "Auto" item
         connect(s.sel->combo, QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -48,7 +49,7 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
     // pull-up/pull-down polarity, split out of the Type name. GND = internal
     // pull-up; VCC = external pull-down (inverted read). Combined with the chip
     // it maps onto the wire config's four-value type enum in read/writeToConfig.
-    m_wiring = new QComboBox(ui->groupBox);
+    m_wiring = new CenteredCBox(ui->groupBox);
     m_wiring->addItem(tr("Buttons to GND"));   // pull-up
     m_wiring->addItem(tr("Buttons to VCC"));   // pull-down
     ui->gridLayout->addWidget(m_wiring, 1, 2);
