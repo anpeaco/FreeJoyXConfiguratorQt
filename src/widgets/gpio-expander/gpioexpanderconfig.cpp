@@ -210,6 +210,9 @@ void GpioExpanderConfig::readFromConfig()
         row.count->setValue(c.button_cnt > 16 ? 16 : c.button_cnt);
         // Invert flag set -> active-high (VCC) wiring; otherwise GND (pull-up).
         row.wiring->setCurrentIndex((c.flags & FLAG_INVERT) ? W_VCC : W_GND);
+        // Seed the enable tracker from the loaded state so the "default to 16 on
+        // enable" auto-fill doesn't fire for a row that loaded already active.
+        row.wasActive = (type != T_DISABLED);
     }
     applyRowEnableStates();
     updatePinDisplays();
@@ -263,6 +266,18 @@ void GpioExpanderConfig::applyRowEnableStates()
 
 void GpioExpanderConfig::onRowChanged()
 {
+    // Default a freshly-enabled chip to a full 16 buttons (a whole MCP2301x
+    // port pair), so configuring a new row lands on the common case instead of 0.
+    // Guard on wasActive so it only fires on the Disabled -> chip transition, and
+    // update the flag before setValue so its re-entrant onRowChanged doesn't loop.
+    for (Row &row : m_rows) {
+        const bool active = row.type->currentIndex() != T_DISABLED;
+        const bool justEnabled = active && !row.wasActive;
+        row.wasActive = active;
+        if (justEnabled && row.count->value() == 0)
+            row.count->setValue(16);
+    }
+
     // Capture each SPI row's CS pick from its combo (authoritative) and relabel
     // the address combo for the current type, before repopulating the CS lists.
     for (Row &row : m_rows) {

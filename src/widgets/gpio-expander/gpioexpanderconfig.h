@@ -53,6 +53,7 @@ private:
         QComboBox *wiring;    // 0 = buttons to GND (pull-up), 1 = to VCC (ext pull-down)
         QSpinBox  *count;     // 0..16
         int        csIndex = 0;  // SPI CS index (flags bits 4:2); authoritative across CS-pin list repopulation
+        bool       wasActive = false;  // last type != Disabled; used to default the count on a fresh enable
     };
     enum { T_DISABLED = 0, T_I2C = 1, T_SPI = 2 };
     enum { W_GND = 0, W_VCC = 1 };
