@@ -214,26 +214,28 @@ void ShiftRegisters::rebuildCombo(PinSelect &sel)
      * the user's explicit pick. Signals blocked: rebuilding must not look like a
      * user edit (which would churn the button-count accounting). */
     QSignalBlocker block(sel.combo);
-    const int keep = qMax(0, sel.combo->currentIndex());
+    // The dropdown simply lists the role pins by name -- no separate "Auto" item.
+    // The register's default pin is just pre-selected; picking it stores as Auto
+    // (nibble 0) in writeToConfig, picking another stores an explicit nibble.
+    const int oldIdx = sel.combo->currentIndex();
+    const int selectedPin = (oldIdx >= 0 && oldIdx < sel.choicePins.size())
+                          ? sel.choicePins[oldIdx] : 0;
     sel.combo->clear();
-    // Item 0 = "Auto" (the positional/default pin for this register). Kept as a
-    // plain word rather than annotated with the resolved pin: showing the pin
-    // name here would duplicate the same pin's explicit entry in the list below.
-    // The explicit picks read as the bare pin name ("Pin A7"); "Auto" reads as
-    // Auto.
-    sel.combo->addItem(tr("Auto"));
     for (const QString &name : sel.choiceNames)
         sel.combo->addItem(name);
-    sel.combo->setCurrentIndex(keep < sel.combo->count() ? keep : 0);
+    // Keep the same pin selected across a list refresh; if it's gone (or none was
+    // set), fall back to this register's default (positional) pin, else the first.
+    int newIdx = sel.choicePins.indexOf(selectedPin);
+    if (newIdx < 0) newIdx = sel.choicePins.indexOf(sel.positionalPin);
+    if (newIdx < 0 && sel.combo->count() > 0) newIdx = 0;
+    if (newIdx >= 0) sel.combo->setCurrentIndex(newIdx);
 }
 
 int ShiftRegisters::effectivePin(const PinSelect &sel) const
 {
     if (!sel.combo) return sel.positionalPin;
-    const int idx = sel.combo->currentIndex();
-    if (idx <= 0) return sel.positionalPin;          // Auto
-    const int k = idx - 1;                           // explicit pick
-    return (k < sel.choicePins.size()) ? sel.choicePins[k] : 0;
+    const int idx = sel.combo->currentIndex();       // combo index == role-pin index
+    return (idx >= 0 && idx < sel.choicePins.size()) ? sel.choicePins[idx] : 0;
 }
 
 void ShiftRegisters::onPinSelectionChanged()
@@ -346,22 +348,25 @@ void ShiftRegisters::readFromConfig()
     }
     ui->spinBox_ButtonCount->setValue(c.button_cnt);
 
-    /* Restore the per-pin selection nibbles (0 = Auto). PinConfig::readFromConfig
-     * runs earlier in the load fan-out, so the choice lists are already populated
-     * here. A stored pick past the available items (stale / externally authored
-     * config) clamps back to Auto rather than silently sticking at the old index.
-     * Signals blocked so restoring doesn't churn the button-count accounting;
-     * setUiOnOff() below re-gates once from the final state. */
+    /* Restore the per-pin selection from the reserved nibbles (0 = Auto).
+     * PinConfig::readFromConfig runs earlier in the load fan-out, so the choice
+     * lists + positional pins are already populated here. Auto selects this
+     * register's default (positional) pin; an explicit nibble N selects the
+     * (N-1)-th role pin. Signals blocked so restoring doesn't churn the
+     * button-count accounting; setUiOnOff() below re-gates from the final state. */
     const uint8_t sel_data  =  (uint8_t)c.reserved[0]       & 0x0F;
     const uint8_t sel_latch = ((uint8_t)c.reserved[0] >> 4) & 0x0F;
     const uint8_t sel_clk   =  (uint8_t)c.reserved[1]       & 0x0F;
-    const struct { PinSelect *sel; uint8_t idx; } picks[] = {
+    const struct { PinSelect *sel; uint8_t nibble; } picks[] = {
         { &m_data, sel_data }, { &m_latch, sel_latch }, { &m_clk, sel_clk },
     };
     for (auto &p : picks) {
         if (!p.sel->combo) continue;
+        int idx = (p.nibble == 0) ? p.sel->choicePins.indexOf(p.sel->positionalPin)
+                                   : (int)p.nibble - 1;
+        if (idx < 0 || idx >= p.sel->combo->count()) idx = -1;   // stale pick -> leave unset
         QSignalBlocker block(p.sel->combo);
-        p.sel->combo->setCurrentIndex(p.idx < p.sel->combo->count() ? p.idx : 0);
+        if (idx >= 0) p.sel->combo->setCurrentIndex(idx);
     }
     setUiOnOff();
 }
@@ -382,12 +387,21 @@ void ShiftRegisters::writeToConfig()
 
     /* Pack the dropdown picks into the reserved nibbles the firmware reads:
      *   reserved[0] lo = data, hi = latch;  reserved[1] lo = clk.
-     * Combo index 0 = Auto = nibble 0, matching a factory-reset config. The
-     * "enabled" flag rides in reserved[1] bit 4 -- the firmware masks CLK to the
-     * low nibble, so this high-nibble bit is configurator-only. */
-    const int sel_data  = m_data.combo  ? qMax(0, m_data.combo->currentIndex())  : 0;
-    const int sel_latch = m_latch.combo ? qMax(0, m_latch.combo->currentIndex()) : 0;
-    const int sel_clk   = m_clk.combo   ? qMax(0, m_clk.combo->currentIndex())   : 0;
+     * Selecting this register's default (positional) pin writes Auto (nibble 0),
+     * matching a factory-reset config -- so an untouched / legacy config still
+     * round-trips to {0,0} even for a shared-bus daisy-chain. Any other pick
+     * writes an explicit nibble (role-pin index + 1). The "enabled" flag rides in
+     * reserved[1] bit 4 -- the firmware masks CLK to the low nibble, so this
+     * high-nibble bit is configurator-only. */
+    auto nibbleFor = [](const PinSelect &sel) -> int {
+        if (!sel.combo) return 0;
+        const int k = sel.combo->currentIndex();
+        if (k < 0 || k >= sel.choicePins.size()) return 0;         // no pin -> Auto (benign)
+        return (sel.choicePins[k] == sel.positionalPin) ? 0 : (k + 1);
+    };
+    const int sel_data  = nibbleFor(m_data);
+    const int sel_latch = nibbleFor(m_latch);
+    const int sel_clk   = nibbleFor(m_clk);
     c.reserved[0] = (int8_t)((sel_data & 0x0F) | ((sel_latch & 0x0F) << 4));
     c.reserved[1] = (int8_t)((sel_clk & 0x0F) | (enabled ? 0x10 : 0x00));
 }
