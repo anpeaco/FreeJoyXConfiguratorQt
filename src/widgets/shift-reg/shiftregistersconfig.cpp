@@ -106,25 +106,46 @@ void ShiftRegistersConfig::shiftRegButtonsCalc(int currentCount, int previousCou
 
 void ShiftRegistersConfig::validateDataPins()
 {
-    // Collect each active register's resolved Data pin; a value seen twice is a
-    // clash (two registers reading the same line with no way to tell them apart).
-    QList<int> seen, clash;
+    // Duplicate Data pins among ENABLED rows: each active register needs its own
+    // data line (shift registers have no addressing to tell two apart, unlike
+    // expander CS + HAEN). Shared Latch / CLK is fine -- the daisy-chain case.
+    QList<int> seenData, dupData;
     for (ShiftRegisters *w : m_shiftRegsPtrList) {
-        const int pin = w->activeDataPin();
-        if (pin <= 0) continue;
-        if (seen.contains(pin)) { if (!clash.contains(pin)) clash.append(pin); }
-        else seen.append(pin);
+        if (!w->isEnabledRow()) continue;
+        const int d = w->effectiveDataPin();
+        if (d <= 0) continue;
+        if (seenData.contains(d)) { if (!dupData.contains(d)) dupData.append(d); }
+        else seenData.append(d);
     }
 
-    // Red-border the offending Data dropdowns; clear the rest.
-    for (ShiftRegisters *w : m_shiftRegsPtrList)
-        w->setDataPinClash(clash.contains(w->activeDataPin()) && w->activeDataPin() > 0);
+    // Per-row: red-highlight the cells an enabled register is still missing.
+    bool anyMissingPin = false, anyMissingCount = false;
+    const bool anyDup = !dupData.isEmpty();
+    for (ShiftRegisters *w : m_shiftRegsPtrList) {
+        if (!w->isEnabledRow()) { w->setFieldClash(false, false, false, false); continue; }
+        const int  d       = w->effectiveDataPin();
+        const bool dMiss   = d <= 0;
+        const bool lMiss   = w->effectiveLatchPin() <= 0;
+        const bool cMiss   = w->effectiveClkPin()   <= 0;
+        const bool dDup    = d > 0 && dupData.contains(d);
+        const bool cntMiss = w->buttonCountRaw() <= 0;
+        w->setFieldClash(dMiss || dDup, lMiss, cMiss, cntMiss);
+        if (dMiss || lMiss || cMiss) anyMissingPin = true;
+        if (cntMiss) anyMissingCount = true;
+    }
 
-    if (m_warnText)
-        m_warnText->setText(tr("Two shift registers share a Data pin — each register "
-                               "needs its own data line (shared Latch/CLK is fine)."));
-    if (m_warnBanner)
-        m_warnBanner->setVisible(!clash.isEmpty());
+    QStringList warnings;
+    if (anyMissingPin)
+        warnings << tr("Assign the highlighted Data / CLK / Latch pins in Pin Config "
+                       "(add more shift-register role pins if there aren't enough).");
+    if (anyDup)
+        warnings << tr("Two shift registers share a Data pin — each needs its own data "
+                       "line (shared Latch / CLK is fine).");
+    if (anyMissingCount)
+        warnings << tr("Set a button count for the highlighted shift registers.");
+
+    if (m_warnText)   m_warnText->setText(warnings.join('\n'));
+    if (m_warnBanner) m_warnBanner->setVisible(!warnings.isEmpty());
 }
 
 
@@ -274,6 +295,7 @@ void ShiftRegistersConfig::readFromConfig()
     for (int i = 0; i < m_shiftRegsPtrList.size(); ++i) {
         m_shiftRegsPtrList[i]->readFromConfig();
     }
+    validateDataPins();   // reflect the loaded state in the highlights + banner
 }
 
 void ShiftRegistersConfig::writeToConfig()

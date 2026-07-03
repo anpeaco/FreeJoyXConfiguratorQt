@@ -63,11 +63,21 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
     ui->spinBox_RegistersCount->setFixedWidth(64);
     ui->spinBox_ButtonCount->setFixedWidth(64);
 
-    // The Type combo is (re)populated by rebuildTypeCombo() from the active
-    // state -- chip types when active, a "Disabled" placeholder when not -- so
-    // it isn't pre-filled here. setUiOnOff() below seeds it.
+    // Type-driven activation (mirrors the Port Expanders): index 0 = "Disabled"
+    // (the default), then the four chip types. A row is "wanted" once its Type is
+    // a chip; Disabled rows blank their config cells. Populate before connecting
+    // so the initial index doesn't fire onTypeChanged.
+    ui->comboBox_ShiftRegType->addItem(tr("Disabled"));
+    for (int i = 0; i < SHIFT_REG_TYPES; ++i)
+        ui->comboBox_ShiftRegType->addItem(m_shiftRegistersList[i].guiName);
+    ui->comboBox_ShiftRegType->setCurrentIndex(0);
     connect(ui->comboBox_ShiftRegType, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &ShiftRegisters::onTypeChanged);
+
+    // The .ui starts the groupBox disabled (the old pin-driven gate greyed the
+    // whole row). Activation is now show/hide by Type, so keep the row enabled
+    // and let setUiOnOff() hide the config cells on a Disabled row.
+    ui->groupBox->setEnabled(true);
 
     connect(ui->spinBox_ButtonCount, SIGNAL(valueChanged(int)), this, SLOT(onButtonCountChanged(int)));
     connect(ui->spinBox_RegistersCount, SIGNAL(valueChanged(int)), this, SLOT(onRegistersCountChanged(int)));
@@ -107,11 +117,14 @@ void ShiftRegisters::onButtonCountChanged(int count)
      * Updating after the emit made this register report its stale count, so its
      * "Shift register N" range came out short by the latest increment and the
      * trailing button leaked into the next category. */
-    if (ui->spinBox_ButtonCount->isEnabled() == true) {
+    if (m_functional) {
         const int previous = m_buttonsCount;
         m_buttonsCount = count;
         emit buttonCountChanged(count, previous);
     }
+    // A zero count on an enabled row is a "needs configuring" state -> let the
+    // container refresh its highlight / banner.
+    emit pinSelectionChanged();
 }
 
 void ShiftRegisters::onRegistersCountChanged(int chips)
@@ -208,113 +221,68 @@ int ShiftRegisters::effectivePin(const PinSelect &sel) const
 void ShiftRegisters::onPinSelectionChanged()
 {
     setUiOnOff();
-    emit pinSelectionChanged();   // container re-validates duplicate Data pins
+    emit pinSelectionChanged();   // container re-validates
 }
 
-int ShiftRegisters::activeDataPin() const
+void ShiftRegisters::onTypeChanged(int /*idx*/)
 {
-    const bool active = effectivePin(m_latch) > 0 &&
-                        effectivePin(m_clk)   > 0 &&
-                        effectivePin(m_data)  > 0;
-    return active ? effectivePin(m_data) : 0;
+    // Disabled <-> chip toggles whether the row's config cells are shown.
+    setUiOnOff();
+    emit pinSelectionChanged();   // container re-validates + refreshes the banner
 }
 
-void ShiftRegisters::setDataPinClash(bool clash)
+bool ShiftRegisters::isEnabledRow() const
 {
-    if (m_data.combo)
-        m_data.combo->setStyleSheet(clash ? QStringLiteral("border: 1px solid #d9534f;")
-                                           : QString());
+    return ui->comboBox_ShiftRegType->currentIndex() != 0;   // 0 == Disabled
 }
 
-void ShiftRegisters::onTypeChanged(int idx)
-{
-    // Capture the pick only while the combo holds the chip types (active row).
-    // The "Disabled" placeholder is a single item on an inactive, greyed row --
-    // never a genuine user choice -- so ignore that mode.
-    if (idx >= 0 && idx < SHIFT_REG_TYPES &&
-        ui->comboBox_ShiftRegType->count() == SHIFT_REG_TYPES)
-        m_userType = idx;
-}
+int ShiftRegisters::effectiveDataPin()  const { return effectivePin(m_data);  }
+int ShiftRegisters::effectiveLatchPin() const { return effectivePin(m_latch); }
+int ShiftRegisters::effectiveClkPin()   const { return effectivePin(m_clk);   }
+int ShiftRegisters::buttonCountRaw()    const { return ui->spinBox_ButtonCount->value(); }
 
-void ShiftRegisters::rebuildTypeCombo(bool active)
+void ShiftRegisters::setFieldClash(bool data, bool latch, bool clk, bool count)
 {
-    QComboBox *c = ui->comboBox_ShiftRegType;
-    if (active && c->count() == SHIFT_REG_TYPES) {
-        // Already in chip-type mode; just keep the shown type in sync.
-        if (c->currentIndex() != m_userType) {
-            QSignalBlocker block(c);
-            c->setCurrentIndex(m_userType);
-        }
-        return;
-    }
-    if (!active && c->count() == 1) return;   // already showing the Disabled item
-
-    QSignalBlocker block(c);
-    c->clear();
-    if (active) {
-        for (int i = 0; i < SHIFT_REG_TYPES; ++i)
-            c->addItem(m_shiftRegistersList[i].guiName);
-        c->setCurrentIndex((m_userType >= 0 && m_userType < SHIFT_REG_TYPES) ? m_userType : 0);
-    } else {
-        // Inactive register -> read like a disabled expander row: a single greyed
-        // "Disabled" entry (the sweep in setUiOnOff greys it) instead of a stale
-        // chip type. The real m_userType is preserved for when it re-activates.
-        c->addItem(tr("Disabled"));
-        c->setCurrentIndex(0);
-    }
+    static const QString red = QStringLiteral("border: 1px solid #d9534f;");
+    if (m_data.combo)  m_data.combo->setStyleSheet(data  ? red : QString());
+    if (m_latch.combo) m_latch.combo->setStyleSheet(latch ? red : QString());
+    if (m_clk.combo)   m_clk.combo->setStyleSheet(clk   ? red : QString());
+    ui->spinBox_ButtonCount->setStyleSheet(count ? red : QString());
 }
 
 void ShiftRegisters::setUiOnOff()
 {
-    /* Enable / disable the widget without touching the spinbox VALUE, so the
-     * user's configured chain length survives any temporary pin removal
-     * (e.g. the bus-remap dry-run, or briefly unmapping a shared latch / clk
-     * pin and reassigning it). Externally-visible button count drops to 0
-     * while the widget is disabled (buttonCount() reads isEnabled()), and
-     * comes back unchanged when the pins return. The transition emits below
-     * replace the old setValue(0) trick the destructive version relied on
-     * to fire buttonCountChanged via the spinbox's valueChanged side effect.
-     *
-     * Gating uses the RESOLVED effective pin (Auto -> positional; explicit ->
-     * the chosen pin), so an explicit override can enable a register that has
-     * no positional pin of its own. */
-    const bool nowEnabled = (effectivePin(m_latch) > 0 &&
-                             effectivePin(m_clk)   > 0 &&
-                             effectivePin(m_data)  > 0);
-    const bool wasEnabled = ui->spinBox_ButtonCount->isEnabled();
+    /* Type-driven activation: a chip Type "wants" the register and reveals its
+     * pin dropdowns + count; Disabled blanks them (mirrors a disabled Port
+     * Expander row). The row itself stays enabled -- it's show/hide, not grey. */
+    const bool shown = isEnabledRow();
 
-    /* Inactive row -> Type shows a greyed "Disabled", and the two count cells
-     * are hidden so they read blank, mirroring a disabled Port Expander row.
-     * The pin dropdowns deliberately stay visible + live (below) since they're
-     * how a pin-less register is overridden back on. */
-    rebuildTypeCombo(nowEnabled);
-    ui->spinBox_RegistersCount->setVisible(nowEnabled);
-    ui->spinBox_ButtonCount->setVisible(nowEnabled);
+    m_data.combo->setVisible(shown);
+    m_latch.combo->setVisible(shown);
+    m_clk.combo->setVisible(shown);
+    ui->spinBox_RegistersCount->setVisible(shown);
+    ui->spinBox_ButtonCount->setVisible(shown);
 
-    /* The pin dropdowns stay live even while the register is disabled, so a
-     * register with no positional pin can still be given an explicit one to
-     * turn it on. Skip the three combos (and their container ancestor, whose
-     * disabled state would otherwise cascade down and grey them out anyway). */
-    for (auto &&child : this->findChildren<QWidget *>()) {
-        const bool keepLive =
-            child == m_data.combo  || m_data.combo->isAncestorOf(child)  ||
-            child == m_latch.combo || m_latch.combo->isAncestorOf(child) ||
-            child == m_clk.combo   || m_clk.combo->isAncestorOf(child)   ||
-            child->isAncestorOf(m_data.combo);   // groupBox / any container above the combos
-        child->setEnabled(keepLive ? true : nowEnabled);
-    }
+    /* "Functional" = wanted AND all three pins actually resolve. Button-count
+     * accounting keys off this (not off the Type alone) so an enabled-but-
+     * unconfigured register contributes no phantom buttons. Emit only on a real
+     * transition, mirroring the old enable/disable edges. */
+    const bool functional = shown &&
+                            effectivePin(m_latch) > 0 &&
+                            effectivePin(m_clk)   > 0 &&
+                            effectivePin(m_data)  > 0;
 
-    if (wasEnabled && !nowEnabled) {
+    if (m_functional && !functional) {
         const int previous = m_buttonsCount;
         m_buttonsCount = 0;
         emit buttonCountChanged(0, previous);
-    } else if (!wasEnabled && nowEnabled) {
+    } else if (!m_functional && functional) {
         const int previous = m_buttonsCount;
         m_buttonsCount = ui->spinBox_ButtonCount->value();
-        if (m_buttonsCount != previous) {
+        if (m_buttonsCount != previous)
             emit buttonCountChanged(m_buttonsCount, previous);
-        }
     }
+    m_functional = functional;
 }
 
 const QString &ShiftRegisters::defaultText() const
@@ -324,16 +292,27 @@ const QString &ShiftRegisters::defaultText() const
 
 int ShiftRegisters::buttonCount() const
 {
-    if (!ui->spinBox_ButtonCount->isEnabled()) return 0;
-    return ui->spinBox_ButtonCount->value();
+    // Only a FUNCTIONAL register (enabled Type + all pins resolved) contributes
+    // buttons to the Buttons tab; an enabled-but-unconfigured one reports 0 so it
+    // doesn't create phantom shift-register buttons.
+    return m_functional ? ui->spinBox_ButtonCount->value() : 0;
 }
 
 void ShiftRegisters::readFromConfig()
 {
     const shift_reg_config_t &c = gEnv.pDeviceConfig->config.shift_registers[m_shiftRegNumber];
-    // The Type combo shows Disabled/chip based on active state; store the chip
-    // type in m_userType and let setUiOnOff() below render it.
-    m_userType = (c.type < SHIFT_REG_TYPES) ? c.type : 0;
+
+    /* Enabled ("wanted") comes from the spare reserved[1] bit 4 the configurator
+     * sets on write. Configs written before type-driven enable have the bit
+     * clear, so fall back to "has a button count" -- a real chain was always
+     * count > 0 -- keeping legacy configs enabled with their chip type. Type
+     * combo item 0 is Disabled, so a chip enum maps to index enum+1. */
+    const bool enabled = (((uint8_t)c.reserved[1] & 0x10) != 0) || (c.button_cnt > 0);
+    const int  chip    = (c.type < SHIFT_REG_TYPES) ? c.type : 0;
+    {
+        QSignalBlocker block(ui->comboBox_ShiftRegType);
+        ui->comboBox_ShiftRegType->setCurrentIndex(enabled ? chip + 1 : 0);
+    }
     ui->spinBox_ButtonCount->setValue(c.button_cnt);
 
     /* Restore the per-pin selection nibbles (0 = Auto). PinConfig::readFromConfig
@@ -359,18 +338,21 @@ void ShiftRegisters::readFromConfig()
 void ShiftRegisters::writeToConfig()
 {
     shift_reg_config_t &c = gEnv.pDeviceConfig->config.shift_registers[m_shiftRegNumber];
-    // Persist the tracked chip type, not the combo index -- the combo may be
-    // showing the "Disabled" placeholder (inactive row), which is display-only.
-    c.type = m_userType;
-    c.button_cnt = ui->spinBox_ButtonCount->value();
+    // Type combo item 0 = Disabled; a chip is enum = index-1. A Disabled row
+    // writes a benign type=0 + count=0 so the firmware ignores it.
+    const int  idx     = ui->comboBox_ShiftRegType->currentIndex();
+    const bool enabled = (idx != 0);
+    c.type       = enabled ? (idx - 1) : 0;
+    c.button_cnt = enabled ? ui->spinBox_ButtonCount->value() : 0;
 
     /* Pack the dropdown picks into the reserved nibbles the firmware reads:
-     *   reserved[0] lo = data, hi = latch;  reserved[1] lo = clk (hi free).
-     * Combo index 0 = Auto = nibble 0, matching a factory-reset config, so an
-     * all-Auto board writes reserved = {0,0} == today's behaviour. */
+     *   reserved[0] lo = data, hi = latch;  reserved[1] lo = clk.
+     * Combo index 0 = Auto = nibble 0, matching a factory-reset config. The
+     * "enabled" flag rides in reserved[1] bit 4 -- the firmware masks CLK to the
+     * low nibble, so this high-nibble bit is configurator-only. */
     const int sel_data  = m_data.combo  ? qMax(0, m_data.combo->currentIndex())  : 0;
     const int sel_latch = m_latch.combo ? qMax(0, m_latch.combo->currentIndex()) : 0;
     const int sel_clk   = m_clk.combo   ? qMax(0, m_clk.combo->currentIndex())   : 0;
     c.reserved[0] = (int8_t)((sel_data & 0x0F) | ((sel_latch & 0x0F) << 4));
-    c.reserved[1] = (int8_t)(sel_clk & 0x0F);
+    c.reserved[1] = (int8_t)((sel_clk & 0x0F) | (enabled ? 0x10 : 0x00));
 }

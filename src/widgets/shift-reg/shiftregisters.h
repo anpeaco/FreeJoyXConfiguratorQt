@@ -51,15 +51,24 @@ public:
      * the firmware ignores registers without all three pins assigned. */
     int buttonCount() const;
 
-    /* The resolved Data pin of this register when it is active (all three
-     * effective pins present), else 0. Two active registers sharing a Data pin
-     * is a conflict -- shift registers have no addressing to tell them apart
-     * (unlike expander CS + HAEN) -- so the container flags duplicates. */
-    int activeDataPin() const;
+    /* Whether this row is "wanted": the Type is a chip (not Disabled). Only
+     * enabled rows are validated/highlighted by the container. */
+    bool isEnabledRow() const;
 
-    /* Red-border the Data dropdown to flag a duplicate-Data-pin clash (mirrors
-     * the expander's clashing-address highlight). */
-    void setDataPinClash(bool clash);
+    /* The pin each role currently resolves to (Auto -> positional; explicit ->
+     * chosen), or 0 if unresolved. The container uses these to flag missing /
+     * duplicate Data pins and missing CLK / Latch. */
+    int effectiveDataPin() const;
+    int effectiveLatchPin() const;
+    int effectiveClkPin() const;
+
+    /* The raw button-count spinbox value (regardless of whether the register is
+     * functional) -- the container flags an enabled row still left at 0. */
+    int buttonCountRaw() const;
+
+    /* Red-border the individual cells the container found wanting (missing or
+     * duplicate pin, or a zero button count on an enabled row). */
+    void setFieldClash(bool data, bool latch, bool clk, bool count);
 
 signals:
     void buttonCountChanged(int currentCount, int previousCount);
@@ -71,13 +80,17 @@ private slots:
     void onButtonCountChanged(int buttonCount);
     void onRegistersCountChanged(int chips);
     /* A pin-select dropdown changed -> the resolved (effective) pin may have
-     * gained/lost the register, so re-run the enable gating. */
+     * gained/lost, so re-run the row state + revalidate. */
     void onPinSelectionChanged();
-    /* User picked a chip type on an active row -> remember it. */
+    /* Type combo changed (Disabled <-> a chip) -> show/hide the config cells. */
     void onTypeChanged(int idx);
 
 private:
     Ui::ShiftRegisters *ui;
+    /* Show/hide this row's config cells for the current Type (Disabled -> blank,
+     * a chip -> reveal pins + counts) and keep the button-count accounting in
+     * step with whether the register is functional (enabled AND all pins
+     * resolved). Named setUiOnOff for continuity with the old pin-driven gate. */
     void setUiOnOff();
 
     /* One pin role's dropdown + the state feeding it. m_positionalPin/Name is
@@ -93,19 +106,11 @@ private:
     };
     PinSelect m_data, m_latch, m_clk;
 
-    /* The chip type the user has chosen (HC165/CD4021 enum, 0..3), tracked
-     * separately from the Type combo because the combo shows a "Disabled"
-     * placeholder while the register is inactive (no complete pin set) and the
-     * real chip types only while it's active. This is what round-trips to the
-     * wire config -- the Disabled display is derived from the pin state, not
-     * stored. */
-    int m_userType = 0;
-
-    /* Repopulate the Type combo for the current active state: the four chip
-     * types (showing m_userType) when active, or a single greyed "Disabled"
-     * item when inactive -- so an unconfigured row reads like a disabled
-     * expander row instead of a greyed chip type. */
-    void rebuildTypeCombo(bool active);
+    /* Tracks whether the register was last FUNCTIONAL (enabled Type AND all
+     * three pins resolved) so setUiOnOff only emits buttonCountChanged on a real
+     * transition -- an enabled-but-unconfigured register never counts phantom
+     * buttons in the Buttons tab. */
+    bool m_functional = false;
 
     /* Rebuild a dropdown from its PinSelect state, preserving the current
      * selection index where still valid. Signals blocked during the rebuild. */
