@@ -38,20 +38,25 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
     // the two tables (the expander has fewer middle fields, leaving cols 5-6
     // empty). Wiring sits right after Type in both tables.
     grid->setContentsMargins(9, 0, 9, 2);
-    // Narrow index column (col 0): no stretch + a 30px minimum, matching the
-    // Shift Registers grids so the "#" numbers don't take an eighth of the width.
+    // Column widths match the Shift Registers grids: narrow index (col 0),
+    // stretchy middle, and fixed-width count columns (6,7) on the right so the
+    // Button count lines up with the SR Registers/Buttons pair (col 6 is the SR
+    // "Registers" slot -- empty here but reserved so col 7 aligns).
     grid->setColumnMinimumWidth(0, 30);
-    for (int c = 0; c < 8; ++c) grid->setColumnStretch(c, c == 0 ? 0 : 1);
+    grid->setColumnMinimumWidth(6, 70);
+    grid->setColumnMinimumWidth(7, 70);
+    for (int c = 0; c < 8; ++c)
+        grid->setColumnStretch(c, (c == 0 || c == 6 || c == 7) ? 0 : 1);
 
     int r = 0;
     grid->addWidget(new QLabel(tr("Type"),         this), r, 1, Qt::AlignCenter);
     grid->addWidget(new QLabel(tr("Wiring"),       this), r, 2, Qt::AlignCenter);
     grid->addWidget(new QLabel(tr("CS pin"),       this), r, 3, Qt::AlignCenter);
     grid->addWidget(new QLabel(tr("Address"),      this), r, 4, Qt::AlignCenter);
-    // Button-count header sits in the last column (col 7) so it lines up with the
-    // shift registers' "Button count" column; cols 5-6 have no expander
-    // equivalent and stay empty. Same name as the SR table.
-    grid->addWidget(new QLabel(tr("Button count"), this), r, 7, Qt::AlignCenter);
+    // Buttons header sits in the last column (col 7) so it lines up with the
+    // shift registers' "Buttons" column; cols 5-6 have no expander equivalent and
+    // stay empty. Same name as the SR table.
+    grid->addWidget(new QLabel(tr("Buttons"), this), r, 7, Qt::AlignCenter);
     ++r;
 
     for (int i = 0; i < MAX_GPIO_EXPANDER_NUM; ++i, ++r) {
