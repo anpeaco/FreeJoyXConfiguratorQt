@@ -74,10 +74,14 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
     connect(ui->comboBox_ShiftRegType, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &ShiftRegisters::onTypeChanged);
 
-    // The .ui starts the groupBox disabled (the old pin-driven gate greyed the
-    // whole row). Activation is now show/hide by Type, so keep the row enabled
-    // and let setUiOnOff() hide the config cells on a Disabled row.
+    // The .ui starts the groupBox AND most cells disabled (the old pin-driven
+    // gate re-enabled them via a per-child sweep). Activation is now show/hide by
+    // Type, so un-disable the row once here -- a child keeps its own disabled
+    // flag even under an enabled groupBox, which was leaving the Type combo
+    // locked -- and let setUiOnOff() hide the config cells on a Disabled row.
     ui->groupBox->setEnabled(true);
+    for (QWidget *w : ui->groupBox->findChildren<QWidget *>())
+        w->setEnabled(true);
 
     connect(ui->spinBox_ButtonCount, SIGNAL(valueChanged(int)), this, SLOT(onButtonCountChanged(int)));
     connect(ui->spinBox_RegistersCount, SIGNAL(valueChanged(int)), this, SLOT(onRegistersCountChanged(int)));
