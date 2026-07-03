@@ -37,7 +37,11 @@ ShiftRegistersConfig::ShiftRegistersConfig(QWidget *parent) :
         };
         for (int c = 0; c < m_headerLabels.size(); ++c)
             hg->addWidget(m_headerLabels[c], 0, c + 1, Qt::AlignCenter);
-        for (int c = 0; c < 8; ++c) hg->setColumnStretch(c, 1);
+        // Narrow index column (col 0): no stretch + a small fixed minimum, so
+        // the "#" numbers don't eat an eighth of the width. Must match the
+        // register row grid (shiftregisters.ui) and the Port Expanders grid.
+        hg->setColumnMinimumWidth(0, 30);
+        for (int c = 0; c < 8; ++c) hg->setColumnStretch(c, c == 0 ? 0 : 1);
         ui->layoutV_ShiftRegisters->addWidget(header);
     }
 

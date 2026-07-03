@@ -85,6 +85,12 @@ ShiftRegisters::ShiftRegisters(int shiftRegNumber, QWidget *parent)
     ui->comboBox_ShiftRegType->addItem(tr("HC165"));
     ui->comboBox_ShiftRegType->addItem(tr("CD4021"));
     ui->comboBox_ShiftRegType->setCurrentIndex(0);
+    // Fill the Type column (the .ui gives it a Preferred width inside a nested
+    // layout, leaving it narrower + off-centre vs the Port Expanders' Type combo);
+    // Expanding + zeroing the nested layout's margins makes it fill the cell like
+    // the other combos and the PE table.
+    ui->comboBox_ShiftRegType->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    ui->gridLayout_2->setContentsMargins(0, 0, 0, 0);
     connect(ui->comboBox_ShiftRegType, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &ShiftRegisters::onTypeChanged);
 
