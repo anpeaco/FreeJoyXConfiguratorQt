@@ -96,6 +96,9 @@ GpioExpanderConfig::GpioExpanderConfig(QWidget *parent)
     }
 
     applyRowEnableStates();   // grey out the disabled rows from the start
+    // Address combos start empty -- nothing to address until a row's type is
+    // chosen (refreshAddressItems fills the I2C/SPI values on selection).
+    for (const Row &row : m_rows) refreshAddressItems(row);
 
     // Shared alert-banner look (triangle-alert icon + amber box), matching the
     // axes pending-pin banner and the dialog warning bars. Text is updated by
@@ -136,11 +139,18 @@ void GpioExpanderConfig::updatePinDisplays()
 
 void GpioExpanderConfig::refreshAddressItems(const Row &row)
 {
-    // The address combo holds 8 entries; relabel them for the current type.
-    // I2C: the 0x20..0x27 slave address. SPI: the A2:A0 DIP strap 0..7 (shown
-    // with its 3-bit binary so it reads straight off the physical switches).
-    const bool spi = row.type->currentIndex() == T_SPI;
+    // Fill the address combo for the current type: I2C shows the 0x20..0x27
+    // slave address; SPI shows the A2:A0 DIP strap 0..7 (with its 3-bit binary
+    // so it reads straight off the physical switches). A Disabled row has no
+    // meaningful address, so the combo is emptied until a type is chosen.
+    const int t = row.type->currentIndex();
     QSignalBlocker b(row.address);
+    if (t != T_I2C && t != T_SPI) {
+        row.address->clear();
+        return;
+    }
+    while (row.address->count() < 8) row.address->addItem(QString());
+    const bool spi = (t == T_SPI);
     for (int a = 0; a < 8; ++a) {
         row.address->setItemText(a, spi ? QString("%1  (%2)").arg(a).arg(a, 3, 2, QChar('0'))
                                         : QString("0x%1").arg(kAddrLo + a, 2, 16, QChar('0')));
@@ -167,16 +177,18 @@ void GpioExpanderConfig::readFromConfig()
         // rather than guess a valid address -- a factory-reset slot is exactly
         // type=0/address=0, which is the common, correct hit of this branch.
         int type = T_DISABLED;
+        int addrIdx = 0;
         if (c.type == GPIO_EXP_MCP23S17) {
             type = T_SPI;
-            row.address->setCurrentIndex(c.address & 0x07);            // A2:A0 DIP strap
+            addrIdx = c.address & 0x07;                                // A2:A0 DIP strap
             row.csIndex = (c.flags & FLAG_CS_MASK) >> FLAG_CS_SHIFT;   // which CS pin
         } else if (c.type == GPIO_EXP_MCP23017 && c.address >= kAddrLo && c.address <= kAddrHi) {
             type = T_I2C;
-            row.address->setCurrentIndex(c.address - kAddrLo);
+            addrIdx = c.address - kAddrLo;
         }
         row.type->setCurrentIndex(type);
-        refreshAddressItems(row);
+        refreshAddressItems(row);                    // populate items (or clear) before selecting
+        if (type != T_DISABLED) row.address->setCurrentIndex(addrIdx);
         row.count->setValue(c.button_cnt > 16 ? 16 : c.button_cnt);
         // Invert flag set -> active-high (VCC) wiring; otherwise GND (pull-up).
         row.wiring->setCurrentIndex((c.flags & FLAG_INVERT) ? W_VCC : W_GND);
