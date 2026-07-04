@@ -156,6 +156,26 @@ void Encoders::applyUsageMask(const QSet<int> &used)
     maskCombo(ui->comboBox_InputB, inputB());
 }
 
+void Encoders::setActivity(bool aFiring, bool bFiring)
+{
+    const int HOLD_MS = 150;   // afterglow so a brief per-detent pulse stays visible
+    if (aFiring) m_aGlow.restart();
+    if (bFiring) m_bGlow.restart();
+
+    const bool aLit = m_aGlow.isValid() && m_aGlow.elapsed() < HOLD_MS;
+    const bool bLit = m_bGlow.isValid() && m_bGlow.elapsed() < HOLD_MS;
+
+    // Only re-role on change -- setRole repolishes, so avoid doing it every frame.
+    if (aLit != m_aLit) {
+        freejoy_style::setRole(ui->text_InputA, "buttonState", aLit ? "on" : "off");
+        m_aLit = aLit;
+    }
+    if (bLit != m_bLit) {
+        freejoy_style::setRole(ui->text_InputB, "buttonState", bLit ? "on" : "off");
+        m_bLit = bLit;
+    }
+}
+
 void Encoders::setInputClash(bool aClash, bool bClash)
 {
     const QString clash = freejoy_style::fieldClashQss();

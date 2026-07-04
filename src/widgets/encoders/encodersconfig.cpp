@@ -193,6 +193,21 @@ void EncodersConfig::refreshDisplay()
     resync(false);   // load / reorder -> respect stored pairs, no invention
 }
 
+void EncodersConfig::updateActivity()
+{
+    // The encoder fires the logical button at its A/B button slot (A on one
+    // rotation direction, B on the other). Read those bits from the device's
+    // logical-button bitmap and flash the row's Pin A / Pin B accordingly.
+    const uint8_t *log = gEnv.pDeviceConfig->paramsReport.log_button_data;
+    auto bitSet = [log](int slot) {
+        return slot >= 0 && slot < MAX_BUTTONS_NUM &&
+               (log[slot >> 3] & (1 << (slot & 0x07)));
+    };
+    for (Encoders *row : m_encodersPtrList) {
+        row->setActivity(bitSet(row->inputA()), bitSet(row->inputB()));
+    }
+}
+
 void EncodersConfig::onRowPairingEdited()
 {
     // A row already wrote its own slot to config; re-grey the now-used pins

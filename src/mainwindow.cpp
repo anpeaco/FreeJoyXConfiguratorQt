@@ -934,6 +934,11 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
     if(ui->tab_ShiftsTimers->isVisible() == true || m_debugWindow) {
         m_shiftsTimersConfig->shiftStateChanged();
     }
+    // Encoder activity: light Pin A / Pin B as the knob turns so direction can
+    // be verified live. Only while the Encoders tab is showing.
+    if(ui->tab_Encoders->isVisible() == true) {
+        m_encoderConfig->updateActivity();
+    }
 
     static QElapsedTimer timer;
 

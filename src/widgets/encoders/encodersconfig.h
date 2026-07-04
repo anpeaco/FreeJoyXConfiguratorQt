@@ -49,6 +49,11 @@ public slots:
      * refresh the rows. Auto-fill only ever touches EMPTY slots -- it never
      * re-pairs a slot the user has explicitly set. */
     void onEncoderButtonsChanged();
+    /* Live activity refresh: for each encoder, light Pin A / Pin B from the
+     * device's logical-button bitmap (params report) so the user sees which
+     * side fires and can verify direction. Call on every params update while
+     * the Encoders tab is visible. */
+    void updateActivity();
     /* Re-render the rows from the current config WITHOUT auto-filling -- used on
      * load and after a Buttons-tab reorder (which already remapped the stored
      * pairs). Auto-fill is an edit-time convenience only; inventing pairs here

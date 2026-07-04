@@ -5,6 +5,7 @@
 #include <QVector>
 #include <QPair>
 #include <QSet>
+#include <QElapsedTimer>
 
 #include "deviceconfig.h"
 #include "global.h"
@@ -47,6 +48,12 @@ public:
     // encoder can't be picked twice.
     void applyUsageMask(const QSet<int> &usedButtons);
 
+    // Live activity: flash the Pin A / Pin B header green when that side's
+    // virtual button is firing (A = one rotation direction, B = the other), so
+    // the user can verify direction by rotating the knob. A short afterglow
+    // keeps a brief per-detent pulse visible. Called on every params update.
+    void setActivity(bool aFiring, bool bFiring);
+
     // Red-border the Pin A / Pin B combos when they clash (A==B, or the pin is
     // also used by another encoder).
     void setInputClash(bool aClash, bool bClash);
@@ -72,6 +79,12 @@ private:
     int m_encodersNumber;   // 1-based display index
     int m_configIndex;      // index into dev_config encoders[] / slow_encoders[]
     bool m_populating = false;   // guard: suppress signals during programmatic fill
+
+    // Live-activity afterglow (ms since last fire) so a brief pulse stays lit.
+    QElapsedTimer m_aGlow;
+    QElapsedTimer m_bGlow;
+    bool m_aLit = false;
+    bool m_bLit = false;
 
     const deviceEnum_guiName_t m_encoderTypeList[ENCODER_TYPE_COUNT] = // order MUST match common_types.h!
     {
