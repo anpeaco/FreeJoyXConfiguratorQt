@@ -1020,6 +1020,12 @@ dev_config_t InitConfig (void)
             .rgb_leds[48].input_num = -1,
             .rgb_leds[49].input_num = -1,
 
+            /* Explicit slow-encoder pairing: every slot defaults to "unwired"
+             * (-1/-1). Without this the designated-init zero-fill would read as
+             * {btn_a:0, btn_b:0} = phantom encoders all pairing button slot 0.
+             * Firmware forms an encoder only when both indices are >= 0. */
+            .slow_encoders[0 ... MAX_ENCODERS_NUM - 1] = { .btn_a = -1, .btn_b = -1 },
+
         };
 #ifdef __clang__
     /*code specific to clang compiler*/

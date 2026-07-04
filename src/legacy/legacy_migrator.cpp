@@ -37,6 +37,46 @@ namespace legacy {
  * patch-level change, not a wire-format change. */
 static constexpr uint16_t FW_MASK = 0xFFF0;
 
+/* ----------------------------------------------------------------------------
+ * Rebuild explicit slow-encoder pairs (slow_encoders[], wire gen 0x0040) from
+ * the legacy positional zip of ENCODER_INPUT_A/_B button slots. Mirrors the
+ * pre-0x0040 firmware EncodersInit scan (encoders.c): walk button slots in
+ * index order, pairing each successive ENCODER_INPUT_A with the next
+ * ENCODER_INPUT_B, filling slow_encoders[] from slot MAX_FAST_ENCODER_NUM up
+ * (fast slots 0..MAX_FAST_ENCODER_NUM-1 stay unused, index-aligned with
+ * encoders[]/encoders_state[]). -1/-1 = unwired.
+ *
+ * Runs on EVERY migration path -- any config carrying ENCODER_INPUT_A/_B
+ * buttons (upstream 0x17xx, FreeJoyX 0x0010/0x0020/0x0030) must have its pairs
+ * materialised now that the firmware reads slow_encoders[] instead of
+ * re-deriving them, otherwise a migrated board loses its encoders. Call after
+ * out.buttons[] is fully populated. */
+static void synthesizeSlowEncoderPairs(dev_config_t &out)
+{
+    for (int i = 0; i < MAX_ENCODERS_NUM; ++i) {
+        out.slow_encoders[i].btn_a = -1;
+        out.slow_encoders[i].btn_b = -1;
+    }
+
+    int pos = MAX_FAST_ENCODER_NUM;   // slow encoders sit after the fast slots
+    int prev_a = -1;
+    int prev_b = -1;
+    for (int i = 0; i < MAX_BUTTONS_NUM && pos < MAX_ENCODERS_NUM; ++i) {
+        if (out.buttons[i].type == ENCODER_INPUT_A && i > prev_a) {
+            for (int j = 0; j < MAX_BUTTONS_NUM; ++j) {
+                if (out.buttons[j].type == ENCODER_INPUT_B && j > prev_b && pos < MAX_ENCODERS_NUM) {
+                    out.slow_encoders[pos].btn_a = static_cast<int8_t>(i);
+                    out.slow_encoders[pos].btn_b = static_cast<int8_t>(j);
+                    prev_a = i;
+                    prev_b = j;
+                    ++pos;
+                    break;
+                }
+            }
+        }
+    }
+}
+
 /* ============================================================================
  * v1710 -> current
  * Source struct: legacy::v1710::dev_config_t. See legacy_types.h header for
@@ -195,6 +235,10 @@ static MigrateResult migrate_v1710_to_current(const uint8_t *raw, size_t len, de
      * migrated config that was never touched by a breakdown-aware
      * configurator. */
 
+    /* Explicit slow-encoder pairs from the old positional ENCODER_INPUT_A/_B
+     * zip (see helper). v1710 encoders were positional too. */
+    synthesizeSlowEncoderPairs(out);
+
     return MigrateResult::Ok;
 }
 
@@ -337,6 +381,10 @@ static MigrateResult migrate_v1730_to_current(const uint8_t *raw, size_t len, de
 
     /* saved_breakdown stays at zero-init (no equivalent in v1730). */
 
+    /* Explicit slow-encoder pairs from the old positional ENCODER_INPUT_A/_B
+     * zip (see helper). */
+    synthesizeSlowEncoderPairs(out);
+
     return MigrateResult::Ok;
 }
 
@@ -475,6 +523,10 @@ static MigrateResult migrate_v1770_to_current(const uint8_t *raw, size_t len, de
     Q_STATIC_ASSERT(sizeof(phys_breakdown_t) == sizeof(v1770::phys_breakdown_t));
     memcpy(&out.saved_breakdown, &old->saved_breakdown, sizeof(phys_breakdown_t));
 
+    /* Explicit slow-encoder pairs from the old positional ENCODER_INPUT_A/_B
+     * zip (see helper). */
+    synthesizeSlowEncoderPairs(out);
+
     return MigrateResult::Ok;
 }
 
@@ -502,12 +554,41 @@ static MigrateResult migrate_pre0030_to_current(const uint8_t *raw, size_t len, 
     if (len < kPre0030ConfigSize) {
         return MigrateResult::BufferTooSmall;
     }
-    /* Seed current factory defaults so the appended i2c_gpio[] holds its
-     * disabled default, then overlay the old prefix bytes verbatim. */
+    /* Seed current factory defaults so the appended fields (gpio_expanders[],
+     * slow_encoders[]) hold their defaults, then overlay the old prefix bytes. */
     out = ::InitConfig();
     memcpy(&out, raw, kPre0030ConfigSize);
     /* Re-stamp so a write-back / device mismatch check stops firing legacy. */
     out.firmware_version = FIRMWARE_VERSION;
+    /* These generations still used positional ENCODER_INPUT_A/_B pairing --
+     * materialise explicit slow_encoders[] so the encoders survive. */
+    synthesizeSlowEncoderPairs(out);
+    return MigrateResult::Ok;
+}
+
+/* ============================================================================
+ * v0030 -> current (0x0030 -> 0x0040)
+ * The 0x0040 bump APPENDED slow_encoders[MAX_ENCODERS_NUM] at the end of
+ * dev_config_t, so the outgoing 0x0030 shape is the byte-exact PREFIX of the
+ * current struct and its size is exactly offsetof(dev_config_t, slow_encoders)
+ * (== 1620). Same offsetof-not-snapshot pattern as migrate_pre0030_to_current:
+ * an append can't reorder/resize any earlier field, and offsetof is read from
+ * the live struct so it can never drift. Migration = seed defaults, overlay the
+ * old prefix, synthesise explicit encoder pairs from the old positional
+ * ENCODER_INPUT_A/_B zip, re-stamp the version.
+ * ============================================================================
+ */
+static const size_t kPre0040ConfigSize = offsetof(dev_config_t, slow_encoders);
+
+static MigrateResult migrate_v0030_to_current(const uint8_t *raw, size_t len, dev_config_t &out)
+{
+    if (len < kPre0040ConfigSize) {
+        return MigrateResult::BufferTooSmall;
+    }
+    out = ::InitConfig();
+    memcpy(&out, raw, kPre0040ConfigSize);
+    out.firmware_version = FIRMWARE_VERSION;
+    synthesizeSlowEncoderPairs(out);
     return MigrateResult::Ok;
 }
 
@@ -572,6 +653,7 @@ bool canMigrate(uint16_t firmware_version)
         case 0x1780:  /* v1.7.8 -- prior FreeJoyX, dev_config shape identical */
         case 0x0010:  /* FreeJoyX v0.0.x -- LONG_PRESS hold-style semantics */
         case 0x0020:  /* FreeJoyX gen 2 -- pre-0x0030 (no i2c_gpio[]) */
+        case 0x0030:  /* FreeJoyX gen 3 -- pre-0x0040 (no slow_encoders[]) */
             return true;
         default:
             return false;
@@ -592,8 +674,13 @@ size_t legacyConfigSize(uint16_t firmware_version)
         case 0x0010:
         case 0x0020:
             /* pre-0x0030 shape == current dev_config_t minus the appended
-             * i2c_gpio[]; the device sends exactly this many bytes. */
+             * i2c_gpio[] AND slow_encoders[]; the device sends exactly this
+             * many bytes. */
             return kPre0030ConfigSize;
+        case 0x0030:
+            /* pre-0x0040 shape == current dev_config_t minus the appended
+             * slow_encoders[]; the device sends exactly this many bytes. */
+            return kPre0040ConfigSize;
         default:
             return sizeof(dev_config_t);
     }
@@ -669,6 +756,14 @@ MigrateResult migrateLegacyConfig(const uint8_t *raw, size_t len, dev_config_t &
                     << QString::number(FIRMWARE_VERSION, 16)
                     << "(append-only: i2c_gpio[] expander slots default to disabled)";
             return migrate_v0020_to_current(raw, len, out);
+
+        case 0x0030:
+            qInfo() << "Migrating dev_config_t from" << describeVersion(version)
+                    << "to current FIRMWARE_VERSION 0x"
+                    << QString::number(FIRMWARE_VERSION, 16)
+                    << "(append-only: slow_encoders[] pairs synthesised from the"
+                    << "old positional ENCODER_INPUT_A/_B button assignments)";
+            return migrate_v0030_to_current(raw, len, out);
 
         default:
             qWarning() << "No migrator for firmware version 0x"

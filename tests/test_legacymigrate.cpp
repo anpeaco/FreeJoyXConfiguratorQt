@@ -26,24 +26,31 @@ private slots:
     void devConfigSize_matchesConstant()
     {
         QCOMPARE(sizeof(dev_config_t), static_cast<size_t>(FREEJOY_DEV_CONFIG_SIZE));
-        QCOMPARE(static_cast<int>(FREEJOY_DEV_CONFIG_SIZE), 1620);
+        QCOMPARE(static_cast<int>(FREEJOY_DEV_CONFIG_SIZE), 1652);
     }
     void i2cGpio_isAppendedAtEnd()
     {
-        /* The old (0x0020) shape is exactly the prefix up to gpio_expanders: a
-         * pure append adds the member size with no padding (alignment-1 member
-         * onto an even-sized, alignment-2 struct). saved_per_exp[8] was appended
-         * AFTER gpio_expanders (1612 -> 1620) so offsetof(gpio_expanders) -- the
-         * 0x0020 migration boundary -- is unchanged. */
+        /* The gpio_expanders append boundary (0x0020 -> 0x0030) is unchanged by
+         * the later 0x0040 slow_encoders append. */
         QCOMPARE(offsetof(dev_config_t, gpio_expanders), static_cast<size_t>(1580));
         QCOMPARE(sizeof(gpio_expander_t), static_cast<size_t>(4));
         QCOMPARE(static_cast<int>(MAX_GPIO_EXPANDER_NUM), 8);
         /* saved_per_exp sits after the 8 x 4B expander slots. */
         QCOMPARE(offsetof(dev_config_t, saved_per_exp), static_cast<size_t>(1580 + 32));
     }
-    void firmwareVersion_isGen3()
+    void slowEncoders_isAppendedAtEnd()
     {
-        QCOMPARE(static_cast<int>(FIRMWARE_VERSION), 0x0030);
+        /* The 0x0030 -> 0x0040 bump appended slow_encoders[MAX_ENCODERS_NUM]
+         * ({int8 btn_a, btn_b}) at the very end, so its offset == the old
+         * (0x0030) config size 1620 -- the migration boundary. */
+        QCOMPARE(sizeof(slow_encoder_t), static_cast<size_t>(2));
+        QCOMPARE(offsetof(dev_config_t, slow_encoders), static_cast<size_t>(1620));
+        QCOMPARE(offsetof(dev_config_t, slow_encoders) + sizeof(slow_encoder_t) * MAX_ENCODERS_NUM,
+                 sizeof(dev_config_t));   /* == 1620 + 32 == 1652 */
+    }
+    void firmwareVersion_isGen4()
+    {
+        QCOMPARE(static_cast<int>(FIRMWARE_VERSION), 0x0040);
     }
 
     /* ---- legacy API ---- */
@@ -52,6 +59,13 @@ private slots:
         QVERIFY(legacy::canMigrate(0x0020));
         QVERIFY(legacy::canMigrate(0x0021));   /* build-letter within the mask */
     }
+    void canMigrate_acceptsGen3()
+    {
+        QVERIFY(legacy::canMigrate(0x0030));
+        QVERIFY(legacy::canMigrate(0x0031));
+        /* current gen is not "migratable" -- it's already current */
+        QVERIFY(!legacy::canMigrate(0x0099));
+    }
     void legacyConfigSize_gen2_isOldPrefixSize()
     {
         QCOMPARE(legacy::legacyConfigSize(0x0020),
@@ -59,6 +73,12 @@ private slots:
         QCOMPARE(legacy::legacyConfigSize(0x0020), static_cast<size_t>(1580));
         /* the current generation reports the full struct */
         QCOMPARE(legacy::legacyConfigSize(FIRMWARE_VERSION), sizeof(dev_config_t));
+    }
+    void legacyConfigSize_gen3_isPre0040PrefixSize()
+    {
+        QCOMPARE(legacy::legacyConfigSize(0x0030),
+                 offsetof(dev_config_t, slow_encoders));
+        QCOMPARE(legacy::legacyConfigSize(0x0030), static_cast<size_t>(1620));
     }
 
     /* ---- 0x0020 -> 0x0030 round-trip ---- */
@@ -107,6 +127,68 @@ private slots:
         dev_config_t out;
         QCOMPARE(legacy::migrateLegacyConfig(tooSmall.data(), tooSmall.size(), out),
                  legacy::MigrateResult::BufferTooSmall);
+    }
+
+    /* ---- 0x0030 -> 0x0040: positional ENCODER_INPUT_A/_B -> explicit pairs ---- */
+    void migrateGen3_synthesizesSlowEncoderPairsFromPositional()
+    {
+        const size_t oldSize = offsetof(dev_config_t, slow_encoders);
+
+        /* Build a 0x0030 raw config with two encoders wired the old way: button
+         * slots typed ENCODER_INPUT_A / _B, paired positionally (Nth A with Nth
+         * B in slot-index order). No slow_encoders[] bytes existed on the wire. */
+        dev_config_t seed = InitConfig();
+        seed.firmware_version   = 0x0030;
+        seed.button_debounce_ms = 0x1234;                 /* preserved-prefix probe */
+        seed.buttons[5].type  = ENCODER_INPUT_A;          /* encoder 1: A=5, B=6 */
+        seed.buttons[6].type  = ENCODER_INPUT_B;
+        seed.buttons[10].type = ENCODER_INPUT_A;          /* encoder 2: A=10, B=11 */
+        seed.buttons[11].type = ENCODER_INPUT_B;
+
+        std::vector<uint8_t> raw(oldSize);
+        std::memcpy(raw.data(), &seed, oldSize);
+
+        dev_config_t out;
+        std::memset(&out, 0xFF, sizeof(out));             /* poison, incl. slow_encoders */
+
+        legacy::MigrateResult r =
+            legacy::migrateLegacyConfig(raw.data(), raw.size(), out);
+
+        QCOMPARE(r, legacy::MigrateResult::Ok);
+        QCOMPARE(out.firmware_version, static_cast<uint16_t>(FIRMWARE_VERSION));
+        QCOMPARE(out.button_debounce_ms, static_cast<uint16_t>(0x1234));
+
+        /* Button types survive (proves the prefix copied and the enum values
+         * 219/220 are still recognised as encoder lines). */
+        QCOMPARE(static_cast<int>(out.buttons[5].type),  static_cast<int>(ENCODER_INPUT_A));
+        QCOMPARE(static_cast<int>(out.buttons[6].type),  static_cast<int>(ENCODER_INPUT_B));
+
+        /* Fast slots stay unwired; slow slots start at MAX_FAST_ENCODER_NUM. */
+        for (int i = 0; i < MAX_FAST_ENCODER_NUM; ++i) {
+            QCOMPARE(out.slow_encoders[i].btn_a, static_cast<int8_t>(-1));
+            QCOMPARE(out.slow_encoders[i].btn_b, static_cast<int8_t>(-1));
+        }
+        QCOMPARE(out.slow_encoders[MAX_FAST_ENCODER_NUM + 0].btn_a, static_cast<int8_t>(5));
+        QCOMPARE(out.slow_encoders[MAX_FAST_ENCODER_NUM + 0].btn_b, static_cast<int8_t>(6));
+        QCOMPARE(out.slow_encoders[MAX_FAST_ENCODER_NUM + 1].btn_a, static_cast<int8_t>(10));
+        QCOMPARE(out.slow_encoders[MAX_FAST_ENCODER_NUM + 1].btn_b, static_cast<int8_t>(11));
+        /* Remaining slots are unwired (poison 0xFF was overwritten with -1). */
+        for (int i = MAX_FAST_ENCODER_NUM + 2; i < MAX_ENCODERS_NUM; ++i) {
+            QCOMPARE(out.slow_encoders[i].btn_a, static_cast<int8_t>(-1));
+            QCOMPARE(out.slow_encoders[i].btn_b, static_cast<int8_t>(-1));
+        }
+    }
+
+    /* A fresh (current-version) factory config has no encoder buttons, so every
+     * slow_encoders[] slot must be unwired -- guards the InitConfig default
+     * against the designated-init zero-fill ({0,0} = phantom encoders). */
+    void freshConfig_hasNoPhantomEncoders()
+    {
+        dev_config_t c = InitConfig();
+        for (int i = 0; i < MAX_ENCODERS_NUM; ++i) {
+            QCOMPARE(c.slow_encoders[i].btn_a, static_cast<int8_t>(-1));
+            QCOMPARE(c.slow_encoders[i].btn_b, static_cast<int8_t>(-1));
+        }
     }
 };
 
