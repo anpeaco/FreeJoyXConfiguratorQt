@@ -274,9 +274,13 @@ private:
         {POV4_DOWN,            tr("POV4 Down")},
         {POV4_LEFT,            tr("POV4 Left")},
         {POV4_CENTER,          tr("POV4 Center")},
-        // Encoders + radios + sequentials
-        {ENCODER_INPUT_A,      tr("Encoder A")},
-        {ENCODER_INPUT_B,      tr("Encoder B")},
+        // Encoders + radios + sequentials.
+        // Single "Encoder" marker (wire gen 0x0040): a pin is just tagged as an
+        // encoder line; which line is A vs B, and the pairing, live on the
+        // Encoders tab (slow_encoders[]). ENCODER_INPUT_A (219) is the marker;
+        // the legacy ENCODER_INPUT_B (220) is retired from the UI but still a
+        // valid enum value (migrated configs are normalised 220 -> 219 on load).
+        {ENCODER_INPUT_A,      tr("Encoder")},
         {RADIO_BUTTON1,        tr("Radio 1")},
         {RADIO_BUTTON2,        tr("Radio 2")},
         {RADIO_BUTTON3,        tr("Radio 3")},

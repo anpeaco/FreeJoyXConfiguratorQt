@@ -158,10 +158,14 @@ private slots:
         QCOMPARE(out.firmware_version, static_cast<uint16_t>(FIRMWARE_VERSION));
         QCOMPARE(out.button_debounce_ms, static_cast<uint16_t>(0x1234));
 
-        /* Button types survive (proves the prefix copied and the enum values
-         * 219/220 are still recognised as encoder lines). */
+        /* Button types survive the prefix copy AND are normalised: every
+         * encoder line becomes the single ENCODER_INPUT_A (219) marker; the
+         * legacy ENCODER_INPUT_B (220) is rewritten to 219 (A/B role now lives
+         * in slow_encoders[]). */
         QCOMPARE(static_cast<int>(out.buttons[5].type),  static_cast<int>(ENCODER_INPUT_A));
-        QCOMPARE(static_cast<int>(out.buttons[6].type),  static_cast<int>(ENCODER_INPUT_B));
+        QCOMPARE(static_cast<int>(out.buttons[6].type),  static_cast<int>(ENCODER_INPUT_A));
+        for (int i = 0; i < MAX_BUTTONS_NUM; ++i)
+            QVERIFY(out.buttons[i].type != ENCODER_INPUT_B);
 
         /* Fast slots stay unwired; slow slots start at MAX_FAST_ENCODER_NUM. */
         for (int i = 0; i < MAX_FAST_ENCODER_NUM; ++i) {

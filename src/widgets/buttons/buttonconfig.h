@@ -106,7 +106,10 @@ public:
     void moveButton(int from, int to);
 
 signals:
-    void encoderInputChanged(int ecoder_A, int ecoder_B);
+    // Emitted when a pin gains or loses the "Encoder" marker; the Encoders tab
+    // rescans the encoder-line buttons, refreshes its Pin A/B dropdowns and
+    // re-runs auto-fill. (Replaces the old positional encoderInputChanged.)
+    void encoderButtonsChanged();
     void logicalButtonsCreated();
 
 public slots:
@@ -326,11 +329,16 @@ private:
         int maxCount;
     };
 
+    // Encoder lines are all tagged ENCODER_INPUT_A (219) now -- both pins of an
+    // encoder share the single "Encoder" marker. Cap at 28 = the 14 slow
+    // encoder slots (MAX_ENCODERS_NUM - MAX_FAST_ENCODER_NUM) x 2 pins each.
+    // ENCODER_INPUT_B (220) is retired from the UI but kept here (harmless,
+    // never selected) so a stray migrated value can't slip the cap.
     static const int m_typeLimCount = 2;
     const pinTypeLimit_t m_ButtonsTypeLimit[m_typeLimCount] =
     {
-        {ENCODER_INPUT_A,        15},
-        {ENCODER_INPUT_B,        15},
+        {ENCODER_INPUT_A,        28},
+        {ENCODER_INPUT_B,        28},
     };
     // typeLimit's count and "type is at cap" tracking. Shared with
     // physicalConflictFilter so both rules can be applied in a single pass.

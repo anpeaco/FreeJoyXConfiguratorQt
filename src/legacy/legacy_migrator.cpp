@@ -76,6 +76,18 @@ void synthesizeSlowEncoderPairs(dev_config_t &out)
             }
         }
     }
+
+    // Normalise the button types AFTER pairing: the new UI marks every encoder
+    // line with a single "Encoder" type (ENCODER_INPUT_A, 219). Rewrite any
+    // legacy ENCODER_INPUT_B (220) -> 219 so the configurator's single dropdown
+    // entry matches. Firmware treats both identically, and the A/B role now
+    // lives in slow_encoders[], so this is a safe canonicalisation. Must run
+    // after the pairing loop above (which needs the B markers).
+    for (int i = 0; i < MAX_BUTTONS_NUM; ++i) {
+        if (out.buttons[i].type == ENCODER_INPUT_B) {
+            out.buttons[i].type = ENCODER_INPUT_A;
+        }
+    }
 }
 
 /* ============================================================================

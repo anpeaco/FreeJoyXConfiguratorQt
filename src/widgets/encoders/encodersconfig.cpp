@@ -1,16 +1,18 @@
 #include "encodersconfig.h"
 #include "ui_encodersconfig.h"
 
+#include <QSet>
+
+#include "common_defines.h"   // MAX_ENCODERS_NUM, MAX_FAST_ENCODER_NUM, MAX_BUTTONS_NUM
+#include "common_types.h"     // ENCODER_INPUT_A
+
 EncodersConfig::EncodersConfig(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::EncodersConfig)
 {
     ui->setupUi(this);
-    m_encodersInput_A_count = 0;
-    m_encodersInput_B_count = 0;
 
-    // spawn fast-encoder rows -- one per fast encoder slot. The widgets
-    // own their own pin-name labels, mode dropdown, and counter state.
+    // spawn fast-encoder rows -- one per fast encoder slot.
     ui->layoutV_FastEncoders->setAlignment(Qt::AlignTop);
     for (int i = 0; i < MAX_FAST_ENCODER_NUM; ++i) {
         FastEncoder *fe = new FastEncoder(i, this);
@@ -23,9 +25,11 @@ EncodersConfig::EncodersConfig(QWidget *parent) :
     // spawn slow-encoder rows below
     ui->layoutV_Encoders->setAlignment(Qt::AlignTop);
     for (int i = 0; i < MAX_ENCODERS_NUM - MAX_FAST_ENCODER_NUM; i++) {
-        Encoders * encoder = new Encoders(i, this);
+        Encoders *encoder = new Encoders(i, this);
         ui->layoutV_Encoders->addWidget(encoder);
         m_encodersPtrList.append(encoder);
+        connect(encoder, &Encoders::pairingEdited,
+                this, &EncodersConfig::onRowPairingEdited);
     }
 }
 
@@ -68,97 +72,108 @@ void EncodersConfig::fastEncoderSelected(const QString &pinGuiName, bool isSelec
     }
 }
 
-
-void EncodersConfig::encoderInputChanged(int encoder_A, int encoder_B)      // messy -- worth a rewrite
+void EncodersConfig::rebuildEncoderButtonList()
 {
-    int tmp_add = 0;
+    m_encoderButtons.clear();
+    const button_t *b = gEnv.pDeviceConfig->config.buttons;
+    for (int i = 0; i < MAX_BUTTONS_NUM; ++i) {
+        if (b[i].type == ENCODER_INPUT_A) {   // the single "Encoder" marker
+            m_encoderButtons.append(qMakePair(i, tr("Button #%1").arg(i + 1)));
+        }
+    }
+    // buttons[] is scanned in index order, so m_encoderButtons is already sorted.
+}
 
-    // add encoder A input
-    if (encoder_A > 0)
-    {
-        m_encodersInput_A_count++;
-        for (int i = 0; i < m_encodersInput_A_count; ++i)
-        {
-            if (encoder_A < m_encodersPtrList[i]->inputA() || m_encodersPtrList[i]->inputA() == 0)    // encoder_A != 0 && ( legacy
-            {
-                if (m_encodersPtrList[i]->inputA() != 0)
-                {
-                    tmp_add = m_encodersPtrList[i]->inputA();
-                    m_encodersPtrList[i]->setInputA(encoder_A);
-                    encoder_A = tmp_add;
-                }
-                else if (m_encodersPtrList[i]->inputA() == 0)
-                {
-                    m_encodersPtrList[i]->setInputA(encoder_A);
-                }
-            }
-        }
-    }
-    // delete encoder A input
-    else if (encoder_A < 0)
-    {
-        encoder_A = -encoder_A;
-        for (int i = 0; i < m_encodersInput_A_count; ++i)
-        {
-            if (m_encodersPtrList[i]->inputA() == encoder_A)   //encoder_A != 0 && (
-            {
-                for (int j = i; j < m_encodersInput_A_count; ++j)
-                {
-                    if (j+1 < m_encodersPtrList.size()) {
-                        m_encodersPtrList[j]->setInputA(m_encodersPtrList[j+1]->inputA());
-                    } else {
-                        m_encodersPtrList[j]->setInputA(0);
-                    }
-                }
-                break;
-            }
-        }
-        m_encodersInput_A_count--;
-    }
+void EncodersConfig::dropStalePairs()
+{
+    QSet<int> valid;
+    for (const auto &pr : m_encoderButtons) valid.insert(pr.first);
 
-    // add encoder B input
-    if (encoder_B > 0)              // else?
-    {
-        m_encodersInput_B_count++;
+    slow_encoder_t *se = gEnv.pDeviceConfig->config.slow_encoders;
+    for (int s = MAX_FAST_ENCODER_NUM; s < MAX_ENCODERS_NUM; ++s) {
+        const bool bothEmpty = (se[s].btn_a < 0 && se[s].btn_b < 0);
+        const bool bothValid = (se[s].btn_a >= 0 && valid.contains(se[s].btn_a) &&
+                                se[s].btn_b >= 0 && valid.contains(se[s].btn_b));
+        if (!bothEmpty && !bothValid) {   // half-set or references a non-encoder pin
+            se[s].btn_a = -1;
+            se[s].btn_b = -1;
+        }
+    }
+}
 
-        for (int i = 0; i < m_encodersInput_B_count; ++i)
-        {
-            if (encoder_B < m_encodersPtrList[i]->inputB() || m_encodersPtrList[i]->inputB() == 0)        //encoder_B != 0 && (
-            {
-                if (m_encodersPtrList[i]->inputB() != 0)
-                {
-                    tmp_add = m_encodersPtrList[i]->inputB();
-                    m_encodersPtrList[i]->setInputB(encoder_B);
-                    encoder_B = tmp_add;
-                }
-                else if (m_encodersPtrList[i]->inputB() == 0)
-                {
-                    m_encodersPtrList[i]->setInputB(encoder_B);
-                }
+void EncodersConfig::autoFillEmptyPairs()
+{
+    slow_encoder_t *se = gEnv.pDeviceConfig->config.slow_encoders;
+
+    // Encoder buttons already claimed by an existing pair.
+    QSet<int> used;
+    for (int s = MAX_FAST_ENCODER_NUM; s < MAX_ENCODERS_NUM; ++s) {
+        if (se[s].btn_a >= 0) used.insert(se[s].btn_a);
+        if (se[s].btn_b >= 0) used.insert(se[s].btn_b);
+    }
+    // Unused encoder buttons, in slot order (lower index becomes Pin A).
+    QList<int> unused;
+    for (const auto &pr : m_encoderButtons)
+        if (!used.contains(pr.first)) unused.append(pr.first);
+
+    // Fill empty slots with consecutive pairs; never touch a slot already set.
+    int k = 0;
+    for (int s = MAX_FAST_ENCODER_NUM; s < MAX_ENCODERS_NUM; ++s) {
+        if (se[s].btn_a < 0 && se[s].btn_b < 0) {   // empty slot
+            if (k + 1 < unused.size()) {
+                se[s].btn_a = int8_t(unused[k]);
+                se[s].btn_b = int8_t(unused[k + 1]);
+                k += 2;
             }
         }
     }
-    // delete encoder B input
-    else if (encoder_B < 0)
-    {
-        encoder_B = -encoder_B;
-        for (int i = 0; i < m_encodersInput_B_count; ++i)
-        {
-            if (m_encodersPtrList[i]->inputB() == encoder_B)       //encoder_B != 0 &&
-            {
-                for (int j = i; j < m_encodersInput_B_count; ++j)
-                {
-                    if (j+1 < m_encodersPtrList.size()) {
-                        m_encodersPtrList[j]->setInputB(m_encodersPtrList[j+1]->inputB());
-                    } else {
-                        m_encodersPtrList[j]->setInputB(0);
-                    }
-                }
-                break;
-            }
-        }
-        m_encodersInput_B_count--;
+}
+
+void EncodersConfig::refreshRows()
+{
+    for (Encoders *row : m_encodersPtrList) {
+        row->setEncoderButtons(m_encoderButtons);
+        row->readFromConfig();
     }
+    applyClashHighlight();
+}
+
+void EncodersConfig::applyClashHighlight()
+{
+    const int n = m_encodersPtrList.size();
+    for (int r = 0; r < n; ++r) {
+        const int a = m_encodersPtrList[r]->inputA();
+        const int b = m_encodersPtrList[r]->inputB();
+
+        auto usedElsewhere = [&](int pin) -> bool {
+            if (pin < 0) return false;
+            for (int q = 0; q < n; ++q) {
+                if (q == r) continue;
+                if (m_encodersPtrList[q]->inputA() == pin ||
+                    m_encodersPtrList[q]->inputB() == pin) return true;
+            }
+            return false;
+        };
+
+        const bool aClash = a >= 0 && (a == b || usedElsewhere(a));
+        const bool bClash = b >= 0 && (b == a || usedElsewhere(b));
+        m_encodersPtrList[r]->setInputClash(aClash, bClash);
+    }
+}
+
+void EncodersConfig::onEncoderButtonsChanged()
+{
+    rebuildEncoderButtonList();
+    dropStalePairs();
+    autoFillEmptyPairs();
+    refreshRows();
+}
+
+void EncodersConfig::onRowPairingEdited()
+{
+    // A row already wrote its own slot to config; just re-run clash highlight
+    // (a pin now used twice, or A==B, must light up across rows).
+    applyClashHighlight();
 }
 
 void EncodersConfig::readFromConfig()
@@ -166,9 +181,13 @@ void EncodersConfig::readFromConfig()
     for (int i = 0; i < m_fastEncodersPtrList.size(); ++i) {
         m_fastEncodersPtrList[i]->readFromConfig();
     }
-    for (int i = 0; i < m_encodersPtrList.size(); ++i) {
-        m_encodersPtrList[i]->readFromConfig();
-    }
+    // Materialise the encoder-line list from the freshly loaded buttons, drop
+    // any stale pair, and auto-fill empty slots (fills only where the stored
+    // config left a gap -- migrated/saved pairs are respected).
+    rebuildEncoderButtonList();
+    dropStalePairs();
+    autoFillEmptyPairs();
+    refreshRows();
 }
 
 void EncodersConfig::writeToConfig()

@@ -466,16 +466,16 @@ void ButtonConfig::physButtonsCreator(int count)
 
 void ButtonConfig::functionTypeChanged(button_type_t current, button_type_t previous, int buttonIndex)
 {
-    if (current == ENCODER_INPUT_A) {
-        emit encoderInputChanged(buttonIndex + 1, 0);
-    } else if (current == ENCODER_INPUT_B) {
-        emit encoderInputChanged(0, buttonIndex + 1);
-    }
-
-    if (previous == ENCODER_INPUT_A) {
-        emit encoderInputChanged((buttonIndex + 1) * -1, 0); // send negative number
-    } else if (previous == ENCODER_INPUT_B) {
-        emit encoderInputChanged(0, (buttonIndex + 1) * -1);
+    // A pin gained or lost the "Encoder" marker -> the Encoders tab must
+    // refresh its Pin A / Pin B dropdowns and re-run its auto-fill. The type is
+    // written to the global config here so the encoder tab's rescan sees it
+    // (functionTypeChanged can fire before the row's own writeToConfig flush).
+    if (current == ENCODER_INPUT_A || previous == ENCODER_INPUT_A ||
+        current == ENCODER_INPUT_B || previous == ENCODER_INPUT_B) {
+        if (buttonIndex >= 0 && buttonIndex < MAX_BUTTONS_NUM) {
+            gEnv.pDeviceConfig->config.buttons[buttonIndex].type = current;
+        }
+        emit encoderButtonsChanged();
     }
     typeLimit(current, previous);  // updates cap state and reapplies the dropdown filter
 
