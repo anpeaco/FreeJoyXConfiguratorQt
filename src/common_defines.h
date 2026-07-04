@@ -23,7 +23,7 @@
  * approved release we stay on major 0; move to 1.0.0 when the
  * project is judged stable. */
 #define FREEJOYX_VERSION_MAJOR              0
-#define FREEJOYX_VERSION_MINOR              2
+#define FREEJOYX_VERSION_MINOR              3
 #define FREEJOYX_VERSION_PATCH              0
 #define FREEJOYX_VER_STR_HELPER(x)          #x
 #define FREEJOYX_VER_STR(x)                 FREEJOYX_VER_STR_HELPER(x)

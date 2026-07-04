@@ -367,6 +367,12 @@ void Flasher::setConnectedDeviceInfo(bool isF411, const QString &name,
     m_connectedName   = name;
     m_connectedVidPid = vidPid;
 
+    /* Reinstall / Flash-file is available whenever an app-mode device is
+     * connected (any board) -- it opens the firmware picker and flashes any
+     * .bin regardless of version, so it isn't gated on a newer release the way
+     * the device-card Upgrade button is. */
+    ui->pushButton_Reinstall->setEnabled(!name.isEmpty());
+
     /* A live app-mode device (non-blank identity, pushed from getParamsPacket
      * after a real params report) is definitive proof the chip is NOT sitting
      * in the bootloader -- so clear any stale flasher-mode flag here.
@@ -390,6 +396,14 @@ void Flasher::setConnectedDeviceInfo(bool isF411, const QString &name,
         ui->frame_FlasherDeviceInfo->setVisible(false);
         ui->label_FlasherDeviceInfo->clear();
     }
+}
+
+void Flasher::on_pushButton_Reinstall_clicked()
+{
+    /* Route to MainWindow, which opens the same firmware picker the device-card
+     * Upgrade button uses -- but unconditionally (no newer-release gate), so the
+     * user can reinstall the same version, flash a dev build, or downgrade. */
+    emit reinstallRequested();
 }
 
 void Flasher::on_pushButton_DfuInstall_clicked()

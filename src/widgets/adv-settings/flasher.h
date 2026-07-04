@@ -51,6 +51,10 @@ signals:
      * local file path of the firmware binary. MainWindow opens the
      * FlashProgressDialog and starts a FlashSession in response. */
     void consolidatedFlashRequested(const QString &filePath);
+    /* The "Reinstall / Flash file…" button was clicked. MainWindow opens the
+     * firmware picker (same as the device-card Upgrade button) so the user can
+     * flash any .bin regardless of version -- not gated on a newer release. */
+    void reinstallRequested();
 
     /* Forwarded from the DfuInstallDialog's "reboot to DFU" button. MainWindow
      * obliges by sending the "system dfu" report so a live device reboots into
@@ -95,6 +99,7 @@ private slots:
      * (anpeaco/FreeJoyXConfiguratorQt#53). Independent of the HID flash flow
      * above; works on a blank/bricked chip with no connected app device. */
     void on_pushButton_DfuInstall_clicked();
+    void on_pushButton_Reinstall_clicked();
     void on_toolButton_OpenRecoveryDir_clicked();
     void on_listWidget_Devices_itemActivated(class QListWidgetItem *item);
     void on_listWidget_Devices_currentRowChanged(int row);

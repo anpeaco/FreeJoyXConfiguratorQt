@@ -452,6 +452,11 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::onConsolidatedFlashRequested);
     connect(m_advSettings->flasher(), &Flasher::systemDfuRebootRequested,
             this, &MainWindow::doEnterSystemDfu);
+    /* Reinstall / Flash-file button -> the same firmware picker the device-card
+     * Upgrade button opens, but reachable regardless of the release-version gate
+     * (reinstall same version / dev build / downgrade). */
+    connect(m_advSettings->flasher(), &Flasher::reinstallRequested,
+            this, &MainWindow::on_pushButton_UpgradeFirmware_clicked);
 
     /* FlashSession -> HidDevice plumbing. Active only while a session
      * is in progress; the slots themselves no-op when m_flashSession is
