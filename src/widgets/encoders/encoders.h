@@ -37,6 +37,10 @@ public:
     int inputA() const;   // selected button-slot index, -1 = none
     int inputB() const;
 
+    // Exchange the Pin A / Pin B selections (reverses direction). Bound to the
+    // Swap button; persists and re-validates like a user edit.
+    void swapInputs();
+
     // Red-border the Pin A / Pin B combos when they clash (A==B, or the pin is
     // also used by another encoder).
     void setInputClash(bool aClash, bool bClash);

@@ -1,6 +1,6 @@
 // Round-trip + legacy-synthesis tests for slow-encoder persistence
 // (wire gen 0x0040). Covers:
-//   - slow_encoders[] {btn_a, btn_b} and the encoders[] swap/mode byte survive
+//   - slow_encoders[] {btn_a, btn_b} and the encoders[] detent-mode byte survive
 //     a .cfg save/load;
 //   - a pre-0x0040 file (no BtnA/BtnB keys) with positional ENCODER_INPUT_A/_B
 //     buttons has its pairs SYNTHESISED on load (encoders not lost).
@@ -33,17 +33,17 @@ class TestEncoderPersist : public QObject
     }
 
 private slots:
-    // Explicit pairs + the detent-mode/swap byte round-trip verbatim.
-    void slowEncoderPairs_and_swap_roundTrip()
+    // Explicit pairs + the detent-mode byte round-trip verbatim. (Direction is
+    // pin-order, not a stored flag -- swapping btn_a/btn_b reverses it.)
+    void slowEncoderPairs_and_mode_roundTrip()
     {
         dev_config_t a; zeroCurrent(a);
         a.slow_encoders[MAX_FAST_ENCODER_NUM + 0].btn_a = 5;
         a.slow_encoders[MAX_FAST_ENCODER_NUM + 0].btn_b = 6;
-        a.slow_encoders[MAX_FAST_ENCODER_NUM + 1].btn_a = 40;
-        a.slow_encoders[MAX_FAST_ENCODER_NUM + 1].btn_b = 41;
-        // detent mode + direction swap packed into encoders[i]
-        a.encoders[MAX_FAST_ENCODER_NUM + 0] = ENCODER_CONF_4x | SLOW_ENC_SWAP;
-        a.encoders[MAX_FAST_ENCODER_NUM + 1] = ENCODER_CONF_2x;   // no swap
+        a.slow_encoders[MAX_FAST_ENCODER_NUM + 1].btn_a = 41;   // "swapped" order
+        a.slow_encoders[MAX_FAST_ENCODER_NUM + 1].btn_b = 40;
+        a.encoders[MAX_FAST_ENCODER_NUM + 0] = ENCODER_CONF_4x;
+        a.encoders[MAX_FAST_ENCODER_NUM + 1] = ENCODER_CONF_2x;
 
         const QString f = path("enc_roundtrip.ini");
         ConfigToFile::saveDeviceConfigToFile(f, a);
@@ -61,9 +61,6 @@ private slots:
             QCOMPARE(b.slow_encoders[i].btn_b, a.slow_encoders[i].btn_b);
             QCOMPARE(b.encoders[i], a.encoders[i]);
         }
-        // Spot-check the swap bit specifically.
-        QVERIFY(b.encoders[MAX_FAST_ENCODER_NUM + 0] & SLOW_ENC_SWAP);
-        QVERIFY(!(b.encoders[MAX_FAST_ENCODER_NUM + 1] & SLOW_ENC_SWAP));
         QCOMPARE(b.encoders[MAX_FAST_ENCODER_NUM + 0] & SLOW_ENC_MODE_MASK,
                  static_cast<uint8_t>(ENCODER_CONF_4x));
     }

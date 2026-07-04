@@ -29,7 +29,7 @@ Encoders::Encoders(int encodersNumber, QWidget *parent)
             this, &Encoders::onUserEdited);
     connect(ui->comboBox_EncoderType, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &Encoders::onUserEdited);
-    connect(ui->checkBox_Swap, &QCheckBox::toggled, this, &Encoders::onUserEdited);
+    connect(ui->pushButton_Swap, &QPushButton::clicked, this, &Encoders::swapInputs);
 }
 
 Encoders::~Encoders()
@@ -96,7 +96,7 @@ void Encoders::updateEnabledState()
     const bool complete = inputA() >= 0 && inputB() >= 0;
     ui->comboBox_EncoderType->setEnabled(complete);
     ui->text_EncoderType->setEnabled(complete);
-    ui->checkBox_Swap->setEnabled(complete);
+    ui->pushButton_Swap->setEnabled(complete);
     ui->text_Swap->setEnabled(complete);
 }
 
@@ -107,9 +107,10 @@ void Encoders::readFromConfig()
     selectData(ui->comboBox_InputA, se.btn_a);
     selectData(ui->comboBox_InputB, se.btn_b);
 
+    // encoders[i] holds the detent mode. Mask off any legacy high bits (an
+    // interim build packed a swap flag here before Swap became a pin exchange).
     const uint8_t enc = gEnv.pDeviceConfig->config.encoders[m_configIndex];
     ui->comboBox_EncoderType->setCurrentIndex(enc & SLOW_ENC_MODE_MASK);
-    ui->checkBox_Swap->setChecked(enc & SLOW_ENC_SWAP);
     m_populating = false;
 
     updateEnabledState();
@@ -119,10 +120,24 @@ void Encoders::writeToConfig()
 {
     gEnv.pDeviceConfig->config.slow_encoders[m_configIndex].btn_a = int8_t(inputA());
     gEnv.pDeviceConfig->config.slow_encoders[m_configIndex].btn_b = int8_t(inputB());
+    gEnv.pDeviceConfig->config.encoders[m_configIndex] =
+        uint8_t(ui->comboBox_EncoderType->currentIndex()) & SLOW_ENC_MODE_MASK;
+}
 
-    const uint8_t mode = uint8_t(ui->comboBox_EncoderType->currentIndex()) & SLOW_ENC_MODE_MASK;
-    const uint8_t swap = ui->checkBox_Swap->isChecked() ? SLOW_ENC_SWAP : 0;
-    gEnv.pDeviceConfig->config.encoders[m_configIndex] = mode | swap;
+void Encoders::swapInputs()
+{
+    // Exchange the Pin A / Pin B selections. Because the firmware decodes
+    // rotation direction from pin order, swapping the pins reverses the encoder
+    // -- no separate swap flag needed.
+    const int a = inputA();
+    const int b = inputB();
+    m_populating = true;
+    selectData(ui->comboBox_InputA, b);
+    selectData(ui->comboBox_InputB, a);
+    m_populating = false;
+    writeToConfig();
+    updateEnabledState();
+    emit pairingEdited();
 }
 
 void Encoders::setInputClash(bool aClash, bool bClash)

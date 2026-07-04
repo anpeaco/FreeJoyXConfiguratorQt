@@ -193,9 +193,9 @@ void ConfigToFile::loadDeviceConfigFromFile(QWidget *parent, const QString &file
     }
 
     // load Encoders config from file. encoders[i] carries the detent mode
-    // (bits 0-1) and the direction-swap flag (bit 4, SLOW_ENC_SWAP), so the
-    // whole byte round-trips via "EncType". slow_encoders[] holds the explicit
-    // {btn_a, btn_b} pairs (wire gen 0x0040). Files written before that field
+    // (bits 0-1); it round-trips via "EncType". slow_encoders[] holds the
+    // explicit {btn_a, btn_b} pairs (wire gen 0x0040); direction is set by that
+    // pair order (Swap exchanges them). Files written before that field
     // existed have no "BtnA" keys -- track that so the pairs can be synthesised
     // from the old positional ENCODER_INPUT_A/_B layout below.
     bool hadSlowEncoderKeys = false;
@@ -599,7 +599,7 @@ void ConfigToFile::saveDeviceConfigToFile(const QString &fileName, dev_config_t 
         deviceSettings.endGroup();
     }
 
-    // save Encoders config to file. EncType carries detent mode + swap bit;
+    // save Encoders config to file. EncType carries the detent mode;
     // BtnA/BtnB are the explicit slow-encoder pin pair (wire gen 0x0040),
     // always written so a reload takes the stored pairs (not the legacy
     // positional synthesis -- see the load side).

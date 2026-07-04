@@ -11,6 +11,7 @@
 #include "common_defines.h"
 #include "common_types.h"
 #include "widgets/encoders/encodersconfig.h"
+#include "widgets/encoders/encoders.h"
 
 GlobalEnvironment gEnv;
 
@@ -147,6 +148,26 @@ private slots:
         for (int s = FIRST; s < MAX_ENCODERS_NUM; ++s) {
             QCOMPARE(a(s), -1); QCOMPARE(b(s), -1);
         }
+    }
+
+    // The Swap button exchanges Pin A / Pin B (which reverses direction on the
+    // device), persisting the exchange to slow_encoders[].
+    void swapInputs_exchangesPinsAndPersists()
+    {
+        tagEncoder(5); tagEncoder(6);
+        setPair(FIRST + 0, 5, 6);
+
+        Encoders row(0);                 // configIndex == MAX_FAST_ENCODER_NUM
+        QCOMPARE(row.configIndex(), FIRST);
+        row.setEncoderButtons({ qMakePair(5, QStringLiteral("Button #6")),
+                                qMakePair(6, QStringLiteral("Button #7")) });
+        row.readFromConfig();
+        QCOMPARE(row.inputA(), 5);  QCOMPARE(row.inputB(), 6);
+
+        row.swapInputs();
+
+        QCOMPARE(row.inputA(), 6);  QCOMPARE(row.inputB(), 5);   // UI exchanged
+        QCOMPARE(a(FIRST + 0), 6);  QCOMPARE(b(FIRST + 0), 5);   // and persisted
     }
 };
 

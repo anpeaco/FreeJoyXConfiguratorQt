@@ -143,12 +143,21 @@
     </widget>
    </item>
    <item row="1" column="4" alignment="Qt::AlignHCenter">
-    <widget class="QCheckBox" name="checkBox_Swap">
+    <widget class="QPushButton" name="pushButton_Swap">
      <property name="enabled">
       <bool>false</bool>
      </property>
+     <property name="maximumSize">
+      <size>
+       <width>44</width>
+       <height>16777215</height>
+      </size>
+     </property>
+     <property name="toolTip">
+      <string>Swap Pin A and Pin B (reverses the encoder direction)</string>
+     </property>
      <property name="text">
-      <string notr="true"/>
+      <string notr="true">⇄</string>
      </property>
     </widget>
    </item>

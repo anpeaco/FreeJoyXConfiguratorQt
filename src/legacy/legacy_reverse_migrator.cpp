@@ -260,9 +260,9 @@ static void reverse_v1730_from_current(const dev_config_t &cur, ReverseResult &r
 
     Q_STATIC_ASSERT(LV1730_MAX_ENCODERS_NUM == MAX_ENCODERS_NUM);
     for (int i = 0; i < MAX_ENCODERS_NUM; ++i) {
-        // Strip the 0x0040 swap flag (bit 4): legacy targets read encoders[i]
-        // unmasked, so only the detent mode (bits 0-1) may cross the wire --
-        // a stray high bit would fall through their switch to the 1x default.
+        // Only the detent mode (bits 0-1) may cross to legacy targets, which
+        // read encoders[i] unmasked -- a stray high bit (e.g. from an interim
+        // 0x0040 build) would fall through their switch to the 1x default.
         out->encoders[i] = cur.encoders[i] & SLOW_ENC_MODE_MASK;
     }
 
@@ -397,9 +397,9 @@ static void reverse_v1710_from_current(const dev_config_t &cur, ReverseResult &r
 
     Q_STATIC_ASSERT(LV1710_MAX_ENCODERS_NUM == MAX_ENCODERS_NUM);
     for (int i = 0; i < MAX_ENCODERS_NUM; ++i) {
-        // Strip the 0x0040 swap flag (bit 4): legacy targets read encoders[i]
-        // unmasked, so only the detent mode (bits 0-1) may cross the wire --
-        // a stray high bit would fall through their switch to the 1x default.
+        // Only the detent mode (bits 0-1) may cross to legacy targets, which
+        // read encoders[i] unmasked -- a stray high bit (e.g. from an interim
+        // 0x0040 build) would fall through their switch to the 1x default.
         out->encoders[i] = cur.encoders[i] & SLOW_ENC_MODE_MASK;
     }
 
@@ -579,9 +579,9 @@ static void reverse_v1770_from_current(const dev_config_t &cur, ReverseResult &r
 
     Q_STATIC_ASSERT(LV1770_MAX_ENCODERS_NUM == MAX_ENCODERS_NUM);
     for (int i = 0; i < MAX_ENCODERS_NUM; ++i) {
-        // Strip the 0x0040 swap flag (bit 4): legacy targets read encoders[i]
-        // unmasked, so only the detent mode (bits 0-1) may cross the wire --
-        // a stray high bit would fall through their switch to the 1x default.
+        // Only the detent mode (bits 0-1) may cross to legacy targets, which
+        // read encoders[i] unmasked -- a stray high bit (e.g. from an interim
+        // 0x0040 build) would fall through their switch to the 1x default.
         out->encoders[i] = cur.encoders[i] & SLOW_ENC_MODE_MASK;
     }
 
