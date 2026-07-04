@@ -14,7 +14,6 @@
 
 #include <QDebug>
 
-static const int SHIFT_COUNT = 6;
 static const int MAX_A2B_BUTTONS = 12;
 
 void ConfigToFile::loadDeviceConfigFromFile(QWidget *parent, const QString &fileName, dev_config_t &devC)
@@ -83,9 +82,12 @@ void ConfigToFile::loadDeviceConfigFromFile(QWidget *parent, const QString &file
     devC.pins[29] = int8_t(deviceSettings.value("C15", devC.pins[29]).toInt());
     deviceSettings.endGroup();
 
-    // load Shift config from file
+    // load Shift config from file. shift_config[] holds MAX_SHIFTS_NUM slots (8 as
+    // of v1.7.8, bumped from 5); the old SHIFT_COUNT-1 loop only persisted the
+    // first 5, silently dropping shifts 6-8. Missing keys default to the current
+    // value, so older files still load.
     deviceSettings.beginGroup("ShiftConfig");
-    for (int i = 0; i < SHIFT_COUNT - 1; ++i) { // -1 "No shift"    (SHIFT_COUNT = shift_count + "No shift")
+    for (int i = 0; i < MAX_SHIFTS_NUM; ++i) {
         devC.shift_config[i].button = int8_t(deviceSettings.value("Shift" + QString::number(i), devC.shift_config[i].button).toInt());
     }
     deviceSettings.endGroup();
@@ -104,6 +106,7 @@ void ConfigToFile::loadDeviceConfigFromFile(QWidget *parent, const QString &file
     // already present in devC at this point (500 / 300).
     devC.tap_cutoff_ms = uint16_t(deviceSettings.value("TapCutoff", devC.tap_cutoff_ms).toInt());
     devC.double_tap_window_ms    = uint16_t(deviceSettings.value("DoubleTapWindow",    devC.double_tap_window_ms).toInt());
+    devC.a2b_debounce_ms = uint16_t(deviceSettings.value("A2bDebounce", devC.a2b_debounce_ms).toInt());
     deviceSettings.endGroup();
 
     // load Buttons config from file
@@ -258,8 +261,21 @@ void ConfigToFile::loadDeviceConfigFromFile(QWidget *parent, const QString &file
 
         devC.rgb_leds[i].input_num = int8_t(deviceSettings.value("InputNum_" + QString::number(i), devC.rgb_leds[i].input_num).toInt());
         devC.rgb_leds[i].is_inverted = deviceSettings.value("Inverted_" + QString::number(i), devC.rgb_leds[i].is_inverted).toBool();
+        devC.rgb_leds[i].is_disabled = deviceSettings.value("Disabled_" + QString::number(i), bool(devC.rgb_leds[i].is_disabled)).toBool();
     }
     deviceSettings.endGroup();
+
+    // load GPIO expanders config from file (MCP23017 I2C / MCP23S17 SPI, wire gen
+    // 0x0030). Absent in files written before expander support -> default to the
+    // current (reset) value = disabled.
+    for (int i = 0; i < MAX_GPIO_EXPANDER_NUM; ++i) {
+        deviceSettings.beginGroup("GpioExpConfig_" + QString::number(i));
+        devC.gpio_expanders[i].type       = uint8_t(deviceSettings.value("Type",      devC.gpio_expanders[i].type).toInt());
+        devC.gpio_expanders[i].address    = uint8_t(deviceSettings.value("Address",   devC.gpio_expanders[i].address).toInt());
+        devC.gpio_expanders[i].button_cnt = uint8_t(deviceSettings.value("ButtonCnt", devC.gpio_expanders[i].button_cnt).toInt());
+        devC.gpio_expanders[i].flags      = uint8_t(deviceSettings.value("Flags",     devC.gpio_expanders[i].flags).toInt());
+        deviceSettings.endGroup();
+    }
 
     oldConfigHandler(parent, devC);
     crossBoardCheck(parent, devC);
@@ -481,9 +497,9 @@ void ConfigToFile::saveDeviceConfigToFile(const QString &fileName, dev_config_t 
     deviceSettings.setValue("C15", devC.pins[29]);
     deviceSettings.endGroup();
 
-    // save Shift config to file
+    // save Shift config to file (all MAX_SHIFTS_NUM slots -- see the load side).
     deviceSettings.beginGroup("ShiftConfig");
-    for (int i = 0; i < SHIFT_COUNT - 1; ++i) { // -1 "No shift"    (SHIFT_COUNT = shift_count + "No shift")
+    for (int i = 0; i < MAX_SHIFTS_NUM; ++i) {
         deviceSettings.setValue("Shift" + QString::number(i), devC.shift_config[i].button);
     }
     deviceSettings.endGroup();
@@ -501,6 +517,7 @@ void ConfigToFile::saveDeviceConfigToFile(const QString &fileName, dev_config_t 
     // Gesture timers (Step 4)
     deviceSettings.setValue("TapCutoff", devC.tap_cutoff_ms);
     deviceSettings.setValue("DoubleTapWindow",    devC.double_tap_window_ms);
+    deviceSettings.setValue("A2bDebounce", devC.a2b_debounce_ms);
     deviceSettings.endGroup();
 
     // save Buttons config to file
@@ -649,7 +666,19 @@ void ConfigToFile::saveDeviceConfigToFile(const QString &fileName, dev_config_t 
 
         deviceSettings.setValue("InputNum_" + QString::number(i), devC.rgb_leds[i].input_num);
         deviceSettings.setValue("Inverted_" + QString::number(i), devC.rgb_leds[i].is_inverted);
+        deviceSettings.setValue("Disabled_" + QString::number(i), bool(devC.rgb_leds[i].is_disabled));
     }
     deviceSettings.endGroup();
+
+    // save GPIO expanders config to file (see the load side).
+    for (int i = 0; i < MAX_GPIO_EXPANDER_NUM; ++i) {
+        deviceSettings.beginGroup("GpioExpConfig_" + QString::number(i));
+        deviceSettings.setValue("Type",      devC.gpio_expanders[i].type);
+        deviceSettings.setValue("Address",   devC.gpio_expanders[i].address);
+        deviceSettings.setValue("ButtonCnt", devC.gpio_expanders[i].button_cnt);
+        deviceSettings.setValue("Flags",     devC.gpio_expanders[i].flags);
+        deviceSettings.endGroup();
+    }
+
     qDebug()<<"SaveDeviceConfigToFile() finished";
 }
