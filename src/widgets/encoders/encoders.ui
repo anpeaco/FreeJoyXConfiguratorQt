@@ -19,7 +19,7 @@
   <property name="windowTitle">
    <string notr="true">Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout" rowstretch="3,3,0" columnstretch="3,10,10,10,4,4">
+  <layout class="QGridLayout" name="gridLayout" rowstretch="3,3,0" columnstretch="3,10,10,10,4,4,4">
    <property name="leftMargin">
     <number>0</number>
    </property>
@@ -162,6 +162,32 @@
     </widget>
    </item>
    <item row="0" column="5">
+    <widget class="QLabel" name="text_Queue">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Queue</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="5" alignment="Qt::AlignHCenter">
+    <widget class="QCheckBox" name="checkBox_Queue">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="toolTip">
+      <string>Step queue (experimental): emit each detent as a discrete press (N detents → N presses) instead of a hold while spinning. For fast increment tuning like a radio knob.</string>
+     </property>
+     <property name="text">
+      <string notr="true"/>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="6">
     <spacer name="horizontalSpacer">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -174,7 +200,7 @@
      </property>
     </spacer>
    </item>
-   <item row="2" column="0" colspan="6">
+   <item row="2" column="0" colspan="7">
     <widget class="Line" name="line">
      <property name="frameShadow">
       <enum>QFrame::Sunken</enum>

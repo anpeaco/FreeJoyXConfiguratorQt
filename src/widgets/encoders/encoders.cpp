@@ -30,6 +30,7 @@ Encoders::Encoders(int encodersNumber, QWidget *parent)
     connect(ui->comboBox_EncoderType, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &Encoders::onUserEdited);
     connect(ui->pushButton_Swap, &QPushButton::clicked, this, &Encoders::swapInputs);
+    connect(ui->checkBox_Queue, &QCheckBox::toggled, this, &Encoders::onUserEdited);
 }
 
 Encoders::~Encoders()
@@ -98,6 +99,8 @@ void Encoders::updateEnabledState()
     ui->text_EncoderType->setEnabled(complete);
     ui->pushButton_Swap->setEnabled(complete);
     ui->text_Swap->setEnabled(complete);
+    ui->checkBox_Queue->setEnabled(complete);
+    ui->text_Queue->setEnabled(complete);
 }
 
 void Encoders::readFromConfig()
@@ -111,6 +114,7 @@ void Encoders::readFromConfig()
     // interim build packed a swap flag here before Swap became a pin exchange).
     const uint8_t enc = gEnv.pDeviceConfig->config.encoders[m_configIndex];
     ui->comboBox_EncoderType->setCurrentIndex(enc & SLOW_ENC_MODE_MASK);
+    ui->checkBox_Queue->setChecked(enc & SLOW_ENC_QUEUE);
     m_populating = false;
 
     updateEnabledState();
@@ -120,8 +124,9 @@ void Encoders::writeToConfig()
 {
     gEnv.pDeviceConfig->config.slow_encoders[m_configIndex].btn_a = int8_t(inputA());
     gEnv.pDeviceConfig->config.slow_encoders[m_configIndex].btn_b = int8_t(inputB());
-    gEnv.pDeviceConfig->config.encoders[m_configIndex] =
-        uint8_t(ui->comboBox_EncoderType->currentIndex()) & SLOW_ENC_MODE_MASK;
+    const uint8_t mode  = uint8_t(ui->comboBox_EncoderType->currentIndex()) & SLOW_ENC_MODE_MASK;
+    const uint8_t queue = ui->checkBox_Queue->isChecked() ? SLOW_ENC_QUEUE : 0;
+    gEnv.pDeviceConfig->config.encoders[m_configIndex] = mode | queue;
 }
 
 void Encoders::swapInputs()
