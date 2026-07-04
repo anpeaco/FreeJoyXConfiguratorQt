@@ -335,13 +335,13 @@ private:
     // Encoder lines are all tagged ENCODER_INPUT_A (219) now -- both pins of an
     // encoder share the single "Encoder" marker. Cap at 28 = the 14 slow
     // encoder slots (MAX_ENCODERS_NUM - MAX_FAST_ENCODER_NUM) x 2 pins each.
-    // ENCODER_INPUT_B (220) is retired from the UI but kept here (harmless,
-    // never selected) so a stray migrated value can't slip the cap.
-    static const int m_typeLimCount = 2;
+    // ENCODER_INPUT_B (220) is retired from the dropdown, so it must NOT be
+    // listed here -- disableButtonType(220) would EnumToIndex-miss (220 isn't a
+    // dropdown item) and spam. A stored 220 is canonicalised to 219 on display.
+    static const int m_typeLimCount = 1;
     const pinTypeLimit_t m_ButtonsTypeLimit[m_typeLimCount] =
     {
         {ENCODER_INPUT_A,        28},
-        {ENCODER_INPUT_B,        28},
     };
     // typeLimit's count and "type is at cap" tracking. Shared with
     // physicalConflictFilter so both rules can be applied in a single pass.

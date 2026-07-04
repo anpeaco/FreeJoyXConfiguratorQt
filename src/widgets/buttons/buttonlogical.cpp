@@ -912,8 +912,13 @@ void ButtonLogical::readFromConfig()
     // isInvert
     ui->checkBox_IsInvert->setChecked(button->is_inverted);
 
-    // logical button function
-    ui->comboBox_ButtonFunction->setCurrentIndex(Converter::EnumToIndex(button->type, m_logicFunc_enumIndex));
+    // logical button function. A stored ENCODER_INPUT_B (220) is the retired
+    // "Encoder B" -- canonicalise it to the single "Encoder" entry (219) so it
+    // maps to a real dropdown item instead of EnumToIndex-missing to -1 (blank
+    // row + error spam). It normalises to 219 in dev_config on the next write.
+    button_type_t fnType = (button->type == ENCODER_INPUT_B) ? (button_type_t)ENCODER_INPUT_A
+                                                             : button->type;
+    ui->comboBox_ButtonFunction->setCurrentIndex(Converter::EnumToIndex(fnType, m_logicFunc_enumIndex));
     // Operator + Source B only matter for type == LOGIC. For non-LOGIC
     // slots functionIndexChanged() above (triggered by the function
     // setCurrentIndex when the index actually moves) has already cleared

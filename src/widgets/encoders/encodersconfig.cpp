@@ -77,7 +77,10 @@ void EncodersConfig::rebuildEncoderButtonList()
     m_encoderButtons.clear();
     const button_t *b = gEnv.pDeviceConfig->config.buttons;
     for (int i = 0; i < MAX_BUTTONS_NUM; ++i) {
-        if (b[i].type == ENCODER_INPUT_A) {   // the single "Encoder" marker
+        // ENCODER_INPUT_A (219) is the single "Encoder" marker; also accept the
+        // retired ENCODER_INPUT_B (220) so a not-yet-normalised legacy pin still
+        // shows up as an encoder line.
+        if (b[i].type == ENCODER_INPUT_A || b[i].type == ENCODER_INPUT_B) {
             m_encoderButtons.append(qMakePair(i, tr("Button #%1").arg(i + 1)));
         }
     }
