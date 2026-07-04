@@ -50,8 +50,9 @@ static constexpr uint16_t FW_MASK = 0xFFF0;
  * buttons (upstream 0x17xx, FreeJoyX 0x0010/0x0020/0x0030) must have its pairs
  * materialised now that the firmware reads slow_encoders[] instead of
  * re-deriving them, otherwise a migrated board loses its encoders. Call after
- * out.buttons[] is fully populated. */
-static void synthesizeSlowEncoderPairs(dev_config_t &out)
+ * out.buttons[] is fully populated. Declared in legacy_migrator.h so the
+ * INI-load path can reuse it. */
+void synthesizeSlowEncoderPairs(dev_config_t &out)
 {
     for (int i = 0; i < MAX_ENCODERS_NUM; ++i) {
         out.slow_encoders[i].btn_a = -1;

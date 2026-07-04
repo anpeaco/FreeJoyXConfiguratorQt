@@ -11,6 +11,7 @@
 #include "deviceconfig.h"
 #include "global.h"
 #include "style_helpers.h"
+#include "legacy/legacy_migrator.h"   /* legacy::synthesizeSlowEncoderPairs */
 
 #include <QDebug>
 
@@ -191,12 +192,26 @@ void ConfigToFile::loadDeviceConfigFromFile(QWidget *parent, const QString &file
         deviceSettings.endGroup();
     }
 
-    // load Encoders config from file
+    // load Encoders config from file. encoders[i] carries the detent mode
+    // (bits 0-1) and the direction-swap flag (bit 4, SLOW_ENC_SWAP), so the
+    // whole byte round-trips via "EncType". slow_encoders[] holds the explicit
+    // {btn_a, btn_b} pairs (wire gen 0x0040). Files written before that field
+    // existed have no "BtnA" keys -- track that so the pairs can be synthesised
+    // from the old positional ENCODER_INPUT_A/_B layout below.
+    bool hadSlowEncoderKeys = false;
     for (int i = 0; i < MAX_ENCODERS_NUM; ++i) {
         deviceSettings.beginGroup("EncodersConfig_" + QString::number(i));
 
         devC.encoders[i] = uint8_t(deviceSettings.value("EncType", devC.encoders[i]).toInt());
+        if (deviceSettings.contains("BtnA")) hadSlowEncoderKeys = true;
+        devC.slow_encoders[i].btn_a = int8_t(deviceSettings.value("BtnA", devC.slow_encoders[i].btn_a).toInt());
+        devC.slow_encoders[i].btn_b = int8_t(deviceSettings.value("BtnB", devC.slow_encoders[i].btn_b).toInt());
         deviceSettings.endGroup();
+    }
+    // Pre-0x0040 file (no stored pairs): materialise slow_encoders[] from the
+    // legacy positional ENCODER_INPUT_A/_B button zip so its encoders survive.
+    if (!hadSlowEncoderKeys) {
+        legacy::synthesizeSlowEncoderPairs(devC);
     }
 
     // load Fast Encoders config from file. INIs saved before this section
@@ -584,11 +599,16 @@ void ConfigToFile::saveDeviceConfigToFile(const QString &fileName, dev_config_t 
         deviceSettings.endGroup();
     }
 
-    // save Encoders config to file
+    // save Encoders config to file. EncType carries detent mode + swap bit;
+    // BtnA/BtnB are the explicit slow-encoder pin pair (wire gen 0x0040),
+    // always written so a reload takes the stored pairs (not the legacy
+    // positional synthesis -- see the load side).
     for (int i = 0; i < MAX_ENCODERS_NUM; ++i) {
         deviceSettings.beginGroup("EncodersConfig_" + QString::number(i));
 
         deviceSettings.setValue("EncType", devC.encoders[i]);
+        deviceSettings.setValue("BtnA", devC.slow_encoders[i].btn_a);
+        deviceSettings.setValue("BtnB", devC.slow_encoders[i].btn_b);
         deviceSettings.endGroup();
     }
 

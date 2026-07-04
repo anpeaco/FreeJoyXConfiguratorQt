@@ -64,6 +64,14 @@ const char *describeVersion(uint16_t firmware_version);
  * sizeof(current dev_config_t) for unknown / current versions. */
 size_t legacyConfigSize(uint16_t firmware_version);
 
+/* Rebuild explicit slow_encoders[] pairs (wire gen 0x0040) from the legacy
+ * positional ENCODER_INPUT_A/_B button zip. Exposed so the INI-load path
+ * (configtofile.cpp) can materialise pairs for a pre-0x0040 file that carries
+ * encoder-line buttons but no stored pairs -- the same synthesis the device
+ * migrators run. Idempotent to re-run; overwrites the whole slow_encoders[]
+ * array. */
+void synthesizeSlowEncoderPairs(dev_config_t &out);
+
 } /* namespace legacy */
 
 #endif /* LEGACY_MIGRATOR_H_ */
