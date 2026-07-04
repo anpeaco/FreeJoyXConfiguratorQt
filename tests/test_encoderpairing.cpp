@@ -6,6 +6,7 @@
 // and asserts what lands in config.slow_encoders[]. Slow encoder slots start at
 // MAX_FAST_ENCODER_NUM (fast slots are unused here).
 #include <QtTest>
+#include <QComboBox>
 #include "global.h"
 #include "deviceconfig.h"
 #include "common_defines.h"
@@ -168,6 +169,41 @@ private slots:
 
         QCOMPARE(row.inputA(), 6);  QCOMPARE(row.inputB(), 5);   // UI exchanged
         QCOMPARE(a(FIRST + 0), 6);  QCOMPARE(b(FIRST + 0), 5);   // and persisted
+    }
+
+    // A pin already used by an encoder is greyed out (disabled) in the Pin
+    // combos so it can't be picked twice -- except each combo's own current pick.
+    void applyUsageMask_greysUsedButtonsExceptOwnPick()
+    {
+        tagEncoder(5); tagEncoder(6); tagEncoder(10); tagEncoder(11);
+
+        Encoders row(1);   // configIndex == FIRST + 1
+        row.setEncoderButtons({ qMakePair(5,  QStringLiteral("#6")),
+                                qMakePair(6,  QStringLiteral("#7")),
+                                qMakePair(10, QStringLiteral("#11")),
+                                qMakePair(11, QStringLiteral("#12")) });
+        setPair(row.configIndex(), 10, 11);   // this row uses 10 (A), 11 (B)
+        row.readFromConfig();
+
+        // 5 & 6 are used by another encoder; mask them plus this row's own pair.
+        row.applyUsageMask({ 5, 6, 10, 11 });
+
+        auto *cbA = row.findChild<QComboBox *>("comboBox_InputA");
+        auto *cbB = row.findChild<QComboBox *>("comboBox_InputB");
+        QVERIFY(cbA && cbB);
+        auto enabled = [](QComboBox *c, int slot) {
+            const int idx = c->findData(slot);
+            return c->itemData(idx, Qt::UserRole - 1).toInt() != 0;
+        };
+        // Combo A: own pick (10) enabled; everything else used -> disabled.
+        QVERIFY( enabled(cbA, 10));
+        QVERIFY(!enabled(cbA, 5));
+        QVERIFY(!enabled(cbA, 6));
+        QVERIFY(!enabled(cbA, 11));   // used by B / elsewhere, not A's own pick
+        // Combo B: own pick (11) enabled; the rest disabled.
+        QVERIFY( enabled(cbB, 11));
+        QVERIFY(!enabled(cbB, 10));
+        QVERIFY(!enabled(cbB, 5));
     }
 };
 

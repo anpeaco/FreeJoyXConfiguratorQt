@@ -77,6 +77,9 @@ private:
     /* Shared resync: rebuild the button list, drop stale pairs, optionally
      * auto-fill empty slots, then refresh the rows. */
     void resync(bool autoFill);
+    /* Grey out, in every row, the encoder buttons already assigned to a pair so
+     * they can't be picked twice (each combo keeps its own pick selectable). */
+    void applyUsageMasks();
     /* Red-border a row's Pin combos when A==B or the same button is used by
      * two different encoders. */
     void applyClashHighlight();

@@ -138,7 +138,18 @@ void EncodersConfig::refreshRows()
         row->setEncoderButtons(m_encoderButtons);
         row->readFromConfig();
     }
+    applyUsageMasks();
     applyClashHighlight();
+}
+
+void EncodersConfig::applyUsageMasks()
+{
+    QSet<int> used;
+    for (Encoders *row : m_encodersPtrList) {
+        if (row->inputA() >= 0) used.insert(row->inputA());
+        if (row->inputB() >= 0) used.insert(row->inputB());
+    }
+    for (Encoders *row : m_encodersPtrList) row->applyUsageMask(used);
 }
 
 void EncodersConfig::applyClashHighlight()
@@ -184,8 +195,9 @@ void EncodersConfig::refreshDisplay()
 
 void EncodersConfig::onRowPairingEdited()
 {
-    // A row already wrote its own slot to config; just re-run clash highlight
-    // (a pin now used twice, or A==B, must light up across rows).
+    // A row already wrote its own slot to config; re-grey the now-used pins
+    // across all rows and re-run the clash highlight.
+    applyUsageMasks();
     applyClashHighlight();
 }
 

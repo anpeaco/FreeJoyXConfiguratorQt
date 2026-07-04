@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QVector>
 #include <QPair>
+#include <QSet>
 
 #include "deviceconfig.h"
 #include "global.h"
@@ -40,6 +41,11 @@ public:
     // Exchange the Pin A / Pin B selections (reverses direction). Bound to the
     // Swap button; persists and re-validates like a user edit.
     void swapInputs();
+
+    // Grey out (disable) every button in `usedButtons` in both Pin combos,
+    // except each combo's own current pick -- so a pin already assigned to an
+    // encoder can't be picked twice.
+    void applyUsageMask(const QSet<int> &usedButtons);
 
     // Red-border the Pin A / Pin B combos when they clash (A==B, or the pin is
     // also used by another encoder).

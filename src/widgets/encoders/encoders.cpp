@@ -140,6 +140,22 @@ void Encoders::swapInputs()
     emit pairingEdited();
 }
 
+void Encoders::applyUsageMask(const QSet<int> &used)
+{
+    // Item state uses the Qt::UserRole-1 combo trick: 1|32 = selectable+enabled,
+    // 0 = disabled (greyed, unpickable). Index 0 is the "none" entry -- always
+    // enabled. A combo's own current pick stays enabled so it still displays.
+    auto maskCombo = [&](CenteredCBox *combo, int keep) {
+        for (int i = 1; i < combo->count(); ++i) {
+            const int d = combo->itemData(i).toInt();
+            const bool disable = used.contains(d) && d != keep;
+            combo->setItemData(i, disable ? 0 : (1 | 32), Qt::UserRole - 1);
+        }
+    };
+    maskCombo(ui->comboBox_InputA, inputA());
+    maskCombo(ui->comboBox_InputB, inputB());
+}
+
 void Encoders::setInputClash(bool aClash, bool bClash)
 {
     const QString clash = freejoy_style::fieldClashQss();
