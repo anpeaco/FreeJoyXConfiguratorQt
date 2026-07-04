@@ -470,8 +470,13 @@ void ButtonConfig::functionTypeChanged(button_type_t current, button_type_t prev
     // refresh its Pin A / Pin B dropdowns and re-run its auto-fill. The type is
     // written to the global config here so the encoder tab's rescan sees it
     // (functionTypeChanged can fire before the row's own writeToConfig flush).
-    if (current == ENCODER_INPUT_A || previous == ENCODER_INPUT_A ||
-        current == ENCODER_INPUT_B || previous == ENCODER_INPUT_B) {
+    // Skipped during a bulk load: the buttons are already in config, and
+    // EncodersConfig::readFromConfig does the single resync once at the end --
+    // emitting per-row here would be an O(rows^2) storm AND would auto-fill
+    // (mutate) the freshly-read config, spuriously marking it dirty.
+    if (!m_configLoadInProgress &&
+        (current == ENCODER_INPUT_A || previous == ENCODER_INPUT_A ||
+         current == ENCODER_INPUT_B || previous == ENCODER_INPUT_B)) {
         if (buttonIndex >= 0 && buttonIndex < MAX_BUTTONS_NUM) {
             gEnv.pDeviceConfig->config.buttons[buttonIndex].type = current;
         }
@@ -1193,12 +1198,35 @@ void ButtonConfig::moveButton(int from, int to)
     }
     cfg[to] = moving;
 
+    // slow_encoders[] stores ABSOLUTE button-slot indices, so the same slot
+    // permutation must be applied to the encoder pairs -- otherwise reordering
+    // an Encoder-tagged button silently repoints its pair at whatever shifted
+    // into the old slot. (The old design re-derived pairing from button types
+    // on every firmware init, so it was reorder-safe; the explicit-pairs model
+    // is not, unless we remap here.) Map each OLD slot index to its NEW slot.
+    auto remapSlot = [from, to](int idx) -> int {
+        if (idx < 0) return idx;
+        if (idx == from) return to;
+        if (from < to) { if (idx > from && idx <= to) return idx - 1; }
+        else           { if (idx >= to && idx < from) return idx + 1; }
+        return idx;
+    };
+    slow_encoder_t *se = gEnv.pDeviceConfig->config.slow_encoders;
+    for (int s = 0; s < MAX_ENCODERS_NUM; ++s) {
+        se[s].btn_a = int8_t(remapSlot(se[s].btn_a));
+        se[s].btn_b = int8_t(remapSlot(se[s].btn_b));
+    }
+
     // Refresh only the rows whose underlying data actually changed.
     const int lo = qMin(from, to);
     const int hi = qMax(from, to);
     for (int i = lo; i <= hi; ++i) {
         m_logicButtonPtrList[i]->readFromConfig();
     }
+
+    // Re-render the Encoders tab from the remapped pairs (display only -- the
+    // pairs are already correct, so no auto-fill).
+    emit encoderButtonsReordered();
 }
 
 // ------------------------------------------------------------------

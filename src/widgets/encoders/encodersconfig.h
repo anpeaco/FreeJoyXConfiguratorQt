@@ -49,6 +49,11 @@ public slots:
      * refresh the rows. Auto-fill only ever touches EMPTY slots -- it never
      * re-pairs a slot the user has explicitly set. */
     void onEncoderButtonsChanged();
+    /* Re-render the rows from the current config WITHOUT auto-filling -- used on
+     * load and after a Buttons-tab reorder (which already remapped the stored
+     * pairs). Auto-fill is an edit-time convenience only; inventing pairs here
+     * would mutate a freshly-loaded config (spurious dirty / phantom encoders). */
+    void refreshDisplay();
     void fastEncoderSelected(const QString &pinGuiName, bool isSelected);
 
 private slots:
@@ -69,6 +74,9 @@ private:
     void autoFillEmptyPairs();
     /* Push m_encoderButtons into every row and re-read the config into them. */
     void refreshRows();
+    /* Shared resync: rebuild the button list, drop stale pairs, optionally
+     * auto-fill empty slots, then refresh the rows. */
+    void resync(bool autoFill);
     /* Red-border a row's Pin combos when A==B or the same button is used by
      * two different encoders. */
     void applyClashHighlight();

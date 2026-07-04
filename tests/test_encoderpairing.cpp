@@ -107,16 +107,46 @@ private slots:
         }
     }
 
-    // readFromConfig respects stored pairs (migrated/saved config) and only
-    // fills the gaps: a stored pair survives, a leftover pin fills a new slot.
-    void readFromConfig_respectsStoredPairs()
+    // readFromConfig respects stored pairs and does NOT auto-fill: load must be
+    // non-mutating (auto-fill is an edit-time convenience). A leftover tagged
+    // pin is left available, not force-paired on load.
+    void readFromConfig_respectsStoredPairs_noAutoFill()
     {
         tagEncoder(5); tagEncoder(6); tagEncoder(10); tagEncoder(11);
         setPair(FIRST + 0, 10, 11);          // as if loaded from a config
         EncodersConfig w;
         w.readFromConfig();
         QCOMPARE(a(FIRST + 0), 10);  QCOMPARE(b(FIRST + 0), 11);   // respected
-        QCOMPARE(a(FIRST + 1), 5);   QCOMPARE(b(FIRST + 1), 6);    // gap filled
+        QCOMPARE(a(FIRST + 1), -1);  QCOMPARE(b(FIRST + 1), -1);   // NOT auto-filled
+    }
+
+    // Regression (review Bug 2): a migrated config where the old firmware left
+    // some Encoder-tagged pins inert (mismatched A/B counts) must NOT gain a
+    // phantom encoder on load. Here the stored pair is {5,8}; pins 6 and 7 are
+    // tagged but were never paired. Load must leave them unpaired, not invent
+    // slow_encoders={6,7}.
+    void readFromConfig_noPhantomFromInertTaggedPins()
+    {
+        tagEncoder(5); tagEncoder(6); tagEncoder(7); tagEncoder(8);
+        setPair(FIRST + 0, 5, 8);            // the only pair the old fw formed
+        EncodersConfig w;
+        w.readFromConfig();
+        QCOMPARE(a(FIRST + 0), 5);   QCOMPARE(b(FIRST + 0), 8);    // stored pair kept
+        for (int s = FIRST + 1; s < MAX_ENCODERS_NUM; ++s) {       // no phantom (6,7)
+            QCOMPARE(a(s), -1); QCOMPARE(b(s), -1);
+        }
+    }
+
+    // refreshDisplay (load / post-reorder path) also never auto-fills, even with
+    // unpaired tagged pins available.
+    void refreshDisplay_neverAutoFills()
+    {
+        tagEncoder(5); tagEncoder(6); tagEncoder(10); tagEncoder(11);
+        EncodersConfig w;
+        w.refreshDisplay();
+        for (int s = FIRST; s < MAX_ENCODERS_NUM; ++s) {
+            QCOMPARE(a(s), -1); QCOMPARE(b(s), -1);
+        }
     }
 };
 

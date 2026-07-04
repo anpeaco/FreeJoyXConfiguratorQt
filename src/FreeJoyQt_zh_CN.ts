@@ -1078,14 +1078,9 @@ This cannot be undone except by reading the config back from the device.</source
         <translation type="unfinished">视角2 居中 {4 ?}</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonlogical.h" line="244"/>
-        <source>Encoder A</source>
-        <translation>编码器 A</translation>
-    </message>
-    <message>
-        <location filename="widgets/buttons/buttonlogical.h" line="245"/>
-        <source>Encoder B</source>
-        <translation>编码器 B</translation>
+        <location filename="widgets/buttons/buttonlogical.h" line="282"/>
+        <source>Encoder</source>
+        <translation>编码器</translation>
     </message>
     <message>
         <location filename="widgets/buttons/buttonlogical.h" line="246"/>

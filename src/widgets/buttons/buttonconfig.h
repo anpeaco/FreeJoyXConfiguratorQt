@@ -110,6 +110,9 @@ signals:
     // rescans the encoder-line buttons, refreshes its Pin A/B dropdowns and
     // re-runs auto-fill. (Replaces the old positional encoderInputChanged.)
     void encoderButtonsChanged();
+    // Emitted after a Buttons-tab reorder has remapped slow_encoders[]; the
+    // Encoders tab re-renders from the (already-correct) pairs without auto-fill.
+    void encoderButtonsReordered();
     void logicalButtonsCreated();
 
 public slots:

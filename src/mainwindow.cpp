@@ -337,6 +337,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_pinConfig, &PinConfig::ledRgbSelected, m_ledConfig, &LedConfig::ledRgbSelected);
     // a pin gained/lost the "Encoder" marker -> encoder tab rescans + auto-fills
     connect(m_buttonConfig, &ButtonConfig::encoderButtonsChanged, m_encoderConfig, &EncodersConfig::onEncoderButtonsChanged);
+    // a Buttons-tab reorder remapped the pairs -> encoder tab re-renders (no auto-fill)
+    connect(m_buttonConfig, &ButtonConfig::encoderButtonsReordered, m_encoderConfig, &EncodersConfig::refreshDisplay);
     // fast encoder
     connect(m_pinConfig, &PinConfig::fastEncoderSelected, m_encoderConfig, &EncodersConfig::fastEncoderSelected);
     // gate the "Encoder" main-source row in the Axes tab on whether

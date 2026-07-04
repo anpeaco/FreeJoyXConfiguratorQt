@@ -161,12 +161,22 @@ void EncodersConfig::applyClashHighlight()
     }
 }
 
-void EncodersConfig::onEncoderButtonsChanged()
+void EncodersConfig::resync(bool autoFill)
 {
     rebuildEncoderButtonList();
     dropStalePairs();
-    autoFillEmptyPairs();
+    if (autoFill) autoFillEmptyPairs();
     refreshRows();
+}
+
+void EncodersConfig::onEncoderButtonsChanged()
+{
+    resync(true);    // a pin was just tagged/untagged -> auto-fill new pairs
+}
+
+void EncodersConfig::refreshDisplay()
+{
+    resync(false);   // load / reorder -> respect stored pairs, no invention
 }
 
 void EncodersConfig::onRowPairingEdited()
@@ -181,13 +191,11 @@ void EncodersConfig::readFromConfig()
     for (int i = 0; i < m_fastEncodersPtrList.size(); ++i) {
         m_fastEncodersPtrList[i]->readFromConfig();
     }
-    // Materialise the encoder-line list from the freshly loaded buttons, drop
-    // any stale pair, and auto-fill empty slots (fills only where the stored
-    // config left a gap -- migrated/saved pairs are respected).
-    rebuildEncoderButtonList();
-    dropStalePairs();
-    autoFillEmptyPairs();
-    refreshRows();
+    // Materialise the encoder-line list from the freshly loaded buttons and
+    // render the stored pairs. NO auto-fill on load: the config (migrated or
+    // saved) is authoritative -- inventing pairs here would mark it dirty and
+    // could resurrect encoder-line buttons the old firmware left inert.
+    resync(false);
 }
 
 void EncodersConfig::writeToConfig()
