@@ -1,7 +1,7 @@
 # Vendored WDK 8 redistributable co-installers
 
 These four DLLs are **Microsoft-supplied, freely redistributable** driver
-co-installers, vendored so the `freejoyx-flash` Windows build
+co-installers, vendored so the `freejoyx-dfu` Windows build
 (`--features winusb-autobind`, which links libwdi) is fully reproducible in CI
 without downloading or installing the WDK at build time.
 
@@ -22,8 +22,9 @@ they are used during the WinUSB driver bind on the end user's machine — a
 placeholder will not do; they must be the genuine signed DLLs.
 
 The build looks for them under `<WDK_DIR>\redist\wdf\<arch>\` (libwdi
-`config.h`: `WDF_VER 1011`, `COINSTALLER_DIR "wdf"`). The release workflow
-(`.github/workflows/release-flash.yml`) sets `WDK_DIR` to this directory.
+`config.h`: `WDF_VER 1011`, `COINSTALLER_DIR "wdf"`). The CI workflows that build
+the `freejoyx-dfu` helper (`.github/workflows/configurator.yml` and `release.yml`)
+set `WDK_DIR` to this directory.
 
 ## Provenance
 
