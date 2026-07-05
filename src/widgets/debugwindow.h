@@ -40,6 +40,18 @@ public:
     Q_INVOKABLE // for multithreading -- CustomMessageHandler in main posts here
         void printMsg(const QString &msg, int level = int(LogLevel::Info));
 
+    /* Zero the per-button fire tallies (the "since reset" point). Called by
+     * Log Clear AND by the Encoders tab's Reset so the two counts always share a
+     * single zero point and can never drift apart. The tallies themselves live
+     * in DeviceConfig (single source shared with the Encoders tab); this just
+     * delegates the zeroing there. Does not touch the log text. */
+    void resetFireCounts();
+
+signals:
+    /* Emitted when Log Clear zeroes the tallies, so the Encoders tab can zero its
+     * matching per-row counters at the same instant. */
+    void fireCountsCleared();
+
 private slots:
     void on_pushButton_LogMarker_clicked();
     void on_pushButton_LogClear_clicked();

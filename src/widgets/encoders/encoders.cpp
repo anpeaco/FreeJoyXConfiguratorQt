@@ -1,24 +1,49 @@
 #include "encoders.h"
 #include "ui_encoders.h"
 
+#include <QComboBox>
+#include <QMessageBox>
+#include <QSignalBlocker>
+
+#include "centered_cbox.h"
+#include "common_defines.h"   // MAX_FAST_ENCODER_NUM, SLOW_ENC_*
+#include "style_helpers.h"    // freejoy_style::fieldClashQss
+#include "encodercalibratedialog.h"
+
 Encoders::Encoders(int encodersNumber, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Encoders)
 {
     ui->setupUi(this);
-    m_input_A = 0;
-    m_input_B = 0;
-    m_notDefined = tr("Not defined");
 
-    m_encodersNumber = encodersNumber + 1;					// 1-based for the user-visible label
-    m_configIndex    = encodersNumber + MAX_FAST_ENCODER_NUM;	// slow encoders sit after the fast slots in dev_config
+    m_encodersNumber = encodersNumber + 1;                    // 1-based user label
+    m_configIndex    = encodersNumber + MAX_FAST_ENCODER_NUM; // slow slots sit after fast
     ui->label_EncoderIndex->setNum(m_encodersNumber);
 
-    for (int i = 0; i < ENCODER_TYPE_COUNT; ++i) {
+    for (int i = 0; i < ENCODER_TYPE_COUNT; ++i)
         ui->comboBox_EncoderType->addItem(m_encoderTypeList[i].guiName);
-        ui->label_ButtonNumberA->setText(m_notDefined);
-        ui->label_ButtonNumberB->setText(m_notDefined);
-    }
+
+    setEncoderButtons({});   // seed the "none" entry + disabled state
+
+    connect(ui->comboBox_InputA, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &Encoders::onUserEdited);
+    connect(ui->comboBox_InputB, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &Encoders::onUserEdited);
+    connect(ui->comboBox_EncoderType, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &Encoders::onUserEdited);
+    connect(ui->pushButton_Swap, &QPushButton::clicked, this, &Encoders::swapInputs);
+    connect(ui->checkBox_Queue, &QCheckBox::toggled, this, &Encoders::onUserEdited);
+    connect(ui->pushButton_Calibrate, &QPushButton::clicked, this, &Encoders::onCalibrateClicked);
+
+    // Seed the per-pin activity squares to the "off" look (same buttonState role
+    // the Buttons tab uses for its physical-button indicators) and a 0 count.
+    freejoy_style::setRole(ui->indicator_A, "buttonState", "off");
+    freejoy_style::setRole(ui->indicator_B, "buttonState", "off");
+    ui->indicator_A->setNum(0);
+    ui->indicator_B->setNum(0);
+
+    // Swap uses the themed left-right arrows icon (re-tints with the theme).
+    freejoy_style::setThemedIcon(ui->pushButton_Swap, ":/Images/icons/lucide/arrow-left-right.svg");
 }
 
 Encoders::~Encoders()
@@ -33,59 +58,201 @@ void Encoders::retranslateUi()
 
 int Encoders::inputA() const
 {
-    return m_input_A;
+    QVariant v = ui->comboBox_InputA->currentData();
+    return v.isValid() ? v.toInt() : -1;
 }
 
 int Encoders::inputB() const
 {
-    return m_input_B;
+    QVariant v = ui->comboBox_InputB->currentData();
+    return v.isValid() ? v.toInt() : -1;
 }
 
-void Encoders::setInputA(int input_A)
+void Encoders::selectData(CenteredCBox *combo, int slotIndex)
 {
-    if (input_A != 0) {
-        m_input_A = input_A;
-        QString name_template(tr("Button #%1"));
-        ui->label_ButtonNumberA->setText(name_template.arg(m_input_A));
-    } else {
-        m_input_A = 0;
-        ui->label_ButtonNumberA->setText(m_notDefined);
-    }
-    setUiOnOff();
+    int idx = combo->findData(slotIndex);
+    combo->setCurrentIndex(idx >= 0 ? idx : 0);   // 0 = the "none" entry
 }
 
-void Encoders::setInputB(int input_B)
+void Encoders::fillCombo(CenteredCBox *combo, const QVector<QPair<int, QString>> &buttons, int keepSel)
 {
-    if (input_B != 0) {
-        m_input_B = input_B;
-        QString name_template(tr("Button #%1"));
-        ui->label_ButtonNumberB->setText(name_template.arg(m_input_B));
-    } else {
-        m_input_B = 0;
-        ui->label_ButtonNumberB->setText(m_notDefined);
-    }
-    setUiOnOff();
+    QSignalBlocker block(combo);
+    combo->clear();
+    combo->addItem(QStringLiteral("—"), -1);   // em dash = "none"
+    for (const auto &pr : buttons)
+        combo->addItem(pr.second, pr.first);
+    selectData(combo, keepSel);
 }
 
-void Encoders::setUiOnOff()
+void Encoders::setEncoderButtons(const QVector<QPair<int, QString>> &buttons)
 {
-    if (m_input_A > 0 && m_input_B > 0) {
-        for (auto &&child : this->findChildren<QWidget *>()) {
-            child->setEnabled(true);
-        }
-    } else {
-        for (auto &&child : this->findChildren<QWidget *>()) {
-            child->setEnabled(false);
-        }
-    }
+    m_populating = true;
+    const int keepA = inputA();
+    const int keepB = inputB();
+    fillCombo(ui->comboBox_InputA, buttons, keepA);
+    fillCombo(ui->comboBox_InputB, buttons, keepB);
+    m_populating = false;
+    updateEnabledState();
+}
+
+void Encoders::updateEnabledState()
+{
+    // Pin combos are selectable whenever there is at least one encoder-line
+    // button to choose (count() > 1 accounts for the leading "none" entry).
+    const bool hasButtons = ui->comboBox_InputA->count() > 1;
+    ui->comboBox_InputA->setEnabled(hasButtons);
+    ui->comboBox_InputB->setEnabled(hasButtons);
+    ui->indicator_A->setEnabled(hasButtons);
+    ui->indicator_B->setEnabled(hasButtons);
+    ui->label_EncoderIndex->setEnabled(hasButtons);
+
+    // Mode + swap only matter once a full pair is chosen.
+    const bool complete = inputA() >= 0 && inputB() >= 0;
+    ui->comboBox_EncoderType->setEnabled(complete);
+    ui->pushButton_Swap->setEnabled(complete);
+    ui->checkBox_Queue->setEnabled(complete);
+    ui->pushButton_Calibrate->setEnabled(complete);
 }
 
 void Encoders::readFromConfig()
 {
-    ui->comboBox_EncoderType->setCurrentIndex(gEnv.pDeviceConfig->config.encoders[m_configIndex]);
+    m_populating = true;
+    const slow_encoder_t &se = gEnv.pDeviceConfig->config.slow_encoders[m_configIndex];
+    selectData(ui->comboBox_InputA, se.btn_a);
+    selectData(ui->comboBox_InputB, se.btn_b);
+
+    // encoders[i] holds the detent mode. Mask off any legacy high bits (an
+    // interim build packed a swap flag here before Swap became a pin exchange).
+    const uint8_t enc = gEnv.pDeviceConfig->config.encoders[m_configIndex];
+    ui->comboBox_EncoderType->setCurrentIndex(enc & SLOW_ENC_MODE_MASK);
+    ui->checkBox_Queue->setChecked(enc & SLOW_ENC_QUEUE);
+    m_populating = false;
+
+    updateEnabledState();
 }
 
 void Encoders::writeToConfig()
 {
-    gEnv.pDeviceConfig->config.encoders[m_configIndex] = ui->comboBox_EncoderType->currentIndex();
+    gEnv.pDeviceConfig->config.slow_encoders[m_configIndex].btn_a = int8_t(inputA());
+    gEnv.pDeviceConfig->config.slow_encoders[m_configIndex].btn_b = int8_t(inputB());
+    const uint8_t mode  = uint8_t(ui->comboBox_EncoderType->currentIndex()) & SLOW_ENC_MODE_MASK;
+    const uint8_t queue = ui->checkBox_Queue->isChecked() ? SLOW_ENC_QUEUE : 0;
+    gEnv.pDeviceConfig->config.encoders[m_configIndex] = mode | queue;
+}
+
+void Encoders::swapInputs()
+{
+    // Exchange the Pin A / Pin B selections. Because the firmware decodes
+    // rotation direction from pin order, swapping the pins reverses the encoder
+    // -- no separate swap flag needed.
+    const int a = inputA();
+    const int b = inputB();
+    m_populating = true;
+    selectData(ui->comboBox_InputA, b);
+    selectData(ui->comboBox_InputB, a);
+    m_populating = false;
+    writeToConfig();
+    updateEnabledState();
+    emit pairingEdited();
+}
+
+void Encoders::applyUsageMask(const QSet<int> &used)
+{
+    // Item state uses the Qt::UserRole-1 combo trick: 1|32 = selectable+enabled,
+    // 0 = disabled (greyed, unpickable). Index 0 is the "none" entry -- always
+    // enabled. A combo's own current pick stays enabled so it still displays.
+    auto maskCombo = [&](CenteredCBox *combo, int keep) {
+        for (int i = 1; i < combo->count(); ++i) {
+            const int d = combo->itemData(i).toInt();
+            const bool disable = used.contains(d) && d != keep;
+            combo->setItemData(i, disable ? 0 : (1 | 32), Qt::UserRole - 1);
+        }
+    };
+    maskCombo(ui->comboBox_InputA, inputA());
+    maskCombo(ui->comboBox_InputB, inputB());
+}
+
+void Encoders::setActivity(bool aFiring, bool bFiring)
+{
+    const int HOLD_MS = 150;   // afterglow so a brief per-detent pulse stays visible
+    if (aFiring) m_aGlow.restart();
+    if (bFiring) m_bGlow.restart();
+
+    const bool aLit = m_aGlow.isValid() && m_aGlow.elapsed() < HOLD_MS;
+    const bool bLit = m_bGlow.isValid() && m_bGlow.elapsed() < HOLD_MS;
+
+    // Only re-role on change -- setRole repolishes, so avoid doing it every frame.
+    if (aLit != m_aLit) {
+        freejoy_style::setRole(ui->indicator_A, "buttonState", aLit ? "on" : "off");
+        m_aLit = aLit;
+    }
+    if (bLit != m_bLit) {
+        freejoy_style::setRole(ui->indicator_B, "buttonState", bLit ? "on" : "off");
+        m_bLit = bLit;
+    }
+}
+
+void Encoders::setPressCounts(int a, int b)
+{
+    ui->indicator_A->setNum(a);
+    ui->indicator_B->setNum(b);
+}
+
+void Encoders::setInputClash(bool aClash, bool bClash)
+{
+    const QString clash = freejoy_style::fieldClashQss();
+    ui->comboBox_InputA->setStyleSheet(aClash ? clash : QString());
+    ui->comboBox_InputB->setStyleSheet(bClash ? clash : QString());
+}
+
+void Encoders::onUserEdited()
+{
+    if (m_populating) return;
+    writeToConfig();
+    updateEnabledState();
+    emit pairingEdited();
+}
+
+void Encoders::applyCalibration(int modeIndex, bool queue)
+{
+    if (modeIndex < 0 || modeIndex >= ENCODER_TYPE_COUNT) return;
+    {
+        QSignalBlocker blockType(ui->comboBox_EncoderType);
+        QSignalBlocker blockQueue(ui->checkBox_Queue);
+        ui->comboBox_EncoderType->setCurrentIndex(modeIndex);
+        ui->checkBox_Queue->setChecked(queue);
+    }
+    // Persist + re-validate exactly like a manual edit.
+    writeToConfig();
+    updateEnabledState();
+    emit pairingEdited();
+}
+
+void Encoders::onCalibrateClicked()
+{
+    // Calibrate drives off the firmware's per-encoder edge monitor (enc_mon_*),
+    // which only exists in the params report of a matching-generation FreeJoyX
+    // device. Against older FreeJoyX, upstream (0x17xx), or a disconnected
+    // device those bytes read as zero/garbage, so the dialog would sit at
+    // "Waiting for movement..." forever. Gate on wire-generation compatibility
+    // (the same &0xFFF0 mask the connect path uses) with a clear message.
+    const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
+    if ((devVer & 0xFFF0) != (FIRMWARE_VERSION & 0xFFF0)) {
+        QMessageBox::information(
+            this, tr("Calibration unavailable"),
+            tr("Encoder calibration needs a connected device running matching "
+               "FreeJoyX firmware — the on-device encoder monitor it relies on "
+               "is only present there. Connect and read the device, then try again."));
+        return;
+    }
+
+    // Scope the helper to this row: pass the encoder's slow-slot index (matches
+    // the firmware's params_report.enc_mon_slot) and the Pin A / B names for
+    // clear "turn THIS encoder" instructions.
+    EncoderCalibrateDialog dlg(m_configIndex, m_encodersNumber,
+                               ui->comboBox_InputA->currentText(),
+                               ui->comboBox_InputB->currentText(),
+                               this);
+    if (dlg.exec() == QDialog::Accepted && dlg.chosenMode() >= 0)
+        applyCalibration(dlg.chosenMode(), dlg.chosenQueue());
 }

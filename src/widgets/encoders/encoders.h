@@ -2,6 +2,10 @@
 #define ENCODERS_H
 
 #include <QWidget>
+#include <QVector>
+#include <QPair>
+#include <QSet>
+#include <QElapsedTimer>
 
 #include "deviceconfig.h"
 #include "global.h"
@@ -10,7 +14,12 @@
 namespace Ui {
 class Encoders;
 }
+class CenteredCBox;
 
+// One slow (software) encoder row on the Encoders tab. Holds an explicit
+// Pin A / Pin B selection (chosen from the buttons tagged "Encoder"), a detent
+// mode (1x/2x/4x) and a direction-swap toggle. Pairs are stored in
+// dev_config.slow_encoders[configIndex]; mode + swap in dev_config.encoders[].
 class Encoders : public QWidget
 {
     Q_OBJECT
@@ -19,26 +28,72 @@ public:
     explicit Encoders(int encodersNumber, QWidget *parent = nullptr);
     ~Encoders();
 
+    void retranslateUi();
+
+    int configIndex() const { return m_configIndex; }
+
+    // (buttonSlotIndex, displayName) for every pin tagged "Encoder". Repopulates
+    // the Pin A / Pin B combos, preserving the current selection where possible.
+    void setEncoderButtons(const QVector<QPair<int, QString>> &buttons);
+
+    int inputA() const;   // selected button-slot index, -1 = none
+    int inputB() const;
+
+    // Exchange the Pin A / Pin B selections (reverses direction). Bound to the
+    // Swap button; persists and re-validates like a user edit.
+    void swapInputs();
+
+    // Grey out (disable) every button in `usedButtons` in both Pin combos,
+    // except each combo's own current pick -- so a pin already assigned to an
+    // encoder can't be picked twice.
+    void applyUsageMask(const QSet<int> &usedButtons);
+
+    // Live activity: flash the Pin A / Pin B header green when that side's
+    // virtual button is firing (A = one rotation direction, B = the other), so
+    // the user can verify direction by rotating the knob. A short afterglow
+    // keeps a brief per-detent pulse visible. Called on every params update.
+    void setActivity(bool aFiring, bool bFiring);
+
+    // Show the running A / B press counts in the two indicator squares (the same
+    // squares that flash on activity). Zeroed via the tab's Reset button.
+    void setPressCounts(int a, int b);
+
+    // Red-border the Pin A / Pin B combos when they clash (A==B, or the pin is
+    // also used by another encoder).
+    void setInputClash(bool aClash, bool bClash);
+
     void readFromConfig();
     void writeToConfig();
 
-    void retranslateUi();
+    // Apply the Calibrate dialog's recommendation to this row: detent mode
+    // (ENCODER_CONF_1x/2x/4x index) + Queue on/off, then persist.
+    void applyCalibration(int modeIndex, bool queue);
 
-    int inputA() const;
-    int inputB() const;
+signals:
+    // User changed A / B / swap / type -> the container re-validates (clash
+    // highlight) and persists.
+    void pairingEdited();
 
-    void setInputA(int);
-    void setInputB(int);
+private slots:
+    void onUserEdited();
+    void onCalibrateClicked();
 
 private:
-    Ui::Encoders *ui;
-    void setUiOnOff();
+    void updateEnabledState();
+    void fillCombo(CenteredCBox *combo, const QVector<QPair<int, QString>> &buttons, int keepSel);
+    static void selectData(CenteredCBox *combo, int slotIndex);
 
-    int m_encodersNumber;	// 1-based display index shown in the UI label
-    int m_configIndex;		// index into dev_config encoders[] / encoders_state[]
-    int m_input_A;
-    int m_input_B;
-    QString m_notDefined;
+    Ui::Encoders *ui;
+
+    int m_encodersNumber;   // 1-based display index
+    int m_configIndex;      // index into dev_config encoders[] / slow_encoders[]
+    bool m_populating = false;   // guard: suppress signals during programmatic fill
+
+    // Live-activity afterglow (ms since last fire) so a brief pulse stays lit.
+    QElapsedTimer m_aGlow;
+    QElapsedTimer m_bGlow;
+    bool m_aLit = false;
+    bool m_bLit = false;
 
     const deviceEnum_guiName_t m_encoderTypeList[ENCODER_TYPE_COUNT] = // order MUST match common_types.h!
     {

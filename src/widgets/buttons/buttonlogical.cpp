@@ -454,8 +454,12 @@ void ButtonLogical::setButtonState(bool state)
             applyRowWash();
             m_lastAct.start();
         } else {
-            // sometimes state dont have time to render. e.g. encoder press time 10ms and monitor refresh time 17ms(60fps)
-            if (m_lastAct.hasExpired(30)) {
+            // Hold the "on" look briefly so short pulses stay VISIBLE, not just
+            // rendered: an isolated slow encoder detent is a brief pulse, and a
+            // ~30ms flash is caught but too quick to perceive (looked "missed" on
+            // slow turns). 120ms reads as a clear blink while staying snappy for
+            // real button taps. Matches the Encoders tab's afterglow intent.
+            if (m_lastAct.hasExpired(120)) {
                 // Clear m_currentState first: clearRowWash()'s setPalette emits a
                 // synchronous PaletteChange, and changeEvent must NOT treat the
                 // row as still-active and re-paint the wash we are removing.
@@ -912,8 +916,13 @@ void ButtonLogical::readFromConfig()
     // isInvert
     ui->checkBox_IsInvert->setChecked(button->is_inverted);
 
-    // logical button function
-    ui->comboBox_ButtonFunction->setCurrentIndex(Converter::EnumToIndex(button->type, m_logicFunc_enumIndex));
+    // logical button function. A stored ENCODER_INPUT_B (220) is the retired
+    // "Encoder B" -- canonicalise it to the single "Encoder" entry (219) so it
+    // maps to a real dropdown item instead of EnumToIndex-missing to -1 (blank
+    // row + error spam). It normalises to 219 in dev_config on the next write.
+    button_type_t fnType = (button->type == ENCODER_INPUT_B) ? (button_type_t)ENCODER_INPUT_A
+                                                             : button->type;
+    ui->comboBox_ButtonFunction->setCurrentIndex(Converter::EnumToIndex(fnType, m_logicFunc_enumIndex));
     // Operator + Source B only matter for type == LOGIC. For non-LOGIC
     // slots functionIndexChanged() above (triggered by the function
     // setCurrentIndex when the index actually moves) has already cleared

@@ -404,6 +404,17 @@
           <property name="maximum"><number>65535</number></property>
          </widget>
         </item>
+        <item row="3" column="0"><widget class="QLabel" name="text_encoderGap"><property name="text"><string>Encoder gap:</string></property></widget></item>
+        <item row="3" column="1">
+         <widget class="QSpinBox" name="spinBox_EncoderGap">
+          <property name="toolTip"><string>Encoder step gap (queue mode)&#10;&#10;The OFF time between queued encoder presses. Keep it short so a fast spin's queue drains quickly; the ON time is set by Encoder press.</string></property>
+          <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
+          <property name="alignment"><set>Qt::AlignCenter</set></property>
+          <property name="suffix"><string> ms</string></property>
+          <property name="minimum"><number>1</number></property>
+          <property name="maximum"><number>65535</number></property>
+         </widget>
+        </item>
        </layout>
       </widget>
      </item>

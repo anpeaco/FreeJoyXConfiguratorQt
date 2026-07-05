@@ -244,6 +244,13 @@ MainWindow::MainWindow(QWidget *parent)
     // add encoders widget
     m_encoderConfig = new EncodersConfig(this);
     ui->layoutV_tabEncodersConfig->addWidget(m_encoderConfig);
+    // If the debug window was already restored by loadAppConfig() (which runs
+    // before this line), make the shared fire-count reset link now that
+    // m_encoderConfig exists. UniqueConnection avoids a duplicate with the one
+    // set up in on_pushButton_ShowDebug_clicked for the user-opens-it-later case.
+    if (m_debugWindow)
+        connect(m_debugWindow, &DebugWindow::fireCountsCleared,
+                m_encoderConfig, &EncodersConfig::resetCounts, Qt::UniqueConnection);
     qDebug()<<"encoder config load time ="<< timer.restart() << "ms";
     // add led widget
     m_ledConfig = new LedConfig(this);
@@ -335,8 +342,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_pinConfig, &PinConfig::totalLEDsValueChanged, m_ledConfig, &LedConfig::spawnLeds);
     connect(m_pinConfig, &PinConfig::ledPwmSelected, m_ledConfig, &LedConfig::ledPwmSelected);
     connect(m_pinConfig, &PinConfig::ledRgbSelected, m_ledConfig, &LedConfig::ledRgbSelected);
-    // encoder changed
-    connect(m_buttonConfig, &ButtonConfig::encoderInputChanged, m_encoderConfig, &EncodersConfig::encoderInputChanged);
+    // a pin gained/lost the "Encoder" marker -> encoder tab rescans + auto-fills
+    connect(m_buttonConfig, &ButtonConfig::encoderButtonsChanged, m_encoderConfig, &EncodersConfig::onEncoderButtonsChanged);
+    // a Buttons-tab reorder remapped the pairs -> encoder tab re-renders (no auto-fill)
+    connect(m_buttonConfig, &ButtonConfig::encoderButtonsReordered, m_encoderConfig, &EncodersConfig::refreshDisplay);
     // fast encoder
     connect(m_pinConfig, &PinConfig::fastEncoderSelected, m_encoderConfig, &EncodersConfig::fastEncoderSelected);
     // gate the "Encoder" main-source row in the Axes tab on whether
@@ -450,6 +459,11 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::onConsolidatedFlashRequested);
     connect(m_advSettings->flasher(), &Flasher::systemDfuRebootRequested,
             this, &MainWindow::doEnterSystemDfu);
+    /* Reinstall / Flash-file button -> the same firmware picker the device-card
+     * Upgrade button opens, but reachable regardless of the release-version gate
+     * (reinstall same version / dev build / downgrade). */
+    connect(m_advSettings->flasher(), &Flasher::reinstallRequested,
+            this, &MainWindow::on_pushButton_UpgradeFirmware_clicked);
 
     /* FlashSession -> HidDevice plumbing. Active only while a session
      * is in progress; the slots themselves no-op when m_flashSession is
@@ -919,6 +933,13 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
      * block above, so a once-only paint stuck at 0.0.0 until a reconnect. */
     updateVersionLabel(firmwareCompatible);
 
+    // Advance the shared fire tallies FIRST, every packet, with no tab gate.
+    // Both the debug log's "fires=" and the Encoders-tab A/B squares read this
+    // single counter, so they can never diverge the way two independent
+    // gated edge-detectors did. Must run before the display refreshes below so
+    // an edge's log line already reflects the incremented count.
+    gEnv.pDeviceConfig->tickFireCounts();
+
     // update button state without delay. fix gamepad_report.raw_button_data[0]
     // because of the delay, changes to the first physical 64 buttons or the rest may be missed.
     // For example, gamepad_report.raw_button_data[0] = 0 may come up consecutively
@@ -931,6 +952,17 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
     // tracks the device's current shift state.
     if(ui->tab_ShiftsTimers->isVisible() == true || m_debugWindow) {
         m_shiftsTimersConfig->shiftStateChanged();
+    }
+    // Encoder activity + press counts: run EVERY params packet (like the button
+    // preview above), NOT throttled -- the chips must catch brief pulses the same
+    // way the debug log does, or slow turns look missed. The per-row work here is
+    // cheap (flash re-role only on change, count on edge); the expensive
+    // monitor-label formatting that once made this heavy was throttled/removed.
+    // Also count while the debug window is open (even on another tab), same as
+    // the button preview -- otherwise turning an encoder from the Buttons tab
+    // ticks the log but leaves the Encoders-tab counter frozen.
+    if(ui->tab_Encoders->isVisible() == true || m_debugWindow) {
+        m_encoderConfig->updateActivity();
     }
 
     static QElapsedTimer timer;
@@ -3043,6 +3075,15 @@ void MainWindow::on_pushButton_ShowDebug_clicked()
         gEnv.pDebugWindow = m_debugWindow;
         ui->layoutV_DebugWindow->addWidget(m_debugWindow);
         m_debugWindow->hide();
+        // Log Clear zeroes the log fire tallies -> zero the Encoders-tab per-row
+        // counters at the same instant so the two counts share one reset point.
+        // Guarded: this can run at startup (debug-window restore in loadAppConfig)
+        // BEFORE m_encoderConfig is constructed -- connecting a null receiver
+        // would crash. The constructor makes the same UniqueConnection once
+        // m_encoderConfig exists, so the link is set up regardless of order.
+        if (m_encoderConfig)
+            connect(m_debugWindow, &DebugWindow::fireCountsCleared,
+                    m_encoderConfig, &EncodersConfig::resetCounts, Qt::UniqueConnection);
     }
 
     if (m_debugWindow->isVisible() == false)

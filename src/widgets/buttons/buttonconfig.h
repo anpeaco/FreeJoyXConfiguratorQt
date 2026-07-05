@@ -106,7 +106,13 @@ public:
     void moveButton(int from, int to);
 
 signals:
-    void encoderInputChanged(int ecoder_A, int ecoder_B);
+    // Emitted when a pin gains or loses the "Encoder" marker; the Encoders tab
+    // rescans the encoder-line buttons, refreshes its Pin A/B dropdowns and
+    // re-runs auto-fill. (Replaces the old positional encoderInputChanged.)
+    void encoderButtonsChanged();
+    // Emitted after a Buttons-tab reorder has remapped slow_encoders[]; the
+    // Encoders tab re-renders from the (already-correct) pairs without auto-fill.
+    void encoderButtonsReordered();
     void logicalButtonsCreated();
 
 public slots:
@@ -326,11 +332,16 @@ private:
         int maxCount;
     };
 
-    static const int m_typeLimCount = 2;
+    // Encoder lines are all tagged ENCODER_INPUT_A (219) now -- both pins of an
+    // encoder share the single "Encoder" marker. Cap at 28 = the 14 slow
+    // encoder slots (MAX_ENCODERS_NUM - MAX_FAST_ENCODER_NUM) x 2 pins each.
+    // ENCODER_INPUT_B (220) is retired from the dropdown, so it must NOT be
+    // listed here -- disableButtonType(220) would EnumToIndex-miss (220 isn't a
+    // dropdown item) and spam. A stored 220 is canonicalised to 219 on display.
+    static const int m_typeLimCount = 1;
     const pinTypeLimit_t m_ButtonsTypeLimit[m_typeLimCount] =
     {
-        {ENCODER_INPUT_A,        15},
-        {ENCODER_INPUT_B,        15},
+        {ENCODER_INPUT_A,        28},
     };
     // typeLimit's count and "type is at cap" tracking. Shared with
     // physicalConflictFilter so both rules can be applied in a single pass.

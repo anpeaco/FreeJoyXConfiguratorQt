@@ -1080,14 +1080,9 @@ Dies kann nur durch erneutes Einlesen der Konfiguration vom Gerät rückgängig 
         <translation type="unfinished">POV2 Zentrum {4 ?}</translation>
     </message>
     <message>
-        <location filename="widgets/buttons/buttonlogical.h" line="244"/>
-        <source>Encoder A</source>
-        <translation>Drehgeber A</translation>
-    </message>
-    <message>
-        <location filename="widgets/buttons/buttonlogical.h" line="245"/>
-        <source>Encoder B</source>
-        <translation>Drehgeber B</translation>
+        <location filename="widgets/buttons/buttonlogical.h" line="282"/>
+        <source>Encoder</source>
+        <translation>Drehgeber</translation>
     </message>
     <message>
         <location filename="widgets/buttons/buttonlogical.h" line="246"/>

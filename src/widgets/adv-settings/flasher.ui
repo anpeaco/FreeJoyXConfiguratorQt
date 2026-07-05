@@ -236,6 +236,25 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_Reinstall">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>&lt;p&gt;Flash (or re-flash) any firmware .bin to the connected device over the HID bootloader — regardless of version.&lt;/p&gt;&lt;p&gt;Opens the firmware picker: browse to a .bin, confirm, and it runs the full backup → bootloader → flash → restore sequence. Use it to reinstall the same version, flash a dev build, or downgrade.&lt;/p&gt;</string>
+       </property>
+       <property name="text">
+        <string>Reinstall / Flash file…</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item row="1" column="2">

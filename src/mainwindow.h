@@ -187,7 +187,7 @@ private:
     ButtonConfig *m_buttonConfig;
     ShiftsTimersConfig *m_shiftsTimersConfig;
     LedConfig *m_ledConfig;
-    EncodersConfig *m_encoderConfig;
+    EncodersConfig *m_encoderConfig = nullptr;
     ShiftRegistersConfig *m_shiftRegConfig;
     GpioExpanderConfig *m_gpioExpConfig;
     QGroupBox *m_shiftRegGroup = nullptr;   // "Shift Registers" group on the SR tab
