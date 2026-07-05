@@ -44,7 +44,7 @@ namespace {
 
 /* Re-probe cadence so the user plugging the board in (or hitting BOOT0 +
  * reset) is noticed without a manual click. Cheap: each tick is a short
- * `freejoyx-flash probe` and is coalesced if one is already running. */
+ * `freejoyx-dfu probe` and is coalesced if one is already running. */
 constexpr int kDetectIntervalMs = 1500;
 
 /* How often the background poll also consults the WinUSB driver layer
@@ -348,7 +348,7 @@ void DfuInstallDialog::buildUi()
     /* Helper-missing is a hard stop: surface it up front and keep Install
      * disabled rather than failing on first click. */
     if (!DfuInstallSession::helperAvailable()) {
-        setDetectStatus(DetectError, tr("The install helper (freejoyx-flash) is "
+        setDetectStatus(DetectError, tr("The install helper (freejoyx-dfu) is "
                                         "missing from the application folder."));
         m_installBtn->setEnabled(false);
         m_detectBtn->setEnabled(false);
@@ -579,7 +579,7 @@ void DfuInstallDialog::onManualRecheck()
      * behaviour (a silent probe that only flipped a label) was reported as
      * "nothing happens". A missing helper is itself a result worth showing. */
     if (!DfuInstallSession::helperAvailable()) {
-        appendLog(tr("The install helper (freejoyx-flash) is missing from the "
+        appendLog(tr("The install helper (freejoyx-dfu) is missing from the "
                      "application folder — cannot re-check."));
         return;
     }
@@ -1105,7 +1105,7 @@ void DfuInstallDialog::updateEraseWarning()
     /* Config is erased (factory reset) only when the app is (re)written -- its
      * layout follows the app's wire format, so a new app must not inherit an old
      * config. A boot-only install keeps the running app AND its config; this
-     * mirrors the helper's region policy (freejoyx-flash plan_install). */
+     * mirrors the helper's region policy (freejoyx-dfu plan_install). */
     const bool writingApp = !m_appCheck || m_appCheck->isChecked();
     QColor accent;
     QString text;

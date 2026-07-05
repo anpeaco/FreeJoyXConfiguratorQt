@@ -43,7 +43,7 @@ upgrade a bootloader on a deployed board.
 A full reinstall **erases the chip** — the device returns to factory
 defaults, so reload your saved config afterward.
 
-> Note: this path is implemented by a bundled `freejoyx-flash` helper and
+> Note: this path is implemented by a bundled `freejoyx-dfu` helper and
 > requires firmware support for the jumper-free "reboot to DFU" trigger
 > (a future convenience); until that lands, use the manual BOOT0 step above.
 

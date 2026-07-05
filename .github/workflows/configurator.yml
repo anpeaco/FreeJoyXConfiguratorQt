@@ -45,12 +45,10 @@ jobs:
 
   # Windows build published as a downloadable CI artifact (NOT a release) so a
   # branch/PR can be smoke-tested on Windows without tagging. Mirrors the
-  # release.yml Windows build + manual Qt deploy, but deliberately omits the
-  # release publish and the *pinned* freejoyx-flash helper bundling: when you're
-  # testing a branch that also changes the helper, the pinned release helper
-  # would be the wrong (old) one. Drop the matching freejoyx-flash.exe (from the
-  # Rust repo's Release-flash run on the same branch) next to the exe before
-  # testing -- see DROP-IN-HELPER.txt in the artifact.
+  # release.yml Windows build + manual Qt deploy. The DFU install helper
+  # (tools/freejoyx-dfu) is built in-repo below and bundled next to the app, so
+  # the artifact is a self-contained, matched pair for the commit under test --
+  # no manual drop-in.
   build-windows:
     name: Build (Windows, Qt 5.15, artifact)
     runs-on: windows-latest
@@ -78,6 +76,62 @@ jobs:
           set PATH=%IQTA_TOOLS%\mingw810_64\bin;%PATH%
           qmake CONFIG+=release FreeJoyQt.pro
           mingw32-make -j%NUMBER_OF_PROCESSORS%
+
+      # --- DFU install helper (tools/freejoyx-dfu) ---------------------------
+      # Built in-repo with the WinUSB auto-bind engine (libwdi) and bundled next
+      # to the app below. Steps mirror the old release-flash.yml that used to
+      # live in the Rust repo.
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Add ARM64 MSVC build tools (libwdi-sys always builds an ARM64 installer)
+        shell: pwsh
+        run: |
+          $vs = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe"
+          $path = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
+          & $vs modify --installPath $path `
+            --add Microsoft.VisualStudio.Component.VC.Tools.ARM64 `
+            --quiet --norestart --nocache
+          while (Get-Process -Name 'vs_installer','setup' -ErrorAction SilentlyContinue) {
+            Start-Sleep -Seconds 5
+          }
+
+      - name: Point WDK_DIR at the vendored redist (for the winusb-autobind build)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $wdk = Join-Path $env:GITHUB_WORKSPACE 'ci\wdk-redist'
+          foreach ($f in 'redist\wdf\x64\WdfCoInstaller01011.dll',
+                         'redist\wdf\x64\winusbcoinstaller2.dll',
+                         'redist\wdf\x86\WdfCoInstaller01011.dll',
+                         'redist\wdf\x86\winusbcoinstaller2.dll') {
+            if (-not (Test-Path (Join-Path $wdk $f))) { throw "vendored WDK redist missing: $f" }
+          }
+          "WDK_DIR=$wdk" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools/freejoyx-dfu
+
+      - name: Build freejoyx-dfu helper (winusb-autobind)
+        run: cargo build --release --features winusb-autobind --manifest-path tools/freejoyx-dfu/Cargo.toml
+
+      - name: Verify autobind is compiled in
+        shell: pwsh
+        run: |
+          # Can't reach a real DFU device on the runner, so "device not found" is
+          # the expected PASS -- it proves the real bind path compiled in. Only
+          # the stub string is a failure.
+          $out = & tools\freejoyx-dfu\target\release\freejoyx-dfu.exe bind-winusb 2>&1 | Out-String
+          Write-Host $out
+          if ($out -match 'not built into this helper') {
+            Write-Error "winusb-autobind feature is missing -- build produced the stub bind path"
+            exit 1
+          }
+          # bind-winusb exits non-zero on the runner ("device not found", the
+          # expected PASS); force success so pwsh doesn't propagate $LASTEXITCODE.
+          Write-Host "OK: winusb-autobind is compiled in"
+          exit 0
 
       - name: Package (app + Qt runtime)
         shell: pwsh
@@ -139,21 +193,14 @@ jobs:
             Copy-Item $src dist\
           }
 
-          # Note for testers: this CI bundle has no helper on purpose.
-          @"
-          This is a CI test build of FreeJoyXConfiguratorQt (not a release).
-
-          Before flashing, copy the matching helper into this folder as:
-              freejoyx-flash.exe
-          Get it from the Rust repo's "Release freejoyx-flash helper" workflow
-          run on the SAME branch (the freejoyx-flash-windows artifact). The
-          released/pinned helper is intentionally NOT bundled here so a branch
-          that changes both halves is tested as a matched pair.
-
-          To flash firmware too, either let the helper/app find bundled bins or
-          point the Boot/App pickers at freejoyx-f411-boot.bin / -app.bin from
-          the FreeJoyX firmware release.
-          "@ | Out-File -Encoding utf8 dist\DROP-IN-HELPER.txt
+          # DFU install helper, built in-repo above (matched pair for this
+          # commit -- no manual drop-in).
+          $helper = "tools\freejoyx-dfu\target\release\freejoyx-dfu.exe"
+          if (-not (Test-Path $helper)) {
+            Write-Error "freejoyx-dfu.exe not found at $helper"
+            exit 1
+          }
+          Copy-Item $helper dist\
 
           Write-Host "=== dist/ (app + Qt runtime) ==="
           Get-ChildItem -Recurse dist | Format-Table FullName, Length

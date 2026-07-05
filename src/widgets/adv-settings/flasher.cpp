@@ -410,7 +410,7 @@ void Flasher::on_pushButton_DfuInstall_clicked()
 {
     /* USB-DFU install/reinstall is fully self-contained in its own modal
      * dialog: it detects the ROM-DFU device, resolves the boot+app binaries,
-     * and drives the freejoyx-flash helper. No HID device or flasher-mode
+     * and drives the freejoyx-dfu helper. No HID device or flasher-mode
      * state is required, so this path works even on a blank or bricked chip. */
     DfuInstallDialog dlg(this);
     /* Offer the one-click reboot-to-DFU shortcut only when an F411 is
