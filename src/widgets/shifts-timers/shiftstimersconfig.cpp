@@ -114,6 +114,17 @@ void ShiftsTimersConfig::readFromConfig()
     ui->spinBox_A2bDebounce->setValue(devc->a2b_debounce_ms);
 
     ui->spinBox_EncoderPressTimer->setValue(devc->encoder_press_time_ms);
+    // Firmware treats encoder_gap_ms == 0 as "use the default gap" (20 ms, the
+    // ENC_QUEUE_GAP_MS fallback in encoders.c). Normalise a stored 0 up to 20 in
+    // BOTH the config and the widget so the spinbox (minimum 1) can't desync from
+    // the config: without this, setValue(0) would clamp the display to 1 while
+    // the config still held 0, and the next flushUiToConfig would silently
+    // rewrite 0 -> 1 (turning the firmware's 0 -> 20 ms default into 1 ms). A 0
+    // only ever reaches here from a config hand-saved by an interim gen-5 build;
+    // 0 and 20 are semantically identical to the firmware, so this is a no-op
+    // remap, not a behaviour change.
+    if (devc->encoder_gap_ms == 0)
+        devc->encoder_gap_ms = 20;
     ui->spinBox_EncoderGap->setValue(devc->encoder_gap_ms);
 
     ui->spinBox_ButtonsPolling->setValue(devc->button_polling_interval_ticks * TICKS_NS);
