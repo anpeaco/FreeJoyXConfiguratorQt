@@ -454,8 +454,12 @@ void ButtonLogical::setButtonState(bool state)
             applyRowWash();
             m_lastAct.start();
         } else {
-            // sometimes state dont have time to render. e.g. encoder press time 10ms and monitor refresh time 17ms(60fps)
-            if (m_lastAct.hasExpired(30)) {
+            // Hold the "on" look briefly so short pulses stay VISIBLE, not just
+            // rendered: an isolated slow encoder detent is a brief pulse, and a
+            // ~30ms flash is caught but too quick to perceive (looked "missed" on
+            // slow turns). 120ms reads as a clear blink while staying snappy for
+            // real button taps. Matches the Encoders tab's afterglow intent.
+            if (m_lastAct.hasExpired(120)) {
                 // Clear m_currentState first: clearRowWash()'s setPalette emits a
                 // synchronous PaletteChange, and changeEvent must NOT treat the
                 // row as still-active and re-paint the wash we are removing.

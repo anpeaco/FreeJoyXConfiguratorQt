@@ -2,9 +2,14 @@
 #include "ui_encodersconfig.h"
 
 #include <QSet>
+#include <QLabel>
+#include <QPushButton>
+#include <QHBoxLayout>
+#include <QGridLayout>
 
 #include "common_defines.h"   // MAX_ENCODERS_NUM, MAX_FAST_ENCODER_NUM, MAX_BUTTONS_NUM
 #include "common_types.h"     // ENCODER_INPUT_A
+#include "widgets/debugwindow.h"   // shared fire-count reset (gEnv.pDebugWindow)
 
 EncodersConfig::EncodersConfig(QWidget *parent) :
     QWidget(parent),
@@ -24,6 +29,36 @@ EncodersConfig::EncodersConfig(QWidget *parent) :
 
     // spawn slow-encoder rows below
     ui->layoutV_Encoders->setAlignment(Qt::AlignTop);
+
+    // One shared column header for all slow-encoder rows (each row carries no
+    // headers of its own) -- same single-header table style as the Shift
+    // Registers screen. The grid's column stretches / minimum widths MUST match
+    // encoders.ui so the header lines up above the row controls.
+    {
+        auto *header = new QWidget(this);
+        auto *hg = new QGridLayout(header);
+        hg->setContentsMargins(0, 0, 0, 2);
+        hg->setHorizontalSpacing(6);
+        m_encHeaderLabels = {
+            new QLabel(tr("Pin A"),     header),
+            new QLabel(tr("Pin B"),     header),
+            new QLabel(tr("Swap"),      header),
+            new QLabel(tr("Type"),      header),
+            new QLabel(tr("Queue"),     header),
+            new QLabel(tr("Calibrate"), header),
+        };
+        // Labels occupy columns 1..6 (col 0 = row index, col 7 = trailing spacer).
+        for (int i = 0; i < m_encHeaderLabels.size(); ++i)
+            hg->addWidget(m_encHeaderLabels[i], 0, i + 1, Qt::AlignCenter);
+        static const int stretch[8] = { 0, 10, 10, 0, 8, 0, 0, 4 };
+        static const int minw[8]    = { 30, 0, 0, 50, 0, 52, 58, 0 };
+        for (int c = 0; c < 8; ++c) {
+            hg->setColumnStretch(c, stretch[c]);
+            if (minw[c]) hg->setColumnMinimumWidth(c, minw[c]);
+        }
+        ui->layoutV_Encoders->addWidget(header);
+    }
+
     for (int i = 0; i < MAX_ENCODERS_NUM - MAX_FAST_ENCODER_NUM; i++) {
         Encoders *encoder = new Encoders(i, this);
         ui->layoutV_Encoders->addWidget(encoder);
@@ -31,6 +66,27 @@ EncodersConfig::EncodersConfig(QWidget *parent) :
         connect(encoder, &Encoders::pairingEdited,
                 this, &EncodersConfig::onRowPairingEdited);
     }
+
+    // Per-row A/B press-count reset -- built in code (kept out of the .ui). Each
+    // row shows its own A/B counts in the indicator squares; this one button
+    // zeroes them all for a fresh test.
+    m_resetCountsBtn = new QPushButton(tr("Reset press counts"), this);
+    m_resetCountsBtn->setToolTip(tr("Zero the A / B press counts on every encoder row."));
+    m_resetCountsBtn->setMaximumWidth(170);
+    connect(m_resetCountsBtn, &QPushButton::clicked, this, &EncodersConfig::resetCounts);
+
+    QWidget *countRow = new QWidget(this);
+    QHBoxLayout *countLayout = new QHBoxLayout(countRow);
+    countLayout->setContentsMargins(4, 2, 4, 2);
+    countLayout->addStretch(1);
+    countLayout->addWidget(m_resetCountsBtn, 0);
+
+    if (QGridLayout *g = qobject_cast<QGridLayout *>(layout()))
+        g->addWidget(countRow, g->rowCount(), 0);
+    else if (layout())
+        layout()->addWidget(countRow);
+
+    resetCounts();   // size + zero the per-row counters now the rows exist
 }
 
 EncodersConfig::~EncodersConfig()
@@ -47,6 +103,10 @@ void EncodersConfig::retranslateUi()
     for (int i = 0; i < m_encodersPtrList.size(); ++i) {
         m_encodersPtrList[i]->retranslateUi();
     }
+    const QStringList hdr = { tr("Pin A"), tr("Pin B"), tr("Swap"),
+                             tr("Type"), tr("Queue"), tr("Calibrate") };
+    for (int i = 0; i < m_encHeaderLabels.size() && i < hdr.size(); ++i)
+        m_encHeaderLabels[i]->setText(hdr[i]);
 }
 
 void EncodersConfig::refreshFastEncoderUi(int slotIndex)
@@ -197,15 +257,40 @@ void EncodersConfig::updateActivity()
 {
     // The encoder fires the logical button at its A/B button slot (A on one
     // rotation direction, B on the other). Read those bits from the device's
-    // logical-button bitmap and flash the row's Pin A / Pin B accordingly.
+    // logical-button bitmap: flash the row's Pin A / Pin B square AND edge-count
+    // each activation (0->1) into the running press count shown in the square.
+    // Runs on every params packet so brief pulses are caught the same way the
+    // debug log catches them.
     const uint8_t *log = gEnv.pDeviceConfig->paramsReport.log_button_data;
+    const int *fires = gEnv.pDeviceConfig->logFireCount;
     auto bitSet = [log](int slot) {
         return slot >= 0 && slot < MAX_BUTTONS_NUM &&
                (log[slot >> 3] & (1 << (slot & 0x07)));
     };
-    for (Encoders *row : m_encodersPtrList) {
+    auto fireCount = [fires](int slot) {
+        return (slot >= 0 && slot < MAX_BUTTONS_NUM) ? fires[slot] : 0;
+    };
+    const int n = m_encodersPtrList.size();
+    for (int r = 0; r < n; ++r) {
+        Encoders *row = m_encodersPtrList[r];
+        // Flash from the live bit; the press count is the SHARED tally that
+        // DeviceConfig edge-counts every packet (same number the debug log's
+        // "fires=" shows), so the square and the log can never disagree.
+        row->setPressCounts(fireCount(row->inputA()), fireCount(row->inputB()));
         row->setActivity(bitSet(row->inputA()), bitSet(row->inputB()));
     }
+}
+
+void EncodersConfig::resetCounts()
+{
+    // The tally is the shared DeviceConfig counter (same one the debug log
+    // reads), so zeroing is a single call there. The squares repaint to 0 on
+    // the next params packet via updateActivity().
+    if (gEnv.pDeviceConfig)
+        gEnv.pDeviceConfig->resetFireCounts();
+    const int n = m_encodersPtrList.size();
+    for (int r = 0; r < n; ++r)
+        m_encodersPtrList[r]->setPressCounts(0, 0);
 }
 
 void EncodersConfig::onRowPairingEdited()

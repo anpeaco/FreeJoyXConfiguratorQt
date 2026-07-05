@@ -11,7 +11,7 @@
 
 //#define DEBUG
 
-#define FIRMWARE_VERSION					0x0040			// FreeJoyX wire-format generation 4: added slow_encoders[MAX_ENCODERS_NUM] (explicit slow-encoder pin pairing {int8 btn_a, int8 btn_b}) appended to the END of dev_config_t, replacing the old positional zip of ENCODER_INPUT_A/_B button slots; direction is set by the Pin A/Pin B order in slow_encoders[] (the Swap button exchanges the two pins -- no swap flag). Old shape is the byte-exact prefix, so 0x0030->0x0040 migration is prefix-copy + synthesise-pairs-from-old-positional-algorithm, and offsetof(dev_config_t, slow_encoders) == the old size (1620). Crosses &0xFFF0 -> factory reset on first flash. ENCODER_PAIRING_PLAN.md. --- Gen 3 note (0x0030): added gpio_expanders[MAX_GPIO_EXPANDER_NUM] (MCP23017/MCP23S17) appended; offsetof == old size 1580; MCP23017_PLAN.md. --- Gen 2 note (0x0020): shape unchanged from 0x0010; SEMANTIC drift (LONG_PRESS -> TAP). See firmware-side comment for the full rationale.
+#define FIRMWARE_VERSION					0x0050			// FreeJoyX wire-format generation 5: appended uint16_t encoder_gap_ms (queue-mode OFF gap, decoupled from the ON pulse encoder_press_time_ms) at the END of dev_config_t. Pure append -> offsetof(dev_config_t, encoder_gap_ms) == old size 1652; 0x0040->0x0050 migration is prefix-copy + default the new field. Crosses &0xFFF0 -> factory reset on first flash. --- Gen 4 note (0x0040): added slow_encoders[MAX_ENCODERS_NUM] (explicit slow-encoder pin pairing {int8 btn_a, int8 btn_b}) appended to the END of dev_config_t, replacing the old positional zip of ENCODER_INPUT_A/_B button slots; direction is set by the Pin A/Pin B order in slow_encoders[] (the Swap button exchanges the two pins -- no swap flag). Old shape is the byte-exact prefix, so 0x0030->0x0040 migration is prefix-copy + synthesise-pairs-from-old-positional-algorithm, and offsetof(dev_config_t, slow_encoders) == the old size (1620). Crosses &0xFFF0 -> factory reset on first flash. ENCODER_PAIRING_PLAN.md. --- Gen 3 note (0x0030): added gpio_expanders[MAX_GPIO_EXPANDER_NUM] (MCP23017/MCP23S17) appended; offsetof == old size 1580; MCP23017_PLAN.md. --- Gen 2 note (0x0020): shape unchanged from 0x0010; SEMANTIC drift (LONG_PRESS -> TAP). See firmware-side comment for the full rationale.
 
 /* FREEJOYX_VERSION is the user-facing project version (semver). It's
  * decoupled from FIRMWARE_VERSION above -- FIRMWARE_VERSION is the
@@ -37,12 +37,17 @@
  * fail the build if the struct shape drifts between the firmware and
  * configurator toolchains (arm-none-eabi-gcc vs MinGW g++). Sister rule
  * lives in CLAUDE.md ("Wire-format archival rule"). */
-#define FREEJOY_DEV_CONFIG_SIZE				1652			/* 1580 -> 1612: +32 for gpio_expanders[MAX_GPIO_EXPANDER_NUM] (8 x 4B MCP23017/MCP23S17 expander slots); 1612 -> 1620: +8 for saved_per_exp[MAX_GPIO_EXPANDER_NUM] (per-expander remap snapshot); 1620 -> 1652: +32 for slow_encoders[MAX_ENCODERS_NUM] (16 x 2B {int8 btn_a, int8 btn_b} explicit slow-encoder pairs). All appended at the end of dev_config_t, so the old (0x0030) size 1620 still == offsetof(dev_config_t, slow_encoders) and the prefix migration is unchanged. */
+#define FREEJOY_DEV_CONFIG_SIZE				1654			/* 1652 -> 1654: +2 for uint16_t encoder_gap_ms (queue-mode OFF gap) appended at the end; offsetof(dev_config_t, encoder_gap_ms) == old size 1652. --- 1580 -> 1612: +32 for gpio_expanders[MAX_GPIO_EXPANDER_NUM] (8 x 4B MCP23017/MCP23S17 expander slots); 1612 -> 1620: +8 for saved_per_exp[MAX_GPIO_EXPANDER_NUM] (per-expander remap snapshot); 1620 -> 1652: +32 for slow_encoders[MAX_ENCODERS_NUM] (16 x 2B {int8 btn_a, int8 btn_b} explicit slow-encoder pairs). All appended at the end of dev_config_t, so the old (0x0030) size 1620 still == offsetof(dev_config_t, slow_encoders) and the prefix migration is unchanged. */
 /* 72 -> 88: params_report_t gained detect_axis_raw[MAX_AXIS_NUM] (8 * int16)
  * for axis auto-detect (AXIS_DETECT_PLAN.md). params-report-only change --
  * dev_config_t untouched, so no FIRMWARE_VERSION 0xFFF0 cross / factory
  * reset; appended (prefix-compatible) and gated on freejoyx_version >= 0.1.3. */
-#define FREEJOY_PARAMS_REPORT_SIZE			88
+/* 88 -> 96: params_report_t gained the encoder monitor block (enc_mon_net i16 +
+ * enc_mon_valid u16 + enc_mon_invalid u16 + enc_mon_ab u8 + enc_mon_slot u8 = 8B)
+ * for live slow-encoder decode diagnostics. params-report-only, appended
+ * (prefix-compatible) -- no dev_config change, no FIRMWARE_VERSION cross /
+ * factory reset. ENCODER_PAIRING_PLAN.md. */
+#define FREEJOY_PARAMS_REPORT_SIZE			96
 
 /* Maximum number of shift modifiers. v1.7.8: bumped 5 -> 8 to match
  * button_t.shift_modificator's widened :4 field (encodes 0=none, 1..8).

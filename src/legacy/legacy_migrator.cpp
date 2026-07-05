@@ -606,6 +606,29 @@ static MigrateResult migrate_v0030_to_current(const uint8_t *raw, size_t len, de
 }
 
 /* ============================================================================
+ * v0040 -> current (0x0040 -> 0x0050)
+ * The 0x0050 bump APPENDED uint16_t encoder_gap_ms at the end of dev_config_t,
+ * so the outgoing 0x0040 shape is the byte-exact PREFIX of the current struct
+ * and its size is exactly offsetof(dev_config_t, encoder_gap_ms) (== 1652).
+ * Pure append: seed factory defaults (so encoder_gap_ms holds its default),
+ * overlay the old prefix (which already carries explicit slow_encoders[] -- no
+ * synthesis needed), re-stamp the version.
+ * ============================================================================
+ */
+static const size_t kPre0050ConfigSize = offsetof(dev_config_t, encoder_gap_ms);
+
+static MigrateResult migrate_v0040_to_current(const uint8_t *raw, size_t len, dev_config_t &out)
+{
+    if (len < kPre0050ConfigSize) {
+        return MigrateResult::BufferTooSmall;
+    }
+    out = ::InitConfig();
+    memcpy(&out, raw, kPre0050ConfigSize);
+    out.firmware_version = FIRMWARE_VERSION;
+    return MigrateResult::Ok;
+}
+
+/* ============================================================================
  * v1780 -> current
  * dev_config_t was byte-identical to 0x0020 until the 0x0030 append; the
  * shared prefix migrator above handles it.
@@ -667,6 +690,7 @@ bool canMigrate(uint16_t firmware_version)
         case 0x0010:  /* FreeJoyX v0.0.x -- LONG_PRESS hold-style semantics */
         case 0x0020:  /* FreeJoyX gen 2 -- pre-0x0030 (no i2c_gpio[]) */
         case 0x0030:  /* FreeJoyX gen 3 -- pre-0x0040 (no slow_encoders[]) */
+        case 0x0040:  /* FreeJoyX gen 4 -- pre-0x0050 (no encoder_gap_ms) */
             return true;
         default:
             return false;
@@ -694,6 +718,10 @@ size_t legacyConfigSize(uint16_t firmware_version)
             /* pre-0x0040 shape == current dev_config_t minus the appended
              * slow_encoders[]; the device sends exactly this many bytes. */
             return kPre0040ConfigSize;
+        case 0x0040:
+            /* pre-0x0050 shape == current dev_config_t minus the appended
+             * encoder_gap_ms; the device sends exactly this many bytes. */
+            return kPre0050ConfigSize;
         default:
             return sizeof(dev_config_t);
     }
@@ -777,6 +805,13 @@ MigrateResult migrateLegacyConfig(const uint8_t *raw, size_t len, dev_config_t &
                     << "(append-only: slow_encoders[] pairs synthesised from the"
                     << "old positional ENCODER_INPUT_A/_B button assignments)";
             return migrate_v0030_to_current(raw, len, out);
+
+        case 0x0040:
+            qInfo() << "Migrating dev_config_t from" << describeVersion(version)
+                    << "to current FIRMWARE_VERSION 0x"
+                    << QString::number(FIRMWARE_VERSION, 16)
+                    << "(append-only: encoder_gap_ms defaults to 20 ms)";
+            return migrate_v0040_to_current(raw, len, out);
 
         default:
             qWarning() << "No migrator for firmware version 0x"

@@ -114,6 +114,7 @@ void ShiftsTimersConfig::readFromConfig()
     ui->spinBox_A2bDebounce->setValue(devc->a2b_debounce_ms);
 
     ui->spinBox_EncoderPressTimer->setValue(devc->encoder_press_time_ms);
+    ui->spinBox_EncoderGap->setValue(devc->encoder_gap_ms);
 
     ui->spinBox_ButtonsPolling->setValue(devc->button_polling_interval_ticks * TICKS_NS);
     ui->spinBox_EncoderPolling->setValue(devc->encoder_polling_interval_ticks * TICKS_NS);
@@ -137,6 +138,7 @@ void ShiftsTimersConfig::writeToConfig()
     devc->a2b_debounce_ms = ui->spinBox_A2bDebounce->value();
 
     devc->encoder_press_time_ms = ui->spinBox_EncoderPressTimer->value();
+    devc->encoder_gap_ms = ui->spinBox_EncoderGap->value();
 
     devc->button_polling_interval_ticks = ui->spinBox_ButtonsPolling->value() / TICKS_NS;
     devc->encoder_polling_interval_ticks = ui->spinBox_EncoderPolling->value() / TICKS_NS;

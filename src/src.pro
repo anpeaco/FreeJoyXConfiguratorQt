@@ -76,6 +76,7 @@ SOURCES += \
     deviceversion.cpp \
     dialogs/busremapconfirmationdialog.cpp \
     dialogs/dfuinstalldialog.cpp \
+    dialogs/encodercalibratedialog.cpp \
     dialogs/flashconfirmationdialog.cpp \
     dialogs/flashprogressdialog.cpp \
     flash/devicetransitionwatcher.cpp \
@@ -154,6 +155,7 @@ HEADERS += \
     devicesync.h \
     dialogs/busremapconfirmationdialog.h \
     dialogs/dfuinstalldialog.h \
+    dialogs/encodercalibratedialog.h \
     dialogs/flashconfirmationdialog.h \
     dialogs/flashprogressdialog.h \
     flash/devicetransitionwatcher.h \

@@ -54,12 +54,20 @@ public:
     // keeps a brief per-detent pulse visible. Called on every params update.
     void setActivity(bool aFiring, bool bFiring);
 
+    // Show the running A / B press counts in the two indicator squares (the same
+    // squares that flash on activity). Zeroed via the tab's Reset button.
+    void setPressCounts(int a, int b);
+
     // Red-border the Pin A / Pin B combos when they clash (A==B, or the pin is
     // also used by another encoder).
     void setInputClash(bool aClash, bool bClash);
 
     void readFromConfig();
     void writeToConfig();
+
+    // Apply the Calibrate dialog's recommendation to this row: detent mode
+    // (ENCODER_CONF_1x/2x/4x index) + Queue on/off, then persist.
+    void applyCalibration(int modeIndex, bool queue);
 
 signals:
     // User changed A / B / swap / type -> the container re-validates (clash
@@ -68,6 +76,7 @@ signals:
 
 private slots:
     void onUserEdited();
+    void onCalibrateClicked();
 
 private:
     void updateEnabledState();

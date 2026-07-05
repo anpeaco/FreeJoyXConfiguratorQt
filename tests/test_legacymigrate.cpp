@@ -26,7 +26,7 @@ private slots:
     void devConfigSize_matchesConstant()
     {
         QCOMPARE(sizeof(dev_config_t), static_cast<size_t>(FREEJOY_DEV_CONFIG_SIZE));
-        QCOMPARE(static_cast<int>(FREEJOY_DEV_CONFIG_SIZE), 1652);
+        QCOMPARE(static_cast<int>(FREEJOY_DEV_CONFIG_SIZE), 1654);
     }
     void i2cGpio_isAppendedAtEnd()
     {
@@ -45,12 +45,23 @@ private slots:
          * (0x0030) config size 1620 -- the migration boundary. */
         QCOMPARE(sizeof(slow_encoder_t), static_cast<size_t>(2));
         QCOMPARE(offsetof(dev_config_t, slow_encoders), static_cast<size_t>(1620));
+        /* slow_encoders (8x4? no: 16 x 2B = 32) ends at 1652, which is now the
+         * offset of the 0x0050 encoder_gap_ms append, not the struct end. */
         QCOMPARE(offsetof(dev_config_t, slow_encoders) + sizeof(slow_encoder_t) * MAX_ENCODERS_NUM,
-                 sizeof(dev_config_t));   /* == 1620 + 32 == 1652 */
+                 static_cast<size_t>(1652));
     }
-    void firmwareVersion_isGen4()
+    void encoderGap_isAppendedAtEnd()
     {
-        QCOMPARE(static_cast<int>(FIRMWARE_VERSION), 0x0040);
+        /* The 0x0040 -> 0x0050 bump appended uint16_t encoder_gap_ms at the very
+         * end, so its offset == the old (0x0040) config size 1652 -- the
+         * migration boundary -- and it closes out the struct at 1654. */
+        QCOMPARE(offsetof(dev_config_t, encoder_gap_ms), static_cast<size_t>(1652));
+        QCOMPARE(offsetof(dev_config_t, encoder_gap_ms) + sizeof(uint16_t),
+                 sizeof(dev_config_t));   /* == 1652 + 2 == 1654 */
+    }
+    void firmwareVersion_isGen5()
+    {
+        QCOMPARE(static_cast<int>(FIRMWARE_VERSION), 0x0050);
     }
 
     /* ---- legacy API ---- */
@@ -63,6 +74,8 @@ private slots:
     {
         QVERIFY(legacy::canMigrate(0x0030));
         QVERIFY(legacy::canMigrate(0x0031));
+        QVERIFY(legacy::canMigrate(0x0040));
+        QVERIFY(legacy::canMigrate(0x0041));
         /* current gen is not "migratable" -- it's already current */
         QVERIFY(!legacy::canMigrate(0x0099));
     }
@@ -79,6 +92,12 @@ private slots:
         QCOMPARE(legacy::legacyConfigSize(0x0030),
                  offsetof(dev_config_t, slow_encoders));
         QCOMPARE(legacy::legacyConfigSize(0x0030), static_cast<size_t>(1620));
+    }
+    void legacyConfigSize_gen4_isPre0050PrefixSize()
+    {
+        QCOMPARE(legacy::legacyConfigSize(0x0040),
+                 offsetof(dev_config_t, encoder_gap_ms));
+        QCOMPARE(legacy::legacyConfigSize(0x0040), static_cast<size_t>(1652));
     }
 
     /* ---- 0x0020 -> 0x0030 round-trip ---- */
@@ -124,6 +143,50 @@ private slots:
     {
         std::vector<uint8_t> tooSmall(8, 0);
         tooSmall[0] = 0x20;   /* version = 0x0020 (little-endian low byte) */
+        dev_config_t out;
+        QCOMPARE(legacy::migrateLegacyConfig(tooSmall.data(), tooSmall.size(), out),
+                 legacy::MigrateResult::BufferTooSmall);
+    }
+
+    /* ---- 0x0040 -> 0x0050: pure append, encoder_gap_ms defaults ---- */
+    void migrateGen4_preservesPrefix_defaultsGap_stampsVersion()
+    {
+        const size_t oldSize = offsetof(dev_config_t, encoder_gap_ms);
+
+        /* A 0x0040 config already carries explicit slow_encoders[] (no synthesis
+         * needed) -- truncated to the pre-encoder_gap_ms prefix. */
+        dev_config_t seed = InitConfig();
+        seed.firmware_version      = 0x0040;
+        seed.button_debounce_ms    = 0x2468;              /* preserved-prefix probe */
+        seed.encoder_press_time_ms = 50;
+        seed.slow_encoders[3].btn_a = 12;                 /* preserved explicit pair */
+        seed.slow_encoders[3].btn_b = 13;
+
+        std::vector<uint8_t> raw(oldSize);
+        std::memcpy(raw.data(), &seed, oldSize);
+
+        /* Poison the destination, incl. the appended encoder_gap_ms, to prove the
+         * migrator seeds it from factory defaults rather than leaving junk. */
+        dev_config_t out;
+        std::memset(&out, 0xFF, sizeof(out));
+
+        legacy::MigrateResult r =
+            legacy::migrateLegacyConfig(raw.data(), raw.size(), out);
+
+        QCOMPARE(r, legacy::MigrateResult::Ok);
+        QCOMPARE(out.firmware_version, static_cast<uint16_t>(FIRMWARE_VERSION));
+        QCOMPARE(out.button_debounce_ms, static_cast<uint16_t>(0x2468));
+        QCOMPARE(out.encoder_press_time_ms, static_cast<uint8_t>(50));
+        QCOMPARE(out.slow_encoders[3].btn_a, static_cast<int8_t>(12));
+        QCOMPARE(out.slow_encoders[3].btn_b, static_cast<int8_t>(13));
+        /* the appended field must hold the factory default (20), not 0xFF junk */
+        QCOMPARE(out.encoder_gap_ms, static_cast<uint16_t>(20));
+    }
+
+    void migrateGen4_rejectsTruncatedBuffer()
+    {
+        std::vector<uint8_t> tooSmall(8, 0);
+        tooSmall[0] = 0x40;   /* version = 0x0040 (little-endian low byte) */
         dev_config_t out;
         QCOMPARE(legacy::migrateLegacyConfig(tooSmall.data(), tooSmall.size(), out),
                  legacy::MigrateResult::BufferTooSmall);

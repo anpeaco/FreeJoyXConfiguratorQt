@@ -231,10 +231,22 @@ void DebugWindow::on_pushButton_LogMarker_clicked()
     appendLine(LogLevel::Marker, QStringLiteral("———— MARKER #%1 ————").arg(counter));
 }
 
+void DebugWindow::resetFireCounts()
+{
+    /* The tallies live in DeviceConfig now (single source shared with the
+     * Encoders tab). Zero them there; this window only reads them. */
+    if (gEnv.pDeviceConfig)
+        gEnv.pDeviceConfig->resetFireCounts();
+}
+
 void DebugWindow::on_pushButton_LogClear_clicked()
 {
-    // Clears the in-app view only; the on-disk log file is untouched.
+    // Clears the in-app view only; the on-disk log file is untouched. Also the
+    // "since reset" point for the per-button fire tallies -- and tells the
+    // Encoders tab to zero its matching per-row counters at the same instant.
     ui->textBrowser_Log->clear();
+    resetFireCounts();
+    emit fireCountsCleared();
 }
 
 void DebugWindow::logicalButtonState(int buttonNumber, bool state)
@@ -258,11 +270,19 @@ void DebugWindow::logicalButtonState(int buttonNumber, bool state)
         physStr = (btn.physical_num < 0) ? QStringLiteral("-")
                                          : QString::number(btn.physical_num + 1);
     }
+    // Fire tally is edge-counted centrally (DeviceConfig::tickFireCounts, every
+    // packet) and shared with the Encoders tab; just read it here. Indexed by
+    // 0-based slot, so buttonNumber-1.
+    int fires = 0;
+    if (gEnv.pDeviceConfig != nullptr
+        && buttonNumber >= 1 && buttonNumber <= MAX_BUTTONS_NUM)
+        fires = gEnv.pDeviceConfig->logFireCount[buttonNumber - 1];
     appendLine(LogLevel::Button,
                QStringLiteral("LBTN slot=") + QString::number(buttonNumber)
                    + QStringLiteral(" type=") + typeStr
                    + QStringLiteral(" phys=") + physStr
-                   + QStringLiteral(" state=") + (state ? QStringLiteral("ON") : QStringLiteral("OFF")));
+                   + QStringLiteral(" state=") + (state ? QStringLiteral("ON") : QStringLiteral("OFF"))
+                   + QStringLiteral(" fires=") + QString::number(fires));
 }
 
 void DebugWindow::physicalButtonState(int buttonNumber, bool state)
@@ -270,7 +290,12 @@ void DebugWindow::physicalButtonState(int buttonNumber, bool state)
     /* Physical button edge -- lands in the combined log under the BTN
      * category so the physical->logical correlation is visible in one
      * timeline during bench testing. */
+    int fires = 0;
+    if (gEnv.pDeviceConfig != nullptr
+        && buttonNumber >= 1 && buttonNumber <= MAX_BUTTONS_NUM)
+        fires = gEnv.pDeviceConfig->physFireCount[buttonNumber - 1];
     appendLine(LogLevel::Button,
                QStringLiteral("PBTN phys=") + QString::number(buttonNumber)
-                   + QStringLiteral(" state=") + (state ? QStringLiteral("ON") : QStringLiteral("OFF")));
+                   + QStringLiteral(" state=") + (state ? QStringLiteral("ON") : QStringLiteral("OFF"))
+                   + QStringLiteral(" fires=") + QString::number(fires));
 }

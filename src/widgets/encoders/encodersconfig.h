@@ -6,6 +6,9 @@
 #include <QPair>
 #include <QString>
 
+class QLabel;
+class QPushButton;
+
 #include "deviceconfig.h"
 #include "encoders.h"
 #include "fastencoder.h"
@@ -60,6 +63,10 @@ public slots:
      * would mutate a freshly-loaded config (spurious dirty / phantom encoders). */
     void refreshDisplay();
     void fastEncoderSelected(const QString &pinGuiName, bool isSelected);
+    /* Zero all per-row A/B press counters (and their edge-detect state). Called
+     * on construct, from the Reset button, and from the debug window's Log Clear
+     * so both counts share one reset point. Public so MainWindow can connect it. */
+    void resetCounts();
 
 private slots:
     /* A row's Pin A / Pin B / swap / mode was edited -> refresh clash
@@ -90,6 +97,17 @@ private:
     void applyClashHighlight();
 
     Ui::EncodersConfig *ui;
+
+    // One shared column header for the slow-encoder table (rows carry no headers
+    // of their own) -- matches the Shift Registers screen's single-header style.
+    QVector<QLabel *> m_encHeaderLabels;
+
+    /* Per-row A/B press counts come from the SHARED DeviceConfig fire tally
+     * (edge-counted once per packet, ungated) -- updateActivity() just reads
+     * logFireCount[slot] for each row's Pin A / Pin B and shows it in the row's
+     * square, so it always equals the debug log's "fires=" for that slot. The
+     * Reset button zeroes the shared tally (which also zeroes the log's). */
+    QPushButton *m_resetCountsBtn = nullptr;
 
     QList<Encoders *> m_encodersPtrList;
     QList<FastEncoder *> m_fastEncodersPtrList;

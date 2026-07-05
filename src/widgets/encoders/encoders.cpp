@@ -7,6 +7,7 @@
 #include "centered_cbox.h"
 #include "common_defines.h"   // MAX_FAST_ENCODER_NUM, SLOW_ENC_*
 #include "style_helpers.h"    // freejoy_style::fieldClashQss
+#include "encodercalibratedialog.h"
 
 Encoders::Encoders(int encodersNumber, QWidget *parent)
     : QWidget(parent)
@@ -31,6 +32,17 @@ Encoders::Encoders(int encodersNumber, QWidget *parent)
             this, &Encoders::onUserEdited);
     connect(ui->pushButton_Swap, &QPushButton::clicked, this, &Encoders::swapInputs);
     connect(ui->checkBox_Queue, &QCheckBox::toggled, this, &Encoders::onUserEdited);
+    connect(ui->pushButton_Calibrate, &QPushButton::clicked, this, &Encoders::onCalibrateClicked);
+
+    // Seed the per-pin activity squares to the "off" look (same buttonState role
+    // the Buttons tab uses for its physical-button indicators) and a 0 count.
+    freejoy_style::setRole(ui->indicator_A, "buttonState", "off");
+    freejoy_style::setRole(ui->indicator_B, "buttonState", "off");
+    ui->indicator_A->setNum(0);
+    ui->indicator_B->setNum(0);
+
+    // Swap uses the themed left-right arrows icon (re-tints with the theme).
+    freejoy_style::setThemedIcon(ui->pushButton_Swap, ":/Images/icons/lucide/arrow-left-right.svg");
 }
 
 Encoders::~Encoders()
@@ -89,18 +101,16 @@ void Encoders::updateEnabledState()
     const bool hasButtons = ui->comboBox_InputA->count() > 1;
     ui->comboBox_InputA->setEnabled(hasButtons);
     ui->comboBox_InputB->setEnabled(hasButtons);
-    ui->text_InputA->setEnabled(hasButtons);
-    ui->text_InputB->setEnabled(hasButtons);
+    ui->indicator_A->setEnabled(hasButtons);
+    ui->indicator_B->setEnabled(hasButtons);
     ui->label_EncoderIndex->setEnabled(hasButtons);
 
     // Mode + swap only matter once a full pair is chosen.
     const bool complete = inputA() >= 0 && inputB() >= 0;
     ui->comboBox_EncoderType->setEnabled(complete);
-    ui->text_EncoderType->setEnabled(complete);
     ui->pushButton_Swap->setEnabled(complete);
-    ui->text_Swap->setEnabled(complete);
     ui->checkBox_Queue->setEnabled(complete);
-    ui->text_Queue->setEnabled(complete);
+    ui->pushButton_Calibrate->setEnabled(complete);
 }
 
 void Encoders::readFromConfig()
@@ -172,13 +182,19 @@ void Encoders::setActivity(bool aFiring, bool bFiring)
 
     // Only re-role on change -- setRole repolishes, so avoid doing it every frame.
     if (aLit != m_aLit) {
-        freejoy_style::setRole(ui->text_InputA, "buttonState", aLit ? "on" : "off");
+        freejoy_style::setRole(ui->indicator_A, "buttonState", aLit ? "on" : "off");
         m_aLit = aLit;
     }
     if (bLit != m_bLit) {
-        freejoy_style::setRole(ui->text_InputB, "buttonState", bLit ? "on" : "off");
+        freejoy_style::setRole(ui->indicator_B, "buttonState", bLit ? "on" : "off");
         m_bLit = bLit;
     }
+}
+
+void Encoders::setPressCounts(int a, int b)
+{
+    ui->indicator_A->setNum(a);
+    ui->indicator_B->setNum(b);
 }
 
 void Encoders::setInputClash(bool aClash, bool bClash)
@@ -194,4 +210,32 @@ void Encoders::onUserEdited()
     writeToConfig();
     updateEnabledState();
     emit pairingEdited();
+}
+
+void Encoders::applyCalibration(int modeIndex, bool queue)
+{
+    if (modeIndex < 0 || modeIndex >= ENCODER_TYPE_COUNT) return;
+    {
+        QSignalBlocker blockType(ui->comboBox_EncoderType);
+        QSignalBlocker blockQueue(ui->checkBox_Queue);
+        ui->comboBox_EncoderType->setCurrentIndex(modeIndex);
+        ui->checkBox_Queue->setChecked(queue);
+    }
+    // Persist + re-validate exactly like a manual edit.
+    writeToConfig();
+    updateEnabledState();
+    emit pairingEdited();
+}
+
+void Encoders::onCalibrateClicked()
+{
+    // Scope the helper to this row: pass the encoder's slow-slot index (matches
+    // the firmware's params_report.enc_mon_slot) and the Pin A / B names for
+    // clear "turn THIS encoder" instructions.
+    EncoderCalibrateDialog dlg(m_configIndex, m_encodersNumber,
+                               ui->comboBox_InputA->currentText(),
+                               ui->comboBox_InputB->currentText(),
+                               this);
+    if (dlg.exec() == QDialog::Accepted && dlg.chosenMode() >= 0)
+        applyCalibration(dlg.chosenMode(), dlg.chosenQueue());
 }
