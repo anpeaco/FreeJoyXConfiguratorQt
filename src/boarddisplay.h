@@ -23,6 +23,21 @@
 
 namespace board_display {
 
+// Map a device's self-reported board_id byte to the board shown on the card.
+// A Black Pill reports BOARD_ID_F411_BLACKPILL (2); anything else -- F103 (1),
+// an old/upstream build (0), or an unrecognised value -- is shown as a Blue
+// Pill. board_id sits at a fixed early offset in params_report_t (right after
+// firmware_version) that NO wire-format bump has ever moved -- every bump only
+// appends fields at the end -- so this is reliable even when the firmware
+// generation doesn't match the configurator. That mismatch is exactly the
+// window (mid firmware-bump) where the old "unrecognised firmware -> assume
+// Blue Pill" fallback used to mislabel an F411 as an F103.
+inline int cardBoardId(uint8_t board_id)
+{
+    return (board_id == BOARD_ID_F411_BLACKPILL) ? BOARD_ID_F411_BLACKPILL
+                                                 : BOARD_ID_F103_BLUEPILL;
+}
+
 inline QString text(int boardId)
 {
     switch (boardId) {

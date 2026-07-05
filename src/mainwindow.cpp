@@ -782,8 +782,7 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
              * CPU icon + "F103 (Blue Pill)"/"F411 (Black Pill)" via board_display,
              * shared with the flash dialog. Cache the shown board so a theme
              * toggle re-renders (the F411 icon ink tracks the theme). */
-            const int shownBoard = (boardId == BOARD_ID_F411_BLACKPILL)
-                ? BOARD_ID_F411_BLACKPILL : BOARD_ID_F103_BLUEPILL;
+            const int shownBoard = board_display::cardBoardId(boardId);
             m_deviceCardBoardId = shownBoard;
             setDeviceCardBoard(shownBoard);
             if (boardId != 0) {
@@ -840,15 +839,21 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
                 liveName.trimmed(),
                 vidPid);
         } else {
-            /* Unrecognised firmware: the params_report layout may differ, so
-             * board_id can't be trusted to detect a Black Pill. But a Black Pill
-             * only ever runs (recognised) FreeJoyX firmware -- so an unrecognised
-             * connected device is a Blue Pill (F103). Show that rather than a
-             * blank, matching the "not Black -> Blue" rule used elsewhere. */
-            m_deviceCardBoardId = BOARD_ID_F103_BLUEPILL;
-            setDeviceCardBoard(BOARD_ID_F103_BLUEPILL);
-            /* Unrecognised firmware -> board_id can't be trusted; don't offer
-             * the reboot shortcut. */
+            /* Unrecognised firmware generation (e.g. an F411 running a build a
+             * few wire-format bumps off from this configurator). The struct
+             * *layout* can't be fully trusted, but board_id sits at a fixed early
+             * offset that no bump has ever moved (see board_display::cardBoardId),
+             * so it's still reliable -- show the REAL board. This is the case that
+             * used to mislabel an F411 as F103 mid firmware-bump. Pin-table
+             * migration stays on the recognised path above (that needs the whole
+             * trusted layout, not just this leading byte). */
+            const uint8_t boardId = gEnv.pDeviceConfig->paramsReport.board_id;
+            const int shownBoard = board_display::cardBoardId(boardId);
+            m_deviceCardBoardId = shownBoard;
+            setDeviceCardBoard(shownBoard);
+            /* The reboot-to-DFU shortcut needs a firmware-support trigger the
+             * off-generation build may lack, so leave it off here; the user
+             * reflashes via manual BOOT0 -> DFU. */
             m_advSettings->flasher()->setConnectedDeviceInfo(false, QString(), QString());
         }
 
