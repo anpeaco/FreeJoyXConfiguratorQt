@@ -254,6 +254,10 @@ jobs:
             Write-Error "winusb-autobind feature is missing -- build produced the stub bind path"
             exit 1
           }
+          # bind-winusb exits non-zero on the runner ("device not found", the
+          # expected PASS); force success so pwsh doesn't propagate $LASTEXITCODE.
+          Write-Host "OK: winusb-autobind is compiled in"
+          exit 0
 
       - name: Bundle helper + F411 firmware, then zip
         shell: pwsh
