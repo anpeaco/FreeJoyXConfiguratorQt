@@ -1,19 +1,27 @@
+# Standalone crate — it lives in the FreeJoyX (Qt) configurator repo but is
+# built on its own by cargo (the Qt app shells out to the produced binary via
+# QProcess; there is no in-process link). The empty [workspace] table below
+# makes this its own workspace root so cargo never tries to attach it to a
+# parent. Renamed from `freejoyx-flash` (which lived in the Rust configurator
+# repo) when it moved in-house; no functional change.
+[workspace]
+
 [package]
-name = "freejoyx-flash"
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
-license.workspace = true
-repository.workspace = true
-authors.workspace = true
-description = "First-install / reinstall DfuSe flasher for F411 over the STM32 ROM USB DFU bootloader"
+name = "freejoyx-dfu"
+version = "0.2.0"
+edition = "2021"
+rust-version = "1.85"
+license = "GPL-3.0-only"
+repository = "https://github.com/anpeaco/FreeJoyXConfiguratorQt"
+authors = ["FreeJoyX contributors"]
+description = "DfuSe install / reinstall helper for the STM32F411 over the ROM USB DFU bootloader (bundled with the FreeJoyX configurator)"
 
 [[bin]]
-name = "freejoyx-flash"
+name = "freejoyx-dfu"
 path = "src/main.rs"
 
 [lib]
-name = "freejoyx_flash"
+name = "freejoyx_dfu"
 path = "src/lib.rs"
 
 [features]

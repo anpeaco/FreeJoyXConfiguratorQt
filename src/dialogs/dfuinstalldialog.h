@@ -7,7 +7,7 @@
   *
   * Built in code (no .ui) -- the layout is small and this keeps the dialog
   * self-contained while the feature is still settling. Owns a
-  * DfuInstallSession (the QProcess driver for the `freejoyx-flash` helper)
+  * DfuInstallSession (the QProcess driver for the `freejoyx-dfu` helper)
   * and renders its stage / progress / log stream.
   *
   * The dialog walks the user through three things:

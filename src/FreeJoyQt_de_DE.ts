@@ -1415,7 +1415,7 @@ Dies kann nur durch erneutes Einlesen der Konfiguration vom Gerät rückgängig 
     </message>
     <message>
         <location filename="dialogs/dfuinstalldialog.cpp" line="313"/>
-        <source>The install helper (freejoyx-flash) is missing from the application folder.</source>
+        <source>The install helper (freejoyx-dfu) is missing from the application folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1461,7 +1461,7 @@ Dies kann nur durch erneutes Einlesen der Konfiguration vom Gerät rückgängig 
     </message>
     <message>
         <location filename="dialogs/dfuinstalldialog.cpp" line="489"/>
-        <source>The install helper (freejoyx-flash) is missing from the application folder — cannot re-check.</source>
+        <source>The install helper (freejoyx-dfu) is missing from the application folder — cannot re-check.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1637,7 +1637,7 @@ Dies kann nur durch erneutes Einlesen der Konfiguration vom Gerät rückgängig 
     <message>
         <location filename="flash/dfuinstallsession.cpp" line="119"/>
         <location filename="flash/dfuinstallsession.cpp" line="155"/>
-        <source>Install helper (freejoyx-flash) is missing from the application folder.</source>
+        <source>Install helper (freejoyx-dfu) is missing from the application folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1755,7 +1755,7 @@ Dies kann nur durch erneutes Einlesen der Konfiguration vom Gerät rückgängig 
     <message>
         <location filename="flash/dfuinstallsession.cpp" line="430"/>
         <location filename="flash/dfuinstallsession.cpp" line="433"/>
-        <source>Couldn&apos;t launch the install helper (freejoyx-flash).</source>
+        <source>Couldn&apos;t launch the install helper (freejoyx-dfu).</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

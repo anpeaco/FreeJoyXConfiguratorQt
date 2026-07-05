@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file           : dfuinstallsession.cpp
-  * @brief          : QProcess driver for the `freejoyx-flash` DfuSe
+  * @brief          : QProcess driver for the `freejoyx-dfu` DfuSe
   *                   install/reinstall helper. See dfuinstallsession.h for the
   *                   CLI + stdout contract this file implements against.
   ******************************************************************************
@@ -19,9 +19,9 @@ namespace {
 /* Helper binary basename, platform-suffixed. Bundled next to the
  * configurator executable by the build/release step. */
 #ifdef Q_OS_WIN
-const char *kHelperName = "freejoyx-flash.exe";
+const char *kHelperName = "freejoyx-dfu.exe";
 #else
-const char *kHelperName = "freejoyx-flash";
+const char *kHelperName = "freejoyx-dfu";
 #endif
 
 /* Protocol record tags (see header). Kept as constants so the parser and
@@ -123,7 +123,7 @@ void DfuInstallSession::installDriver()
     const QString helper = helperPath();
     if (helper.isEmpty()) {
         emit driverInstallFinished(false,
-            tr("Install helper (freejoyx-flash) is missing from the "
+            tr("Install helper (freejoyx-dfu) is missing from the "
                "application folder."));
         return;
     }
@@ -161,7 +161,7 @@ void DfuInstallSession::leaveDfu()
     const QString helper = helperPath();
     if (helper.isEmpty()) {
         emit leaveFinished(false,
-            tr("Install helper (freejoyx-flash) is missing from the "
+            tr("Install helper (freejoyx-dfu) is missing from the "
                "application folder."));
         return;
     }
@@ -200,7 +200,7 @@ void DfuInstallSession::eraseChip()
     const QString helper = helperPath();
     if (helper.isEmpty()) {
         emit eraseFinished(false,
-            tr("Install helper (freejoyx-flash) is missing from the "
+            tr("Install helper (freejoyx-dfu) is missing from the "
                "application folder."));
         return;
     }
@@ -240,7 +240,7 @@ bool DfuInstallSession::start(const Params &p)
     }
     const QString helper = helperPath();
     if (helper.isEmpty()) {
-        m_lastErrorDetail = tr("Install helper (freejoyx-flash) is missing "
+        m_lastErrorDetail = tr("Install helper (freejoyx-dfu) is missing "
                                "from the application folder.");
         return false;
     }
@@ -579,24 +579,24 @@ void DfuInstallSession::onProcessErrorOccurred(QProcess::ProcessError error)
             m_binding = false;
             if (m_proc) { m_proc->deleteLater(); m_proc = nullptr; }
             emit driverInstallFinished(false,
-                tr("Couldn't launch the install helper (freejoyx-flash)."));
+                tr("Couldn't launch the install helper (freejoyx-dfu)."));
             return;
         }
         if (m_leaving) {
             m_leaving = false;
             if (m_proc) { m_proc->deleteLater(); m_proc = nullptr; }
             emit leaveFinished(false,
-                tr("Couldn't launch the install helper (freejoyx-flash)."));
+                tr("Couldn't launch the install helper (freejoyx-dfu)."));
             return;
         }
         if (m_erasing) {
             m_erasing = false;
             if (m_proc) { m_proc->deleteLater(); m_proc = nullptr; }
             emit eraseFinished(false,
-                tr("Couldn't launch the install helper (freejoyx-flash)."));
+                tr("Couldn't launch the install helper (freejoyx-dfu)."));
             return;
         }
-        m_lastErrorDetail = tr("Couldn't launch the install helper (freejoyx-flash).");
+        m_lastErrorDetail = tr("Couldn't launch the install helper (freejoyx-dfu).");
         m_sawError = true;
         if (m_proc) { m_proc->deleteLater(); m_proc = nullptr; }
         setStage(Stage::Failed, m_lastErrorDetail);

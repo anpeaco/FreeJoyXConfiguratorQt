@@ -15,18 +15,15 @@ on:
 permissions:
   contents: write  # softprops/action-gh-release needs write to create / modify the Release
 
-# The configurator ships two sidecar artifacts it does NOT build itself:
-#   - freejoyx-flash  -- the DfuSe install helper, built + released by the Rust
-#     repo (anpeaco/FreeJoyXConfigurator, release-flash.yml). Pinned by tag here
-#     so a configurator release is reproducible; bump when a new helper ships.
+# The configurator bundles two sidecars:
+#   - freejoyx-dfu  -- the DfuSe install helper, built in-repo from
+#     tools/freejoyx-dfu (Windows uses the winusb-autobind / libwdi build;
+#     Linux uses the plain build). Always the matched pair for this commit.
 #   - the F103 AND F411 boot+app firmware bins, pulled from the LATEST
 #     anpeaco/FreeJoyX release so a download always carries current firmware
 #     for both supported boards.
-# Both are fetched with `gh release download` (all three repos are public, so
-# the default job token has read access) rather than rebuilt here -- that keeps
-# the Rust toolchain + libwdi/WDK mess out of this Qt workflow.
-env:
-  FLASH_HELPER_TAG: flash-v0.1.9   # pinned freejoyx-flash helper release tag
+# The firmware is fetched with `gh release download` (public repo, default job
+# token has read access); the helper is built here.
 
 jobs:
   build-linux:
@@ -58,16 +55,23 @@ jobs:
           qmake CONFIG+=release FreeJoyQt.pro
           make -j$(nproc)
 
-      - name: Fetch flasher helper + F411 firmware
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build DFU helper (freejoyx-dfu)
+        run: |
+          # Linux needs no WinUSB autobind (udev handles device access) -- plain
+          # nusb build.
+          cargo build --release --manifest-path tools/freejoyx-dfu/Cargo.toml
+          mkdir -p dist
+          cp tools/freejoyx-dfu/target/release/freejoyx-dfu dist/freejoyx-dfu
+          chmod +x dist/freejoyx-dfu
+
+      - name: Fetch F411 firmware
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p dist/firmware
-          # Pinned freejoyx-flash helper (Linux) from the Rust repo.
-          gh release download "$FLASH_HELPER_TAG" --repo anpeaco/FreeJoyXConfigurator \
-            --pattern 'freejoyx-flash-linux-x64' --dir dist --clobber
-          mv dist/freejoyx-flash-linux-x64 dist/freejoyx-flash
-          chmod +x dist/freejoyx-flash
           # Latest F103 + F411 firmware (app + boot) from the firmware repo.
           gh release download --repo anpeaco/FreeJoyX \
             --pattern 'freejoyx-f103-app-*.bin' --pattern 'freejoyx-f103-boot-*.bin' \
@@ -206,16 +210,59 @@ jobs:
           Write-Host "=== dist/ (app + Qt runtime) assembled ==="
           Get-ChildItem -Recurse dist | Format-Table FullName, Length
 
-      - name: Fetch flasher helper + F411 firmware, then zip
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Add ARM64 MSVC build tools (libwdi-sys always builds an ARM64 installer)
+        shell: pwsh
+        run: |
+          $vs = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe"
+          $path = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
+          & $vs modify --installPath $path `
+            --add Microsoft.VisualStudio.Component.VC.Tools.ARM64 `
+            --quiet --norestart --nocache
+          while (Get-Process -Name 'vs_installer','setup' -ErrorAction SilentlyContinue) {
+            Start-Sleep -Seconds 5
+          }
+
+      - name: Point WDK_DIR at the vendored redist (for the winusb-autobind build)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $wdk = Join-Path $env:GITHUB_WORKSPACE 'ci\wdk-redist'
+          foreach ($f in 'redist\wdf\x64\WdfCoInstaller01011.dll',
+                         'redist\wdf\x64\winusbcoinstaller2.dll',
+                         'redist\wdf\x86\WdfCoInstaller01011.dll',
+                         'redist\wdf\x86\winusbcoinstaller2.dll') {
+            if (-not (Test-Path (Join-Path $wdk $f))) { throw "vendored WDK redist missing: $f" }
+          }
+          "WDK_DIR=$wdk" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools/freejoyx-dfu
+
+      - name: Build DFU helper (freejoyx-dfu, winusb-autobind)
+        run: cargo build --release --features winusb-autobind --manifest-path tools/freejoyx-dfu/Cargo.toml
+
+      - name: Verify autobind is compiled in
+        shell: pwsh
+        run: |
+          $out = & tools\freejoyx-dfu\target\release\freejoyx-dfu.exe bind-winusb 2>&1 | Out-String
+          Write-Host $out
+          if ($out -match 'not built into this helper') {
+            Write-Error "winusb-autobind feature is missing -- build produced the stub bind path"
+            exit 1
+          }
+
+      - name: Bundle helper + F411 firmware, then zip
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           New-Item -ItemType Directory -Path dist\firmware -Force | Out-Null
-          # Pinned freejoyx-flash helper (Windows) from the Rust repo.
-          gh release download "$env:FLASH_HELPER_TAG" --repo anpeaco/FreeJoyXConfigurator `
-            --pattern 'freejoyx-flash-windows-x64.exe' --dir dist --clobber
-          Move-Item -Force dist\freejoyx-flash-windows-x64.exe dist\freejoyx-flash.exe
+          # DFU helper built in-repo above (matched pair for this commit).
+          Copy-Item tools\freejoyx-dfu\target\release\freejoyx-dfu.exe dist\freejoyx-dfu.exe
           # Latest F103 + F411 firmware (app + boot) from the firmware repo.
           gh release download --repo anpeaco/FreeJoyX `
             --pattern 'freejoyx-f103-app-*.bin' --pattern 'freejoyx-f103-boot-*.bin' `

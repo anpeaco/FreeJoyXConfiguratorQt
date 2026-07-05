@@ -2,10 +2,10 @@
 //! `DfuInstallSession`):
 //!
 //! ```text
-//! freejoyx-flash probe   --board f411 [--check-driver] [--verbose]
-//! freejoyx-flash install --board f411 [--boot <bootBin>] [--app <appBin>]
-//! freejoyx-flash erase   --board f411
-//! freejoyx-flash bind    --board f411
+//! freejoyx-dfu probe   --board f411 [--check-driver] [--verbose]
+//! freejoyx-dfu install --board f411 [--boot <bootBin>] [--app <appBin>]
+//! freejoyx-dfu erase   --board f411
+//! freejoyx-dfu bind    --board f411
 //! ```
 //!
 //! `erase` mass-erases the whole chip (bootloader + config + app) and leaves it
@@ -28,8 +28,8 @@
 //! All progress/results go to stdout as the line protocol in [`proto`].
 //! Exit code 0 == success, non-zero == failure (with an `ERROR` line first).
 
-use freejoyx_flash::dfuse::{self, CliTiming, Dfu, APP_ADDR, BOOT_ADDR};
-use freejoyx_flash::{driver, proto};
+use freejoyx_dfu::dfuse::{self, CliTiming, Dfu, APP_ADDR, BOOT_ADDR};
+use freejoyx_dfu::{driver, proto};
 use proto::Stage;
 
 /// Config storage sector base (F411 S4). Erased on a full reinstall so the

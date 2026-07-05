@@ -1,4 +1,4 @@
-//! freejoyx-flash — first-install / reinstall flasher for the F411 over the
+//! freejoyx-dfu — first-install / reinstall flasher for the F411 over the
 //! STM32 factory USB DFU (DfuSe) ROM bootloader.
 //!
 //! Driven today by the Qt configurator via a `QProcess` boundary

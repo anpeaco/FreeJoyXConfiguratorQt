@@ -21,7 +21,7 @@
   *
   * Rather than bolt libusb + libwdi into this MinGW Qt build (and bin it
   * when the Rust configurator takes over), the DfuSe logic lives in a small
-  * Rust helper binary -- `freejoyx-flash` (anpeaco/FreeJoyXConfigurator#21).
+  * Rust helper binary -- `freejoyx-dfu` (anpeaco/FreeJoyXConfigurator#21).
   * This class is a thin QProcess driver: it locates the helper, spawns it,
   * parses its line-oriented stdout into Qt signals, and maps its exit code
   * to a success/failure verdict. The USB + driver mess stays entirely on the
@@ -38,7 +38,7 @@
   * --- Helper CLI contract (this class is the authority both sides honour) ---
   *
   * Probe (used to enable/disable the UI entry):
-  *     freejoyx-flash probe --board f411
+  *     freejoyx-dfu probe --board f411
   *   Prints exactly one line `PROBE present`, `PROBE needs-driver`, or
   *   `PROBE absent`, exit 0. `needs-driver` means the ROM DFU device is present
   *   at the OS driver layer but isn't WinUSB-bound yet (so nusb -- and thus a
@@ -46,7 +46,7 @@
   *   driver. Only surfaced on a `--verbose` (manual re-check) probe.
   *
   * Install/reinstall (writes bootloader + app in one DfuSe session):
-  *     freejoyx-flash install --board f411 --boot <bootBin> --app <appBin>
+  *     freejoyx-dfu install --board f411 --boot <bootBin> --app <appBin>
   *   The helper performs, in order: WinUSB bind (libwdi, may raise one UAC
   *   prompt the first time on Windows; no-op on Linux/macOS), erase, write
   *   bootloader -> 0x08000000, write app -> 0x08020000, verify, leave DFU.
@@ -80,7 +80,7 @@
   *
   * Install the WinUSB driver on its own (the same bind step `install` does
   * first), so the driver can be fixed before nusb can see the device:
-  *     freejoyx-flash bind --board f411
+  *     freejoyx-dfu bind --board f411
   *   One UAC prompt on Windows; no-op elsewhere. exit 0 on success.
   *
   * --- Helper stdout protocol (one record per line, space-delimited) ---
@@ -171,7 +171,7 @@ public:
     ~DfuInstallSession();
 
     /* Absolute path to the bundled helper binary next to the configurator
-     * executable (`freejoyx-flash.exe` on Windows, `freejoyx-flash`
+     * executable (`freejoyx-dfu.exe` on Windows, `freejoyx-dfu`
      * elsewhere). Returns an empty string if the file isn't present, so
      * callers can disable the feature with a clear "helper missing" reason
      * rather than spawning a process that can't start. */
@@ -182,7 +182,7 @@ public:
     bool isActive() const { return m_proc && m_proc->state() != QProcess::NotRunning; }
     const QString &lastErrorDetail() const { return m_lastErrorDetail; }
 
-    /* Async availability probe: spawns `freejoyx-flash probe`. The result
+    /* Async availability probe: spawns `freejoyx-dfu probe`. The result
      * arrives via availability(Availability): Ready for a WinUSB-bound chip in
      * ROM-DFU mode, NeedsDriver for one present but not yet WinUSB-bound,
      * Absent otherwise. Safe to call repeatedly (e.g. on a device-list
@@ -203,7 +203,7 @@ public:
     void probe(bool verbose = false, bool checkDriver = false);
 
     /* Install/repair the WinUSB binding for the ROM DFU device on its own, by
-     * running `freejoyx-flash bind` (the same step install() does first). Use
+     * running `freejoyx-dfu bind` (the same step install() does first). Use
      * this when probe() reports NeedsDriver -- it fixes the driver so a
      * subsequent probe can see the device. Raises one UAC prompt on Windows;
      * a no-op elsewhere. The outcome arrives via driverInstallFinished(); LOG
@@ -221,14 +221,14 @@ public:
      * install, since DfuSe always erases before writing. */
     void cancel();
 
-    /* Leave DFU without flashing: runs `freejoyx-flash leave`, which manifests +
+    /* Leave DFU without flashing: runs `freejoyx-dfu leave`, which manifests +
      * resets the chip so it reboots into its firmware -- no power-cycle needed.
      * Only effective if the board entered DFU via the software reboot (BOOT0 low);
      * a held BOOT0 re-enters DFU on the reset. Outcome via leaveFinished(); the
      * device then disappears from probe(). Coalesced if a session is active. */
     void leaveDfu();
 
-    /* Mass-erase the whole chip (clear-chip recovery): runs `freejoyx-flash
+    /* Mass-erase the whole chip (clear-chip recovery): runs `freejoyx-dfu
      * erase`, wiping bootloader + config + app. The board is left blank but
      * still IN DFU, so an install can follow immediately. DESTRUCTIVE -- the
      * dialog gates it behind a strong confirmation. Outcome via eraseFinished();
