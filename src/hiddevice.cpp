@@ -950,14 +950,21 @@ void HidDevice::flashFirmwareToDevice()
                     flash_buffer[1] = uint8_t(cnt >> 8);
                     flash_buffer[2] = uint8_t(cnt & 0xFF);
                     flash_buffer[3] = 0;
-                    if (cnt * 60 < m_firmware->size()) {
-                        memcpy(flash_buffer + 4, m_firmware->constData() + (cnt - 1) * 60, 60);
-                        bytes_sent = (cnt - 1) * 60;
-                    } else {
-                        memcpy(flash_buffer + 4, m_firmware->constData() + (cnt - 1) * 60,
-                               m_firmware->size() - (cnt - 1) * 60);
-                        bytes_sent = total_bytes;
+                    /* cnt is supplied by the device on the wire. Validate it
+                     * against the firmware's actual size before using it to
+                     * index the buffer: cnt==0 would underread (constData()-60)
+                     * and an out-of-range cnt would make size()-(cnt-1)*60 a
+                     * negative int that converts to a huge size_t in memcpy. */
+                    const qsizetype fw_size = m_firmware->size();
+                    const qsizetype off = qsizetype(cnt - 1) * 60;
+                    if (cnt == 0 || off >= fw_size) {
+                        hid_close(flasher);
+                        emit flashStatus(SIZE_ERROR, bytes_sent, total_bytes);
+                        return;
                     }
+                    const qsizetype n = qMin(qsizetype(60), fw_size - off);
+                    memcpy(flash_buffer + 4, m_firmware->constData() + off, size_t(n));
+                    bytes_sent = (n < 60) ? total_bytes : int(off);
                     hid_write(flasher, flash_buffer, 64);
                     emit flashStatus(IN_PROCESS, bytes_sent, total_bytes);
                     qDebug() << "Firmware packet sent:" << cnt;
