@@ -1,0 +1,35 @@
+[package]
+name = "freejoyx-flash"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "First-install / reinstall DfuSe flasher for F411 over the STM32 ROM USB DFU bootloader"
+
+[[bin]]
+name = "freejoyx-flash"
+path = "src/main.rs"
+
+[lib]
+name = "freejoyx_flash"
+path = "src/lib.rs"
+
+[features]
+# Off by default. Enables the Windows WinUSB auto-bind (libwdi / Zadig's
+# engine: one UAC prompt, no certificate) via the `wdi` crate. The default
+# build needs only `nusb` and compiles on any Windows/Linux/macOS host.
+#
+# Building WITH this feature additionally requires the "MSVC v143 ARM64 build
+# tools" component, because libwdi-sys 0.1.4 always builds an ARM64 installer
+# (no feature disables it). Without the feature the helper still flashes; the
+# user binds WinUSB once with Zadig (see driver.rs open_failure_hint).
+winusb-autobind = ["dep:wdi"]
+
+[dependencies]
+nusb = "0.1"
+
+# Optional, Windows-only, behind the `winusb-autobind` feature (see above).
+[target.'cfg(windows)'.dependencies]
+wdi = { version = "0.1", default-features = false, features = ["enable-x86"], optional = true }
