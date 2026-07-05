@@ -411,6 +411,7 @@
           <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
           <property name="alignment"><set>Qt::AlignCenter</set></property>
           <property name="suffix"><string> ms</string></property>
+          <property name="minimum"><number>1</number></property>
           <property name="maximum"><number>65535</number></property>
          </widget>
         </item>

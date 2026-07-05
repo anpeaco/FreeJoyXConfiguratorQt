@@ -2,6 +2,7 @@
 #include "ui_encoders.h"
 
 #include <QComboBox>
+#include <QMessageBox>
 #include <QSignalBlocker>
 
 #include "centered_cbox.h"
@@ -229,6 +230,22 @@ void Encoders::applyCalibration(int modeIndex, bool queue)
 
 void Encoders::onCalibrateClicked()
 {
+    // Calibrate drives off the firmware's per-encoder edge monitor (enc_mon_*),
+    // which only exists in the params report of a matching-generation FreeJoyX
+    // device. Against older FreeJoyX, upstream (0x17xx), or a disconnected
+    // device those bytes read as zero/garbage, so the dialog would sit at
+    // "Waiting for movement..." forever. Gate on wire-generation compatibility
+    // (the same &0xFFF0 mask the connect path uses) with a clear message.
+    const uint16_t devVer = gEnv.pDeviceConfig->paramsReport.firmware_version;
+    if ((devVer & 0xFFF0) != (FIRMWARE_VERSION & 0xFFF0)) {
+        QMessageBox::information(
+            this, tr("Calibration unavailable"),
+            tr("Encoder calibration needs a connected device running matching "
+               "FreeJoyX firmware — the on-device encoder monitor it relies on "
+               "is only present there. Connect and read the device, then try again."));
+        return;
+    }
+
     // Scope the helper to this row: pass the encoder's slow-slot index (matches
     // the firmware's params_report.enc_mon_slot) and the Pin A / B names for
     // clear "turn THIS encoder" instructions.

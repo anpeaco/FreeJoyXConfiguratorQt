@@ -2,7 +2,6 @@
 #define DEBUGWINDOW_H
 
 #include <QWidget>
-#include <QHash>
 
 namespace Ui {
 class DebugWindow;
