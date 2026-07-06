@@ -229,14 +229,14 @@ private:
     const deviceEnum_guiName_t m_shiftList[SHIFT_COUNT] = // order must be as in common_types.h!!!!!!!!!!!          // static ?
     {
         {0,        tr("-")},
-        {1,        tr("Shift 1")},
-        {2,        tr("Shift 2")},
-        {3,        tr("Shift 3")},
-        {4,        tr("Shift 4")},
-        {5,        tr("Shift 5")},
-        {6,        tr("Shift 6")},
-        {7,        tr("Shift 7")},
-        {8,        tr("Shift 8")},
+        {1,        tr("S1")},
+        {2,        tr("S2")},
+        {3,        tr("S3")},
+        {4,        tr("S4")},
+        {5,        tr("S5")},
+        {6,        tr("S6")},
+        {7,        tr("S7")},
+        {8,        tr("S8")},
     };
     //static deviceEnum_guiName_t logical_function_list_[LOGICAL_FUNCTION_COUNT];
 
