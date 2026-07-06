@@ -165,6 +165,12 @@ void ButtonLogical::initialization()
     for (int i = 0; i < SHIFT_COUNT; i++) {
         ui->comboBox_ShiftIndex->addItem(m_shiftList[i].guiName);
     }
+    // Labels are abbreviated (S1..S8) to fit the narrow column; spell it out
+    // in a tooltip so the meaning isn't cryptic when the dropdown is closed.
+    ui->comboBox_ShiftIndex->setToolTip(
+        tr("Shift modifier layer (S1 = Shift 1 … S8 = Shift 8).\n"
+           "This button only outputs while the chosen shift is held.\n"
+           "\"-\" = no shift (always active)."));
     for (int i = 0; i < TIMER_COUNT; i++) {
         // Item 0 is the "-" sentinel (slot = -1); items 1..3 map to button
         // timers T1..T3. Display "-" for the sentinel and "T<n> (X ms)"
