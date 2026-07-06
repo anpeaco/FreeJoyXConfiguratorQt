@@ -78,6 +78,14 @@ dev_config_t InitConfig (void)
             .button_polling_interval_ticks = 5,
             .encoder_polling_interval_ticks = 1,
 
+            // Gesture timers -- mirror of FreeJoyX/application/Inc/main.h's
+            // init_config. Must be seeded explicitly: without them the
+            // designated initializer leaves both at 0, and a config built
+            // from scratch (not read off a device) collapses the tap window
+            // so TAP / DOUBLE_TAP never fire.
+            .tap_cutoff_ms = 200,					// TAP release-within cutoff (global)
+            .double_tap_window_ms = 200,			// DOUBLE_TAP max gap between taps (global)
+
             /*
         Device pins configuration. Available values:
         - AXIS_ANALOG (only for pins 0-7)
