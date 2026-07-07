@@ -129,6 +129,22 @@ void ConfigToFile::loadDeviceConfigFromFile(QWidget *parent, const QString &file
         deviceSettings.endGroup();
     }
 
+    // load Shift buttons config from file (wire gen 0x0060 -- dedicated shift
+    // modifiers; older INIs lack this section, so each field falls back to the
+    // struct default = unwired). No ShiftMod: a shift is never itself shifted.
+    for (int i = 0; i < MAX_SHIFTS_NUM; ++i) {
+        deviceSettings.beginGroup("ShiftButtonsConfig_" + QString::number(i));
+        devC.shift_buttons[i].physical_num = int8_t(deviceSettings.value("ButtonPhysicNumber", devC.shift_buttons[i].physical_num).toInt());
+        devC.shift_buttons[i].type = uint8_t(deviceSettings.value("ButtonType", devC.shift_buttons[i].type).toInt());
+        devC.shift_buttons[i].is_inverted = uint8_t(deviceSettings.value("Inverted", devC.shift_buttons[i].is_inverted).toInt());
+        devC.shift_buttons[i].is_disabled = uint8_t(deviceSettings.value("Disabled", devC.shift_buttons[i].is_disabled).toInt());
+        devC.shift_buttons[i].delay_timer = uint8_t(deviceSettings.value("DelayTimer", devC.shift_buttons[i].delay_timer).toInt());
+        devC.shift_buttons[i].press_timer = uint8_t(deviceSettings.value("PressTimer", devC.shift_buttons[i].press_timer).toInt());
+        devC.shift_buttons[i].op    = uint8_t(deviceSettings.value("Op",   devC.shift_buttons[i].op).toInt());
+        devC.shift_buttons[i].src_b = int8_t(deviceSettings.value("SrcB",  devC.shift_buttons[i].src_b).toInt());
+        deviceSettings.endGroup();
+    }
+
     // load Axes config from file
     for (int i = 0; i < MAX_AXIS_NUM; ++i)
     {
@@ -550,6 +566,20 @@ void ConfigToFile::saveDeviceConfigToFile(const QString &fileName, dev_config_t 
         deviceSettings.setValue("PressTimer", devC.buttons[i].press_timer);
         deviceSettings.setValue("Op",         devC.buttons[i].op);
         deviceSettings.setValue("SrcB",       devC.buttons[i].src_b);
+        deviceSettings.endGroup();
+    }
+
+    // save Shift buttons config to file (wire gen 0x0060)
+    for (int i = 0; i < MAX_SHIFTS_NUM; ++i) {
+        deviceSettings.beginGroup("ShiftButtonsConfig_" + QString::number(i));
+        deviceSettings.setValue("ButtonPhysicNumber", devC.shift_buttons[i].physical_num);
+        deviceSettings.setValue("ButtonType", devC.shift_buttons[i].type);
+        deviceSettings.setValue("Inverted", devC.shift_buttons[i].is_inverted);
+        deviceSettings.setValue("Disabled", devC.shift_buttons[i].is_disabled);
+        deviceSettings.setValue("DelayTimer", devC.shift_buttons[i].delay_timer);
+        deviceSettings.setValue("PressTimer", devC.shift_buttons[i].press_timer);
+        deviceSettings.setValue("Op",         devC.shift_buttons[i].op);
+        deviceSettings.setValue("SrcB",       devC.shift_buttons[i].src_b);
         deviceSettings.endGroup();
     }
 

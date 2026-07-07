@@ -21,6 +21,7 @@
 #include "shiftregistersconfig.h"
 #include "gpioexpanderconfig.h"
 #include "shiftstimersconfig.h"
+#include "shiftbuttonconfig.h"
 #include "loadingoverlay.h"
 
 QT_BEGIN_NAMESPACE
@@ -186,6 +187,7 @@ private:
     PinConfig *m_pinConfig;
     ButtonConfig *m_buttonConfig;
     ShiftsTimersConfig *m_shiftsTimersConfig;
+    ShiftButtonConfig *m_shiftButtonConfig;
     LedConfig *m_ledConfig;
     EncodersConfig *m_encoderConfig = nullptr;
     ShiftRegistersConfig *m_shiftRegConfig;
