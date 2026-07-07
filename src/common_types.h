@@ -589,6 +589,9 @@ typedef struct
 
     // config 14
     shift_reg_config_t	shift_registers[4];
+    /* DEPRECATED (wire gen 0x0060): shift modifiers moved to shift_buttons[] at
+     * the end of this struct. Kept as reserved bytes so every following field
+     * keeps its offset (prefix migration stays valid). Never used by the app. */
     shift_modificator_t	shift_config[MAX_SHIFTS_NUM];
     uint16_t						vid;
     uint16_t						pid;
@@ -649,6 +652,13 @@ typedef struct
     // spin's queue drains quickly. Appended at the very end so 0x0040 -> 0x0050 is
     // a prefix-copy: offsetof(dev_config_t, encoder_gap_ms) == the old size (1652).
     uint16_t				encoder_gap_ms;
+
+    /* Dedicated shift-modifier buttons (wire gen 0x0060). Full button_t entries,
+     * processed like logical buttons (NORMAL / TOGGLE* / LOGIC) into shifts_state,
+     * but never HID-reported and never counted against the 128 button slots.
+     * Replaces the deprecated shift_config[] above. Appended last so
+     * 0x0050 -> 0x0060 stays a prefix-copy migration. */
+    button_t				shift_buttons[MAX_SHIFTS_NUM];
 
 }dev_config_t;
 
