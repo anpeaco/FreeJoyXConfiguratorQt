@@ -212,6 +212,8 @@ MainWindow::MainWindow(QWidget *parent)
     m_shiftButtonConfig = new ShiftButtonConfig(this);
     ui->tabWidget->insertTab(ui->tabWidget->indexOf(ui->tab_ButtonConfig) + 1,
                              m_shiftButtonConfig, tr("Shifts"));
+    // Shifts moved out of the old "Shifts & Timers" tab -> rename it "Timers".
+    ui->tabWidget->setTabText(ui->tabWidget->indexOf(ui->tab_ShiftsTimers), tr("Timers"));
     qDebug()<<"shifts/timers config load time ="<< timer.restart() << "ms";
     // add axes widget
     m_axesConfig = new AxesConfig(this);
