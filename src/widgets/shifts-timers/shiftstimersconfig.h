@@ -28,15 +28,13 @@ public:
 
     void retranslateUi();
 
-    // Greys / un-greys the shift spinboxes when the device is
-    // disconnected / connected. Driven from MainWindow's setUiOnOff
-    // dispatch, same way ButtonConfig::setUiOnOff used to.
+    // Retained no-op hook (MainWindow's setUiOnOff dispatch still calls it):
+    // the global timers on this tab are always editable, and shift widgets
+    // moved to the dedicated Shifts tab, so there's nothing device-gated here.
     void setUiOnOff(int value);
 
-    // Drives the green highlight on shift labels when the device
-    // reports an active shift state. Called from MainWindow on
-    // params-report updates, same hook ButtonConfig::buttonStateChanged
-    // used.
+    // Retained no-op hook (MainWindow calls it on params-report updates): live
+    // shift feedback moved to the dedicated Shifts tab (ShiftButtonConfig).
     void shiftStateChanged();
 
 signals:
@@ -49,18 +47,6 @@ signals:
 
 private:
     Ui::ShiftsTimersConfig *ui;
-
-    bool m_isShifts_act;
-    /* Per-slot label-highlight tracking. Indexed [0..MAX_SHIFTS_NUM-1].
-     * Refactored from named flags (m_shift1_act..m_shift5_act) when slot
-     * count grew to 8 in v1.7.8 (issue anpeaco/FreeJoyX#1). */
-    bool m_shift_act[MAX_SHIFTS_NUM];
-
-    /* Pointer tables to the per-slot UI widgets. Populated in the
-     * constructor; lets readFromConfig / writeToConfig / setUiOnOff /
-     * shiftStateChanged loop instead of repeating per-slot code. */
-    QSpinBox *m_spinBoxes[MAX_SHIFTS_NUM] = {};
-    QLabel   *m_labels[MAX_SHIFTS_NUM]    = {};
 };
 
 #endif // SHIFTSTIMERSCONFIG_H

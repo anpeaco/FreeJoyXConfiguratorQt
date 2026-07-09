@@ -607,18 +607,6 @@ QLabel[buttonState="on"] {
     color: #ffffff;
 }
 
-/* ----- Active-shift indicator on Shifts & Timers tab ---------------- */
-
-/* The shift-name label flashes green when that shift's physical button
- * is held on the device. Set via setProperty("shiftActive", true). */
-
-QLabel[shiftActive="true"] {
-    background: %green-fill%;
-    color: #ffffff;
-    border-radius: 4px;
-    padding: 1px 4px;
-}
-
 /* The curve-editor button (AxesCurvesButton) styles its own selected /
  * hover / drop states via a per-widget stylesheet in axescurvesbutton.cpp
  * (it keys off custom checked/hover/drop/lastChecked properties, not the

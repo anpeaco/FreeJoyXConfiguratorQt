@@ -86,6 +86,22 @@ dev_config_t InitConfig (void)
             .tap_cutoff_ms = 200,					// TAP release-within cutoff (global)
             .double_tap_window_ms = 200,			// DOUBLE_TAP max gap between taps (global)
 
+            /* Dedicated shift buttons (wire gen 0x0060) default to unwired. Like
+             * buttons[], physical_num / src_b MUST be -1: a designated-initializer
+             * default of 0 would bind every shift to physical button 0. Mirror of
+             * FreeJoyX/application/Inc/main.h. */
+            .shift_buttons[0].physical_num = -1, .shift_buttons[0].src_b = -1,
+            .shift_buttons[1].physical_num = -1, .shift_buttons[1].src_b = -1,
+            .shift_buttons[2].physical_num = -1, .shift_buttons[2].src_b = -1,
+            .shift_buttons[3].physical_num = -1, .shift_buttons[3].src_b = -1,
+            .shift_buttons[4].physical_num = -1, .shift_buttons[4].src_b = -1,
+            .shift_buttons[5].physical_num = -1, .shift_buttons[5].src_b = -1,
+            .shift_buttons[6].physical_num = -1, .shift_buttons[6].src_b = -1,
+            .shift_buttons[7].physical_num = -1, .shift_buttons[7].src_b = -1,
+
+            // Global LOGIC debounce, shared by every LOGIC button + shift. 0 = off.
+            .logic_debounce_ms = 0,
+
             /*
         Device pins configuration. Available values:
         - AXIS_ANALOG (only for pins 0-7)

@@ -34,6 +34,15 @@ public:
     void readFromConfig();
     void writeToConfig();
 
+    /* Wire gen 0x0060: a row targets either the main buttons[] array (default)
+     * or the dedicated shift_buttons[] array. Call setTarget(ShiftButtons) once,
+     * AFTER initialization(). A shift row reads/writes shift_buttons[m_buttonIndex],
+     * never HID-reports, hides the shift-modifier column, shows an "S<n>" label,
+     * and restricts the Function dropdown to NORMAL / TOGGLE* / LOGIC. */
+    enum Target { MainButtons, ShiftButtons };
+    void setTarget(Target t);
+    bool isShiftTarget() const { return m_target == ShiftButtons; }
+
     void initialization();
 
     void setMaxPhysButtons(int maxPhysButtons);
@@ -193,6 +202,8 @@ private:
     bool m_slotDisabled = false;		// true while the slot's eye/disable box is checked (row locked + ghosted)
     bool m_spinBoxEnabledByMax = true;	// last setSpinBoxOnOff() state, so re-enable restores the spinbox correctly
     int m_buttonIndex;
+    Target m_target = MainButtons;
+    button_t *slotPtr() const;   // -> config.buttons[] or config.shift_buttons[] per m_target
     static int m_currentFocus;			// row whose phys-num spinBox has focus, or -1
     static int m_currentFocusSrcB;		// row whose Source B spinBox has focus, or -1
     static bool m_autoPhysButEnabled;

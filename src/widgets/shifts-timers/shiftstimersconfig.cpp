@@ -4,11 +4,6 @@
 
 #include <QSpinBox>
 
-// SHIFT_COUNT lives in buttonlogical.h (MAX_SHIFTS_NUM shifts + "No shift"
-// sentinel). Pulled in here for the shiftStateChanged() loop that mirrors
-// the device's active-shift bitmap onto the label highlights.
-#include "buttonlogical.h"
-
 static const int TICKS_NS = 500;
 
 ShiftsTimersConfig::ShiftsTimersConfig(QWidget *parent)
@@ -16,33 +11,11 @@ ShiftsTimersConfig::ShiftsTimersConfig(QWidget *parent)
     , ui(new Ui::ShiftsTimersConfig)
 {
     ui->setupUi(this);
-    m_isShifts_act = false;
-    for (int i = 0; i < MAX_SHIFTS_NUM; ++i) {
-        m_shift_act[i] = false;
-    }
 
-    /* Per-slot widget tables. v1.7.8 (issue anpeaco/FreeJoyX#1) refactored
-     * the prior hand-unrolled per-slot code into loops over these arrays;
-     * the .ui carries spinBox_Shift1..8 plus a "Shift N" label_ShiftN per slot
-     * for slots 1..MAX_SHIFTS_NUM, addressed here as 0..MAX_SHIFTS_NUM-1. The
-     * label_ShiftN is the active-shift highlight target (shiftStateChanged). */
-    m_spinBoxes[0] = ui->spinBox_Shift1;
-    m_spinBoxes[1] = ui->spinBox_Shift2;
-    m_spinBoxes[2] = ui->spinBox_Shift3;
-    m_spinBoxes[3] = ui->spinBox_Shift4;
-    m_spinBoxes[4] = ui->spinBox_Shift5;
-    m_spinBoxes[5] = ui->spinBox_Shift6;
-    m_spinBoxes[6] = ui->spinBox_Shift7;
-    m_spinBoxes[7] = ui->spinBox_Shift8;
-
-    m_labels[0] = ui->label_Shift1;
-    m_labels[1] = ui->label_Shift2;
-    m_labels[2] = ui->label_Shift3;
-    m_labels[3] = ui->label_Shift4;
-    m_labels[4] = ui->label_Shift5;
-    m_labels[5] = ui->label_Shift6;
-    m_labels[6] = ui->label_Shift7;
-    m_labels[7] = ui->label_Shift8;
+    /* Shift modifiers live on the dedicated Shifts tab (wire gen 0x0070); the
+     * old per-shift spinbox group was removed from this tab, which now hosts only
+     * the global timers. (Relocating the timers to the Advanced tab is a
+     * wire-independent follow-up.) */
 
     // Polling spinboxes round to TICKS_NS multiples on user edit. Same
     // helper that ButtonConfig used to own.
@@ -102,16 +75,13 @@ void ShiftsTimersConfig::readFromConfig()
 {
     dev_config_t *devc = &gEnv.pDeviceConfig->config;
 
-    for (int i = 0; i < MAX_SHIFTS_NUM; ++i) {
-        m_spinBoxes[i]->setValue(devc->shift_config[i].button + 1);
-    }
-
     ui->spinBox_Timer1->setValue(devc->button_timer1_ms);
     ui->spinBox_Timer2->setValue(devc->button_timer2_ms);
     ui->spinBox_Timer3->setValue(devc->button_timer3_ms);
 
     ui->spinBox_DebounceTimer->setValue(devc->button_debounce_ms);
     ui->spinBox_A2bDebounce->setValue(devc->a2b_debounce_ms);
+    ui->spinBox_LogicDebounce->setValue(devc->logic_debounce_ms);
 
     ui->spinBox_EncoderPressTimer->setValue(devc->encoder_press_time_ms);
     // Firmware treats encoder_gap_ms == 0 as "use the default gap" (20 ms, the
@@ -137,9 +107,6 @@ void ShiftsTimersConfig::readFromConfig()
 void ShiftsTimersConfig::writeToConfig()
 {
     dev_config_t *devc = &gEnv.pDeviceConfig->config;
-    for (int i = 0; i < MAX_SHIFTS_NUM; ++i) {
-        devc->shift_config[i].button = m_spinBoxes[i]->value() - 1;
-    }
 
     devc->button_timer1_ms = ui->spinBox_Timer1->value();
     devc->button_timer2_ms = ui->spinBox_Timer2->value();
@@ -147,6 +114,7 @@ void ShiftsTimersConfig::writeToConfig()
 
     devc->button_debounce_ms = ui->spinBox_DebounceTimer->value();
     devc->a2b_debounce_ms = ui->spinBox_A2bDebounce->value();
+    devc->logic_debounce_ms = ui->spinBox_LogicDebounce->value();
 
     devc->encoder_press_time_ms = ui->spinBox_EncoderPressTimer->value();
     devc->encoder_gap_ms = ui->spinBox_EncoderGap->value();
@@ -158,37 +126,13 @@ void ShiftsTimersConfig::writeToConfig()
     devc->double_tap_window_ms = ui->spinBox_DoubleTapWindow->value();
 }
 
-void ShiftsTimersConfig::setUiOnOff(int value)
+void ShiftsTimersConfig::setUiOnOff(int /*value*/)
 {
-    const bool on = (value > 0);
-    for (int i = 0; i < MAX_SHIFTS_NUM; ++i) {
-        m_spinBoxes[i]->setEnabled(on);
-    }
+    // Shifts moved to the dedicated Shifts tab; the global timers on this tab
+    // are always editable, so nothing is device-gated here now.
 }
 
 void ShiftsTimersConfig::shiftStateChanged()
 {
-    /* Mirror paramsRep->shift_button_data (one bit per shift slot) onto
-     * the per-slot label "shiftActive" highlight. v1.7.8 (issue
-     * anpeaco/FreeJoyX#1) collapsed the prior 5 hand-unrolled if/else
-     * chains into this loop -- which incidentally fixes a bug where
-     * every "shift cleared" branch checked `i == 0` regardless of the
-     * actual slot, so only slot 1's clear ever fired. */
-    params_report_t *paramsRep = &gEnv.pDeviceConfig->paramsReport;
-
-    bool any_active = false;
-    for (int i = 0; i < MAX_SHIFTS_NUM; ++i) {
-        const bool active = (paramsRep->shift_button_data & (1 << i)) != 0;
-        if (active) {
-            any_active = true;
-            if (!m_shift_act[i]) {
-                freejoy_style::setRole(m_labels[i], "shiftActive", true);
-                m_shift_act[i] = true;
-            }
-        } else if (m_shift_act[i]) {
-            freejoy_style::clearRole(m_labels[i], "shiftActive");
-            m_shift_act[i] = false;
-        }
-    }
-    m_isShifts_act = any_active;
+    // Live shift feedback moved to the dedicated Shifts tab (ShiftButtonConfig).
 }

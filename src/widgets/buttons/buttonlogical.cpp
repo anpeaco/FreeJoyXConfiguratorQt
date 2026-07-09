@@ -425,8 +425,113 @@ void ButtonLogical::setSlotDisabled(bool disabled)
     }
 }
 
+button_t *ButtonLogical::slotPtr() const
+{
+    return (m_target == ShiftButtons)
+               ? &gEnv.pDeviceConfig->config.shift_buttons[m_buttonIndex]
+               : &gEnv.pDeviceConfig->config.buttons[m_buttonIndex];
+}
+
+/* Switch this row to configure a dedicated shift button. Call AFTER
+ * initialization() -- the Function-type filter needs the dropdown populated. */
+void ButtonLogical::setTarget(Target t)
+{
+    m_target = t;
+    if (t != ShiftButtons)
+        return;
+
+    /* A shift is a modifier, not a HID button: hide the (circular, firmware-
+     * ignored) shift-modifier column and show an "S<n>" label in place of the
+     * host button number. */
+    ui->comboBox_ShiftIndex->hide();
+    ui->label_LogicalButtonNumber->setText(QStringLiteral("S%1").arg(m_buttonIndex + 1));
+    ui->label_LogicalButtonNumber->setToolTip(tr("Shift %1").arg(m_buttonIndex + 1));
+
+    /* Shift slots are fixed positions -- S1..S8 map to bit positions in the
+     * firmware's shifts_state bitmap -- so drag-to-reorder is meaningless here
+     * (and ShiftButtonConfig has no drop handler anyway). Hide the grip. */
+    ui->label_DragHandle->hide();
+
+    /* Strip the per-slot Delay / Press timer columns from shift rows. Both are
+     * meaningless for a shift's HELD output: press_timer only sets a momentary
+     * pulse width (a shift layer isn't a pulse -- it would just make the layer
+     * linger past release), and delay_timer only postpones engagement. On a LOGIC
+     * shift delay_timer would be the debounce picker, but a held modifier tolerates
+     * the few-ms input-transition glitch debounce guards against, so it's dropped
+     * here too for a clean, uniform shift table. The fields stay in button_t (they
+     * sit at their default and the firmware ignores them for a held shift); we just
+     * stop surfacing knobs that do nothing. Scoped to the shift target only --
+     * main-button rows keep both columns. */
+    ui->comboBox_DelayTimerIndex->hide();
+    ui->comboBox_PressTimerIndex->hide();
+
+    /* Prune the Function dropdown to the only types that produce a HELD state a
+     * shift layer can be sampled against: Normal, Toggle, Logic. A shift is read
+     * live every tick (shifts_state |= current_state << i in buttons.c), so a type
+     * is only usable if current_state can stay high for as long as the layer is
+     * wanted. Everything else is REMOVED (not just greyed) so the list stays short
+     * and unambiguous:
+     *   - Toggle switch / on / off produce an EDGE PULSE, not a held state -- the
+     *     layer would blink on for one press-timer then drop, so you could never
+     *     hold a shifted button. (A maintained hardware toggle that should hold a
+     *     layer is wired to a NORMAL shift slot instead -- held while closed.)
+     *   - POV / Encoder produce hat / axis output, not a button state.
+     *   - TAP / Double-tap need the gesture state machine, which shifts are held
+     *     off (num == 0xFF sentinel in buttons.c).
+     *   - Radio and Sequential BUTTON are cross-slot and/or momentary: Radio's
+     *     handler self-references by slot index (breaks under the 0xFF shift
+     *     sentinel) and Sequential BUTTON drops its state on release (not held).
+     * Sequential TOGGLE is allowed: its ring slot latches current_state high, and
+     * the firmware handler is generalised to the shift arrays when num == 0xFF, so
+     * one physical button cycles shift layers (S1 -> S2 -> S1 ...).
+     * m_logicFunc_enumIndex is row-aligned 1:1 with the combo (a -1 sentinel per
+     * grouped header), so items and their now-empty headers are dropped from both
+     * together, top-to-bottom preserved by walking bottom-up. */
+    auto isShiftType = [](int type) {
+        return type == BUTTON_NORMAL || type == BUTTON_TOGGLE || type == LOGIC
+            || type == SEQUENTIAL_TOGGLE;
+    };
+    auto removeRow = [this](int r) {
+        ui->comboBox_ButtonFunction->removeItem(r);
+        m_logicFunc_enumIndex.removeAt(r);
+    };
+    /* Block the combo's currentIndexChanged across the whole prune + re-anchor.
+     * removeItem() can fire it synchronously (if a removed row is at/below the
+     * current index), and functionIndexChanged() would then index
+     * m_logicFunc_enumIndex while it's momentarily out of step with the combo --
+     * a wrong-enum map or QList assert. readFromConfig() re-selects and fires the
+     * handler with the real value later, so suppressing it here is safe. */
+    QSignalBlocker functionBlocker(ui->comboBox_ButtonFunction);
+    // Pass 1: drop every selectable item that isn't a valid shift type.
+    for (int r = m_logicFunc_enumIndex.size() - 1; r >= 0; --r) {
+        if (m_logicFunc_enumIndex[r] >= 0 && !isShiftType(m_logicFunc_enumIndex[r]))
+            removeRow(r);
+    }
+    // Pass 2: drop any group header left with no items beneath it (its next row is
+    // another header or the end of the list).
+    for (int r = m_logicFunc_enumIndex.size() - 1; r >= 0; --r) {
+        if (m_logicFunc_enumIndex[r] < 0) {
+            const bool empty = (r + 1 >= m_logicFunc_enumIndex.size())
+                            || (m_logicFunc_enumIndex[r + 1] < 0);
+            if (empty)
+                removeRow(r);
+        }
+    }
+    // The pruning may have removed the row initialization() selected; re-anchor on
+    // the first surviving real (non-header) row so the closed combo shows a type.
+    for (int r = 0; r < m_logicFunc_enumIndex.size(); ++r) {
+        if (m_logicFunc_enumIndex[r] >= 0) {
+            ui->comboBox_ButtonFunction->setCurrentIndex(r);
+            break;
+        }
+    }
+}
+
 void ButtonLogical::setReportNumber(int hidNumber)
 {
+    // Shift rows never HID-report; keep the "S<n>" label setTarget() applied.
+    if (m_target == ShiftButtons)
+        return;
     if (hidNumber >= 1) {
         ui->label_LogicalButtonNumber->setNum(hidNumber);
     } else {
@@ -661,12 +766,15 @@ void ButtonLogical::disableButtonType(button_type_t type, bool disable)
 
 void ButtonLogical::setTimerColumnsEnabled(bool delayEnabled, bool pressEnabled)
 {
-    /* Issue anpeaco/FreeJoyX#22: gesture-managed slots (TAP, DOUBLE_TAP,
-     * gesture-coexisting NORMAL) ignore delay_timer in firmware. Force
-     * the column to BUTTON_TIMER_NONE (combo index 0) and disable both
-     * the combo and the underlying config value so the user can't set a
-     * meaningless timer. press_timer stays editable on these slots --
-     * it becomes the per-slot minimum-hold floor. */
+    /* Gate the per-row Delay / Press timer columns. A disabled column is
+     * forced back to BUTTON_TIMER_NONE (combo index 0) so a timer the
+     * firmware won't read can't linger in the config. Two cases:
+     *   - Gesture-managed slots (TAP / DOUBLE_TAP / gesture-coexisting
+     *     NORMAL) ignore delay_timer; press_timer stays editable as the
+     *     per-slot minimum-hold floor. Issue anpeaco/FreeJoyX#22.
+     *   - Encoder input rows ignore BOTH (delay_timer is never read;
+     *     press_timer only applies in non-queue mode), so both lock here
+     *     -- encoder press timing lives on the Encoders tab. */
     if (m_slotDisabled) {
         // Slot locked: both timer columns stay disabled regardless of the
         // gesture gating ButtonConfig is requesting.
@@ -674,27 +782,45 @@ void ButtonLogical::setTimerColumnsEnabled(bool delayEnabled, bool pressEnabled)
         ui->comboBox_PressTimerIndex->setEnabled(false);
         return;
     }
+    const button_type_t rowType = currentButtonType();
+    const bool isEncoder = (rowType == ENCODER_INPUT_A || rowType == ENCODER_INPUT_B);
+
     ui->comboBox_DelayTimerIndex->setEnabled(delayEnabled);
     ui->comboBox_PressTimerIndex->setEnabled(pressEnabled);
+
+    // Force a disabled column back to BUTTON_TIMER_NONE (combo index 0).
+    // Both columns clear now: encoder rows disable press too (gesture rows
+    // keep it as the minimum-hold floor).
     if (!delayEnabled && ui->comboBox_DelayTimerIndex->currentIndex() != 0)
-    {
         ui->comboBox_DelayTimerIndex->setCurrentIndex(0);
-    }
-    QString tip = delayEnabled
-        ? QString()
-        : freejoy_style::tipHtml(
-              tr("Delay timer disabled"),
-              tr("Gesture-managed slots are driven by the global tap and double-tap windows."));
-    ui->comboBox_DelayTimerIndex->setToolTip(tip);
+    if (!pressEnabled && ui->comboBox_PressTimerIndex->currentIndex() != 0)
+        ui->comboBox_PressTimerIndex->setCurrentIndex(0);
+
+    // Delay tooltip when disabled -- wording depends on why.
+    ui->comboBox_DelayTimerIndex->setToolTip(
+        delayEnabled ? QString()
+        : isEncoder
+            ? freejoy_style::tipHtml(
+                  tr("Delay timer disabled"),
+                  tr("Encoder rows don't use a delay timer."))
+            : freejoy_style::tipHtml(
+                  tr("Delay timer disabled"),
+                  tr("Gesture-managed slots are driven by the global tap and double-tap windows.")));
+
+    // Press tooltip: disabled -> encoder note; enabled-but-delay-off -> the
+    // gesture minimum-hold floor explanation.
     ui->comboBox_PressTimerIndex->setToolTip(
-        pressEnabled
-            ? (delayEnabled
-                ? QString()
-                : freejoy_style::tipHtml(
-                      tr("Minimum-hold floor"),
-                      { tr("Guarantees the host sees the logical button high for at least this duration after the gesture fires."),
-                        tr("Minimum 20 ms.") }))
-            : QString());
+        !pressEnabled
+            ? (isEncoder
+                ? freejoy_style::tipHtml(
+                      tr("Press timer disabled"),
+                      tr("Encoder rows use the press-pulse length set on the Encoders tab."))
+                : QString())
+        : delayEnabled ? QString()
+        : freejoy_style::tipHtml(
+              tr("Minimum-hold floor"),
+              { tr("Guarantees the host sees the logical button high for at least this duration after the gesture fires."),
+                tr("Minimum 20 ms.") }));
 }
 
 button_type_t ButtonLogical::currentButtonType()
@@ -914,7 +1040,7 @@ void ButtonLogical::startRowDrag()
 
 void ButtonLogical::readFromConfig()
 {
-    button_t *button = &gEnv.pDeviceConfig->config.buttons[m_buttonIndex];
+    button_t *button = slotPtr();
     // physical
     ui->spinBox_PhysicalButtonNumber->setValue(button->physical_num + 1); // +1 !!!!
     // isDisable
@@ -986,7 +1112,7 @@ void ButtonLogical::clearRow()
     // removed. readFromConfig() repaints the row from the cleared config; its
     // setValue / setCurrentIndex calls drive editingOnOff / functionIndexChanged,
     // so enabled-state + coexistence recompute for free.
-    button_t *b = &gEnv.pDeviceConfig->config.buttons[m_buttonIndex];
+    button_t *b = slotPtr();
     const button_type_t prevType = b->type;
     b->physical_num     = -1;
     b->type             = BUTTON_NORMAL;
@@ -1019,7 +1145,7 @@ void ButtonLogical::updateClearButtonVisibility()
 
 void ButtonLogical::writeToConfig()
 {
-    button_t *button = &gEnv.pDeviceConfig->config.buttons[m_buttonIndex];
+    button_t *button = slotPtr();
 
     button->physical_num = ui->spinBox_PhysicalButtonNumber->value() - 1; // -1 !!!!
     button->is_disabled = ui->checkBox_IsDisable->isChecked();

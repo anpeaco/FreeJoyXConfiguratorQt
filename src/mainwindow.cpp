@@ -206,6 +206,14 @@ MainWindow::MainWindow(QWidget *parent)
     // add shifts & timers widget
     m_shiftsTimersConfig = new ShiftsTimersConfig(this);
     ui->layoutV_tabShiftsTimers->addWidget(m_shiftsTimersConfig);
+
+    // Dedicated Shifts tab (wire gen 0x0060): shift modifiers configured as
+    // button_t entries, inserted right after the Buttons tab.
+    m_shiftButtonConfig = new ShiftButtonConfig(this);
+    ui->tabWidget->insertTab(ui->tabWidget->indexOf(ui->tab_ButtonConfig) + 1,
+                             m_shiftButtonConfig, tr("Shifts"));
+    // Shifts moved out of the old "Shifts & Timers" tab -> rename it "Timers".
+    ui->tabWidget->setTabText(ui->tabWidget->indexOf(ui->tab_ShiftsTimers), tr("Timers"));
     qDebug()<<"shifts/timers config load time ="<< timer.restart() << "ms";
     // add axes widget
     m_axesConfig = new AxesConfig(this);
@@ -333,6 +341,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_pinConfig, &PinConfig::totalButtonsValueChanged, m_buttonConfig, &ButtonConfig::setUiOnOff);
     // shift spinboxes get enabled/disabled with the same connect/disconnect signal
     connect(m_pinConfig, &PinConfig::totalButtonsValueChanged, m_shiftsTimersConfig, &ShiftsTimersConfig::setUiOnOff);
+    connect(m_pinConfig, &PinConfig::totalButtonsValueChanged, m_shiftButtonConfig, &ShiftButtonConfig::setUiOnOff);
     /* Button Config's Delay/Press timer dropdowns show "T<n> (X ms)";
      * keep the (X ms) suffix live as the user edits Timer 1/2/3 on
      * the Shifts & Timers tab. */
@@ -958,6 +967,10 @@ void MainWindow::getParamsPacket(bool firmwareCompatible)
     if(ui->tab_ShiftsTimers->isVisible() == true || m_debugWindow) {
         m_shiftsTimersConfig->shiftStateChanged();
     }
+    // Dedicated Shifts tab: same live active-shift feedback on its rows.
+    if (m_shiftButtonConfig->isVisible() || m_debugWindow) {
+        m_shiftButtonConfig->shiftStateChanged();
+    }
     // Encoder activity + press counts: run EVERY params packet (like the button
     // preview above), NOT throttled -- the chips must catch brief pulses the same
     // way the debug log does, or slow turns look missed. The per-row work here is
@@ -1440,6 +1453,8 @@ void MainWindow::UiReadFromConfig(bool resetDirtyBaseline)
     m_buttonConfig->readFromConfig();
     // read shifts & timers config
     m_shiftsTimersConfig->readFromConfig();
+    // read dedicated shift buttons
+    m_shiftButtonConfig->readFromConfig();
 
     m_buttonConfig->endConfigLoad();
 
@@ -1486,6 +1501,8 @@ void MainWindow::flushUiToConfig()
     m_buttonConfig->writeToConfig();
     // write shifts & timers config
     m_shiftsTimersConfig->writeToConfig();
+    // write dedicated shift buttons
+    m_shiftButtonConfig->writeToConfig();
 
     // Persist the live physical-button breakdown (matrix + per-SR +
     // per-a2b + direct counts) into dev_config_t.saved_breakdown so the
