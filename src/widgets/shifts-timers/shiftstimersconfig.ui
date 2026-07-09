@@ -20,205 +20,6 @@
    <property name="bottomMargin"><number>6</number></property>
    <property name="spacing"><number>12</number></property>
 
-   <!-- ===== Shifts: a compact 4-column x 2-row grid (was 8 heavy boxes) ===== -->
-   <item>
-    <widget class="QGroupBox" name="groupBox_Shifts">
-     <property name="title"><string>Shifts</string></property>
-     <layout class="QVBoxLayout" name="layoutV_Shifts">
-      <property name="leftMargin"><number>12</number></property>
-      <property name="topMargin"><number>6</number></property>
-      <property name="rightMargin"><number>12</number></property>
-      <property name="bottomMargin"><number>8</number></property>
-      <property name="spacing"><number>6</number></property>
-      <item>
-       <widget class="QLabel" name="label_ShiftsHint">
-        <property name="text"><string>A shift is held while its assigned logical button is active.</string></property>
-        <property name="styleSheet"><string notr="true">color: palette(mid); font-style: italic;</string></property>
-       </widget>
-      </item>
-      <item>
-       <layout class="QGridLayout" name="grid_Shifts">
-        <property name="horizontalSpacing"><number>18</number></property>
-        <property name="verticalSpacing"><number>8</number></property>
-        <property name="columnStretch" stdset="0"><string notr="true">1,1,1,1</string></property>
-
-        <!-- row 0: shifts 1-4 -->
-        <item row="0" column="0">
-         <layout class="QHBoxLayout" name="cell_Shift1">
-          <property name="spacing"><number>8</number></property>
-          <item>
-           <widget class="QLabel" name="label_Shift1">
-            <property name="text"><string notr="true">Shift 1:</string></property>
-            <property name="font"><font><bold>true</bold></font></property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QSpinBox" name="spinBox_Shift1">
-            <property name="enabled"><bool>false</bool></property>
-            <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
-            <property name="alignment"><set>Qt::AlignCenter</set></property>
-            <property name="maximum"><number>128</number></property>
-            <property name="toolTip"><string>Shift trigger&#10;&#10;Logical button that holds this shift active.</string></property>
-           </widget>
-          </item>
-          <item><spacer name="sp_Shift1"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
-         </layout>
-        </item>
-        <item row="0" column="1">
-         <layout class="QHBoxLayout" name="cell_Shift2">
-          <property name="spacing"><number>8</number></property>
-          <item>
-           <widget class="QLabel" name="label_Shift2">
-            <property name="text"><string notr="true">Shift 2:</string></property>
-            <property name="font"><font><bold>true</bold></font></property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QSpinBox" name="spinBox_Shift2">
-            <property name="enabled"><bool>false</bool></property>
-            <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
-            <property name="alignment"><set>Qt::AlignCenter</set></property>
-            <property name="maximum"><number>128</number></property>
-            <property name="toolTip"><string>Shift trigger&#10;&#10;Logical button that holds this shift active.</string></property>
-           </widget>
-          </item>
-          <item><spacer name="sp_Shift2"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
-         </layout>
-        </item>
-        <item row="0" column="2">
-         <layout class="QHBoxLayout" name="cell_Shift3">
-          <property name="spacing"><number>8</number></property>
-          <item>
-           <widget class="QLabel" name="label_Shift3">
-            <property name="text"><string notr="true">Shift 3:</string></property>
-            <property name="font"><font><bold>true</bold></font></property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QSpinBox" name="spinBox_Shift3">
-            <property name="enabled"><bool>false</bool></property>
-            <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
-            <property name="alignment"><set>Qt::AlignCenter</set></property>
-            <property name="maximum"><number>128</number></property>
-            <property name="toolTip"><string>Shift trigger&#10;&#10;Logical button that holds this shift active.</string></property>
-           </widget>
-          </item>
-          <item><spacer name="sp_Shift3"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
-         </layout>
-        </item>
-        <item row="0" column="3">
-         <layout class="QHBoxLayout" name="cell_Shift4">
-          <property name="spacing"><number>8</number></property>
-          <item>
-           <widget class="QLabel" name="label_Shift4">
-            <property name="text"><string notr="true">Shift 4:</string></property>
-            <property name="font"><font><bold>true</bold></font></property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QSpinBox" name="spinBox_Shift4">
-            <property name="enabled"><bool>false</bool></property>
-            <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
-            <property name="alignment"><set>Qt::AlignCenter</set></property>
-            <property name="maximum"><number>128</number></property>
-            <property name="toolTip"><string>Shift trigger&#10;&#10;Logical button that holds this shift active.</string></property>
-           </widget>
-          </item>
-          <item><spacer name="sp_Shift4"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
-         </layout>
-        </item>
-
-        <!-- row 1: shifts 5-8 -->
-        <item row="1" column="0">
-         <layout class="QHBoxLayout" name="cell_Shift5">
-          <property name="spacing"><number>8</number></property>
-          <item>
-           <widget class="QLabel" name="label_Shift5">
-            <property name="text"><string notr="true">Shift 5:</string></property>
-            <property name="font"><font><bold>true</bold></font></property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QSpinBox" name="spinBox_Shift5">
-            <property name="enabled"><bool>false</bool></property>
-            <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
-            <property name="alignment"><set>Qt::AlignCenter</set></property>
-            <property name="maximum"><number>128</number></property>
-            <property name="toolTip"><string>Shift trigger&#10;&#10;Logical button that holds this shift active.</string></property>
-           </widget>
-          </item>
-          <item><spacer name="sp_Shift5"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
-         </layout>
-        </item>
-        <item row="1" column="1">
-         <layout class="QHBoxLayout" name="cell_Shift6">
-          <property name="spacing"><number>8</number></property>
-          <item>
-           <widget class="QLabel" name="label_Shift6">
-            <property name="text"><string notr="true">Shift 6:</string></property>
-            <property name="font"><font><bold>true</bold></font></property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QSpinBox" name="spinBox_Shift6">
-            <property name="enabled"><bool>false</bool></property>
-            <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
-            <property name="alignment"><set>Qt::AlignCenter</set></property>
-            <property name="maximum"><number>128</number></property>
-            <property name="toolTip"><string>Shift trigger&#10;&#10;Logical button that holds this shift active.</string></property>
-           </widget>
-          </item>
-          <item><spacer name="sp_Shift6"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
-         </layout>
-        </item>
-        <item row="1" column="2">
-         <layout class="QHBoxLayout" name="cell_Shift7">
-          <property name="spacing"><number>8</number></property>
-          <item>
-           <widget class="QLabel" name="label_Shift7">
-            <property name="text"><string notr="true">Shift 7:</string></property>
-            <property name="font"><font><bold>true</bold></font></property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QSpinBox" name="spinBox_Shift7">
-            <property name="enabled"><bool>false</bool></property>
-            <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
-            <property name="alignment"><set>Qt::AlignCenter</set></property>
-            <property name="maximum"><number>128</number></property>
-            <property name="toolTip"><string>Shift trigger&#10;&#10;Logical button that holds this shift active.</string></property>
-           </widget>
-          </item>
-          <item><spacer name="sp_Shift7"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
-         </layout>
-        </item>
-        <item row="1" column="3">
-         <layout class="QHBoxLayout" name="cell_Shift8">
-          <property name="spacing"><number>8</number></property>
-          <item>
-           <widget class="QLabel" name="label_Shift8">
-            <property name="text"><string notr="true">Shift 8:</string></property>
-            <property name="font"><font><bold>true</bold></font></property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QSpinBox" name="spinBox_Shift8">
-            <property name="enabled"><bool>false</bool></property>
-            <property name="maximumSize"><size><width>64</width><height>22</height></size></property>
-            <property name="alignment"><set>Qt::AlignCenter</set></property>
-            <property name="maximum"><number>128</number></property>
-            <property name="toolTip"><string>Shift trigger&#10;&#10;Logical button that holds this shift active.</string></property>
-           </widget>
-          </item>
-          <item><spacer name="sp_Shift8"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>0</width><height>0</height></size></property></spacer></item>
-         </layout>
-        </item>
-       </layout>
-      </item>
-     </layout>
-    </widget>
-   </item>
-
    <!-- ===== Timing settings: four logically-grouped cards filling the width ===== -->
    <item>
     <layout class="QHBoxLayout" name="row_Groups" stretch="1,1,1,1">
@@ -343,6 +144,16 @@
         <item row="1" column="0"><widget class="QLabel" name="text_a2bDebounce"><property name="text"><string>Axes-to-buttons:</string></property></widget></item>
         <item row="1" column="1">
          <widget class="QSpinBox" name="spinBox_A2bDebounce">
+          <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
+          <property name="alignment"><set>Qt::AlignCenter</set></property>
+          <property name="suffix"><string> ms</string></property>
+          <property name="maximum"><number>65535</number></property>
+         </widget>
+        </item>
+        <item row="2" column="0"><widget class="QLabel" name="text_logicDebounce"><property name="text"><string>Logic buttons:</string></property></widget></item>
+        <item row="2" column="1">
+         <widget class="QSpinBox" name="spinBox_LogicDebounce">
+          <property name="toolTip"><string>Shared settle time for all Logic-type buttons and shifts. A logic output commits only after its computed value is stable this long. 0 = off (commit immediately). Filters the transient glitch when a multi-pin encoded switch changes position.</string></property>
           <property name="maximumSize"><size><width>90</width><height>22</height></size></property>
           <property name="alignment"><set>Qt::AlignCenter</set></property>
           <property name="suffix"><string> ms</string></property>

@@ -650,8 +650,8 @@ static void migrateShiftConfigToShiftButtons(dev_config_t &out)
 }
 
 /* ============================================================================
- * v0050 -> current (0x0050 -> 0x0060)
- * The 0x0060 bump APPENDED button_t shift_buttons[] at the end and repurposed the
+ * v0050 -> current (0x0050 -> 0x0070)
+ * The shift-buttons bump APPENDED button_t shift_buttons[] at the end and repurposed the
  * mid-struct shift_config[] as reserved (kept in place, same offset). So the
  * outgoing 0x0050 shape is the byte-exact PREFIX of the current struct up to
  * shift_buttons, size == offsetof(dev_config_t, shift_buttons). Prefix-copy the
@@ -668,6 +668,31 @@ static MigrateResult migrate_v0050_to_current(const uint8_t *raw, size_t len, de
     }
     out = ::InitConfig();
     memcpy(&out, raw, kPre0060ConfigSize);
+    out.firmware_version = FIRMWARE_VERSION;
+    return MigrateResult::Ok;
+}
+
+/* ============================================================================
+ * v0060 -> current (0x0060 -> 0x0070)
+ * The 0x0070 bump APPENDED uint16_t logic_debounce_ms at the very end. The
+ * never-released 0x0060 intermediate (shift_buttons[] but no logic_debounce_ms)
+ * was flashed to the maintainer's test boards, so migrate it too: its shape is
+ * the byte-exact PREFIX of the current struct up to logic_debounce_ms. Prefix-
+ * copy (carrying the already-authoritative shift_buttons[]) and let InitConfig
+ * default the new field. NOTE: a 0x0060 source already has real shift_buttons[],
+ * so migrateLegacyConfig() must NOT re-run the shift_config[] lift for it -- that
+ * would clobber shifts the user edited on the new Shifts tab.
+ * ============================================================================
+ */
+static const size_t kPre0070ConfigSize = offsetof(dev_config_t, logic_debounce_ms);
+
+static MigrateResult migrate_v0060_to_current(const uint8_t *raw, size_t len, dev_config_t &out)
+{
+    if (len < kPre0070ConfigSize) {
+        return MigrateResult::BufferTooSmall;
+    }
+    out = ::InitConfig();
+    memcpy(&out, raw, kPre0070ConfigSize);
     out.firmware_version = FIRMWARE_VERSION;
     return MigrateResult::Ok;
 }
@@ -736,6 +761,7 @@ bool canMigrate(uint16_t firmware_version)
         case 0x0030:  /* FreeJoyX gen 3 -- pre-0x0040 (no slow_encoders[]) */
         case 0x0040:  /* FreeJoyX gen 4 -- pre-0x0050 (no encoder_gap_ms) */
         case 0x0050:  /* FreeJoyX gen 5 -- pre-0x0060 (no shift_buttons[]) */
+        case 0x0060:  /* FreeJoyX gen 6 (never released) -- pre-0x0070 (no logic_debounce_ms) */
             return true;
         default:
             return false;
@@ -771,6 +797,10 @@ size_t legacyConfigSize(uint16_t firmware_version)
             /* pre-0x0060 shape == current dev_config_t minus the appended
              * shift_buttons[]; the device sends exactly this many bytes. */
             return kPre0060ConfigSize;
+        case 0x0060:
+            /* pre-0x0070 shape == current dev_config_t minus the appended
+             * logic_debounce_ms; the device sends exactly this many bytes. */
+            return kPre0070ConfigSize;
         default:
             return sizeof(dev_config_t);
     }
@@ -869,6 +899,13 @@ static MigrateResult dispatchMigration(const uint8_t *raw, size_t len, dev_confi
                     << "(shift modifiers lifted from shift_config[] into dedicated shift_buttons[])";
             return migrate_v0050_to_current(raw, len, out);
 
+        case 0x0060:
+            qInfo() << "Migrating dev_config_t from" << describeVersion(version)
+                    << "to current FIRMWARE_VERSION 0x"
+                    << QString::number(FIRMWARE_VERSION, 16)
+                    << "(append-only: logic_debounce_ms defaults to 0; shift_buttons[] preserved)";
+            return migrate_v0060_to_current(raw, len, out);
+
         default:
             qWarning() << "No migrator for firmware version 0x"
                        << QString::number(version, 16)
@@ -880,12 +917,21 @@ static MigrateResult dispatchMigration(const uint8_t *raw, size_t len, dev_confi
 
 /* Public entry: dispatch to the version-specific migrator, then -- for any
  * successful MIGRATION (not a NotNeeded no-op) -- lift the reserved shift_config[]
- * into the dedicated shift_buttons[] so shifts survive the 0x0060 move. */
+ * into the dedicated shift_buttons[] so shifts survive the shift_buttons move.
+ * Exception: a 0x0060 source already carries authoritative shift_buttons[] (its
+ * deprecated shift_config[] may be stale from Shifts-tab edits), so skip the lift
+ * for it -- re-deriving would clobber the user's mapping. */
 MigrateResult migrateLegacyConfig(const uint8_t *raw, size_t len, dev_config_t &out)
 {
     MigrateResult r = dispatchMigration(raw, len, out);
     if (r == MigrateResult::Ok) {
-        migrateShiftConfigToShiftButtons(out);
+        uint16_t version = 0;
+        if (len >= 2) {
+            memcpy(&version, raw, sizeof(version));
+        }
+        if ((version & FW_MASK) != 0x0060) {
+            migrateShiftConfigToShiftButtons(out);
+        }
     }
     return r;
 }

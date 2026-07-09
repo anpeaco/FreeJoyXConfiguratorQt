@@ -66,6 +66,63 @@ private slots:
         QCOMPARE(int(out.buttons[20].physical_num), 7);
     }
 
+    void migrate_v0050_defaults_logic_debounce()
+    {
+        // logic_debounce_ms was appended AFTER shift_buttons in the same 0x0060
+        // gen. A 0x0050 blob (prefix up to shift_buttons) carries neither field, so
+        // the migrator must default logic_debounce_ms from InitConfig -- never read
+        // it from bytes past the prefix it was handed.
+        dev_config_t src = InitConfig();
+        src.firmware_version = 0x0050;
+        src.logic_debounce_ms = 9999;   // sentinel living PAST the 0x0050 prefix
+
+        const size_t blobSize = offsetof(dev_config_t, shift_buttons);
+        dev_config_t out;
+        const legacy::MigrateResult r = legacy::migrateLegacyConfig(
+            reinterpret_cast<const uint8_t *>(&src), blobSize, out);
+
+        QVERIFY(r == legacy::MigrateResult::Ok);
+        // Defaulted from InitConfig (0), NOT the 9999 sentinel beyond the prefix.
+        QCOMPARE(int(out.logic_debounce_ms), 0);
+    }
+
+    void initconfig_defaults_logic_debounce_off()
+    {
+        QCOMPARE(int(InitConfig().logic_debounce_ms), 0);
+    }
+
+    void migrate_v0060_preserves_shift_buttons_and_defaults_logic_debounce()
+    {
+        // The never-released 0x0060 intermediate had shift_buttons[] but no
+        // logic_debounce_ms. Migrating 0x0060 -> current must prefix-copy the
+        // authoritative shift_buttons[] verbatim, default logic_debounce_ms, and
+        // NOT re-run the shift_config[] lift (which would clobber tab edits).
+        dev_config_t src = InitConfig();
+        src.firmware_version = 0x0060;
+        src.logic_debounce_ms = 9999;          // sentinel past the 0x0060 prefix
+
+        // Shift 3 configured directly (as the Shifts tab would), with a stale
+        // shift_config that must be ignored (it points elsewhere).
+        src.shift_buttons[2].physical_num = 12;
+        src.shift_buttons[2].type = BUTTON_TOGGLE;
+        for (int i = 0; i < MAX_SHIFTS_NUM; ++i) src.shift_config[i].button = -1;
+        src.shift_config[2].button = 40;       // stale: buttons[40] is unset
+        src.buttons[40].physical_num = 99;     // if the lift wrongly ran, shift 3 -> 99
+
+        const size_t blobSize = offsetof(dev_config_t, logic_debounce_ms);
+        dev_config_t out;
+        const legacy::MigrateResult r = legacy::migrateLegacyConfig(
+            reinterpret_cast<const uint8_t *>(&src), blobSize, out);
+
+        QVERIFY2(r == legacy::MigrateResult::Ok, "0x0060 must be migratable to current");
+        QCOMPARE(int(out.firmware_version), int(FIRMWARE_VERSION));
+        // shift_buttons preserved verbatim (NOT re-derived from stale shift_config).
+        QCOMPARE(int(out.shift_buttons[2].physical_num), 12);
+        QCOMPARE(int(out.shift_buttons[2].type), int(BUTTON_TOGGLE));
+        // logic_debounce_ms defaulted from InitConfig (0), not the 9999 sentinel.
+        QCOMPARE(int(out.logic_debounce_ms), 0);
+    }
+
     void already_current_is_not_migrated()
     {
         // A config already at the current version must be a no-op (NotNeeded),

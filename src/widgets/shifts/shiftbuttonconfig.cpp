@@ -2,6 +2,7 @@
 
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QTimer>
 
 #include "buttonlogical.h"
 #include "global.h"
@@ -32,11 +33,16 @@ ShiftButtonConfig::ShiftButtonConfig(QWidget *parent)
     lay->addStretch(1);
 
     // Build each row's dropdowns, THEN switch it to shift mode (setTarget's
-    // type filter needs the Function dropdown populated first).
-    for (ButtonLogical *row : m_rows) {
-        row->initialization();
-        row->setTarget(ButtonLogical::ShiftButtons);
-    }
+    // type filter needs the Function dropdown populated first). Deferred to the
+    // event loop -- like ButtonConfig::logicaButtonsCreator -- because doing the
+    // grouped-combobox setup during MainWindow construction (before the event
+    // loop, before the widget is shown) hangs the UI.
+    QTimer::singleShot(0, this, [this] {
+        for (ButtonLogical *row : m_rows) {
+            row->initialization();
+            row->setTarget(ButtonLogical::ShiftButtons);
+        }
+    });
 }
 
 void ShiftButtonConfig::readFromConfig()

@@ -109,6 +109,7 @@ void ConfigToFile::loadDeviceConfigFromFile(QWidget *parent, const QString &file
     devC.tap_cutoff_ms = uint16_t(deviceSettings.value("TapCutoff", devC.tap_cutoff_ms).toInt());
     devC.double_tap_window_ms    = uint16_t(deviceSettings.value("DoubleTapWindow",    devC.double_tap_window_ms).toInt());
     devC.a2b_debounce_ms = uint16_t(deviceSettings.value("A2bDebounce", devC.a2b_debounce_ms).toInt());
+    devC.logic_debounce_ms = uint16_t(deviceSettings.value("LogicDebounce", devC.logic_debounce_ms).toInt());
     deviceSettings.endGroup();
 
     // load Buttons config from file
@@ -551,6 +552,7 @@ void ConfigToFile::saveDeviceConfigToFile(const QString &fileName, dev_config_t 
     deviceSettings.setValue("TapCutoff", devC.tap_cutoff_ms);
     deviceSettings.setValue("DoubleTapWindow",    devC.double_tap_window_ms);
     deviceSettings.setValue("A2bDebounce", devC.a2b_debounce_ms);
+    deviceSettings.setValue("LogicDebounce", devC.logic_debounce_ms);
     deviceSettings.endGroup();
 
     // save Buttons config to file

@@ -99,6 +99,9 @@ dev_config_t InitConfig (void)
             .shift_buttons[6].physical_num = -1, .shift_buttons[6].src_b = -1,
             .shift_buttons[7].physical_num = -1, .shift_buttons[7].src_b = -1,
 
+            // Global LOGIC debounce, shared by every LOGIC button + shift. 0 = off.
+            .logic_debounce_ms = 0,
+
             /*
         Device pins configuration. Available values:
         - AXIS_ANALOG (only for pins 0-7)

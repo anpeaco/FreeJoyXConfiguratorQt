@@ -646,9 +646,18 @@ void ButtonConfig::physicalConflictFilter()
         const bool selfIsGesture     = isGesture(selfType);
         const bool selfIsCoexNormal  = (selfType == BUTTON_NORMAL && hasGestureSister);
         const bool gestureManaged    = selfIsGesture || selfIsCoexNormal;
+        // Encoder input rows ignore BOTH per-slot timers: firmware never reads
+        // delay_timer for an encoder, and press_timer only applies in non-queue
+        // mode (a niche override of the Encoders tab's encoder_press_time_ms).
+        // Lock + clear both so all encoder press timing lives on the Encoders tab.
+        const bool isEncoderRow = (selfType == ENCODER_INPUT_A || selfType == ENCODER_INPUT_B);
+        // LOGIC rows use neither per-slot timer: debounce is now a single global
+        // (dev_config.logic_debounce_ms, set on the Timers tab) and press_timer
+        // never applied to a logic output. Lock + clear both.
+        const bool isLogicRow = (selfType == LOGIC);
         m_logicButtonPtrList[r]->setTimerColumnsEnabled(
-            /* delayEnabled */ !gestureManaged,
-            /* pressEnabled */ true);
+            /* delayEnabled */ !gestureManaged && !isEncoderRow && !isLogicRow,
+            /* pressEnabled */ !isEncoderRow && !isLogicRow);
     }
 }
 

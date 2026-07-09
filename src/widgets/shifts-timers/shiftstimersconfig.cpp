@@ -4,11 +4,6 @@
 
 #include <QSpinBox>
 
-// SHIFT_COUNT lives in buttonlogical.h (MAX_SHIFTS_NUM shifts + "No shift"
-// sentinel). Pulled in here for the shiftStateChanged() loop that mirrors
-// the device's active-shift bitmap onto the label highlights.
-#include "buttonlogical.h"
-
 static const int TICKS_NS = 500;
 
 ShiftsTimersConfig::ShiftsTimersConfig(QWidget *parent)
@@ -17,11 +12,10 @@ ShiftsTimersConfig::ShiftsTimersConfig(QWidget *parent)
 {
     ui->setupUi(this);
 
-    /* Shift modifiers moved to the dedicated Shifts tab (wire gen 0x0060). The
-     * old shift spinboxes/labels/indicators remain in the .ui but are hidden;
-     * this tab now hosts only the global timers. (Relocating the timers to the
-     * Advanced tab is a wire-independent follow-up.) */
-    ui->groupBox_Shifts->hide();
+    /* Shift modifiers live on the dedicated Shifts tab (wire gen 0x0070); the
+     * old per-shift spinbox group was removed from this tab, which now hosts only
+     * the global timers. (Relocating the timers to the Advanced tab is a
+     * wire-independent follow-up.) */
 
     // Polling spinboxes round to TICKS_NS multiples on user edit. Same
     // helper that ButtonConfig used to own.
@@ -87,6 +81,7 @@ void ShiftsTimersConfig::readFromConfig()
 
     ui->spinBox_DebounceTimer->setValue(devc->button_debounce_ms);
     ui->spinBox_A2bDebounce->setValue(devc->a2b_debounce_ms);
+    ui->spinBox_LogicDebounce->setValue(devc->logic_debounce_ms);
 
     ui->spinBox_EncoderPressTimer->setValue(devc->encoder_press_time_ms);
     // Firmware treats encoder_gap_ms == 0 as "use the default gap" (20 ms, the
@@ -119,6 +114,7 @@ void ShiftsTimersConfig::writeToConfig()
 
     devc->button_debounce_ms = ui->spinBox_DebounceTimer->value();
     devc->a2b_debounce_ms = ui->spinBox_A2bDebounce->value();
+    devc->logic_debounce_ms = ui->spinBox_LogicDebounce->value();
 
     devc->encoder_press_time_ms = ui->spinBox_EncoderPressTimer->value();
     devc->encoder_gap_ms = ui->spinBox_EncoderGap->value();

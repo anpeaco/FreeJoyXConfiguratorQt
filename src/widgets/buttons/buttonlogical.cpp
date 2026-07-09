@@ -429,7 +429,7 @@ button_t *ButtonLogical::slotPtr() const
 {
     return (m_target == ShiftButtons)
                ? &gEnv.pDeviceConfig->config.shift_buttons[m_buttonIndex]
-               : slotPtr();
+               : &gEnv.pDeviceConfig->config.buttons[m_buttonIndex];
 }
 
 /* Switch this row to configure a dedicated shift button. Call AFTER
@@ -447,21 +447,84 @@ void ButtonLogical::setTarget(Target t)
     ui->label_LogicalButtonNumber->setText(QStringLiteral("S%1").arg(m_buttonIndex + 1));
     ui->label_LogicalButtonNumber->setToolTip(tr("Shift %1").arg(m_buttonIndex + 1));
 
-    /* Restrict the Function dropdown to types the firmware drives off the
-     * main-buttons path. POV / Encoder / Radio / Sequential / gesture types need
-     * the cross-slot state machine or the HID report and are invalid for a shift. */
-    static const button_type_t kNonShiftTypes[] = {
-        TAP, DOUBLE_TAP,
-        POV1_UP, POV1_RIGHT, POV1_DOWN, POV1_LEFT, POV1_CENTER,
-        POV2_UP, POV2_RIGHT, POV2_DOWN, POV2_LEFT, POV2_CENTER,
-        POV3_UP, POV3_RIGHT, POV3_DOWN, POV3_LEFT, POV3_CENTER,
-        POV4_UP, POV4_RIGHT, POV4_DOWN, POV4_LEFT, POV4_CENTER,
-        ENCODER_INPUT_A,
-        RADIO_BUTTON1, RADIO_BUTTON2, RADIO_BUTTON3, RADIO_BUTTON4,
-        SEQUENTIAL_TOGGLE, SEQUENTIAL_BUTTON,
+    /* Shift slots are fixed positions -- S1..S8 map to bit positions in the
+     * firmware's shifts_state bitmap -- so drag-to-reorder is meaningless here
+     * (and ShiftButtonConfig has no drop handler anyway). Hide the grip. */
+    ui->label_DragHandle->hide();
+
+    /* Strip the per-slot Delay / Press timer columns from shift rows. Both are
+     * meaningless for a shift's HELD output: press_timer only sets a momentary
+     * pulse width (a shift layer isn't a pulse -- it would just make the layer
+     * linger past release), and delay_timer only postpones engagement. On a LOGIC
+     * shift delay_timer would be the debounce picker, but a held modifier tolerates
+     * the few-ms input-transition glitch debounce guards against, so it's dropped
+     * here too for a clean, uniform shift table. The fields stay in button_t (they
+     * sit at their default and the firmware ignores them for a held shift); we just
+     * stop surfacing knobs that do nothing. Scoped to the shift target only --
+     * main-button rows keep both columns. */
+    ui->comboBox_DelayTimerIndex->hide();
+    ui->comboBox_PressTimerIndex->hide();
+
+    /* Prune the Function dropdown to the only types that produce a HELD state a
+     * shift layer can be sampled against: Normal, Toggle, Logic. A shift is read
+     * live every tick (shifts_state |= current_state << i in buttons.c), so a type
+     * is only usable if current_state can stay high for as long as the layer is
+     * wanted. Everything else is REMOVED (not just greyed) so the list stays short
+     * and unambiguous:
+     *   - Toggle switch / on / off produce an EDGE PULSE, not a held state -- the
+     *     layer would blink on for one press-timer then drop, so you could never
+     *     hold a shifted button. (A maintained hardware toggle that should hold a
+     *     layer is wired to a NORMAL shift slot instead -- held while closed.)
+     *   - POV / Encoder produce hat / axis output, not a button state.
+     *   - TAP / Double-tap need the gesture state machine, which shifts are held
+     *     off (num == 0xFF sentinel in buttons.c).
+     *   - Radio and Sequential BUTTON are cross-slot and/or momentary: Radio's
+     *     handler self-references by slot index (breaks under the 0xFF shift
+     *     sentinel) and Sequential BUTTON drops its state on release (not held).
+     * Sequential TOGGLE is allowed: its ring slot latches current_state high, and
+     * the firmware handler is generalised to the shift arrays when num == 0xFF, so
+     * one physical button cycles shift layers (S1 -> S2 -> S1 ...).
+     * m_logicFunc_enumIndex is row-aligned 1:1 with the combo (a -1 sentinel per
+     * grouped header), so items and their now-empty headers are dropped from both
+     * together, top-to-bottom preserved by walking bottom-up. */
+    auto isShiftType = [](int type) {
+        return type == BUTTON_NORMAL || type == BUTTON_TOGGLE || type == LOGIC
+            || type == SEQUENTIAL_TOGGLE;
     };
-    for (button_type_t bt : kNonShiftTypes)
-        disableButtonType(bt, true);
+    auto removeRow = [this](int r) {
+        ui->comboBox_ButtonFunction->removeItem(r);
+        m_logicFunc_enumIndex.removeAt(r);
+    };
+    /* Block the combo's currentIndexChanged across the whole prune + re-anchor.
+     * removeItem() can fire it synchronously (if a removed row is at/below the
+     * current index), and functionIndexChanged() would then index
+     * m_logicFunc_enumIndex while it's momentarily out of step with the combo --
+     * a wrong-enum map or QList assert. readFromConfig() re-selects and fires the
+     * handler with the real value later, so suppressing it here is safe. */
+    QSignalBlocker functionBlocker(ui->comboBox_ButtonFunction);
+    // Pass 1: drop every selectable item that isn't a valid shift type.
+    for (int r = m_logicFunc_enumIndex.size() - 1; r >= 0; --r) {
+        if (m_logicFunc_enumIndex[r] >= 0 && !isShiftType(m_logicFunc_enumIndex[r]))
+            removeRow(r);
+    }
+    // Pass 2: drop any group header left with no items beneath it (its next row is
+    // another header or the end of the list).
+    for (int r = m_logicFunc_enumIndex.size() - 1; r >= 0; --r) {
+        if (m_logicFunc_enumIndex[r] < 0) {
+            const bool empty = (r + 1 >= m_logicFunc_enumIndex.size())
+                            || (m_logicFunc_enumIndex[r + 1] < 0);
+            if (empty)
+                removeRow(r);
+        }
+    }
+    // The pruning may have removed the row initialization() selected; re-anchor on
+    // the first surviving real (non-header) row so the closed combo shows a type.
+    for (int r = 0; r < m_logicFunc_enumIndex.size(); ++r) {
+        if (m_logicFunc_enumIndex[r] >= 0) {
+            ui->comboBox_ButtonFunction->setCurrentIndex(r);
+            break;
+        }
+    }
 }
 
 void ButtonLogical::setReportNumber(int hidNumber)
