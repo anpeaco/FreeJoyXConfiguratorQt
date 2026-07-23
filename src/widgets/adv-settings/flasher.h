@@ -45,7 +45,22 @@ public:
                          const QString &deviceSerial = QString(),
                          const QString &deviceVersionText = QString());
 
+    /* Newest FreeJoyX release version available for `boardId` (a BOARD_ID_*),
+     * taken from the FirmwareLibrary's last-known release list (network or
+     * cache). Considers only the FreeJoyX fork repo -- upstream's separate
+     * 1.7.x semver line must not masquerade as a newer FreeJoyX build -- and
+     * only releases carrying a .bin for that board. Returns true and fills
+     * maj/min/pat when a candidate exists; false (out-params untouched) when the
+     * library has nothing yet, so the caller can fall back to its own version.
+     * Drives MainWindow::refreshUpgradeButtonState's "newer available?" test. */
+    bool latestAvailableForBoard(int boardId, int &maj, int &min, int &pat) const;
+
 signals:
+    /* The FirmwareLibrary's release list changed (async fetch finished, or the
+     * cache loaded). MainWindow re-evaluates the device-card Upgrade button in
+     * response, since "newer available?" depends on this list. */
+    void availableFirmwareChanged();
+
     /* Consolidated one-click flash. Emitted by the Flash button after the
      * user accepts the FlashConfirmationDialog. Carries the resolved
      * local file path of the firmware binary. MainWindow opens the
