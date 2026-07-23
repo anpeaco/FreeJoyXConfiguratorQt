@@ -423,6 +423,13 @@ MainWindow::MainWindow(QWidget *parent)
      * widget's m_inFlasherMode flag is already updated when this reads it. */
     connect(m_hidDeviceWorker, &HidDevice::flasherFound,
             this, [this](bool) { refreshUpgradeButtonState(); });
+    /* Re-evaluate the same button when the firmware release list changes. The
+     * background release fetch usually finishes after a device is already
+     * connected, so without this the button would stay in whatever state the
+     * (empty) cache produced at connect time and only correct itself on the next
+     * unrelated refresh. */
+    connect(m_advSettings->flasher(), &Flasher::availableFirmwareChanged,
+            this, [this]() { refreshUpgradeButtonState(); });
     // set selected hid device
     connect(ui->comboBox_HidDeviceList, SIGNAL(currentIndexChanged(int)),
                 this, SLOT(hidDeviceListChanged(int)));
@@ -2535,19 +2542,39 @@ void MainWindow::refreshUpgradeButtonState()
         haveBoard = (boardId == BOARD_ID_F103_BLUEPILL ||
                      boardId == BOARD_ID_F411_BLACKPILL);
 
-        /* "Newer available" = a different wire-gen than the configurator, OR the
-         * same gen but the device's reported FreeJoyX semver is older than the
-         * configurator's (covers point upgrades like 0.1.5 -> 0.1.9). Devices
-         * that don't report a semver (old/upstream, all-zero) read as older, so
-         * they're offered the upgrade too. We deliberately do NOT gate on a
-         * bundled .bin being present -- that only pre-selects it -- so the
-         * button works for F103 and F411 alike; the picker dialog opened on
-         * click finds / browses / downloads the firmware. */
+        /* "Newer available" compares the device's reported FreeJoyX semver
+         * against the newest RELEASE the FirmwareLibrary knows about for this
+         * board -- NOT against the configurator's own version. That decoupling
+         * is the fix for anpeaco/FreeJoyXConfiguratorQt's Upgrade-button bug:
+         * a firmware-only point release (e.g. v0.2.1 with the configurator left
+         * at 0.2.0) must still light the button, which the old
+         * compare-against-FREEJOYX_VERSION logic couldn't do. sameWireGen is
+         * passed true because the reference is a real released binary whose
+         * availability is established -- so the test reduces to a pure semver
+         * comparison; any factory-reset / wire-gen crossing is surfaced later by
+         * the flash confirmation dialog, not by whether the button is enabled.
+         *
+         * Fallback: when the library has no release data yet (offline first run,
+         * before any successful fetch/cache), compare against the configurator's
+         * own version so behaviour is no worse than before. Devices that report
+         * no semver at all (old/upstream, all-zero) read as older either way, so
+         * they're still offered the upgrade. We deliberately do NOT gate on a
+         * bundled .bin being present -- the picker opened on click finds /
+         * browses / downloads the firmware. */
         const auto &pr = gEnv.pDeviceConfig->paramsReport;
-        newerAvailable = firmwareNewerAvailable(
-            pr.freejoyx_version_major, pr.freejoyx_version_minor, pr.freejoyx_version_patch,
-            FREEJOYX_VERSION_MAJOR, FREEJOYX_VERSION_MINOR, FREEJOYX_VERSION_PATCH,
-            versionMatchesCurrent);
+        int availMaj = 0, availMin = 0, availPat = 0;
+        if (haveBoard &&
+            m_advSettings->flasher()->latestAvailableForBoard(
+                boardId, availMaj, availMin, availPat)) {
+            newerAvailable = firmwareNewerAvailable(
+                pr.freejoyx_version_major, pr.freejoyx_version_minor, pr.freejoyx_version_patch,
+                availMaj, availMin, availPat, /*sameWireGen=*/true);
+        } else {
+            newerAvailable = firmwareNewerAvailable(
+                pr.freejoyx_version_major, pr.freejoyx_version_minor, pr.freejoyx_version_patch,
+                FREEJOYX_VERSION_MAJOR, FREEJOYX_VERSION_MINOR, FREEJOYX_VERSION_PATCH,
+                versionMatchesCurrent);
+        }
     }
 
     /* The button is ALWAYS visible (set in the ctor); set its enabled state +

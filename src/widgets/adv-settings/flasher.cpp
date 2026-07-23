@@ -29,6 +29,7 @@
 #include "dialogs/dfuinstalldialog.h"
 #include "dialogs/flashconfirmationdialog.h"
 #include "firmwareimage.h"
+#include "flashverdict.h"
 #include "global.h"
 #include "style_helpers.h"
 #include "firmwarelibrary.h"
@@ -234,6 +235,60 @@ void Flasher::onReleasesUpdated()
 {
     qDebug() << "Flasher: releases updated, rebuilding source list";
     refreshSourceList();
+    /* The device-card Upgrade button's "newer available?" test reads the same
+     * release list; poke MainWindow to recompute now that it may have changed
+     * (the fetch typically finishes after a device is already connected). */
+    emit availableFirmwareChanged();
+}
+
+bool Flasher::latestAvailableForBoard(int boardId, int &maj, int &min, int &pat) const
+{
+    bool found = false;
+    int bMaj = 0, bMin = 0, bPat = 0;
+
+    const QList<FirmwareLibrary::Release> rels = m_library->releases();
+    for (const auto &rel : rels) {
+        /* FreeJoyX fork only -- upstream FreeJoy's 1.7.x line is a different
+         * project whose higher semver would otherwise always read as "newer". */
+        if (!rel.repo.startsWith(QStringLiteral("anpeaco/"))) {
+            continue;
+        }
+        /* The release must ship a binary for this board (releases normally carry
+         * both f103 and f411 app bins, but don't assume it). */
+        bool hasBoardAsset = false;
+        for (const auto &asset : rel.assets) {
+            if (boardIdFromAssetName(asset.name.toUtf8().constData()) == boardId) {
+                hasBoardAsset = true;
+                break;
+            }
+        }
+        if (!hasBoardAsset) {
+            continue;
+        }
+
+        int rMaj = 0, rMin = 0, rPat = 0;
+        if (!parseSemverTag(rel.tag.toUtf8().constData(), &rMaj, &rMin, &rPat)) {
+            continue;
+        }
+
+        /* Keep the highest semver seen. Reuse firmwareNewerAvailable (the same
+         * unit-tested comparator the button uses) as "is the current best older
+         * than this candidate?" rather than hand-rolling the compare again. */
+        if (!found || firmwareNewerAvailable(bMaj, bMin, bPat, rMaj, rMin, rPat,
+                                             /*sameWireGen=*/true)) {
+            found = true;
+            bMaj = rMaj;
+            bMin = rMin;
+            bPat = rPat;
+        }
+    }
+
+    if (found) {
+        maj = bMaj;
+        min = bMin;
+        pat = bPat;
+    }
+    return found;
 }
 
 QVector<QPair<QString, QVariant>> Flasher::buildSourceItems()

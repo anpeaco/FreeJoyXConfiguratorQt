@@ -54,10 +54,30 @@ bool crossingMasksDowngrade(FlashVerdict verdict, bool crossing);
 
 /* True when a newer firmware is available for the connected device: a different
  * wire-format generation, OR the same generation but the device's reported
- * FreeJoyX semver is older than the bundled (configurator) semver. */
+ * FreeJoyX semver is older than the reference semver. The reference is normally
+ * the newest release the FirmwareLibrary knows about for the device's board
+ * (see MainWindow::refreshUpgradeButtonState); it falls back to the
+ * configurator's own compile-time version only when no release data is
+ * available (offline first run). Passing `sameWireGen = true` reduces the test
+ * to a pure semver comparison -- correct when the reference is a real released
+ * binary whose availability is already established. */
 bool firmwareNewerAvailable(int devMajor, int devMinor, int devPatch,
                             int bundledMajor, int bundledMinor, int bundledPatch,
                             bool sameWireGen);
+
+/* Parse a release tag ("v0.2.1", "0.2.1", or the upstream "v1.7.7b3" build-suffix
+ * form) into its major/minor/patch integers. The optional leading 'v'/'V' and the
+ * optional trailing 'b<build>' suffix are accepted and ignored; any other shape
+ * (missing component, trailing junk) returns false and leaves the out-params
+ * untouched. Pure string math so test_flashverdict can cover the edge cases
+ * without pulling in QRegularExpression. */
+bool parseSemverTag(const char *tag, int *major, int *minor, int *patch);
+
+/* Map a firmware asset filename to the board it targets, by the "f103" / "f411"
+ * token FreeJoyX's release naming embeds (e.g. "freejoyx-f103-app-v0.2.1.bin").
+ * Returns 1 (BOARD_ID_F103_BLUEPILL) or 2 (BOARD_ID_F411_BLACKPILL); 0 when no
+ * board token is present (upstream "FreeJoy.bin" and other foreign names). */
+int boardIdFromAssetName(const char *assetName);
 
 /* What the device-card firmware button should offer, given the device state. */
 enum class UpgradeButton {
