@@ -271,12 +271,11 @@ bool Flasher::latestAvailableForBoard(int boardId, int &maj, int &min, int &pat)
             continue;
         }
 
-        /* Keep the highest semver seen. */
-        const bool newer = !found
-            || (rMaj != bMaj ? rMaj > bMaj
-              : rMin != bMin ? rMin > bMin
-                             : rPat > bPat);
-        if (newer) {
+        /* Keep the highest semver seen. Reuse firmwareNewerAvailable (the same
+         * unit-tested comparator the button uses) as "is the current best older
+         * than this candidate?" rather than hand-rolling the compare again. */
+        if (!found || firmwareNewerAvailable(bMaj, bMin, bPat, rMaj, rMin, rPat,
+                                             /*sameWireGen=*/true)) {
             found = true;
             bMaj = rMaj;
             bMin = rMin;
