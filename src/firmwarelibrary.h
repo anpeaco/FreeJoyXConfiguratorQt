@@ -130,7 +130,7 @@ private:
 
     void fetchOneRepo(const QString &repoSlug);
     void parseReleasesJson(const QString &repoSlug, const QByteArray &json);
-    bool tagIsCompatible(const QString &tag) const;
+    bool tagIsCompatible(const QString &repoSlug, const QString &tag) const;
     void saveCache();
     void loadCache();
     void sortReleases();

@@ -247,6 +247,94 @@ private slots:
         QVERIFY(showFirmwareForBoard(/*connected*/ 0, false, F103));
         QVERIFY(showFirmwareForBoard(0, false, F411));
     }
+
+    /* ---- parseSemverTag ----
+     * Feeds the device-card Upgrade button: a release tag from the FirmwareLibrary
+     * is parsed to compare against the device's reported semver. The regression
+     * this guards is the firmware-only point release (v0.2.1) that must parse and
+     * out-rank a device on v0.2.0. */
+    void parseTag_plainV_ok()
+    {
+        int a = -1, b = -1, c = -1;
+        QVERIFY(parseSemverTag("v0.2.1", &a, &b, &c));
+        QCOMPARE(a, 0); QCOMPARE(b, 2); QCOMPARE(c, 1);
+    }
+    void parseTag_noLeadingV_ok()
+    {
+        int a = -1, b = -1, c = -1;
+        QVERIFY(parseSemverTag("1.10.0", &a, &b, &c));
+        QCOMPARE(a, 1); QCOMPARE(b, 10); QCOMPARE(c, 0);
+    }
+    void parseTag_upstreamBuildSuffix_ok()
+    {
+        /* Upstream's "v1.7.7b3" build-suffix form: parse the version, ignore bN. */
+        int a = -1, b = -1, c = -1;
+        QVERIFY(parseSemverTag("v1.7.7b3", &a, &b, &c));
+        QCOMPARE(a, 1); QCOMPARE(b, 7); QCOMPARE(c, 7);
+    }
+    void parseTag_missingPatch_fails()
+    {
+        int a = -1, b = -1, c = -1;
+        QVERIFY(!parseSemverTag("v0.2", &a, &b, &c));
+    }
+    void parseTag_trailingJunk_fails()
+    {
+        int a = -1, b = -1, c = -1;
+        QVERIFY(!parseSemverTag("v0.2.1-rc1", &a, &b, &c));
+        QVERIFY(!parseSemverTag("latest", &a, &b, &c));
+        QVERIFY(!parseSemverTag("v0.2.1b", &a, &b, &c));  /* suffix 'b' w/o digits */
+    }
+    void parseTag_null_fails()
+    {
+        QVERIFY(!parseSemverTag(nullptr, nullptr, nullptr, nullptr));
+    }
+    void parseTag_outParamsUntouchedOnFailure()
+    {
+        int a = 7, b = 8, c = 9;
+        QVERIFY(!parseSemverTag("nope", &a, &b, &c));
+        QCOMPARE(a, 7); QCOMPARE(b, 8); QCOMPARE(c, 9);
+    }
+
+    /* ---- boardIdFromAssetName ----
+     * Maps a release .bin filename to the board it targets, so the button only
+     * treats a release as "available for this board" when it actually ships that
+     * board's binary. */
+    void assetBoard_f103()
+    {
+        QCOMPARE(boardIdFromAssetName("freejoyx-f103-app-v0.2.1.bin"), F103);
+    }
+    void assetBoard_f411()
+    {
+        QCOMPARE(boardIdFromAssetName("freejoyx-f411-boot-v0.2.1.bin"), F411);
+    }
+    void assetBoard_caseInsensitive()
+    {
+        QCOMPARE(boardIdFromAssetName("FreeJoyX-F411-App.bin"), F411);
+    }
+    void assetBoard_upstreamNoToken_isZero()
+    {
+        QCOMPARE(boardIdFromAssetName("FreeJoy.bin"), 0);
+    }
+    void assetBoard_null_isZero()
+    {
+        QCOMPARE(boardIdFromAssetName(nullptr), 0);
+    }
+
+    /* ---- integration: the exact issue scenario ----
+     * Device on v0.2.0; newest available release for the board is v0.2.1 (parsed
+     * from its tag). The reference is a real released binary, so sameWireGen is
+     * true and the test reduces to semver: 0.2.0 < 0.2.1 => newer available.
+     * This is what the old compare-against-configurator (also 0.2.0) got wrong. */
+    void issue_pointReleaseLightsButton()
+    {
+        int a = 0, b = 0, c = 0;
+        QVERIFY(parseSemverTag("v0.2.1", &a, &b, &c));
+        QVERIFY(firmwareNewerAvailable(0, 2, 0, a, b, c, /*sameWireGen*/ true));
+        /* And the classifier turns that into an enabled Upgrade button. */
+        QCOMPARE(classifyUpgradeButton(false, /*connected*/ true,
+                                       /*haveBoard*/ true, /*newer*/ true),
+                 UpgradeButton::Upgrade);
+    }
 };
 
 QTEST_APPLESS_MAIN(TestFlashVerdict)

@@ -167,7 +167,7 @@ void FirmwareLibrary::parseReleasesJson(const QString &repoSlug,
         const QJsonObject obj = v.toObject();
 
         const QString tag = obj.value("tag_name").toString();
-        if (!tagIsCompatible(tag)) {
+        if (!tagIsCompatible(repoSlug, tag)) {
             ++skipped;
             continue;
         }
@@ -206,15 +206,27 @@ void FirmwareLibrary::parseReleasesJson(const QString &repoSlug,
              << "->" << kept << "kept," << skipped << "skipped";
 }
 
-bool FirmwareLibrary::tagIsCompatible(const QString &tag) const
+bool FirmwareLibrary::tagIsCompatible(const QString &repoSlug, const QString &tag) const
 {
-    /* Accept v<major>.<minor>.<patch> with optional b<build> suffix.
-     * Filter to >= v1.7.0 per the user's "anything after v1.7.0"
-     * requirement. */
+    /* Accept v<major>.<minor>.<patch> with optional b<build> suffix. */
     QRegularExpression re(QStringLiteral("^v(\\d+)\\.(\\d+)\\.(\\d+)(?:b\\d+)?$"));
     const QRegularExpressionMatch m = re.match(tag);
     if (!m.hasMatch()) return false;
 
+    /* The FreeJoyX fork carries its OWN semver line, which started at 0.x. Its
+     * releases (0.1.x, 0.2.x, ...) are all relevant to a FreeJoyX device, so
+     * accept every well-formed tag from the fork repo. Without this the 0.x
+     * releases were dropped here and never reached the release list -- which is
+     * exactly why the device-card Upgrade button, which compares the device
+     * against the newest available release, could never see a firmware-only
+     * point release like v0.2.1 (anpeaco/FreeJoyXConfiguratorQt bug). */
+    if (repoSlug.startsWith(QStringLiteral("anpeaco/"))) {
+        return true;
+    }
+
+    /* Upstream FreeJoy-Team/FreeJoy has a long tag history; filter to >= v1.7.0
+     * per the user's "anything after v1.7.0" requirement so the picker isn't
+     * flooded with ancient builds. */
     const int major = m.captured(1).toInt();
     const int minor = m.captured(2).toInt();
     /* patch unused in the comparison since we accept v1.7.0 as the floor */
