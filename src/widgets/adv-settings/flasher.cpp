@@ -234,6 +234,17 @@ void Flasher::onReleasesUpdated()
 {
     qDebug() << "Flasher: releases updated, rebuilding source list";
     refreshSourceList();
+    /* The known-release set changed -- let MainWindow re-evaluate the device
+     * card's Upgrade button so a firmware-only release lights it up without a
+     * reconnect. */
+    emit firmwareLibraryUpdated();
+}
+
+bool Flasher::newestFirmwareForBoard(int boardId, int &outMajor, int &outMinor,
+                                     int &outPatch) const
+{
+    return m_library->newestApplicableFirmware(boardId, outMajor, outMinor,
+                                               outPatch);
 }
 
 QVector<QPair<QString, QVariant>> Flasher::buildSourceItems()

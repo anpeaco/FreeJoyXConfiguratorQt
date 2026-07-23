@@ -45,7 +45,22 @@ public:
                          const QString &deviceSerial = QString(),
                          const QString &deviceVersionText = QString());
 
+    /* Highest FreeJoyX release version applicable to `boardId` known to the
+     * firmware library (network + cache). Returns true and fills the semver
+     * when a release applies; false otherwise. MainWindow uses this so the
+     * device-card Upgrade button reflects actually-released firmware rather
+     * than the configurator's own build version. Thin delegate to
+     * FirmwareLibrary::newestApplicableFirmware(). */
+    bool newestFirmwareForBoard(int boardId, int &outMajor, int &outMinor,
+                                int &outPatch) const;
+
 signals:
+    /* The firmware library finished a fetch (or reloaded its cache) and the
+     * known release set may have changed. MainWindow re-evaluates the Upgrade
+     * button so a freshly-released firmware lights it up without needing a
+     * device reconnect. */
+    void firmwareLibraryUpdated();
+
     /* Consolidated one-click flash. Emitted by the Flash button after the
      * user accepts the FlashConfirmationDialog. Carries the resolved
      * local file path of the firmware binary. MainWindow opens the

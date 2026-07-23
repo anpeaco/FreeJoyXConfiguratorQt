@@ -145,6 +145,56 @@ private slots:
         QVERIFY(firmwareNewerAvailable(0, 0, 0, 0, 1, 9, true));
     }
 
+    /* ---- semverOlder ---- */
+    void semver_olderByPatch_true()  { QVERIFY(semverOlder(0, 2, 0, 0, 2, 1)); }
+    void semver_olderByMinor_true()  { QVERIFY(semverOlder(0, 1, 9, 0, 2, 0)); }
+    void semver_olderByMajor_true()  { QVERIFY(semverOlder(0, 9, 9, 1, 0, 0)); }
+    void semver_equal_false()        { QVERIFY(!semverOlder(0, 2, 1, 0, 2, 1)); }
+    void semver_newer_false()        { QVERIFY(!semverOlder(0, 2, 1, 0, 2, 0)); }
+
+    /* ---- newestApplicableRelease ----
+     * Feeds the Upgrade button the newest RELEASED firmware version for the
+     * connected board, so a firmware-only point release (e.g. 0.2.1 shipped
+     * without a new configurator) is seen -- the bug where the button compared
+     * only against the configurator's own compile-time version. */
+    void newest_picksHighestForBoard()
+    {
+        /* F411's 0.3.0 must not leak into an F103 device's decision. */
+        const std::vector<ReleaseSemver> c = {
+            {0, 2, 0, F103}, {0, 2, 1, F103}, {0, 3, 0, F411},
+        };
+        int a = -1, b = -1, p = -1;
+        QVERIFY(newestApplicableRelease(c, F103, &a, &b, &p));
+        QCOMPARE(a, 0); QCOMPARE(b, 2); QCOMPARE(p, 1);
+    }
+    void newest_boardAgnosticApplies()
+    {
+        const std::vector<ReleaseSemver> c = { {0, 2, 5, 0} };
+        int a = -1, b = -1, p = -1;
+        QVERIFY(newestApplicableRelease(c, F103, &a, &b, &p));
+        QCOMPARE(a, 0); QCOMPARE(b, 2); QCOMPARE(p, 5);
+    }
+    void newest_unknownDeviceBoard_takesGlobalMax()
+    {
+        const std::vector<ReleaseSemver> c = { {0, 2, 0, F103}, {0, 3, 0, F411} };
+        int a = -1, b = -1, p = -1;
+        QVERIFY(newestApplicableRelease(c, /*board*/ 0, &a, &b, &p));
+        QCOMPARE(a, 0); QCOMPARE(b, 3); QCOMPARE(p, 0);
+    }
+    void newest_noMatch_falseAndUntouched()
+    {
+        const std::vector<ReleaseSemver> c = { {0, 2, 0, F411} };
+        int a = 7, b = 7, p = 7;
+        QVERIFY(!newestApplicableRelease(c, F103, &a, &b, &p));
+        QCOMPARE(a, 7); QCOMPARE(b, 7); QCOMPARE(p, 7);   /* outputs untouched */
+    }
+    void newest_empty_false()
+    {
+        const std::vector<ReleaseSemver> c;
+        int a = 0, b = 0, p = 0;
+        QVERIFY(!newestApplicableRelease(c, F103, &a, &b, &p));
+    }
+
     /* ---- classifyUpgradeButton ----
      * Drives the device-card Upgrade/Install button. A board sitting in the
      * custom HID bootloader (flasher mode) never reports params, so the

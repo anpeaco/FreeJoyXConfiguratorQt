@@ -423,6 +423,13 @@ MainWindow::MainWindow(QWidget *parent)
      * widget's m_inFlasherMode flag is already updated when this reads it. */
     connect(m_hidDeviceWorker, &HidDevice::flasherFound,
             this, [this](bool) { refreshUpgradeButtonState(); });
+    /* The firmware library fetches releases asynchronously (and reloads its
+     * cache at startup), so a newer release can land after the device already
+     * connected. Re-evaluate the Upgrade button when it does, otherwise a
+     * firmware-only release wouldn't light the button until the next
+     * reconnect. */
+    connect(m_advSettings->flasher(), &Flasher::firmwareLibraryUpdated,
+            this, [this] { refreshUpgradeButtonState(); });
     // set selected hid device
     connect(ui->comboBox_HidDeviceList, SIGNAL(currentIndexChanged(int)),
                 this, SLOT(hidDeviceListChanged(int)));
@@ -2537,16 +2544,37 @@ void MainWindow::refreshUpgradeButtonState()
 
         /* "Newer available" = a different wire-gen than the configurator, OR the
          * same gen but the device's reported FreeJoyX semver is older than the
-         * configurator's (covers point upgrades like 0.1.5 -> 0.1.9). Devices
+         * TARGET version (covers point upgrades like 0.1.5 -> 0.1.9). Devices
          * that don't report a semver (old/upstream, all-zero) read as older, so
          * they're offered the upgrade too. We deliberately do NOT gate on a
          * bundled .bin being present -- that only pre-selects it -- so the
          * button works for F103 and F411 alike; the picker dialog opened on
-         * click finds / browses / downloads the firmware. */
+         * click finds / browses / downloads the firmware.
+         *
+         * The target version is the newest firmware actually RELEASED for this
+         * board (from the FirmwareLibrary release list), floored at the
+         * configurator's own bundled version. The floor preserves today's
+         * behaviour when offline / the library is empty, and never regresses
+         * below it. Consulting the release list is the fix for a firmware-only
+         * point release (e.g. 0.2.1 shipped without a new configurator): the
+         * configurator's compile-time FREEJOYX_VERSION alone can never see it,
+         * so the button stayed dead. */
+        int tgtMajor = FREEJOYX_VERSION_MAJOR;
+        int tgtMinor = FREEJOYX_VERSION_MINOR;
+        int tgtPatch = FREEJOYX_VERSION_PATCH;
+        int relMajor = 0, relMinor = 0, relPatch = 0;
+        if (m_advSettings->flasher()->newestFirmwareForBoard(
+                boardId, relMajor, relMinor, relPatch) &&
+            semverOlder(tgtMajor, tgtMinor, tgtPatch, relMajor, relMinor, relPatch)) {
+            tgtMajor = relMajor;
+            tgtMinor = relMinor;
+            tgtPatch = relPatch;
+        }
+
         const auto &pr = gEnv.pDeviceConfig->paramsReport;
         newerAvailable = firmwareNewerAvailable(
             pr.freejoyx_version_major, pr.freejoyx_version_minor, pr.freejoyx_version_patch,
-            FREEJOYX_VERSION_MAJOR, FREEJOYX_VERSION_MINOR, FREEJOYX_VERSION_PATCH,
+            tgtMajor, tgtMinor, tgtPatch,
             versionMatchesCurrent);
     }
 

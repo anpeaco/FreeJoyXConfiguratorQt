@@ -39,6 +39,8 @@
 #include <QString>
 #include <QList>
 
+#include "flashverdict.h"   // ReleaseSemver, newestApplicableRelease
+
 class QNetworkAccessManager;
 class QNetworkReply;
 
@@ -71,6 +73,17 @@ public:
     /* Last-known release list (from network or cache). Sorted by repo
      * then tag (newest first). */
     QList<Release> releases() const { return m_releases; }
+
+    /* Highest FreeJoyX release version applicable to `boardId` (a BOARD_ID_*,
+     * or 0 = unknown/any) across the known releases. Writes the semver into the
+     * out params and returns true when a release applies; false (outputs
+     * untouched) when the library is empty or nothing matches. Only
+     * anpeaco/FreeJoyX releases are considered -- upstream FreeJoy uses a
+     * separate 1.x version line that isn't comparable to the device's reported
+     * FreeJoyX semver. Drives the device card's Upgrade button so it reflects
+     * actually-released firmware, not the configurator's own build version. */
+    bool newestApplicableFirmware(int boardId, int &outMajor, int &outMinor,
+                                  int &outPatch) const;
 
     /* Async download of a remote asset to the local recovery folder.
      * destPath is computed from the asset metadata (repo + tag + name)

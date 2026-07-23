@@ -18,6 +18,7 @@
 #define FLASHVERDICT_H
 
 #include <cstdint>
+#include <vector>
 
 /* Classification of an upcoming flash. Mirrors the cases the Confirm dialog
  * renders. `None` = nothing selected yet. */
@@ -58,6 +59,34 @@ bool crossingMasksDowngrade(FlashVerdict verdict, bool crossing);
 bool firmwareNewerAvailable(int devMajor, int devMinor, int devPatch,
                             int bundledMajor, int bundledMinor, int bundledPatch,
                             bool sameWireGen);
+
+/* Strict semver less-than: true when (aMajor,aMinor,aPatch) is older than
+ * (bMajor,bMinor,bPatch). Shared by newestApplicableRelease() and the
+ * caller's "floor the target at the configurator's own version" step. */
+bool semverOlder(int aMajor, int aMinor, int aPatch,
+                 int bMajor, int bMinor, int bPatch);
+
+/* A firmware release candidate parsed from the FirmwareLibrary list: its
+ * semver plus the board its .bin targets. `boardId` is a BOARD_ID_* or 0 when
+ * the asset is board-agnostic / undetectable (applies to any connected board).
+ * Deliberately Qt-free so the selection below stays unit-testable. */
+struct ReleaseSemver {
+    int major = 0;
+    int minor = 0;
+    int patch = 0;
+    int boardId = 0;
+};
+
+/* Pick the newest release in `candidates` applicable to `boardId` and write its
+ * semver into *outMajor/*outMinor/*outPatch. A candidate applies when its
+ * boardId is 0 (agnostic), or `boardId` is 0 (device board unknown -> consider
+ * all), or the two boards match. Returns true when at least one candidate
+ * applied (outputs set to the newest); false otherwise (outputs untouched).
+ * Lets the Upgrade button be gated on the actually-released firmware version
+ * rather than the configurator's own compile-time version. */
+bool newestApplicableRelease(const std::vector<ReleaseSemver> &candidates,
+                             int boardId,
+                             int *outMajor, int *outMinor, int *outPatch);
 
 /* What the device-card firmware button should offer, given the device state. */
 enum class UpgradeButton {

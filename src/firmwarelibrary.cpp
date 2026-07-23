@@ -14,12 +14,44 @@
 #include <QRegularExpression>
 #include <QDateTime>
 
+#include "common_defines.h"   // BOARD_ID_F103_BLUEPILL / _F411_BLACKPILL
+
 namespace {
 
 const QStringList kTrackedRepos = {
     QStringLiteral("FreeJoy-Team/FreeJoy"),
     QStringLiteral("anpeaco/FreeJoyX"),
 };
+
+/* This project's own release slug. Only these carry a FreeJoyX (0.x) semver
+ * comparable to the device's reported freejoyx_version; upstream FreeJoy's
+ * 1.7.x line is deliberately excluded from the "newer available" check. */
+const QString kFreeJoyXRepo = QStringLiteral("anpeaco/FreeJoyX");
+
+/* Parse "v0.2.1" or "v0.2.1b3" into semver ints. Returns false when the tag
+ * doesn't match the release convention. */
+bool parseTagSemver(const QString &tag, int &maj, int &min, int &pat)
+{
+    static const QRegularExpression re(
+        QStringLiteral("^v(\\d+)\\.(\\d+)\\.(\\d+)(?:b\\d+)?$"));
+    const QRegularExpressionMatch m = re.match(tag);
+    if (!m.hasMatch()) return false;
+    maj = m.captured(1).toInt();
+    min = m.captured(2).toInt();
+    pat = m.captured(3).toInt();
+    return true;
+}
+
+/* Map a release .bin asset name to a BOARD_ID_*, or 0 when it's board-agnostic
+ * / undetectable. FreeJoyX bundles name their assets with an "f103" / "f411"
+ * token (e.g. "freejoyx-f103-app-v0.2.1.bin"). */
+int boardIdForAssetName(const QString &name)
+{
+    const QString n = name.toLower();
+    if (n.contains(QStringLiteral("f103"))) return BOARD_ID_F103_BLUEPILL;
+    if (n.contains(QStringLiteral("f411"))) return BOARD_ID_F411_BLACKPILL;
+    return 0;
+}
 
 QString releasesUrlFor(const QString &repoSlug)
 {
@@ -245,6 +277,29 @@ void FirmwareLibrary::sortReleases()
             }
             return false;
         });
+}
+
+bool FirmwareLibrary::newestApplicableFirmware(int boardId, int &outMajor,
+                                               int &outMinor, int &outPatch) const
+{
+    std::vector<ReleaseSemver> candidates;
+    for (const Release &rel : m_releases) {
+        if (rel.repo != kFreeJoyXRepo) continue;   // FreeJoyX (0.x) line only
+        int maj = 0, min = 0, pat = 0;
+        if (!parseTagSemver(rel.tag, maj, min, pat)) continue;
+        /* One candidate per .bin asset so its board token is honoured; the
+         * newest-for-board selection dedupes by taking the max. */
+        for (const Asset &a : rel.assets) {
+            ReleaseSemver c;
+            c.major = maj;
+            c.minor = min;
+            c.patch = pat;
+            c.boardId = boardIdForAssetName(a.name);
+            candidates.push_back(c);
+        }
+    }
+    return newestApplicableRelease(candidates, boardId,
+                                   &outMajor, &outMinor, &outPatch);
 }
 
 

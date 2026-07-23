@@ -70,6 +70,43 @@ bool firmwareNewerAvailable(int devMajor, int devMinor, int devPatch,
     return !sameWireGen || olderSemver;
 }
 
+bool semverOlder(int aMajor, int aMinor, int aPatch,
+                 int bMajor, int bMinor, int bPatch)
+{
+    if (aMajor != bMajor) return aMajor < bMajor;
+    if (aMinor != bMinor) return aMinor < bMinor;
+    return aPatch < bPatch;
+}
+
+bool newestApplicableRelease(const std::vector<ReleaseSemver> &candidates,
+                             int boardId,
+                             int *outMajor, int *outMinor, int *outPatch)
+{
+    bool found = false;
+    int bestMaj = 0, bestMin = 0, bestPat = 0;
+    for (const ReleaseSemver &c : candidates) {
+        /* Skip a board-specific asset for the other board. A board-agnostic
+         * asset (c.boardId == 0) or an unknown device board (boardId == 0)
+         * never skips -- both mean "could apply". */
+        if (c.boardId != 0 && boardId != 0 && c.boardId != boardId) {
+            continue;
+        }
+        if (!found || semverOlder(bestMaj, bestMin, bestPat,
+                                  c.major, c.minor, c.patch)) {
+            found = true;
+            bestMaj = c.major;
+            bestMin = c.minor;
+            bestPat = c.patch;
+        }
+    }
+    if (found) {
+        if (outMajor) *outMajor = bestMaj;
+        if (outMinor) *outMinor = bestMin;
+        if (outPatch) *outPatch = bestPat;
+    }
+    return found;
+}
+
 UpgradeButton classifyUpgradeButton(bool inFlasherMode, bool deviceConnected,
                                     bool haveBoard, bool newerAvailable)
 {
